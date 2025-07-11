@@ -612,7 +612,527 @@ window.migrateFromLocalStorage = async function() {
             const users = JSON.parse(localUsers);
             for (const user of users) {
                 await window.airtableAPI.createUsuario(user);
+            }// 🗄️ Configuración de Airtable API - VERSIÓN CORREGIDA PARA NETLIFY
+// Hospital Susana López de Valencia - Sistema de Gestión
+
+class AirtableAPI {
+    constructor() {
+        // 🌐 Detección mejorada de entorno
+        this.hostname = window.location.hostname;
+        this.isLocalhost = this.hostname === 'localhost' || 
+                          this.hostname === '127.0.0.1' || 
+                          this.hostname.includes('127.0.0.1') ||
+                          this.hostname.includes('localhost');
+        
+        // En producción, SIEMPRE usar proxy
+        this.isProduction = !this.isLocalhost;
+        
+        console.log('🔍 Detección de entorno:');
+        console.log('  📍 Hostname:', this.hostname);
+        console.log('  🏠 Es localhost:', this.isLocalhost);
+        console.log('  🌐 Es producción:', this.isProduction);
+        
+        // 🔗 Configuración de conexión
+        if (this.isProduction) {
+            // ✅ PRODUCCIÓN: Solo proxy, nunca conexión directa
+            this.baseUrl = '/.netlify/functions/airtable-proxy';
+            this.useProxy = true;
+            this.directApiKey = null;
+            console.log('🛡️ Modo PRODUCCIÓN: Usando proxy seguro');
+        } else {
+            // 🔧 DESARROLLO: Conexión directa permitida
+            this.baseUrl = 'https://api.airtable.com/v0/appFyEBCedQGOeJyV';
+            this.useProxy = false;
+            this.directApiKey = 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
+            console.log('🔧 Modo DESARROLLO: Conexión directa permitida');
+        }
+        
+        // Nombres de las tablas
+        this.tables = {
+            solicitudes: 'Solicitudes',
+            tecnicos: 'Tecnicos', 
+            usuarios: 'Usuarios',
+            solicitudesAcceso: 'SolicitudesAcceso'
+        };
+        
+        // 🚀 Estado de conexión
+        this.connectionStatus = 'connecting';
+        
+        console.log('🔗 AirtableAPI inicializada');
+        console.log('📡 URL base:', this.baseUrl);
+        console.log('🛡️ Usando proxy:', this.useProxy);
+        
+        // 🧪 Test inicial de conectividad
+        this.initializeConnection();
+    }
+
+    // 🚀 Inicializar conexión
+    async initializeConnection() {
+        console.log('🔄 Iniciando conexión con Airtable...');
+        
+        try {
+            const isConnected = await this.testConnection();
+            
+            if (isConnected) {
+                this.connectionStatus = 'connected';
+                this.notifyConnectionStatus(true);
+                console.log('✅ Conectado a Airtable exitosamente');
+                return true;
+            } else {
+                throw new Error('Test de conexión falló');
             }
+            
+        } catch (error) {
+            console.error('❌ Error en conexión:', error);
+            this.connectionStatus = 'disconnected';
+            this.notifyConnectionStatus(false);
+            console.warn('⚠️ Activando modo fallback (localStorage)');
+            return false;
+        }
+    }
+
+    // 📢 Notificar estado de conexión
+    notifyConnectionStatus(connected) {
+        const event = new CustomEvent('airtableConnectionUpdate', {
+            detail: { 
+                connected, 
+                timestamp: new Date(),
+                method: this.useProxy ? 'proxy' : 'direct',
+                hostname: this.hostname
+            }
+        });
+        window.dispatchEvent(event);
+    }
+
+    // 🌐 Método base para hacer requests
+    async makeRequest(endpoint, method = 'GET', data = null, retries = 2) {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                let url, options;
+                
+                if (this.useProxy) {
+                    // 🛡️ Modo PROXY (Producción) - Sin conexiones externas
+                    url = `${this.baseUrl}/${endpoint}`;
+                    options = {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        // 🔒 Configuración segura para evitar CSP
+                        mode: 'same-origin',
+                        credentials: 'omit',
+                        cache: 'no-cache'
+                    };
+                } else {
+                    // 🔧 Modo DIRECTO (Solo desarrollo local)
+                    if (this.isProduction) {
+                        throw new Error('Conexión directa bloqueada en producción por CSP');
+                    }
+                    
+                    url = `${this.baseUrl}/${endpoint}`;
+                    options = {
+                        method: method,
+                        headers: {
+                            'Authorization': `Bearer ${this.directApiKey}`,
+                            'Content-Type': 'application/json'
+                        },
+                        mode: 'cors',
+                        credentials: 'omit'
+                    };
+                }
+                
+                if (data && (method === 'POST' || method === 'PATCH')) {
+                    options.body = JSON.stringify(data);
+                }
+                
+                console.log(`📡 ${method} request to: ${url} (intento ${attempt + 1})`);
+                console.log('🔧 Opciones:', { 
+                    mode: options.mode, 
+                    useProxy: this.useProxy,
+                    isProduction: this.isProduction 
+                });
+                
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`❌ Error ${response.status}:`, errorText);
+                    
+                    if (response.status === 401) {
+                        throw new Error('❌ API Key inválida o expirada');
+                    } else if (response.status === 403) {
+                        throw new Error('❌ Acceso denegado - Verificar permisos');
+                    } else if (response.status === 404) {
+                        throw new Error('❌ Endpoint no encontrado - Verificar función Netlify');
+                    } else if (response.status === 500) {
+                        throw new Error(`❌ Error del servidor: ${errorText}`);
+                    }
+                    
+                    throw new Error(`Error ${response.status}: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log(`✅ Response received successfully`);
+                
+                // Actualizar estado de conexión
+                if (this.connectionStatus !== 'connected') {
+                    this.connectionStatus = 'connected';
+                    this.notifyConnectionStatus(true);
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error(`❌ Intento ${attempt + 1} falló:`, error);
+                
+                // Si es error de CSP en producción, no reintentar conexión directa
+                if (error.message.includes('Content Security Policy') || 
+                    error.message.includes('CSP') ||
+                    error.name === 'TypeError' && this.isProduction) {
+                    console.error('🚨 Error de CSP detectado - usando fallback inmediatamente');
+                    this.connectionStatus = 'disconnected';
+                    this.notifyConnectionStatus(false);
+                    return this.localStorageFallback(endpoint, method, data);
+                }
+                
+                if (attempt === retries) {
+                    // Último intento falló, usar fallback
+                    console.warn('⚠️ Todos los intentos fallaron, usando localStorage');
+                    this.connectionStatus = 'disconnected';
+                    this.notifyConnectionStatus(false);
+                    return this.localStorageFallback(endpoint, method, data);
+                }
+                
+                await this.delay(1000 * (attempt + 1));
+            }
+        }
+    }
+
+    // ⏳ Delay helper
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // 💾 Fallback a localStorage
+    localStorageFallback(endpoint, method, data) {
+        console.log('💾 Usando localStorage fallback para:', endpoint);
+        
+        const tableName = endpoint.split('/')[0];
+        const storageKey = `hospital_${tableName.toLowerCase()}`;
+        
+        try {
+            switch (method) {
+                case 'GET':
+                    const stored = localStorage.getItem(storageKey);
+                    return {
+                        records: stored ? JSON.parse(stored).map(item => ({
+                            id: item.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
+                            fields: item
+                        })) : []
+                    };
+                    
+                case 'POST':
+                    const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    const newRecord = { ...data.fields };
+                    newRecord.id = newRecord.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
+                    existing.push(newRecord);
+                    localStorage.setItem(storageKey, JSON.stringify(existing));
+                    
+                    console.log('💾 Registro guardado en localStorage:', newRecord.id);
+                    
+                    return { id: newRecord.id, fields: newRecord };
+                    
+                case 'PATCH':
+                    const existingPatch = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    const recordIndex = existingPatch.findIndex(r => r.id === endpoint.split('/').pop());
+                    
+                    if (recordIndex !== -1) {
+                        existingPatch[recordIndex] = { ...existingPatch[recordIndex], ...data.fields };
+                        localStorage.setItem(storageKey, JSON.stringify(existingPatch));
+                        console.log('💾 Registro actualizado en localStorage');
+                    }
+                    
+                    return { id: 'local', fields: data.fields };
+                    
+                default:
+                    return { records: [] };
+            }
+        } catch (localError) {
+            console.error('❌ LocalStorage fallback error:', localError);
+            return { records: [] };
+        }
+    }
+
+    // 📋 SOLICITUDES DE MANTENIMIENTO
+    async getSolicitudes() {
+        const result = await this.makeRequest(this.tables.solicitudes);
+        return result.records.map(record => ({
+            id: record.id,
+            ...record.fields
+        }));
+    }
+
+    async createSolicitud(solicitudData) {
+        const data = {
+            fields: {
+                numero: solicitudData.numero,
+                servicioIngenieria: solicitudData.servicioIngenieria,
+                tipoServicio: solicitudData.tipoServicio,
+                prioridad: solicitudData.prioridad,
+                equipo: solicitudData.equipo,
+                ubicacion: solicitudData.ubicacion,
+                descripcion: solicitudData.descripcion,
+                observaciones: solicitudData.observaciones || '',
+                solicitante: solicitudData.solicitante,
+                servicioHospitalario: solicitudData.servicioHospitalario,
+                emailSolicitante: solicitudData.emailSolicitante,
+                fechaCreacion: solicitudData.fechaCreacion,
+                estado: solicitudData.estado || 'PENDIENTE',
+                tecnicoAsignado: solicitudData.tecnicoAsignado || '',
+                tecnicoAsignadoId: solicitudData.tecnicoAsignadoId || '',
+                fechaAsignacion: solicitudData.fechaAsignacion || ''
+            }
+        };
+        
+        return await this.makeRequest(this.tables.solicitudes, 'POST', data);
+    }
+
+    async updateSolicitud(recordId, updates) {
+        const data = { fields: updates };
+        return await this.makeRequest(`${this.tables.solicitudes}/${recordId}`, 'PATCH', data);
+    }
+
+    // 👥 TÉCNICOS
+    async getTecnicos() {
+        const result = await this.makeRequest(this.tables.tecnicos);
+        return result.records.map(record => ({
+            id: record.id,
+            ...record.fields
+        }));
+    }
+
+    async createTecnico(tecnicoData) {
+        const data = {
+            fields: {
+                id: tecnicoData.id,
+                nombre: tecnicoData.nombre,
+                area: tecnicoData.area,
+                tipo: tecnicoData.tipo,
+                especialidad: tecnicoData.especialidad,
+                telefono: tecnicoData.telefono,
+                email: tecnicoData.email,
+                estado: tecnicoData.estado || 'disponible',
+                solicitudAsignada: tecnicoData.solicitudAsignada || '',
+                fechaCreacion: tecnicoData.fechaCreacion
+            }
+        };
+        
+        return await this.makeRequest(this.tables.tecnicos, 'POST', data);
+    }
+
+    async updateTecnico(recordId, updates) {
+        const data = { fields: updates };
+        return await this.makeRequest(`${this.tables.tecnicos}/${recordId}`, 'PATCH', data);
+    }
+
+    // 🔐 USUARIOS APROBADOS
+    async getUsuarios() {
+        const result = await this.makeRequest(this.tables.usuarios);
+        return result.records.map(record => ({
+            id: record.id,
+            ...record.fields
+        }));
+    }
+
+    async createUsuario(usuarioData) {
+        const data = {
+            fields: {
+                id: usuarioData.id,
+                nombreCompleto: usuarioData.nombreCompleto,
+                email: usuarioData.email,
+                telefono: usuarioData.telefono || '',
+                numeroDocumento: usuarioData.numeroDocumento || '',
+                servicioHospitalario: usuarioData.servicioHospitalario,
+                cargo: usuarioData.cargo,
+                codigoAcceso: usuarioData.codigoAcceso,
+                estado: usuarioData.estado || 'ACTIVO',
+                fechaAprobacion: usuarioData.fechaAprobacion,
+                ultimoAcceso: usuarioData.ultimoAcceso || ''
+            }
+        };
+        
+        return await this.makeRequest(this.tables.usuarios, 'POST', data);
+    }
+
+    async updateUsuario(recordId, updates) {
+        const data = { fields: updates };
+        return await this.makeRequest(`${this.tables.usuarios}/${recordId}`, 'PATCH', data);
+    }
+
+    // 📝 SOLICITUDES DE ACCESO
+    async getSolicitudesAcceso() {
+        const result = await this.makeRequest(this.tables.solicitudesAcceso);
+        return result.records.map(record => ({
+            id: record.id,
+            ...record.fields
+        }));
+    }
+
+    async createSolicitudAcceso(solicitudData) {
+        const data = {
+            fields: {
+                id: solicitudData.id,
+                nombreCompleto: solicitudData.nombreCompleto,
+                email: solicitudData.email,
+                telefono: solicitudData.telefono || '',
+                servicioHospitalario: solicitudData.servicioHospitalario,
+                cargo: solicitudData.cargo,
+                justificacion: solicitudData.justificacion || '',
+                fechaSolicitud: solicitudData.fechaSolicitud,
+                estado: solicitudData.estado || 'PENDIENTE',
+                esUrgente: solicitudData.esUrgente || false
+            }
+        };
+        
+        return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+    }
+
+    async updateSolicitudAcceso(recordId, updates) {
+        const data = { fields: updates };
+        return await this.makeRequest(`${this.tables.solicitudesAcceso}/${recordId}`, 'PATCH', data);
+    }
+
+    // 🔢 Generar código de acceso único
+    async generateUniqueAccessCode() {
+        const usuarios = await this.getUsuarios();
+        const existingCodes = usuarios.map(u => u.codigoAcceso).filter(Boolean);
+        
+        let code;
+        do {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+        } while (existingCodes.includes(code));
+        
+        return code;
+    }
+
+    // 🧪 Test de conexión
+    async testConnection() {
+        try {
+            console.log('🧪 Probando conexión con Airtable...');
+            
+            let url, options;
+            
+            if (this.useProxy) {
+                // 🛡️ Test via proxy (producción)
+                url = `${this.baseUrl}/${this.tables.solicitudes}?maxRecords=1`;
+                options = {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'same-origin',  // 🔒 Evitar CSP
+                    credentials: 'omit',
+                    cache: 'no-cache'
+                };
+            } else {
+                // 🔧 Test directo (solo desarrollo)
+                if (this.isProduction) {
+                    throw new Error('Test directo bloqueado en producción');
+                }
+                
+                url = `${this.baseUrl}/${this.tables.solicitudes}?maxRecords=1`;
+                options = {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${this.directApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                };
+            }
+            
+            console.log('🔗 Test URL:', url);
+            console.log('🔧 Test mode:', options.mode);
+            
+            const result = await fetch(url, options);
+            
+            if (!result.ok) {
+                throw new Error(`HTTP ${result.status}: ${result.statusText}`);
+            }
+            
+            await result.json();
+            console.log('✅ Test de conexión exitoso');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Test de conexión falló:', error);
+            return false;
+        }
+    }
+}
+
+// 🌍 Instancia global de la API
+window.airtableAPI = new AirtableAPI();
+
+// 📡 Event listener para cambios de estado de conexión
+window.addEventListener('airtableConnectionUpdate', function(event) {
+    console.log('🔄 Estado de conexión actualizado:', event.detail);
+    
+    if (typeof updateConnectionStatus === 'function') {
+        updateConnectionStatus(
+            event.detail.connected, 
+            event.detail.connected 
+                ? `Conectado via ${event.detail.method} (${event.detail.hostname})` 
+                : 'Modo Local'
+        );
+    }
+});
+
+// 🚀 Inicialización automática
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔗 Inicializando sistema Hospital...');
+    console.log('🌐 Dominio actual:', window.location.hostname);
+    console.log('🛡️ Modo detectado:', window.airtableAPI.isProduction ? 'PRODUCCIÓN' : 'DESARROLLO');
+    console.log('📡 Método de conexión:', window.airtableAPI.useProxy ? 'PROXY SEGURO' : 'CONEXIÓN DIRECTA');
+    
+    // Verificar conexión cada 5 minutos si está desconectado
+    setInterval(() => {
+        if (window.airtableAPI.connectionStatus === 'disconnected') {
+            console.log('🔄 Reintentando conexión automática...');
+            window.airtableAPI.initializeConnection();
+        }
+    }, 5 * 60 * 1000);
+});
+
+// 🛠️ Función de diagnóstico mejorada
+window.debugAirtableConnection = function() {
+    console.log('🔍 DIAGNÓSTICO COMPLETO DE CONEXIÓN AIRTABLE');
+    console.log('==========================================');
+    console.log('🌐 Hostname actual:', window.location.hostname);
+    console.log('🏠 Es localhost:', window.airtableAPI.isLocalhost);
+    console.log('🌍 Es producción:', window.airtableAPI.isProduction);
+    console.log('🛡️ Usando proxy:', window.airtableAPI.useProxy);
+    console.log('🔗 URL base:', window.airtableAPI.baseUrl);
+    console.log('📡 Estado actual:', window.airtableAPI.connectionStatus);
+    console.log('🔐 API Key disponible:', !!window.airtableAPI.directApiKey);
+    console.log('🚀 User Agent:', navigator.userAgent.substring(0, 50) + '...');
+    
+    console.log('\n🧪 Ejecutando test de conexión...');
+    window.airtableAPI.testConnection().then(result => {
+        console.log('🔍 Resultado del test:', result ? '✅ EXITOSO' : '❌ FALLÓ');
+    });
+    
+    return {
+        hostname: window.location.hostname,
+        isProduction: window.airtableAPI.isProduction,
+        useProxy: window.airtableAPI.useProxy,
+        baseUrl: window.airtableAPI.baseUrl,
+        status: window.airtableAPI.connectionStatus
+    };
+};
             console.log('✅ Usuarios migrados');
         }
         
