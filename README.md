@@ -1,0 +1,351 @@
+# 🏥 Sistema de Gestión Hospitalaria Cloud
+## Hospital Susana López de Valencia E.S.E.
+
+### 🌟 Descripción
+Sistema integral de gestión de solicitudes de mantenimiento hospitalario desarrollado por **Ing. Paul Eduardo Muñoz R.** Migrado de localStorage a una solución cloud completa con **Netlify + Airtable**.
+
+### ✨ Características Principales
+- 🌐 **Acceso Global**: Disponible desde cualquier computador con internet
+- 🗄️ **Base de Datos en la Nube**: Airtable como backend robusto
+- 🔄 **Sincronización en Tiempo Real**: Cambios reflejados inmediatamente
+- 🔐 **Sistema de Autenticación**: Códigos de acceso de 4 dígitos
+- 👥 **Gestión de Personal**: Técnicos e ingenieros por área
+- 📋 **Seguimiento Completo**: Estados de solicitudes en tiempo real
+- 💾 **Respaldo Automático**: Datos seguros en Airtable
+- 📱 **Responsive Design**: Funciona en dispositivos móviles
+
+---
+
+## 🏗️ Arquitectura del Sistema
+
+```
+┌─────────────────────────────────────┐
+│           USUARIOS FINALES          │
+│  (Personal Hospitalario)            │
+└─────────────┬───────────────────────┘
+              │
+┌─────────────▼───────────────────────┐
+│        NETLIFY (Frontend)           │
+│  • Portal de Solicitudes           │
+│  • Portal de Gestión               │
+│  • HTTPS Automático                 │
+│  • CDN Global                       │
+└─────────────┬───────────────────────┘
+              │ API Calls
+┌─────────────▼───────────────────────┐
+│         AIRTABLE (Backend)          │
+│  • Solicitudes                      │
+│  • Técnicos                         │
+│  • Usuarios                         │
+│  • Solicitudes de Acceso            │
+└─────────────────────────────────────┘
+```
+
+---
+
+## 📁 Estructura de Archivos
+
+```
+hospital-system/
+├── 📄 portal-solicitudes.html      # Portal para usuarios finales
+├── 📄 portal-gestion.html          # Portal administrativo
+├── ⚙️ airtable-config.js           # Configuración de Airtable API
+├── 🔒 security-config.js           # Configuración de seguridad avanzada
+├── 🌐 netlify.toml                 # Configuración de Netlify
+├── 📖 README.md                    # Este archivo
+└── 📋 deployment-checklist.md      # Lista de verificación
+```
+
+---
+
+## 🚀 Deploy Rápido (5 minutos)
+
+### Paso 1: Configurar Airtable
+1. Crea una base en [airtable.com](https://airtable.com) con estas 4 tablas:
+   - **Solicitudes** (solicitudes de mantenimiento)
+   - **Tecnicos** (personal técnico)
+   - **Usuarios** (usuarios con acceso)
+   - **SolicitudesAcceso** (solicitudes de acceso pendientes)
+
+2. Genera tu **Personal Access Token** en [airtable.com/create/tokens](https://airtable.com/create/tokens)
+
+3. Obtén tu **Base ID** desde [airtable.com/api](https://airtable.com/api)
+
+### Paso 2: Configurar Credenciales
+Edita `airtable-config.js` y reemplaza:
+```javascript
+this.baseId = 'TU_BASE_ID_AQUI';     // app1234567890abcdef
+this.apiKey = 'TU_API_KEY_AQUI';     // pat1234567890abcdef
+```
+
+### Paso 3: Deploy en Netlify
+1. Ve a [netlify.com](https://netlify.com)
+2. Arrastra y suelta toda la carpeta del proyecto
+3. ¡Listo! Tu sistema estará en línea en segundos
+
+### URLs Resultantes:
+- **Portal de Solicitudes**: `https://tu-sitio.netlify.app/portal-solicitudes.html`
+- **Portal de Gestión**: `https://tu-sitio.netlify.app/portal-gestion.html`
+
+---
+
+## 👥 Guía de Usuario
+
+### Para Personal Hospitalario (Portal de Solicitudes)
+
+#### 1. **Solicitar Acceso**
+1. Abrir Portal de Solicitudes
+2. Pestaña "Solicitar Acceso"
+3. Completar formulario con:
+   - Nombre completo
+   - Email institucional
+   - Servicio/Área hospitalaria
+   - Cargo
+4. Enviar solicitud
+5. Esperar aprobación del administrador
+
+#### 2. **Iniciar Sesión**
+1. Pestaña "Iniciar Sesión"
+2. Ingresar:
+   - Email registrado
+   - Código de 4 dígitos (proporcionado tras aprobación)
+3. Acceso al portal autenticado
+
+#### 3. **Crear Solicitud de Mantenimiento**
+1. Sección "Nueva Solicitud"
+2. Completar:
+   - **Área**: Ingeniería Biomédica, Mecánica, o Infraestructura
+   - **Tipo**: Preventivo, Correctivo, Reparación, etc.
+   - **Prioridad**: Crítica, Alta, Media, Baja
+   - **Equipo**: Descripción del equipo afectado
+   - **Ubicación**: Ubicación específica
+   - **Descripción**: Detalle del problema
+3. Enviar solicitud
+4. Se guarda automáticamente en Airtable
+
+#### 4. **Seguimiento de Solicitudes**
+1. Sección "Mis Solicitudes"
+2. Ver historial personal
+3. Estados disponibles:
+   - **Pendiente**: Esperando asignación
+   - **Asignada**: Técnico asignado
+   - **En Proceso**: Trabajo en progreso
+   - **Completada**: Trabajo finalizado
+
+### Para Administradores (Portal de Gestión)
+
+#### 1. **Dashboard**
+- Vista general del sistema
+- Métricas por área de ingeniería
+- Estado de conexión con Airtable
+- Resumen de personal técnico
+
+#### 2. **Gestión de Solicitudes**
+- Ver todas las solicitudes
+- Asignar técnicos manualmente
+- Auto-asignación automática
+- Cambiar estados de solicitudes
+- Filtrar por área y estado
+
+#### 3. **Gestión de Técnicos**
+- Agregar nuevo personal técnico
+- Organizar por áreas (Biomédica, Mecánica, Infraestructura)
+- Cambiar estados (Disponible, Ocupado, Inactivo)
+- Ver estadísticas del personal
+
+#### 4. **Gestión de Accesos**
+- Revisar solicitudes pendientes
+- Aprobar/rechazar accesos
+- Generar códigos de 4 dígitos automáticamente
+- Gestionar usuarios activos
+- Regenerar códigos si es necesario
+
+---
+
+## 🔧 Configuración Técnica
+
+### Variables de Entorno (Netlify)
+Para mayor seguridad, configurar en Netlify:
+```
+AIRTABLE_BASE_ID=app1234567890abcdef
+AIRTABLE_API_KEY=pat1234567890abcdef
+```
+
+### Límites y Consideraciones
+- **Airtable Free**: 1,200 records por base
+- **Netlify Free**: 100 GB bandwidth/mes
+- **Rate Limiting**: 5 requests/segundo
+- **Usuarios Concurrentes**: ~50-100 sin problemas
+
+### Backup y Seguridad
+- **Backup Automático**: Airtable mantiene snapshots diarios
+- **HTTPS**: Certificados SSL automáticos de Let's Encrypt
+- **CORS**: Configurado para seguridad
+- **Sanitización**: Datos validados antes de guardarse
+
+---
+
+## 🛠️ Desarrollo y Personalización
+
+### Estructura del Código
+```javascript
+// Configuración principal
+class AirtableAPI {
+    constructor() {
+        this.baseId = '...';
+        this.apiKey = '...';
+    }
+    
+    // Métodos CRUD
+    async getSolicitudes() { /* ... */ }
+    async createSolicitud(data) { /* ... */ }
+    async updateSolicitud(id, data) { /* ... */ }
+}
+```
+
+### Personalización de Áreas
+Para agregar nuevas áreas de ingeniería:
+
+1. **En Airtable**: Agregar opción en campo `servicioIngenieria`
+2. **En código**: Actualizar objeto `areasIngenieria`
+3. **En formularios**: Agregar option en selects
+
+### Personalización de Estados
+Para modificar estados de solicitudes:
+
+1. **En Airtable**: Modificar campo `estado`
+2. **En código**: Actualizar funciones de estado
+3. **En CSS**: Agregar clases de estilo correspondientes
+
+---
+
+## 📊 Monitoreo y Métricas
+
+### Métricas Disponibles
+- Solicitudes totales por área
+- Personal técnico por estado
+- Solicitudes pendientes
+- Usuarios activos
+- Performance de API
+
+### Logs y Debugging
+```javascript
+// Habilitar logs detallados
+window.airtableAPI.enableLogging = true;
+
+// Ver métricas de uso
+console.log(window.airtableAPI.getUsageMetrics());
+```
+
+### Alertas Automáticas
+- Solicitudes críticas sin asignar
+- Rate limiting de Airtable
+- Errores de conexión
+- DevTools abierto (modo desarrollo)
+
+---
+
+## 🚨 Troubleshooting
+
+### Errores Comunes
+
+#### "Airtable API Error: 401"
+- **Causa**: API Key incorrecto
+- **Solución**: Verificar token en airtable.com/account
+
+#### "Airtable API Error: 404"
+- **Causa**: Base ID incorrecto o tabla no existe
+- **Solución**: Verificar Base ID y nombres de tablas
+
+#### "El sitio carga pero no muestra datos"
+- **Causa**: JavaScript no carga correctamente
+- **Solución**: Abrir DevTools (F12) y revisar Console
+
+#### "Datos no se sincronizan"
+- **Causa**: Problema de conexión o rate limiting
+- **Solución**: Verificar conexión a internet y esperar
+
+### Modo de Emergencia
+El sistema incluye fallback automático a localStorage si Airtable no está disponible:
+- Los datos se guardan localmente
+- Se sincronizan cuando se restablece la conexión
+- Indicador visual muestra el modo activo
+
+---
+
+## 📈 Roadmap y Mejoras Futuras
+
+### Versión 1.1 (Próxima)
+- [ ] Notificaciones push
+- [ ] App móvil nativa
+- [ ] Reportes avanzados en PDF
+- [ ] Integración con WhatsApp
+- [ ] Dashboard de métricas en tiempo real
+
+### Versión 1.2
+- [ ] Reconocimiento de voz para solicitudes
+- [ ] IA para asignación automática inteligente
+- [ ] Integración con sistemas hospitalarios existentes
+- [ ] API REST pública
+
+### Versión 2.0
+- [ ] Multi-hospital (varios hospitales)
+- [ ] Módulo de inventarios
+- [ ] Planificación predictiva de mantenimiento
+- [ ] Blockchain para auditabilidad
+
+---
+
+## 👨‍💻 Soporte y Contacto
+
+### Desarrollado por:
+**Ing. Paul Eduardo Muñoz R.**
+- Email: paul.munoz@hospital.com
+- Sistema: Hospital Susana López de Valencia E.S.E.
+
+### Soporte Técnico:
+- **Nivel 1**: Personal del hospital capacitado
+- **Nivel 2**: Administrador del sistema
+- **Nivel 3**: Desarrollador (para modificaciones)
+
+### Documentación Técnica:
+- Airtable API: [airtable.com/developers/web/api](https://airtable.com/developers/web/api)
+- Netlify Docs: [docs.netlify.com](https://docs.netlify.com)
+- JavaScript MDN: [developer.mozilla.org](https://developer.mozilla.org)
+
+---
+
+## 📄 Licencia y Términos
+
+### Uso Interno
+Este sistema está diseñado exclusivamente para uso interno del **Hospital Susana López de Valencia E.S.E.** y no debe ser redistribuido sin autorización.
+
+### Responsabilidades
+- **Hospital**: Mantener credenciales seguras y personal capacitado
+- **Desarrollador**: Soporte técnico y actualizaciones según acuerdo
+- **Usuarios**: Uso responsable y reporte de problemas
+
+### Garantías
+- Sistema probado y funcional al momento de entrega
+- Soporte por 12 meses incluido
+- Actualizaciones de seguridad sin costo adicional
+
+---
+
+## 🎉 Agradecimientos
+
+### Tecnologías Utilizadas
+- **Airtable**: Base de datos robusta y fácil de usar
+- **Netlify**: Hosting confiable con deploy automático
+- **HTML/CSS/JavaScript**: Stack web estándar para máxima compatibilidad
+
+### Inspiración
+Sistema desarrollado pensando en las necesidades reales del personal hospitalario, con enfoque en simplicidad, confiabilidad y accesibilidad.
+
+---
+
+**¡Su hospital ahora tiene un sistema de gestión moderno y profesional en la nube!** 🏥✨
+
+*Última actualización: $(date)*
+*Versión: 1.0.0*
+*Estado: Producción*
