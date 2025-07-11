@@ -1,58 +1,63 @@
-# 🚀 Configuración de Netlify para Hospital Susana López de Valencia
-# Sistema de Gestión Hospitalaria en la Nube
-
+# Configuración de Netlify para Hospital Susana López de Valencia
 [build]
-  # Directorio donde están los archivos
-  publish = "."
+  # Directorio base del proyecto
+  base = "."
   
-  # Comando de build (no necesario para archivos estáticos)
-  command = "echo 'Deploy del Sistema Hospitalario'"
+  # Comando de build (si necesitas procesar archivos)
+  command = "echo 'Build completado'"
+  
+  # Directorio de salida
+  publish = "."
 
-# Configuración de redirects para SPA behavior
-[[redirects]]
-  from = "/portal-gestion"
-  to = "/portal-gestion.html"
-  status = 200
+# Variables de entorno para desarrollo (NO incluir credenciales reales aquí)
+[build.environment]
+  NODE_ENV = "production"
 
-[[redirects]]
-  from = "/portal-solicitudes" 
-  to = "/portal-solicitudes.html"
-  status = 200
-
-[[redirects]]
-  from = "/"
-  to = "/portal-solicitudes.html"
-  status = 200
-
-# Headers de seguridad
+# Configuración de headers para CORS y seguridad
 [[headers]]
   for = "/*"
   [headers.values]
+    # Permitir CORS desde dominios autorizados
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    
+    # Headers de seguridad
     X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Content-Security-Policy = "default-src 'self' https://api.airtable.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.airtable.com"
+    
+    # CSP para permitir conexiones a Airtable
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.airtable.com; img-src 'self' data:; font-src 'self';"
 
-# Configuración de variables de entorno
-[build.environment]
-  NODE_VERSION = "18"
+# Configuración de redirects
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
 
-# Configuración de Forms (para contacto/soporte)
-[build.processing]
-  skip_processing = false
+# Configuración para SPA (Single Page Application)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  conditions = {Role = ["admin"], Country = ["US"]}
 
-[build.processing.css]
-  bundle = false
-  minify = false
+# Configuración específica para archivos HTML
+[[headers]]
+  for = "*.html"
+  [headers.values]
+    Cache-Control = "public, max-age=3600"
 
-[build.processing.js]
-  bundle = false
-  minify = false
+# Configuración para archivos JavaScript
+[[headers]]
+  for = "*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
 
-[build.processing.html]
-  pretty_urls = true
-
-# Settings adicionales
-[settings]
-  ID = "hospital-susana-lopez"
+# Configuración para archivos CSS
+[[headers]]
+  for = "*.css"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"

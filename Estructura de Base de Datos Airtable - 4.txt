@@ -1,0 +1,94 @@
+# 🗄️ Estructura de Base de Datos - Airtable
+
+## Tablas Requeridas
+
+### 1. **Solicitudes** (Solicitudes de Mantenimiento)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `numero` | Single line text | ID único (SOL2024001) |
+| `servicioIngenieria` | Single select | INGENIERIA_BIOMEDICA, MECANICA, INFRAESTRUCTURA |
+| `tipoServicio` | Single select | MANTENIMIENTO_PREVENTIVO, CORRECTIVO, etc. |
+| `prioridad` | Single select | CRITICA, ALTA, MEDIA, BAJA |
+| `equipo` | Long text | Descripción del equipo |
+| `ubicacion` | Single line text | Ubicación específica |
+| `descripcion` | Long text | Descripción del problema |
+| `observaciones` | Long text | Observaciones adicionales |
+| `solicitante` | Single line text | Nombre del solicitante |
+| `servicioHospitalario` | Single line text | Servicio que solicita |
+| `emailSolicitante` | Email | Email del solicitante |
+| `fechaCreacion` | Date | Fecha de creación |
+| `estado` | Single select | PENDIENTE, ASIGNADA, EN_PROCESO, COMPLETADA |
+| `tecnicoAsignado` | Single line text | Nombre del técnico |
+| `tecnicoAsignadoId` | Single line text | ID del técnico |
+| `fechaAsignacion` | Date | Fecha de asignación |
+
+### 2. **Tecnicos** (Personal Técnico)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | Single line text | ID único (IB001, ME001, IN001) |
+| `nombre` | Single line text | Nombre completo |
+| `area` | Single select | INGENIERIA_BIOMEDICA, MECANICA, INFRAESTRUCTURA |
+| `tipo` | Single select | INGENIERO, TECNICO |
+| `especialidad` | Single line text | Área de especialidad |
+| `telefono` | Phone number | Teléfono de contacto |
+| `email` | Email | Email institucional |
+| `estado` | Single select | disponible, ocupado, inactivo |
+| `solicitudAsignada` | Single line text | Número de solicitud asignada |
+| `fechaCreacion` | Date | Fecha de registro |
+
+### 3. **Usuarios** (Usuarios Aprobados)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | Single line text | ID único |
+| `nombreCompleto` | Single line text | Nombre completo |
+| `email` | Email | Email del usuario |
+| `telefono` | Phone number | Teléfono |
+| `numeroDocumento` | Single line text | Número de documento |
+| `servicioHospitalario` | Single line text | Servicio hospitalario |
+| `cargo` | Single line text | Cargo/posición |
+| `codigoAcceso` | Single line text | Código de 4 dígitos |
+| `estado` | Single select | ACTIVO, INACTIVO |
+| `fechaAprobacion` | Date | Fecha de aprobación |
+| `ultimoAcceso` | Date | Último acceso |
+
+### 4. **SolicitudesAcceso** (Solicitudes de Acceso Pendientes)
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | Single line text | ID único |
+| `nombreCompleto` | Single line text | Nombre completo |
+| `email` | Email | Email del solicitante |
+| `telefono` | Phone number | Teléfono |
+| `servicioHospitalario` | Single line text | Servicio hospitalario |
+| `cargo` | Single line text | Cargo solicitado |
+| `justificacion` | Long text | Justificación |
+| `fechaSolicitud` | Date | Fecha de solicitud |
+| `estado` | Single select | PENDIENTE, APROBADO, RECHAZADO |
+| `esUrgente` | Checkbox | Solicitud urgente |
+
+## 🔧 Configuración en Airtable
+
+### Paso 1: Crear Base
+1. Ve a [airtable.com](https://airtable.com)
+2. Crea una cuenta o inicia sesión
+3. Clic en "Create a workspace"
+4. Nombre: **Hospital Susana López - Sistema de Gestión**
+
+### Paso 2: Crear Tablas
+1. Crea las 4 tablas con los campos especificados arriba
+2. Configura los tipos de campo exactamente como se muestra
+3. Para campos Single Select, agrega las opciones específicas
+
+### Paso 3: Obtener Credenciales API
+1. Ve a [airtable.com/developers/web/api/introduction](https://airtable.com/developers/web/api/introduction)
+2. Clic en tu base creada
+3. Anota:
+   - **Base ID**: Empieza con `app...`
+   - **Table Names**: Solicitudes, Tecnicos, Usuarios, SolicitudesAcceso
+4. Ve a [airtable.com/account](https://airtable.com/account)
+5. En "API" section, genera un **Personal Access Token**
+6. Guarda este token de forma segura
+
+### Paso 4: Configurar Permisos
+1. En tu base, ve a "Sharing"
+2. Configura permisos adecuados
+3. Asegúrate que el API token tenga permisos de lectura/escritura

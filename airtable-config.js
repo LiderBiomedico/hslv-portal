@@ -1,65 +1,265 @@
-// 🗄️ Configuración de Airtable API
+// 🗄️ Configuración de Airtable API - VERSIÓN NETLIFY CON PROXY SEGURO
 // Hospital Susana López de Valencia - Sistema de Gestión
 
 class AirtableAPI {
     constructor() {
-        // ⚠️ CONFIGURACIÓN REQUERIDA
-        // Reemplaza estos valores con los de tu base de Airtable
-        this.baseId = process.env.AIRTABLE_BASE_ID ||'appFyEBCedQGOeJyV'; // Tu Base ID de Airtable
-        this.apiKey = process.env.AIRTABLE_API_KEY ||'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570'; // Tu Personal Access Token
+        // 🌐 Detectar entorno
+        this.isProduction = window.location.hostname !== 'localhost' && 
+                           window.location.hostname !== '127.0.0.1';
         
-        this.baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
+        // 🔗 URL base para el proxy de Netlify
+        this.proxyBaseUrl = this.isProduction 
+            ? '/.netlify/functions/airtable-proxy'  // Producción: usar Netlify Functions
+            : '/api/airtable';  // Desarrollo: proxy directo opcional
         
-        // Nombres de las tablas en Airtable
+        // 🛡️ Para desarrollo local, mantener conexión directa como fallback
+        this.directBaseId = 'appFyEBCedQGOeJyV';
+        this.directApiKey = this.isProduction ? null : 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
+        this.directBaseUrl = `https://api.airtable.com/v0/${this.directBaseId}`;
+        
+        // Nombres de las tablas
         this.tables = {
-            solicitudes: 'Solicitudes',
-            tecnicos: 'Tecnicos', 
-            usuarios: 'Usuarios',
-            solicitudesAcceso: 'SolicitudesAcceso'
+            solicitudes: 'solicitudes',
+            tecnicos: 'tecnicos', 
+            usuarios: 'usuarios',
+            solicitudesAcceso: 'solicitudesAcceso'
         };
         
-        console.log('🔗 AirtableAPI inicializada');
+        // 🚀 Estado de conexión
+        this.connectionStatus = 'connecting';
+        this.useProxy = this.isProduction; // En producción, siempre usar proxy
+        
+        console.log('🔗 AirtableAPI inicializada para:', this.isProduction ? 'PRODUCCIÓN (Proxy)' : 'DESARROLLO');
+        console.log('🌐 Proxy URL:', this.proxyBaseUrl);
+        
+        // 🧪 Test inicial de conectividad
+        this.initializeConnection();
     }
 
-    // 🌐 Método base para hacer requests a Airtable
-    async makeRequest(endpoint, method = 'GET', data = null) {
-        const url = `${this.baseUrl}/${endpoint}`;
+    // 🚀 Inicializar conexión con retry logic
+    async initializeConnection() {
+        console.log('🔄 Iniciando conexión...');
+        
+        try {
+            const isConnected = await this.testConnection();
+            
+            if (isConnected) {
+                this.connectionStatus = 'connected';
+                this.notifyConnectionStatus(true);
+                console.log('✅ Conectado a Airtable exitosamente');
+                return true;
+            } else {
+                throw new Error('Test de conexión falló');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en conexión inicial:', error);
+            
+            // Si estamos en desarrollo y el proxy falla, intentar conexión directa
+            if (!this.isProduction && this.directApiKey) {
+                console.log('🔄 Intentando conexión directa en desarrollo...');
+                try {
+                    const directConnection = await this.testDirectConnection();
+                    if (directConnection) {
+                        this.useProxy = false;
+                        this.connectionStatus = 'connected';
+                        this.notifyConnectionStatus(true);
+                        console.log('✅ Conectado directamente a Airtable');
+                        return true;
+                    }
+                } catch (directError) {
+                    console.error('❌ Conexión directa también falló:', directError);
+                }
+            }
+            
+            // Activar modo fallback
+            this.connectionStatus = 'disconnected';
+            this.notifyConnectionStatus(false);
+            console.warn('⚠️ Activando modo fallback (localStorage)');
+            return false;
+        }
+    }
+
+    // 📢 Notificar estado de conexión
+    notifyConnectionStatus(connected) {
+        const event = new CustomEvent('airtableConnectionUpdate', {
+            detail: { 
+                connected, 
+                timestamp: new Date(),
+                mode: this.useProxy ? 'proxy' : (connected ? 'direct' : 'fallback')
+            }
+        });
+        window.dispatchEvent(event);
+    }
+
+    // 🌐 Método base para hacer requests
+    async makeRequest(endpoint, method = 'GET', data = null, retries = 2) {
+        // Decidir si usar proxy o conexión directa
+        if (this.useProxy) {
+            return this.makeProxyRequest(endpoint, method, data, retries);
+        } else {
+            return this.makeDirectRequest(endpoint, method, data, retries);
+        }
+    }
+
+    // 🛡️ Request a través del proxy de Netlify
+    async makeProxyRequest(endpoint, method = 'GET', data = null, retries = 2) {
+        const url = `${this.proxyBaseUrl}/${endpoint}`;
         
         const options = {
             method: method,
             headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            mode: 'cors',
+            credentials: 'omit'
         };
         
         if (data && (method === 'POST' || method === 'PATCH')) {
             options.body = JSON.stringify(data);
         }
         
-        try {
-            console.log(`📡 ${method} request to: ${endpoint}`);
-            const response = await fetch(url, options);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Airtable API Error: ${response.status} - ${errorText}`);
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                console.log(`📡 Proxy request to: ${url} (intento ${attempt + 1})`);
+                
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error(`❌ Proxy error ${response.status}:`, errorText);
+                    
+                    if (response.status === 500) {
+                        throw new Error(`Error del servidor proxy: ${errorText}`);
+                    } else if (response.status === 403) {
+                        throw new Error('Acceso denegado por el proxy');
+                    } else {
+                        throw new Error(`Proxy error: ${response.status} - ${errorText}`);
+                    }
+                }
+                
+                const result = await response.json();
+                console.log(`✅ Proxy response received`);
+                
+                // Actualizar estado de conexión
+                if (this.connectionStatus !== 'connected') {
+                    this.connectionStatus = 'connected';
+                    this.notifyConnectionStatus(true);
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error(`❌ Proxy attempt ${attempt + 1} failed:`, error);
+                
+                if (attempt === retries) {
+                    // Si todos los intentos del proxy fallan y estamos en desarrollo, intentar directo
+                    if (!this.isProduction && this.directApiKey) {
+                        console.log('🔄 Proxy falló, intentando conexión directa...');
+                        try {
+                            this.useProxy = false;
+                            return await this.makeDirectRequest(endpoint, method, data, 1);
+                        } catch (directError) {
+                            console.error('❌ Conexión directa también falló:', directError);
+                        }
+                    }
+                    
+                    // Último recurso: fallback
+                    console.warn('⚠️ Todas las conexiones fallaron, usando localStorage');
+                    this.connectionStatus = 'disconnected';
+                    this.notifyConnectionStatus(false);
+                    return this.localStorageFallback(endpoint, method, data);
+                }
+                
+                await this.delay(1000 * (attempt + 1));
             }
-            
-            const result = await response.json();
-            console.log(`✅ Response received:`, result);
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Airtable API Error:', error);
-            
-            // Fallback a localStorage si Airtable falla
-            console.warn('⚠️ Usando localStorage como fallback');
-            return this.localStorageFallback(endpoint, method, data);
         }
     }
 
-    // 💾 Fallback a localStorage si Airtable no está disponible
+    // 🔗 Request directo a Airtable (solo desarrollo)
+    async makeDirectRequest(endpoint, method = 'GET', data = null, retries = 2) {
+        if (this.isProduction) {
+            throw new Error('Conexión directa no permitida en producción');
+        }
+
+        if (!this.directApiKey) {
+            throw new Error('API Key no configurada para conexión directa');
+        }
+
+        // Convertir endpoint del proxy al formato de Airtable
+        const tableName = endpoint.split('/')[0];
+        const tableMapping = {
+            'solicitudes': 'Solicitudes',
+            'tecnicos': 'Tecnicos',
+            'usuarios': 'Usuarios',
+            'solicitudesAcceso': 'SolicitudesAcceso'
+        };
+        
+        const actualTableName = tableMapping[tableName] || tableName;
+        const recordId = endpoint.split('/')[1];
+        
+        let url = `${this.directBaseUrl}/${actualTableName}`;
+        if (recordId) {
+            url += `/${recordId}`;
+        }
+        
+        const options = {
+            method: method,
+            headers: {
+                'Authorization': `Bearer ${this.directApiKey}`,
+                'Content-Type': 'application/json'
+            },
+            mode: 'cors',
+            credentials: 'omit'
+        };
+        
+        if (data && (method === 'POST' || method === 'PATCH')) {
+            options.body = JSON.stringify(data);
+        }
+        
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                console.log(`📡 Direct request to: ${url} (intento ${attempt + 1})`);
+                
+                const response = await fetch(url, options);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Airtable API Error: ${response.status} - ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log(`✅ Direct response received`);
+                
+                if (this.connectionStatus !== 'connected') {
+                    this.connectionStatus = 'connected';
+                    this.notifyConnectionStatus(true);
+                }
+                
+                return result;
+                
+            } catch (error) {
+                console.error(`❌ Direct attempt ${attempt + 1} failed:`, error);
+                
+                if (attempt === retries) {
+                    console.warn('⚠️ Conexión directa falló, usando localStorage');
+                    this.connectionStatus = 'disconnected';
+                    this.notifyConnectionStatus(false);
+                    return this.localStorageFallback(endpoint, method, data);
+                }
+                
+                await this.delay(1000 * (attempt + 1));
+            }
+        }
+    }
+
+    // ⏳ Delay helper
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // 💾 Fallback a localStorage (igual que antes)
     localStorageFallback(endpoint, method, data) {
         const [tableName] = endpoint.split('?')[0].split('/');
         const storageKey = `hospital_${tableName.toLowerCase()}`;
@@ -70,21 +270,33 @@ class AirtableAPI {
                     const stored = localStorage.getItem(storageKey);
                     return {
                         records: stored ? JSON.parse(stored).map(item => ({
-                            id: item.id || `rec${Date.now()}`,
+                            id: item.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
                             fields: item
                         })) : []
                     };
                     
                 case 'POST':
                     const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    const newRecord = data.fields;
-                    newRecord.id = newRecord.id || `rec${Date.now()}`;
+                    const newRecord = { ...data.fields };
+                    newRecord.id = newRecord.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
                     existing.push(newRecord);
                     localStorage.setItem(storageKey, JSON.stringify(existing));
+                    
+                    this.markForSync(storageKey, newRecord, 'CREATE');
+                    
                     return { id: newRecord.id, fields: newRecord };
                     
                 case 'PATCH':
-                    // Implementar actualización local si es necesario
+                    const existingPatch = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    const recordIndex = existingPatch.findIndex(r => r.id === endpoint.split('/').pop());
+                    
+                    if (recordIndex !== -1) {
+                        existingPatch[recordIndex] = { ...existingPatch[recordIndex], ...data.fields };
+                        localStorage.setItem(storageKey, JSON.stringify(existingPatch));
+                        
+                        this.markForSync(storageKey, existingPatch[recordIndex], 'UPDATE');
+                    }
+                    
                     return { id: 'local', fields: data.fields };
                     
                 default:
@@ -94,6 +306,18 @@ class AirtableAPI {
             console.error('❌ LocalStorage fallback error:', localError);
             return { records: [] };
         }
+    }
+
+    // 🔄 Marcar datos para sincronización posterior
+    markForSync(table, record, operation) {
+        const syncQueue = JSON.parse(localStorage.getItem('hospital_sync_queue') || '[]');
+        syncQueue.push({
+            table,
+            record,
+            operation,
+            timestamp: new Date().toISOString()
+        });
+        localStorage.setItem('hospital_sync_queue', JSON.stringify(syncQueue));
     }
 
     // 📋 SOLICITUDES DE MANTENIMIENTO
@@ -248,15 +472,64 @@ class AirtableAPI {
         return code;
     }
 
-    // 🧪 Método de prueba de conexión
+    // 🧪 Test de conexión proxy
     async testConnection() {
         try {
-            console.log('🧪 Probando conexión con Airtable...');
-            const result = await this.makeRequest(this.tables.solicitudes + '?maxRecords=1');
-            console.log('✅ Conexión exitosa con Airtable');
-            return true;
+            console.log('🧪 Probando conexión...');
+            
+            if (this.useProxy) {
+                const result = await fetch(`${this.proxyBaseUrl}/${this.tables.solicitudes}?maxRecords=1`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    mode: 'cors',
+                    credentials: 'omit'
+                });
+                
+                if (!result.ok) {
+                    throw new Error(`Proxy error: ${result.status}`);
+                }
+                
+                await result.json();
+                console.log('✅ Conexión proxy exitosa');
+                return true;
+            } else {
+                return await this.testDirectConnection();
+            }
+            
         } catch (error) {
-            console.error('❌ Error de conexión con Airtable:', error);
+            console.error('❌ Error de conexión:', error);
+            return false;
+        }
+    }
+
+    // 🧪 Test de conexión directa
+    async testDirectConnection() {
+        if (!this.directApiKey) return false;
+        
+        try {
+            const result = await fetch(`${this.directBaseUrl}/Solicitudes?maxRecords=1`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.directApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                mode: 'cors',
+                credentials: 'omit'
+            });
+            
+            if (!result.ok) {
+                throw new Error(`HTTP ${result.status}: ${result.statusText}`);
+            }
+            
+            await result.json();
+            console.log('✅ Conexión directa exitosa');
+            return true;
+            
+        } catch (error) {
+            console.error('❌ Error de conexión directa:', error);
             return false;
         }
     }
@@ -265,26 +538,52 @@ class AirtableAPI {
 // 🌍 Instancia global de la API
 window.airtableAPI = new AirtableAPI();
 
-// 🚀 Inicialización automática
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🔗 Conectando con Airtable...');
+// 📡 Event listener para cambios de estado de conexión
+window.addEventListener('airtableConnectionUpdate', function(event) {
+    console.log('🔄 Estado de conexión actualizado:', event.detail);
     
-    // Probar conexión al cargar la página
-    window.airtableAPI.testConnection().then(success => {
-        if (success) {
-            console.log('🌟 Sistema conectado a Airtable correctamente');
-        } else {
-            console.warn('⚠️ Usando modo fallback (localStorage)');
-        }
-    });
+    if (typeof updateConnectionStatus === 'function') {
+        updateConnectionStatus(
+            event.detail.connected, 
+            event.detail.connected 
+                ? `Conectado via ${event.detail.mode}` 
+                : 'Modo Local'
+        );
+    }
 });
 
-// 📊 Funciones de utilidad para migración de datos
+// 🚀 Inicialización automática
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔗 Inicializando conexión con Airtable...');
+    console.log('🌐 Entorno:', window.location.hostname);
+    console.log('🛡️ Modo:', window.airtableAPI.useProxy ? 'Proxy Seguro' : 'Conexión Directa');
+    
+    // Verificar conexión cada 5 minutos
+    setInterval(() => {
+        if (window.airtableAPI.connectionStatus === 'disconnected') {
+            console.log('🔄 Reintentando conexión...');
+            window.airtableAPI.initializeConnection();
+        }
+    }, 5 * 60 * 1000);
+});
+
+// 🛠️ Función de diagnóstico
+window.debugAirtableConnection = function() {
+    console.log('🔍 DIAGNÓSTICO DE CONEXIÓN AIRTABLE');
+    console.log('================================');
+    console.log('🌐 Entorno:', window.airtableAPI.isProduction ? 'PRODUCCIÓN' : 'DESARROLLO');
+    console.log('🛡️ Modo:', window.airtableAPI.useProxy ? 'PROXY' : 'DIRECTO');
+    console.log('🔗 Proxy URL:', window.airtableAPI.proxyBaseUrl);
+    console.log('📡 Estado:', window.airtableAPI.connectionStatus);
+    console.log('🌍 Hostname:', window.location.hostname);
+    console.log('🔐 Direct API configurada:', !!window.airtableAPI.directApiKey);
+};
+
+// 📊 Migración de datos
 window.migrateFromLocalStorage = async function() {
     console.log('🔄 Iniciando migración desde localStorage...');
     
     try {
-        // Migrar técnicos
         const localTechnicians = localStorage.getItem('hospital_technicians');
         if (localTechnicians) {
             const technicians = JSON.parse(localTechnicians);
@@ -299,7 +598,6 @@ window.migrateFromLocalStorage = async function() {
             console.log('✅ Técnicos migrados');
         }
         
-        // Migrar solicitudes
         const localRequests = localStorage.getItem('hospital_solicitudes');
         if (localRequests) {
             const requests = JSON.parse(localRequests);
@@ -309,7 +607,6 @@ window.migrateFromLocalStorage = async function() {
             console.log('✅ Solicitudes migradas');
         }
         
-        // Migrar usuarios aprobados
         const localUsers = localStorage.getItem('hospital_approved_users');
         if (localUsers) {
             const users = JSON.parse(localUsers);

@@ -1,0 +1,1 @@
+Estoy trabajando en este proyecto por ahora esta funcionando local solo en mi computador guardo los datos solo en mi computador pero quiero colocarlos en internet  empleando netlify y Airtable para que los datos que se envian entre los portales se guarden en la nube y cualquier persona pueda acceder desde cualquier computador con internet
