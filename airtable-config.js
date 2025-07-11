@@ -5,8 +5,8 @@ class AirtableAPI {
     constructor() {
         // ⚠️ CONFIGURACIÓN REQUERIDA
         // Reemplaza estos valores con los de tu base de Airtable
-        this.baseId = 'appFyEBCedQGOeJyV'; // Tu Base ID de Airtable
-        this.apiKey = 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570'; // Tu Personal Access Token
+        this.baseId = process.env.AIRTABLE_BASE_ID ||'appFyEBCedQGOeJyV'; // Tu Base ID de Airtable
+        this.apiKey = process.env.AIRTABLE_API_KEY ||'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570'; // Tu Personal Access Token
         
         this.baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
         
