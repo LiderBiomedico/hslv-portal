@@ -1,4 +1,3 @@
-// Función Netlify para proxy Airtable
 const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
 
@@ -12,7 +11,6 @@ const ALLOWED_TABLES = {
 exports.handler = async (event, context) => {
     console.log('📡 Proxy request:', event.httpMethod, event.path);
 
-    // CORS preflight
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
@@ -25,7 +23,6 @@ exports.handler = async (event, context) => {
         };
     }
 
-    // Verificar credenciales
     if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) {
         return {
             statusCode: 500,
@@ -38,12 +35,10 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        // Parsear ruta
         const pathParts = event.path.replace('/.netlify/functions/airtable-proxy/', '').split('/');
         const tableName = pathParts[0];
         const recordId = pathParts[1];
 
-        // Verificar tabla autorizada
         if (!ALLOWED_TABLES[tableName]) {
             return {
                 statusCode: 403,
@@ -52,7 +47,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Construir URL de Airtable
         let airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableName}`;
         if (recordId) airtableUrl += `/${recordId}`;
         if (event.queryStringParameters) {
@@ -60,7 +54,6 @@ exports.handler = async (event, context) => {
             if (queryString) airtableUrl += `?${queryString}`;
         }
 
-        // Request a Airtable
         const fetchOptions = {
             method: event.httpMethod,
             headers: {
@@ -73,7 +66,6 @@ exports.handler = async (event, context) => {
             fetchOptions.body = event.body;
         }
 
-        console.log('🔗 Airtable URL:', airtableUrl);
         const response = await fetch(airtableUrl, fetchOptions);
         const responseData = await response.text();
 
