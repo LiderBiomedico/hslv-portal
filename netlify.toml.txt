@@ -1,0 +1,58 @@
+# 🚀 Configuración de Netlify para Hospital Susana López de Valencia
+# Sistema de Gestión Hospitalaria en la Nube
+
+[build]
+  # Directorio donde están los archivos
+  publish = "."
+  
+  # Comando de build (no necesario para archivos estáticos)
+  command = "echo 'Deploy del Sistema Hospitalario'"
+
+# Configuración de redirects para SPA behavior
+[[redirects]]
+  from = "/portal-gestion"
+  to = "/portal-gestion.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal-solicitudes" 
+  to = "/portal-solicitudes.html"
+  status = 200
+
+[[redirects]]
+  from = "/"
+  to = "/portal-solicitudes.html"
+  status = 200
+
+# Headers de seguridad
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https://api.airtable.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src 'self' https://api.airtable.com"
+
+# Configuración de variables de entorno
+[build.environment]
+  NODE_VERSION = "18"
+
+# Configuración de Forms (para contacto/soporte)
+[build.processing]
+  skip_processing = false
+
+[build.processing.css]
+  bundle = false
+  minify = false
+
+[build.processing.js]
+  bundle = false
+  minify = false
+
+[build.processing.html]
+  pretty_urls = true
+
+# Settings adicionales
+[settings]
+  ID = "hospital-susana-lopez"
