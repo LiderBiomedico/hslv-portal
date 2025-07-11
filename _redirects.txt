@@ -1,4 +1,0 @@
-/solicitudes    /PORTALSOLICITUDES1.html    200
-/gestion        /PORTALMANTENIMIENTO1.html  200
-/admin          /PORTALMANTENIMIENTO1.html  200
-/*              /index.html                 404
