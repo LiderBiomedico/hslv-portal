@@ -829,7 +829,7 @@
                     <div class="user-details">
                         <h3 id="user-name">Usuario del Sistema</h3>
                         <p id="user-service">Servicio no especificado</p>
-                        <span class="verification-badge">✓ Cloud</span>
+                        <span class="verification-badge">�?Cloud</span>
                     </div>
                     <button class="logout-btn" onclick="logout()">🚪 Salir</button>
                 </div>
@@ -853,7 +853,7 @@
             <!-- Navigation Cards -->
             <div class="nav-grid">
                 <div class="nav-card active" onclick="showSection('nueva-solicitud')">
-                    <span class="nav-card-icon">🛠️</span>
+                    <span class="nav-card-icon">🛠�?/span>
                     <h3>Nueva Solicitud Cloud</h3>
                     <p>Crear solicitud que se guardará automáticamente en Airtable</p>
                 </div>
@@ -875,12 +875,12 @@
             <div id="nueva-solicitud" class="content-card">
                 <div class="form-section">
                     <div class="form-header">
-                        <h2>🛠️ Nueva Solicitud Cloud</h2>
+                        <h2>🛠�?Nueva Solicitud Cloud</h2>
                         <p>Solicitud guardada automáticamente en Airtable</p>
                     </div>
                     
                     <div class="alert alert-success">
-                        <strong>✅ Usuario Autenticado:</strong> <span id="auth-user-display">-</span><br>
+                        <strong>�?Usuario Autenticado:</strong> <span id="auth-user-display">-</span><br>
                         <strong>🏥 Servicio Autorizado:</strong> <span id="auth-service-display">-</span><br>
                         <strong>🌐 Estado Cloud:</strong> <span id="auth-cloud-status">Conectando...</span>
                     </div>
@@ -895,7 +895,7 @@
                                 <option value="">Seleccione el área técnica</option>
                                 <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
                                 <option value="MECANICA">⚙️ Mecánica</option>
-                                <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
+                                <option value="INFRAESTRUCTURA">🏗�?Infraestructura</option>
                             </select>
                             <small style="color: #6b7280; font-size: 0.75rem;">Se guardará automáticamente en Airtable</small>
                         </div>
@@ -905,18 +905,18 @@
                             <select id="tipo-servicio" class="form-select" required>
                                 <option value="">Seleccione el tipo de servicio</option>
                                 <option value="MANTENIMIENTO_PREVENTIVO">🔧 Mantenimiento Preventivo</option>
-                                <option value="MANTENIMIENTO_CORRECTIVO">🛠️ Mantenimiento Correctivo</option>
+                                <option value="MANTENIMIENTO_CORRECTIVO">🛠�?Mantenimiento Correctivo</option>
                                 <option value="REPARACION">🔨 Reparación</option>
                                 <option value="INSTALACION">📦 Instalación</option>
                                 <option value="CALIBRACION">⚖️ Calibración</option>
-                                <option value="INSPECCION">👁️ Inspección</option>
+                                <option value="INSPECCION">👁�?Inspección</option>
                                 <option value="ACTUALIZACION">🔄 Actualización</option>
                                 <option value="EMERGENCIA">🚨 Emergencia</option>
                             </select>
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">⚡ Prioridad *</label>
+                            <label class="form-label">�?Prioridad *</label>
                             <select id="prioridad" class="form-select" required>
                                 <option value="">Seleccione la prioridad</option>
                                 <option value="CRITICA">🚨 Crítica (Equipos vitales, falla total)</option>
@@ -927,7 +927,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">🖥️ Equipo/Sistema Afectado *</label>
+                            <label class="form-label">🖥�?Equipo/Sistema Afectado *</label>
                             <input type="text" id="equipo" class="form-input" required placeholder="Ej: Ventilador mecánico Marca X Modelo Y - Habitación 201">
                         </div>
 
@@ -982,10 +982,10 @@
                         📋 Todas
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="filterMyRequests('PENDIENTE')">
-                        ⏳ Pendientes
+                        �?Pendientes
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="filterMyRequests('COMPLETADA')">
-                        ✅ Completadas
+                        �?Completadas
                     </button>
                 </div>
 
@@ -1034,7 +1034,7 @@
                     </div>
 
                     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #ede9fe 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #8b5cf6;">
-                        <div style="font-size: 3rem; margin-bottom: 1rem;">🏗️</div>
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🏗�?/div>
                         <h3 style="color: #7c3aed; margin-bottom: 1rem;">Infraestructura</h3>
                         <p style="color: #6d28d9; margin-bottom: 1rem;">Instalaciones con registro en Airtable</p>
                         <ul style="color: #6d28d9; font-size: 0.875rem; line-height: 1.6;">
@@ -1060,7 +1060,7 @@
                             <p style="color: #6b7280; font-size: 0.875rem;">Visible inmediatamente en Portal de Gestión</p>
                         </div>
                         <div>
-                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">3. 👨‍🔧 Asignación</h5>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">3. 👨‍�?Asignación</h5>
                             <p style="color: #6b7280; font-size: 0.875rem;">Técnico asignado desde cualquier dispositivo</p>
                         </div>
                         <div>
@@ -1157,16 +1157,16 @@
                     updateCloudStatus(isConnected, isConnected ? 'Airtable Conectado' : 'Error de conexión');
                     
                     alert(isConnected ? 
-                        '✅ Conexión exitosa con Airtable\n\n🌐 El portal está funcionando correctamente en la nube.' :
-                        '❌ Error de conexión con Airtable\n\nEl portal funcionará en modo local como respaldo.'
+                        '�?Conexión exitosa con Airtable\n\n🌐 El portal está funcionando correctamente en la nube.' :
+                        '�?Error de conexión con Airtable\n\nEl portal funcionará en modo local como respaldo.'
                     );
                 } else {
                     updateCloudStatus(false, 'API no disponible');
-                    alert('❌ No se pudo cargar la configuración de Airtable');
+                    alert('�?No se pudo cargar la configuración de Airtable');
                 }
             } catch (error) {
                 updateCloudStatus(false, 'Error de conexión');
-                alert('❌ Error al probar conexión: ' + error.message);
+                alert('�?Error al probar conexión: ' + error.message);
             }
         }
 
@@ -1181,13 +1181,13 @@
                     try {
                         const isConnected = await window.airtableAPI.testConnection();
                         updateCloudStatus(isConnected);
-                        console.log(isConnected ? '✅ Conectado a Airtable' : '⚠️ Modo local activo');
+                        console.log(isConnected ? '�?Conectado a Airtable' : '⚠️ Modo local activo');
                     } catch (error) {
-                        console.error('❌ Error de conexión:', error);
+                        console.error('�?Error de conexión:', error);
                         updateCloudStatus(false, 'Error de conexión');
                     }
                 } else {
-                    console.error('❌ No se pudo cargar airtable-config.js');
+                    console.error('�?No se pudo cargar airtable-config.js');
                     updateCloudStatus(false, 'Configuración no disponible');
                 }
             }, 1000);
@@ -1197,7 +1197,7 @@
             checkExistingSession();
             initializeEventListeners();
             
-            console.log('✅ Sistema Cloud iniciado');
+            console.log('�?Sistema Cloud iniciado');
         });
 
         function initializeEventListeners() {
@@ -1217,7 +1217,7 @@
             try {
                 if (window.airtableAPI && isCloudConnected) {
                     const usuarios = await window.airtableAPI.getUsuarios();
-                    console.log(`✅ ${usuarios.length} usuarios aprobados cargados desde Airtable`);
+                    console.log(`�?${usuarios.length} usuarios aprobados cargados desde Airtable`);
                     return usuarios;
                 } else {
                     // Fallback a localStorage
@@ -1227,7 +1227,7 @@
                     return usuarios;
                 }
             } catch (error) {
-                console.error('❌ Error cargando usuarios:', error);
+                console.error('�?Error cargando usuarios:', error);
                 return [];
             }
         }
@@ -1264,17 +1264,17 @@
             
             // Validaciones básicas
             if (!email || !accessCode) {
-                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos');
+                showAlert(alertDiv, 'error', '�?Por favor complete todos los campos');
                 return;
             }
             
             if (accessCode.length !== 4 || !/^[0-9]{4}$/.test(accessCode)) {
-                showAlert(alertDiv, 'error', '❌ El código de acceso debe contener exactamente 4 dígitos');
+                showAlert(alertDiv, 'error', '�?El código de acceso debe contener exactamente 4 dígitos');
                 return;
             }
             
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '⏳ Verificando con Airtable...';
+            loginBtn.innerHTML = '�?Verificando con Airtable...';
             
             try {
                 // Cargar usuarios desde Airtable
@@ -1289,19 +1289,19 @@
                 const user = approvedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
                 
                 if (!user) {
-                    showAlert(alertDiv, 'error', '❌ Usuario no encontrado. Verifique su email o solicite acceso.');
+                    showAlert(alertDiv, 'error', '�?Usuario no encontrado. Verifique su email o solicite acceso.');
                     return;
                 }
                 
                 // Verificar estado del usuario
                 if (user.estado !== 'ACTIVO') {
-                    showAlert(alertDiv, 'error', `⏳ Su cuenta está en estado: ${user.estado}. Contacte al administrador.`);
+                    showAlert(alertDiv, 'error', `�?Su cuenta está en estado: ${user.estado}. Contacte al administrador.`);
                     return;
                 }
                 
                 // Verificar código de acceso
                 if (!user.codigoAcceso) {
-                    showAlert(alertDiv, 'error', '❌ Su cuenta no tiene código de acceso asignado. Contacte al administrador.');
+                    showAlert(alertDiv, 'error', '�?Su cuenta no tiene código de acceso asignado. Contacte al administrador.');
                     return;
                 }
                 
@@ -1309,7 +1309,7 @@
                 const inputCode = String(accessCode);
                 
                 if (userCode !== inputCode) {
-                    showAlert(alertDiv, 'error', '❌ Código de acceso incorrecto.');
+                    showAlert(alertDiv, 'error', '�?Código de acceso incorrecto.');
                     return;
                 }
                 
@@ -1319,8 +1319,8 @@
                 }, 1500);
                 
             } catch (error) {
-                console.error('❌ Error en login cloud:', error);
-                showAlert(alertDiv, 'error', '❌ Error de conexión. Intente nuevamente.');
+                console.error('�?Error en login cloud:', error);
+                showAlert(alertDiv, 'error', '�?Error de conexión. Intente nuevamente.');
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '🚀 Acceder al Portal Cloud';
@@ -1350,12 +1350,12 @@
             
             // Validaciones
             if (!formData.nombreCompleto || !formData.email || !formData.servicioHospitalario || !formData.cargo) {
-                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
+                showAlert(alertDiv, 'error', '�?Por favor complete todos los campos obligatorios');
                 return;
             }
             
             requestBtn.disabled = true;
-            requestBtn.innerHTML = '⏳ Enviando a Airtable...';
+            requestBtn.innerHTML = '�?Enviando a Airtable...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
@@ -1363,12 +1363,12 @@
                     await window.airtableAPI.createSolicitudAcceso(formData);
                     
                     showAlert(alertDiv, 'success', 
-                        `✅ Solicitud enviada a Airtable correctamente\n\n` +
+                        `�?Solicitud enviada a Airtable correctamente\n\n` +
                         `📊 DATOS ENVIADOS:\n` +
-                        `• ID: ${formData.id}\n` +
-                        `• Nombre: ${formData.nombreCompleto}\n` +
-                        `• Email: ${formData.email}\n` +
-                        `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `�?ID: ${formData.id}\n` +
+                        `�?Nombre: ${formData.nombreCompleto}\n` +
+                        `�?Email: ${formData.email}\n` +
+                        `�?Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
                         `🌐 Su solicitud estará visible inmediatamente en el Portal de Gestión.\n` +
                         `📧 Recibirá notificación cuando sea aprobada.`
                     );
@@ -1378,15 +1378,15 @@
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                    showAlert(alertDiv, 'success', '�?Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
                 // Limpiar formulario
                 document.getElementById('request-form').reset();
                 
             } catch (error) {
-                console.error('❌ Error enviando solicitud:', error);
-                showAlert(alertDiv, 'error', '❌ Error al enviar la solicitud: ' + error.message);
+                console.error('�?Error enviando solicitud:', error);
+                showAlert(alertDiv, 'error', '�?Error al enviar la solicitud: ' + error.message);
             } finally {
                 requestBtn.disabled = false;
                 requestBtn.innerHTML = '📤 Enviar Solicitud Cloud';
@@ -1397,7 +1397,7 @@
             e.preventDefault();
             
             if (!currentUser) {
-                alert('❌ Error de sesión. Por favor inicie sesión nuevamente.');
+                alert('�?Error de sesión. Por favor inicie sesión nuevamente.');
                 return;
             }
             
@@ -1429,12 +1429,12 @@
             // Validaciones
             if (!formData.servicioIngenieria || !formData.tipoServicio || !formData.prioridad || 
                 !formData.equipo || !formData.ubicacion || !formData.descripcion) {
-                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
+                showAlert(alertDiv, 'error', '�?Por favor complete todos los campos obligatorios (*)');
                 return;
             }
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ Guardando en Airtable...';
+            submitBtn.innerHTML = '�?Guardando en Airtable...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
@@ -1442,12 +1442,12 @@
                     await window.airtableAPI.createSolicitud(formData);
                     
                     showAlert(alertDiv, 'success', 
-                        `✅ Solicitud guardada en Airtable exitosamente\n\n` +
+                        `�?Solicitud guardada en Airtable exitosamente\n\n` +
                         `📋 DETALLES:\n` +
-                        `• Número: ${formData.numero}\n` +
-                        `• Área: ${areasIngenieria[formData.servicioIngenieria]}\n` +
-                        `• Prioridad: ${formData.prioridad}\n` +
-                        `• Equipo: ${formData.equipo}\n\n` +
+                        `�?Número: ${formData.numero}\n` +
+                        `�?Área: ${areasIngenieria[formData.servicioIngenieria]}\n` +
+                        `�?Prioridad: ${formData.prioridad}\n` +
+                        `�?Equipo: ${formData.equipo}\n\n` +
                         `🌐 Su solicitud está disponible inmediatamente en el Portal de Gestión cloud.\n` +
                         `📱 Visible desde cualquier dispositivo con internet.`
                     );
@@ -1457,7 +1457,7 @@
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará con Airtable cuando se restablezca la conexión.');
+                    showAlert(alertDiv, 'success', '�?Solicitud guardada localmente. Se sincronizará con Airtable cuando se restablezca la conexión.');
                 }
                 
                 // Agregar a lista local
@@ -1475,8 +1475,8 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error('❌ Error creando solicitud:', error);
-                showAlert(alertDiv, 'error', '❌ Error al guardar en Airtable: ' + error.message);
+                console.error('�?Error creando solicitud:', error);
+                showAlert(alertDiv, 'error', '�?Error al guardar en Airtable: ' + error.message);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '📤 Enviar Solicitud a Airtable';
@@ -1503,7 +1503,7 @@
             // Mostrar portal principal
             showMainPortalCloud();
             
-            console.log('✅ Usuario autenticado en sistema cloud:', currentUser.name);
+            console.log('�?Usuario autenticado en sistema cloud:', currentUser.name);
         }
 
         function showMainPortalCloud() {
@@ -1518,7 +1518,7 @@
             
             // Mensaje de bienvenida
             setTimeout(() => {
-                alert(`✅ ¡Bienvenido al Portal Cloud, ${currentUser.name}!\n\n🏥 Servicio: ${currentUser.serviceName}\n🌐 Conectado a Airtable\n⏰ Sesión válida por 4 horas\n\n🛠️ Sus solicitudes se guardan automáticamente en la nube`);
+                alert(`�?¡Bienvenido al Portal Cloud, ${currentUser.name}!\n\n🏥 Servicio: ${currentUser.serviceName}\n🌐 Conectado a Airtable\n�?Sesión válida por 4 horas\n\n🛠�?Sus solicitudes se guardan automáticamente en la nube`);
             }, 500);
         }
 
@@ -1559,7 +1559,7 @@
                         request.servicioHospitalario === currentUser.service
                     );
                     
-                    console.log(`✅ ${myRequests.length} solicitudes cargadas desde Airtable`);
+                    console.log(`�?${myRequests.length} solicitudes cargadas desde Airtable`);
                 } else {
                     // Fallback a localStorage
                     const localRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
@@ -1574,7 +1574,7 @@
                 updateMyRequestsDisplay();
                 
             } catch (error) {
-                console.error('❌ Error cargando solicitudes:', error);
+                console.error('�?Error cargando solicitudes:', error);
                 myRequests = [];
                 updateMyRequestsDisplay();
             }
@@ -1600,7 +1600,7 @@
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
                         <p style="margin-bottom: 1.5rem;">Sus solicitudes aparecerán aquí cuando las envíe al sistema cloud</p>
                         <button class="btn btn-primary" onclick="showSection('nueva-solicitud')">
-                            🛠️ Crear Primera Solicitud
+                            🛠�?Crear Primera Solicitud
                         </button>
                     </div>
                 `;
@@ -1679,7 +1679,7 @@
                             <div class="request-detail-value">${request.tipoServicio?.replace('_', ' ') || 'No especificado'}</div>
                         </div>
                         <div class="request-detail">
-                            <div class="request-detail-label">🖥️ Equipo</div>
+                            <div class="request-detail-label">🖥�?Equipo</div>
                             <div class="request-detail-value">${request.equipo || 'No especificado'}</div>
                         </div>
                         <div class="request-detail">
@@ -1691,7 +1691,7 @@
                             <div class="request-detail-value">${new Date(request.fechaCreacion).toLocaleString('es-CO')}</div>
                         </div>
                         <div class="request-detail">
-                            <div class="request-detail-label">👨‍🔧 Técnico Asignado</div>
+                            <div class="request-detail-label">👨‍�?Técnico Asignado</div>
                             <div class="request-detail-value">${request.tecnicoAsignado || '<span style="color: #f59e0b;">Pendiente de asignación</span>'}</div>
                         </div>
                     </div>
@@ -1813,8 +1813,9 @@
         // Log de inicialización
         console.log('🌐 Portal de Solicitudes Cloud con Airtable Iniciado');
         console.log('🔐 Sistema de autenticación: Email + Código de 4 dígitos');
-        console.log('🛠️ Funcionalidades: Crear solicitudes cloud, ver mis solicitudes sincronizadas');
+        console.log('🛠�?Funcionalidades: Crear solicitudes cloud, ver mis solicitudes sincronizadas');
         console.log('💾 Sincronización: Airtable como base de datos principal con fallback a localStorage');
     </script>
+	<script src="airtable-config.js"></script>
 </body>
 </html>
