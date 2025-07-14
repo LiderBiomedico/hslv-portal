@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ğŸ§ª Test Netlify Functions</title>
+    <title>?? Test Netlify Functions</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -73,52 +73,59 @@
 </head>
 <body>
     <div class="container">
-        <h1>ğŸ§ª DiagnÃ³stico Netlify Functions</h1>
+        <h1>?? Diagn¨®stico Netlify Functions</h1>
         
         <div class="test-section">
-            <h2>ğŸ“Š InformaciÃ³n del Sitio</h2>
+            <h2>?? Informaci¨®n del Sitio</h2>
             <p><strong>URL:</strong> <span id="site-url"></span></p>
             <p><strong>Hostname:</strong> <span id="hostname"></span></p>
             <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
         </div>
 
         <div class="test-section">
-            <h2>ğŸ§ª Test 1: FunciÃ³n de ConfiguraciÃ³n</h2>
-            <p>Verifica que las variables de entorno estÃ©n configuradas correctamente.</p>
-            <button class="btn" onclick="testConfigFunction()">ğŸ”§ Probar ConfiguraciÃ³n</button>
+            <h2>?? Test 1: Funci¨®n de Configuraci¨®n</h2>
+            <p>Verifica que las variables de entorno est¨¦n configuradas correctamente.</p>
+            <button class="btn" onclick="testConfigFunction()">?? Probar Configuraci¨®n</button>
             <div id="config-result" class="result" style="display: none;"></div>
         </div>
 
         <div class="test-section">
-            <h2>ğŸ”— Test 2: FunciÃ³n Airtable Proxy</h2>
-            <p>Prueba la conexiÃ³n con Airtable a travÃ©s del proxy.</p>
-            <button class="btn" onclick="testAirtableProxy()">ğŸ“¡ Probar Proxy Airtable</button>
+            <h2>?? Test 2: Funci¨®n Airtable Proxy</h2>
+            <p>Prueba la conexi¨®n con Airtable a trav¨¦s del proxy.</p>
+            <button class="btn" onclick="testAirtableProxy()">?? Probar Proxy Airtable</button>
             <div id="proxy-result" class="result" style="display: none;"></div>
         </div>
 
         <div class="test-section">
-            <h2>ğŸŒ Test 3: ConexiÃ³n Directa (Solo Local)</h2>
-            <p>Prueba conexiÃ³n directa a Airtable (solo funciona en localhost).</p>
-            <button class="btn" onclick="testDirectAirtable()">ğŸ”§ Probar Directo</button>
+            <h2>?? Test 3: Conexi¨®n Directa (Solo Local)</h2>
+            <p>Prueba conexi¨®n directa a Airtable (solo funciona en localhost).</p>
+            <button class="btn" onclick="testDirectAirtable()">?? Probar Directo</button>
             <div id="direct-result" class="result" style="display: none;"></div>
         </div>
 
         <div class="test-section">
-            <h2>ğŸ” Test 4: Debug EspecÃ­fico de Airtable</h2>
-            <p>Verifica permisos, tablas disponibles y configuraciÃ³n de Airtable.</p>
-            <button class="btn" onclick="debugAirtable()">ğŸ” Debug Airtable</button>
+            <h2>?? Test 4A: Debug Simple de Airtable</h2>
+            <p>Prueba b¨¢sica para encontrar tablas disponibles en Airtable.</p>
+            <button class="btn" onclick="simpleDebugAirtable()">?? Debug Simple</button>
+            <div id="simple-debug-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>?? Test 4B: Debug Completo de Airtable</h2>
+            <p>Verifica permisos, tablas disponibles y configuraci¨®n completa.</p>
+            <button class="btn" onclick="debugAirtable()">?? Debug Completo</button>
             <div id="debug-result" class="result" style="display: none;"></div>
         </div>
 
         <div class="test-section">
-            <h2>ğŸ“‹ Lista de Funciones Disponibles</h2>
-            <button class="btn" onclick="listFunctions()">ğŸ“‹ Listar Funciones</button>
+            <h2>?? Lista de Funciones Disponibles</h2>
+            <button class="btn" onclick="listFunctions()">?? Listar Funciones</button>
             <div id="functions-result" class="result" style="display: none;"></div>
         </div>
     </div>
 
     <script>
-        // InformaciÃ³n del sitio
+        // Informaci¨®n del sitio
         document.getElementById('site-url').textContent = window.location.href;
         document.getElementById('hostname').textContent = window.location.hostname;
         document.getElementById('protocol').textContent = window.location.protocol;
@@ -131,7 +138,7 @@
         }
 
         async function testConfigFunction() {
-            showResult('config-result', 'ğŸ”„ Probando funciÃ³n de configuraciÃ³n...', 'warning');
+            showResult('config-result', '?? Probando funci¨®n de configuraci¨®n...', 'warning');
             
             try {
                 const response = await fetch('/.netlify/functions/test-config', {
@@ -150,36 +157,36 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    const output = `âœ… FUNCIÃ“N DE TEST EXITOSA
+                    const output = `? FUNCI¨®N DE TEST EXITOSA
 
-ğŸ“Š STATUS: ${response.status} ${response.statusText}
+?? STATUS: ${response.status} ${response.statusText}
 
-ğŸ”‘ VARIABLES DE ENTORNO:
-â€¢ API Key: ${data.environment.hasApiKey ? 'âœ… Configurada' : 'âŒ Faltante'}
-â€¢ Base ID: ${data.environment.hasBaseId ? 'âœ… Configurada' : 'âŒ Faltante'}
+?? VARIABLES DE ENTORNO:
+? API Key: ${data.environment.hasApiKey ? '? Configurada' : '? Faltante'}
+? Base ID: ${data.environment.hasBaseId ? '? Configurada' : '? Faltante'}
 
-ğŸ“‹ DETALLES:
-â€¢ API Key Preview: ${data.environment.apiKeyPreview}
-â€¢ Base ID: ${data.environment.baseId}
-â€¢ Timestamp: ${data.timestamp}
-â€¢ Function Name: ${data.netlify.functionName}
-â€¢ Region: ${data.netlify.region}
+?? DETALLES:
+? API Key Preview: ${data.environment.apiKeyPreview}
+? Base ID: ${data.environment.baseId}
+? Timestamp: ${data.timestamp}
+? Function Name: ${data.netlify.functionName}
+? Region: ${data.netlify.region}
 
 ${JSON.stringify(data, null, 2)}`;
 
                     showResult('config-result', output, data.environment.hasApiKey && data.environment.hasBaseId ? 'success' : 'error');
                 } else {
                     const errorText = await response.text();
-                    showResult('config-result', `âŒ ERROR ${response.status}: ${errorText}`, 'error');
+                    showResult('config-result', `? ERROR ${response.status}: ${errorText}`, 'error');
                 }
 
             } catch (error) {
-                showResult('config-result', `ğŸ’¥ ERROR DE CONEXIÃ“N: ${error.message}\n\nStack: ${error.stack}`, 'error');
+                showResult('config-result', `?? ERROR DE CONEXI¨®N: ${error.message}\n\nStack: ${error.stack}`, 'error');
             }
         }
 
         async function testAirtableProxy() {
-            showResult('proxy-result', 'ğŸ”„ Probando proxy de Airtable...', 'warning');
+            showResult('proxy-result', '?? Probando proxy de Airtable...', 'warning');
             
             try {
                 const response = await fetch('/.netlify/functions/airtable-proxy/Solicitudes?maxRecords=1', {
@@ -191,12 +198,12 @@ ${JSON.stringify(data, null, 2)}`;
 
                 if (response.ok) {
                     const data = await response.json();
-                    const output = `âœ… PROXY AIRTABLE EXITOSO
+                    const output = `? PROXY AIRTABLE EXITOSO
 
-ğŸ“Š STATUS: ${response.status} ${response.statusText}
-ğŸ“‹ RECORDS: ${data.records ? data.records.length : 'N/A'}
+?? STATUS: ${response.status} ${response.statusText}
+?? RECORDS: ${data.records ? data.records.length : 'N/A'}
 
-ğŸ“„ RESPUESTA:
+?? RESPUESTA:
 ${JSON.stringify(data, null, 2)}`;
 
                     showResult('proxy-result', output, 'success');
@@ -209,34 +216,34 @@ ${JSON.stringify(data, null, 2)}`;
                         parsedError = errorText;
                     }
 
-                    const output = `âŒ ERROR EN PROXY AIRTABLE
+                    const output = `? ERROR EN PROXY AIRTABLE
 
-ğŸ“Š STATUS: ${response.status} ${response.statusText}
+?? STATUS: ${response.status} ${response.statusText}
 
-ğŸ“„ RESPUESTA DE ERROR:
+?? RESPUESTA DE ERROR:
 ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parsedError}
 
-ğŸ” POSIBLES CAUSAS:
-â€¢ Variables de entorno no configuradas
-â€¢ API Key invÃ¡lida
-â€¢ Base ID incorrecto
-â€¢ Permisos insuficientes en Airtable`;
+?? POSIBLES CAUSAS:
+? Variables de entorno no configuradas
+? API Key inv¨¢lida
+? Base ID incorrecto
+? Permisos insuficientes en Airtable`;
 
                     showResult('proxy-result', output, 'error');
                 }
 
             } catch (error) {
-                showResult('proxy-result', `ğŸ’¥ ERROR DE CONEXIÃ“N: ${error.message}\n\nStack: ${error.stack}`, 'error');
+                showResult('proxy-result', `?? ERROR DE CONEXI¨®N: ${error.message}\n\nStack: ${error.stack}`, 'error');
             }
         }
 
         async function testDirectAirtable() {
             if (window.location.hostname !== 'localhost' && !window.location.hostname.startsWith('127.0.0.1')) {
-                showResult('direct-result', 'âš ï¸ CONEXIÃ“N DIRECTA BLOQUEADA\n\nLas conexiones directas a Airtable solo funcionan en localhost por seguridad.', 'warning');
+                showResult('direct-result', '?? CONEXI¨®N DIRECTA BLOQUEADA\n\nLas conexiones directas a Airtable solo funcionan en localhost por seguridad.', 'warning');
                 return;
             }
 
-            showResult('direct-result', 'ğŸ”„ Probando conexiÃ³n directa a Airtable...', 'warning');
+            showResult('direct-result', '?? Probando conexi¨®n directa a Airtable...', 'warning');
             
             try {
                 const response = await fetch('https://api.airtable.com/v0/appFyEBCedQGOeJyV/Solicitudes?maxRecords=1', {
@@ -249,19 +256,86 @@ ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parse
 
                 if (response.ok) {
                     const data = await response.json();
-                    showResult('direct-result', `âœ… CONEXIÃ“N DIRECTA EXITOSA\n\nRecords: ${data.records.length}\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                    showResult('direct-result', `? CONEXI¨®N DIRECTA EXITOSA\n\nRecords: ${data.records.length}\n\n${JSON.stringify(data, null, 2)}`, 'success');
                 } else {
                     const errorText = await response.text();
-                    showResult('direct-result', `âŒ ERROR DIRECTO: ${response.status}\n\n${errorText}`, 'error');
+                    showResult('direct-result', `? ERROR DIRECTO: ${response.status}\n\n${errorText}`, 'error');
                 }
 
             } catch (error) {
-                showResult('direct-result', `ğŸ’¥ ERROR: ${error.message}`, 'error');
+                showResult('direct-result', `?? ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        async function simpleDebugAirtable() {
+            showResult('simple-debug-result', '?? Ejecutando debug simple de Airtable...', 'warning');
+            
+            try {
+                const response = await fetch('/.netlify/functions/simple-debug', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    let output = `?? DEBUG SIMPLE COMPLETADO
+
+?? CONFIGURACI¨®N:
+? API Key: ${data.configuration?.apiKeyConfigured ? '? Configurada' : '? Faltante'}
+? Base ID: ${data.configuration?.baseIdConfigured ? '? Configurada' : '? Faltante'}
+? Preview: ${data.configuration?.apiKeyPreview || 'N/A'}
+? Base: ${data.configuration?.baseId || 'N/A'}
+
+?? PRUEBAS DE TABLAS:
+? Total probadas: ${data.tableTests?.total || 0}
+? Exitosas: ${data.tableTests?.successful || 0}
+? Fallidas: ${data.tableTests?.failed || 0}
+
+`;
+
+                    if (data.workingTables && data.workingTables.length > 0) {
+                        output += `? TABLAS QUE FUNCIONAN:\n`;
+                        data.workingTables.forEach(table => {
+                            output += `? ${table.tableName} (${table.recordCount} records)${table.hasData ? ' ??' : ' ??'}\n`;
+                        });
+                        
+                        output += `\n?? RECOMENDACI¨®N: ${data.recommendation}\n`;
+                    } else {
+                        output += `? NO SE ENCONTRARON TABLAS ACCESIBLES\n`;
+                        output += `\n?? PROBLEMAS POSIBLES:\n`;
+                        output += `? Base ID incorrecto\n`;
+                        output += `? API Key sin permisos\n`;
+                        output += `? Tabla con nombre diferente\n`;
+                        
+                        if (data.failedTables && data.failedTables.length > 0) {
+                            output += `\n? ERRORES DETALLADOS:\n`;
+                            data.failedTables.forEach(table => {
+                                output += `? ${table.tableName}: ${table.status}\n`;
+                                if (table.error && table.error.error && table.error.error.message) {
+                                    output += `  ¡ú ${table.error.error.message}\n`;
+                                }
+                            });
+                        }
+                    }
+
+                    output += `\n?? RESPUESTA COMPLETA:\n${JSON.stringify(data, null, 2)}`;
+
+                    showResult('simple-debug-result', output, data.workingTables?.length > 0 ? 'success' : 'error');
+                } else {
+                    const errorText = await response.text();
+                    showResult('simple-debug-result', `? ERROR ${response.status}: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                showResult('simple-debug-result', `?? ERROR DE CONEXI¨®N: ${error.message}\n\nStack: ${error.stack}`, 'error');
             }
         }
 
         async function debugAirtable() {
-            showResult('debug-result', 'ğŸ”„ Ejecutando debug especÃ­fico de Airtable...', 'warning');
+            showResult('debug-result', '?? Ejecutando debug espec¨ªfico de Airtable...', 'warning');
             
             try {
                 const response = await fetch('/.netlify/functions/debug-airtable', {
@@ -274,82 +348,83 @@ ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parse
                 if (response.ok) {
                     const data = await response.json();
                     
-                    let output = `ğŸ” DEBUG AIRTABLE COMPLETADO
+                    let output = `?? DEBUG AIRTABLE COMPLETADO
 
-ğŸ“Š RESUMEN:
-â€¢ Tests ejecutados: ${data.summary.total}
-â€¢ Exitosos: ${data.summary.passed}
-â€¢ Fallidos: ${data.summary.failed}
-â€¢ Errores: ${data.summary.errors}
+?? RESUMEN:
+? Tests ejecutados: ${data.summary.total}
+? Exitosos: ${data.summary.passed}
+? Fallidos: ${data.summary.failed}
+? Errores: ${data.summary.errors}
 
-ğŸ”‘ CONFIGURACIÃ“N:
-â€¢ API Key: ${data.environment.apiKeyPreview}
-â€¢ Base ID: ${data.environment.baseId}
+?? CONFIGURACI¨®N:
+? API Key: ${data.environment.apiKeyPreview}
+? Base ID: ${data.environment.baseId}
 
-ğŸ“‹ RESULTADOS DETALLADOS:
+?? RESULTADOS DETALLADOS:
 `;
 
                     data.tests.forEach((test, index) => {
                         output += `\n${index + 1}. ${test.test}: `;
                         
                         if (test.status === 'SUCCESS') {
-                            output += 'âœ… EXITOSO';
+                            output += '? EXITOSO';
                             if (test.test.includes('Tabla') && test.data.recordCount !== undefined) {
                                 output += ` (${test.data.recordCount} records)`;
                             }
                         } else if (test.status === 'FAILED') {
-                            output += `âŒ FALLÃ“ (${test.error.status})`;
+                            output += `? FALL¨® (${test.error.status})`;
                             if (test.error.message && typeof test.error.message === 'object') {
                                 if (test.error.message.error?.message) {
                                     output += `\n   Detalle: ${test.error.message.error.message}`;
                                 }
                             }
                         } else {
-                            output += `ğŸ’¥ ERROR: ${test.error}`;
+                            output += `?? ERROR: ${test.error}`;
                         }
                     });
 
                     // Buscar tablas que funcionaron
                     const workingTables = data.tests.filter(t => t.test.includes('Tabla') && t.status === 'SUCCESS');
                     if (workingTables.length > 0) {
-                        output += `\n\nâœ… TABLAS ENCONTRADAS:`;
+                        output += `\n\n? TABLAS ENCONTRADAS:`;
                         workingTables.forEach(table => {
                             const tableName = table.test.match(/"([^"]+)"/)[1];
-                            output += `\nâ€¢ ${tableName} (${table.data.recordCount} records)`;
+                            output += `\n? ${tableName} (${table.data.recordCount} records)`;
                         });
                     }
 
-                    // Buscar informaciÃ³n de permisos
+                    // Buscar informaci¨®n de permisos
                     const permissionTest = data.tests.find(t => t.test === 'API Key Permissions');
                     if (permissionTest && permissionTest.status === 'SUCCESS' && permissionTest.data) {
-                        output += `\n\nğŸ‘¤ INFORMACIÃ“N DE USUARIO:`;
-                        if (permissionTest.data.id) output += `\nâ€¢ User ID: ${permissionTest.data.id}`;
-                        if (permissionTest.data.email) output += `\nâ€¢ Email: ${permissionTest.data.email}`;
+                        output += `\n\n?? INFORMACI¨®N DE USUARIO:`;
+                        if (permissionTest.data.id) output += `\n? User ID: ${permissionTest.data.id}`;
+                        if (permissionTest.data.email) output += `\n? Email: ${permissionTest.data.email}`;
                     }
 
-                    output += `\n\nğŸ“„ RESPUESTA COMPLETA:\n${JSON.stringify(data, null, 2)}`;
+                    output += `\n\n?? RESPUESTA COMPLETA:\n${JSON.stringify(data, null, 2)}`;
 
                     showResult('debug-result', output, data.summary.passed > 0 ? 'success' : 'error');
                 } else {
                     const errorText = await response.text();
-                    showResult('debug-result', `âŒ ERROR ${response.status}: ${errorText}`, 'error');
+                    showResult('debug-result', `? ERROR ${response.status}: ${errorText}`, 'error');
                 }
 
             } catch (error) {
-                showResult('debug-result', `ğŸ’¥ ERROR DE CONEXIÃ“N: ${error.message}\n\nStack: ${error.stack}`, 'error');
+                showResult('debug-result', `?? ERROR DE CONEXI¨®N: ${error.message}\n\nStack: ${error.stack}`, 'error');
             }
         }
 
         async function listFunctions() {
-            showResult('functions-result', 'ğŸ”„ Verificando funciones disponibles...', 'warning');
+            showResult('functions-result', '?? Verificando funciones disponibles...', 'warning');
             
             const functionsToTest = [
                 'test-config',
                 'airtable-proxy',
+                'simple-debug',
                 'debug-airtable'
             ];
 
-            let results = 'ğŸ“‹ FUNCIONES NETLIFY:\n\n';
+            let results = '?? FUNCIONES NETLIFY:\n\n';
 
             for (const func of functionsToTest) {
                 try {
@@ -357,24 +432,24 @@ ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parse
                         method: 'GET'
                     });
                     
-                    results += `â€¢ ${func}: ${response.status === 404 ? 'âŒ No encontrada' : 'âœ… Disponible'} (${response.status})\n`;
+                    results += `? ${func}: ${response.status === 404 ? '? No encontrada' : '? Disponible'} (${response.status})\n`;
                     
                 } catch (error) {
-                    results += `â€¢ ${func}: âŒ Error (${error.message})\n`;
+                    results += `? ${func}: ? Error (${error.message})\n`;
                 }
             }
 
-            results += '\nğŸ” Si ves "âŒ No encontrada (404)" significa que la funciÃ³n no se desplegÃ³ correctamente.';
-            results += '\nğŸ” Si ves "âœ… Disponible" significa que la funciÃ³n existe y responde.';
+            results += '\n?? Si ves "? No encontrada (404)" significa que la funci¨®n no se despleg¨® correctamente.';
+            results += '\n?? Si ves "? Disponible" significa que la funci¨®n existe y responde.';
 
             showResult('functions-result', results, 'info');
         }
 
-        // Auto-ejecutar test bÃ¡sico al cargar
+        // Auto-ejecutar test b¨¢sico al cargar
         window.addEventListener('load', function() {
-            console.log('ğŸ§ª PÃ¡gina de test cargada');
-            console.log('ğŸŒ Hostname:', window.location.hostname);
-            console.log('ğŸ“¡ URL base:', window.location.origin);
+            console.log('?? P¨¢gina de test cargada');
+            console.log('?? Hostname:', window.location.hostname);
+            console.log('?? URL base:', window.location.origin);
         });
     </script>
 </body>
