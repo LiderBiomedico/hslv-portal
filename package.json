@@ -1,11 +1,12 @@
 {
   "name": "hospital-airtable-system",
   "version": "1.0.0",
-  "description": "Sistema de Gestión Hospitalaria con Airtable",
+  "description": "Sistema de Gestión Hospitalaria con Airtable y Netlify Functions",
   "main": "index.js",
   "scripts": {
-    "build": "echo 'No build required'",
-    "dev": "netlify dev"
+    "build": "echo 'No build needed for static site'",
+    "dev": "netlify dev",
+    "test": "echo 'Tests not implemented yet'"
   },
   "dependencies": {
     "node-fetch": "^2.6.7"
@@ -13,12 +14,20 @@
   "devDependencies": {
     "netlify-cli": "^17.0.0"
   },
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "keywords": [
     "hospital",
     "airtable",
     "netlify",
-    "javascript"
+    "javascript",
+    "functions"
   ],
   "author": "Ing. Paul Eduardo Muñoz R.",
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tu-usuario/hospital-system.git"
+  }
 }
