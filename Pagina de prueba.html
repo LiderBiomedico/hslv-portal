@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧪 Test Netlify Functions</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #f8fafc;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        .btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin: 0.5rem 0;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #1d4ed8;
+        }
+        .result {
+            background: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 0.875rem;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            background: #f0fdf4;
+            border-left: 4px solid #22c55e;
+        }
+        .error {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+        }
+        .warning {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Diagnóstico Netlify Functions</h1>
+        
+        <div class="test-section">
+            <h2>📊 Información del Sitio</h2>
+            <p><strong>URL:</strong> <span id="site-url"></span></p>
+            <p><strong>Hostname:</strong> <span id="hostname"></span></p>
+            <p><strong>Protocolo:</strong> <span id="protocol"></span></p>
+        </div>
+
+        <div class="test-section">
+            <h2>🧪 Test 1: Función de Configuración</h2>
+            <p>Verifica que las variables de entorno estén configuradas correctamente.</p>
+            <button class="btn" onclick="testConfigFunction()">🔧 Probar Configuración</button>
+            <div id="config-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔗 Test 2: Función Airtable Proxy</h2>
+            <p>Prueba la conexión con Airtable a través del proxy.</p>
+            <button class="btn" onclick="testAirtableProxy()">📡 Probar Proxy Airtable</button>
+            <div id="proxy-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🌐 Test 3: Conexión Directa (Solo Local)</h2>
+            <p>Prueba conexión directa a Airtable (solo funciona en localhost).</p>
+            <button class="btn" onclick="testDirectAirtable()">🔧 Probar Directo</button>
+            <div id="direct-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📋 Lista de Funciones Disponibles</h2>
+            <button class="btn" onclick="listFunctions()">📋 Listar Funciones</button>
+            <div id="functions-result" class="result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Información del sitio
+        document.getElementById('site-url').textContent = window.location.href;
+        document.getElementById('hostname').textContent = window.location.hostname;
+        document.getElementById('protocol').textContent = window.location.protocol;
+
+        function showResult(elementId, content, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = `result ${type}`;
+        }
+
+        async function testConfigFunction() {
+            showResult('config-result', '🔄 Probando función de configuración...', 'warning');
+            
+            try {
+                const response = await fetch('/.netlify/functions/test-config', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    headers: Object.fromEntries(response.headers.entries())
+                };
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const output = `✅ FUNCIÓN DE TEST EXITOSA
+
+📊 STATUS: ${response.status} ${response.statusText}
+
+🔑 VARIABLES DE ENTORNO:
+• API Key: ${data.environment.hasApiKey ? '✅ Configurada' : '❌ Faltante'}
+• Base ID: ${data.environment.hasBaseId ? '✅ Configurada' : '❌ Faltante'}
+
+📋 DETALLES:
+• API Key Preview: ${data.environment.apiKeyPreview}
+• Base ID: ${data.environment.baseId}
+• Timestamp: ${data.timestamp}
+• Function Name: ${data.netlify.functionName}
+• Region: ${data.netlify.region}
+
+${JSON.stringify(data, null, 2)}`;
+
+                    showResult('config-result', output, data.environment.hasApiKey && data.environment.hasBaseId ? 'success' : 'error');
+                } else {
+                    const errorText = await response.text();
+                    showResult('config-result', `❌ ERROR ${response.status}: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                showResult('config-result', `💥 ERROR DE CONEXIÓN: ${error.message}\n\nStack: ${error.stack}`, 'error');
+            }
+        }
+
+        async function testAirtableProxy() {
+            showResult('proxy-result', '🔄 Probando proxy de Airtable...', 'warning');
+            
+            try {
+                const response = await fetch('/.netlify/functions/airtable-proxy/Solicitudes?maxRecords=1', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const output = `✅ PROXY AIRTABLE EXITOSO
+
+📊 STATUS: ${response.status} ${response.statusText}
+📋 RECORDS: ${data.records ? data.records.length : 'N/A'}
+
+📄 RESPUESTA:
+${JSON.stringify(data, null, 2)}`;
+
+                    showResult('proxy-result', output, 'success');
+                } else {
+                    const errorText = await response.text();
+                    let parsedError;
+                    try {
+                        parsedError = JSON.parse(errorText);
+                    } catch (e) {
+                        parsedError = errorText;
+                    }
+
+                    const output = `❌ ERROR EN PROXY AIRTABLE
+
+📊 STATUS: ${response.status} ${response.statusText}
+
+📄 RESPUESTA DE ERROR:
+${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parsedError}
+
+🔍 POSIBLES CAUSAS:
+• Variables de entorno no configuradas
+• API Key inválida
+• Base ID incorrecto
+• Permisos insuficientes en Airtable`;
+
+                    showResult('proxy-result', output, 'error');
+                }
+
+            } catch (error) {
+                showResult('proxy-result', `💥 ERROR DE CONEXIÓN: ${error.message}\n\nStack: ${error.stack}`, 'error');
+            }
+        }
+
+        async function testDirectAirtable() {
+            if (window.location.hostname !== 'localhost' && !window.location.hostname.startsWith('127.0.0.1')) {
+                showResult('direct-result', '⚠️ CONEXIÓN DIRECTA BLOQUEADA\n\nLas conexiones directas a Airtable solo funcionan en localhost por seguridad.', 'warning');
+                return;
+            }
+
+            showResult('direct-result', '🔄 Probando conexión directa a Airtable...', 'warning');
+            
+            try {
+                const response = await fetch('https://api.airtable.com/v0/appFyEBCedQGOeJyV/Solicitudes?maxRecords=1', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    showResult('direct-result', `✅ CONEXIÓN DIRECTA EXITOSA\n\nRecords: ${data.records.length}\n\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    const errorText = await response.text();
+                    showResult('direct-result', `❌ ERROR DIRECTO: ${response.status}\n\n${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                showResult('direct-result', `💥 ERROR: ${error.message}`, 'error');
+            }
+        }
+
+        async function listFunctions() {
+            showResult('functions-result', '🔄 Verificando funciones disponibles...', 'warning');
+            
+            const functionsToTest = [
+                'test-config',
+                'airtable-proxy'
+            ];
+
+            let results = '📋 FUNCIONES NETLIFY:\n\n';
+
+            for (const func of functionsToTest) {
+                try {
+                    const response = await fetch(`/.netlify/functions/${func}`, {
+                        method: 'GET'
+                    });
+                    
+                    results += `• ${func}: ${response.status === 404 ? '❌ No encontrada' : '✅ Disponible'} (${response.status})\n`;
+                    
+                } catch (error) {
+                    results += `• ${func}: ❌ Error (${error.message})\n`;
+                }
+            }
+
+            results += '\n🔍 Si ves "❌ No encontrada (404)" significa que la función no se desplegó correctamente.';
+            results += '\n🔍 Si ves "✅ Disponible" significa que la función existe y responde.';
+
+            showResult('functions-result', results, 'info');
+        }
+
+        // Auto-ejecutar test básico al cargar
+        window.addEventListener('load', function() {
+            console.log('🧪 Página de test cargada');
+            console.log('🌐 Hostname:', window.location.hostname);
+            console.log('📡 URL base:', window.location.origin);
+        });
+    </script>
+</body>
+</html>
