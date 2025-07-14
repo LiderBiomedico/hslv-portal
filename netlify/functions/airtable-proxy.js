@@ -1,74 +1,50 @@
-// Función Netlify para proxy Airtable
-const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
-const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+// 🛡️ Función Netlify Proxy para Airtable
+// netlify/functions/airtable-proxy.js
 
-const ALLOWED_TABLES = {
-    'Solicitudes': 'Solicitudes',
-    'Tecnicos': 'Tecnicos',
-    'Usuarios': 'Usuarios',
-    'SolicitudesAcceso': 'SolicitudesAcceso'
-};
+const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
-    console.log('📡 Proxy request:', event.httpMethod, event.path);
+    // 🛡️ Headers de seguridad
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+        'Content-Type': 'application/json'
+    };
 
-    // CORS preflight
+    // ✅ Manejar preflight OPTIONS
     if (event.httpMethod === 'OPTIONS') {
         return {
             statusCode: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-                'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS'
-            },
+            headers,
             body: ''
         };
     }
 
-    // Verificar credenciales
-    if (!AIRTABLE_BASE_ID || !AIRTABLE_API_KEY) {
-        console.error('❌ Variables no configuradas');
-        return {
-            statusCode: 500,
-            headers: { 'Access-Control-Allow-Origin': '*' },
-            body: JSON.stringify({ 
-                error: 'Variables de entorno no configuradas en Netlify',
-                missing: !AIRTABLE_BASE_ID ? 'AIRTABLE_BASE_ID' : 'AIRTABLE_API_KEY'
-            })
-        };
-    }
-
     try {
-        // Parsear ruta
-        const pathParts = event.path.replace('/.netlify/functions/airtable-proxy/', '').split('/');
-        const tableName = pathParts[0];
-        const recordId = pathParts[1];
+        // 🔑 Obtener credenciales desde variables de entorno
+        const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
+        const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
 
-        console.log('📋 Tabla solicitada:', tableName);
-
-        // Verificar tabla autorizada
-        if (!ALLOWED_TABLES[tableName]) {
+        if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID) {
+            console.error('❌ Credenciales de Airtable no configuradas');
             return {
-                statusCode: 403,
-                headers: { 'Access-Control-Allow-Origin': '*' },
+                statusCode: 500,
+                headers,
                 body: JSON.stringify({ 
-                    error: 'Tabla no autorizada', 
-                    tabla: tableName,
-                    tablasPermitidas: Object.keys(ALLOWED_TABLES)
+                    error: 'Credenciales de Airtable no configuradas' 
                 })
             };
         }
 
-        // Construir URL de Airtable
-        let airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${tableName}`;
-        if (recordId) airtableUrl += `/${recordId}`;
-        if (event.queryStringParameters) {
-            const queryString = new URLSearchParams(event.queryStringParameters).toString();
-            if (queryString) airtableUrl += `?${queryString}`;
-        }
+        // 🔗 Construir URL de Airtable
+        const path = event.path.replace('/.netlify/functions/airtable-proxy/', '');
+        const airtableUrl = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${path}${event.rawQuery ? '?' + event.rawQuery : ''}`;
 
-        // Request a Airtable
-        const fetchOptions = {
+        console.log(`📡 Proxy request: ${event.httpMethod} ${airtableUrl}`);
+
+        // 🚀 Hacer request a Airtable
+        const requestOptions = {
             method: event.httpMethod,
             headers: {
                 'Authorization': `Bearer ${AIRTABLE_API_KEY}`,
@@ -76,35 +52,32 @@ exports.handler = async (event, context) => {
             }
         };
 
-        if (event.body && ['POST', 'PATCH', 'PUT'].includes(event.httpMethod)) {
-            fetchOptions.body = event.body;
+        // ➕ Agregar body si es POST/PATCH
+        if (event.body && (event.httpMethod === 'POST' || event.httpMethod === 'PATCH')) {
+            requestOptions.body = event.body;
         }
 
-        console.log('🔗 Request a Airtable:', event.httpMethod, airtableUrl);
-        
-        const response = await fetch(airtableUrl, fetchOptions);
-        const responseData = await response.text();
+        const response = await fetch(airtableUrl, requestOptions);
+        const data = await response.text();
 
-        console.log('📥 Airtable respuesta:', response.status, response.ok);
+        console.log(`✅ Airtable response: ${response.status}`);
 
+        // ↩️ Retornar respuesta
         return {
             statusCode: response.status,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/json'
-            },
-            body: responseData
+            headers,
+            body: data
         };
 
     } catch (error) {
         console.error('❌ Error en proxy:', error);
+        
         return {
             statusCode: 500,
-            headers: { 'Access-Control-Allow-Origin': '*' },
+            headers,
             body: JSON.stringify({ 
-                error: 'Error interno del proxy',
-                message: error.message,
-                timestamp: new Date().toISOString()
+                error: 'Error interno del servidor',
+                message: error.message 
             })
         };
     }

@@ -1,12 +1,31 @@
 [build]
   functions = "netlify/functions"
+  publish = "."
 
-[functions]
-  directory = "netlify/functions"
+[build.environment]
+  NODE_VERSION = "18"
 
 [[headers]]
   for = "/*"
   [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, Accept"
+    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Methods = "GET, POST, PATCH, DELETE, OPTIONS"
+
+[[redirects]]
+  from = "/portal"
+  to = "/portal-solicitudes.html"
+  status = 200
+
+[[redirects]]
+  from = "/gestion"
+  to = "/portal-gestion.html"
+  status = 200
