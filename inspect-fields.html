@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Inspector de Campos - Airtable</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-1px);
+        }
+        .btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .result {
+            background: #f1f5f9;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            max-height: 500px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        .result.success {
+            background: #f0fdf4;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+        .result.error {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+        .alert {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            color: #92400e;
+        }
+        .field-list {
+            display: grid;
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .field-item {
+            background: #f8fafc;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid #2563eb;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+        .field-missing {
+            border-left-color: #ef4444;
+            background: #fef2f2;
+        }
+        h1, h2, h3 {
+            color: #1f2937;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Inspector de Campos de Airtable</h1>
+            <p>Diagnóstico para resolver error de campo "fechaSolicitud"</p>
+        </div>
+
+        <div class="alert">
+            <strong>🚨 Problema detectado:</strong> El campo "fechaSolicitud" no existe en la tabla SolicitudesAcceso de Airtable.
+            <br><br>
+            <strong>🎯 Objetivo:</strong> Encontrar qué campos están disponibles y corregir el mapeo.
+        </div>
+
+        <div style="text-align: center; margin: 2rem 0;">
+            <button class="btn" onclick="inspectTable('SolicitudesAcceso')" id="btn-solicitudes">
+                🔍 Inspeccionar SolicitudesAcceso
+            </button>
+            <button class="btn" onclick="inspectTable('Solicitudes')" id="btn-solicitudes-main">
+                🔍 Inspeccionar Solicitudes (Principal)
+            </button>
+            <button class="btn" onclick="inspectTable('Usuarios')" id="btn-usuarios">
+                🔍 Inspeccionar Usuarios
+            </button>
+        </div>
+
+        <div id="inspection-result" class="result"></div>
+
+        <div id="fix-recommendations" style="display: none;">
+            <h2>🛠️ Recomendaciones de Corrección</h2>
+            <div id="fix-content"></div>
+            <button class="btn" onclick="generateFixCode()">
+                🔧 Generar Código Corregido
+            </button>
+        </div>
+
+        <div id="generated-fix" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        let lastInspectionResult = null;
+
+        function showResult(content, type = 'info') {
+            const element = document.getElementById('inspection-result');
+            element.style.display = 'block';
+            element.textContent = content;
+            element.className = `result ${type}`;
+        }
+
+        async function inspectTable(tableName) {
+            const btn = document.getElementById(`btn-${tableName.toLowerCase().replace('solicitudes', 'solicitudes')}`);
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = `🔄 Inspeccionando ${tableName}...`;
+            }
+
+            showResult(`🔄 Inspeccionando tabla "${tableName}"...`, 'info');
+
+            try {
+                const response = await fetch(`/.netlify/functions/inspect-table?table=${encodeURIComponent(tableName)}`);
+
+                if (response.ok) {
+                    const data = await response.json();
+                    lastInspectionResult = data;
+
+                    let output = `🔍 INSPECCIÓN DE TABLA: "${tableName}"
+
+📊 INFORMACIÓN GENERAL:
+• Tabla: ${data.analysis.tableName}
+• Records encontrados: ${data.analysis.recordCount}
+• Campos disponibles: ${data.fieldCount}
+
+📋 CAMPOS DISPONIBLES:
+${data.availableFields.map(field => `• ${field}`).join('\n')}
+
+📄 ANÁLISIS DETALLADO DE CAMPOS:
+`;
+
+                    Object.entries(data.analysis.fields).forEach(([fieldName, info]) => {
+                        output += `
+📝 ${fieldName}:
+   • Tipo: ${Array.isArray(info.type) ? info.type.join(', ') : info.type}
+   • Valores ejemplo: ${JSON.stringify(info.sampleValues)}
+   • ¿Requerido?: ${info.isRequired ? 'Sí' : 'No'}`;
+                    });
+
+                    if (data.recommendations && data.recommendations.recommendedMapping) {
+                        output += `
+
+🛠️ MAPEO RECOMENDADO PARA SOLICITUDESACCESO:
+`;
+                        Object.entries(data.recommendations.recommendedMapping).forEach(([campo, mapeo]) => {
+                            const status = mapeo.includes('❌') ? '❌' : '✅';
+                            output += `${status} ${campo} → ${mapeo}\n`;
+                        });
+                    }
+
+                    if (data.analysis.sampleData && data.analysis.sampleData.length > 0) {
+                        output += `
+
+📋 DATOS DE EJEMPLO:
+${JSON.stringify(data.analysis.sampleData, null, 2)}`;
+                    }
+
+                    showResult(output, 'success');
+
+                    // Mostrar recomendaciones si es SolicitudesAcceso
+                    if (tableName === 'SolicitudesAcceso') {
+                        showFixRecommendations(data);
+                    }
+
+                } else {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = errorText;
+                    }
+
+                    showResult(`❌ ERROR INSPECCIONANDO TABLA "${tableName}"
+
+📊 STATUS: ${response.status}
+
+📄 ERROR DETALLADO:
+${typeof errorData === 'object' ? JSON.stringify(errorData, null, 2) : errorData}
+
+🔍 POSIBLES CAUSAS:
+• Tabla "${tableName}" no existe en Airtable
+• Permisos insuficientes para acceder a la tabla
+• Error de configuración`, 'error');
+                }
+
+            } catch (error) {
+                showResult(`💥 ERROR DE CONEXIÓN: ${error.message}
+
+🔧 VERIFICACIONES:
+• Función inspect-table desplegada correctamente
+• Variables de entorno configuradas
+• Conexión a internet estable`, 'error');
+            }
+
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = btn.textContent.replace('🔄 Inspeccionando', '🔍 Inspeccionar').replace('...', '');
+            }
+        }
+
+        function showFixRecommendations(data) {
+            const fixSection = document.getElementById('fix-recommendations');
+            const fixContent = document.getElementById('fix-content');
+            
+            if (!data.recommendations || !data.recommendations.recommendedMapping) {
+                return;
+            }
+
+            const mapping = data.recommendations.recommendedMapping;
+            
+            let content = '<div class="field-list">';
+            
+            Object.entries(mapping).forEach(([campo, mapeo]) => {
+                const isMissing = mapeo.includes('❌');
+                const className = isMissing ? 'field-item field-missing' : 'field-item';
+                
+                content += `<div class="${className}">
+                    <strong>${campo}:</strong> ${mapeo}
+                    ${isMissing ? '<br><em>⚠️ Este campo necesita ser creado en Airtable o removido del código</em>' : ''}
+                </div>`;
+            });
+            
+            content += '</div>';
+            
+            fixContent.innerHTML = content;
+            fixSection.style.display = 'block';
+        }
+
+        function generateFixCode() {
+            if (!lastInspectionResult || !lastInspectionResult.recommendations) {
+                alert('❌ Primero ejecuta la inspección de SolicitudesAcceso');
+                return;
+            }
+
+            const mapping = lastInspectionResult.recommendations.recommendedMapping;
+            const availableFields = lastInspectionResult.availableFields;
+
+            let fixCode = `// 🛠️ CÓDIGO CORREGIDO PARA createSolicitudAcceso()
+// Basado en campos disponibles en Airtable
+
+async createSolicitudAcceso(solicitudData) {
+    const data = {
+        fields: {`;
+
+            // Solo incluir campos que existen
+            Object.entries(mapping).forEach(([campo, mapeo]) => {
+                if (!mapeo.includes('❌')) {
+                    // Campo existe en Airtable
+                    if (mapeo === 'Created time') {
+                        fixCode += `
+            // ${mapeo}: Campo automático de Airtable, no enviar`;
+                    } else {
+                        fixCode += `
+            ${mapeo}: solicitudData.${campo},`;
+                    }
+                } else {
+                    // Campo no existe
+                    fixCode += `
+            // ${campo}: No existe en Airtable - OMITIDO`;
+                }
+            });
+
+            fixCode += `
+        }
+    };
+    
+    return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+}
+
+// 📋 CAMPOS DISPONIBLES EN AIRTABLE:
+// ${availableFields.join(', ')}
+
+// 🚨 CAMPOS QUE FALTAN Y NECESITAN SER CREADOS O REMOVIDOS:
+`;
+
+            Object.entries(mapping).forEach(([campo, mapeo]) => {
+                if (mapeo.includes('❌')) {
+                    fixCode += `// - ${campo}: ${mapeo}\n`;
+                }
+            });
+
+            const fixElement = document.getElementById('generated-fix');
+            fixElement.style.display = 'block';
+            fixElement.textContent = fixCode;
+            fixElement.className = 'result success';
+        }
+
+        // Auto-ejecutar inspección al cargar
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                console.log('🔍 Auto-ejecutando inspección de SolicitudesAcceso...');
+                inspectTable('SolicitudesAcceso');
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
