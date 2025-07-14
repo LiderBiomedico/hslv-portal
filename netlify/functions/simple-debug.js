@@ -2,6 +2,8 @@
 // netlify/functions/simple-debug.js
 
 exports.handler = async (event, context) => {
+    console.log('🧪 === SIMPLE DEBUG INICIADO ===');
+    
     // Headers básicos
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -16,8 +18,6 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        console.log('🧪 === SIMPLE DEBUG INICIADO ===');
-
         // Obtener variables
         const AIRTABLE_API_KEY = process.env.AIRTABLE_API_KEY;
         const AIRTABLE_BASE_ID = process.env.AIRTABLE_BASE_ID;
@@ -43,10 +43,10 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // Test básico: intentar acceder a cualquier tabla
+        // Test básico: intentar acceder a diferentes tablas
         const fetch = require('node-fetch');
         
-        console.log('🔗 Probando conexión básica...');
+        console.log('🔗 Probando conexión con múltiples tablas...');
         
         // Lista de nombres comunes de tablas para probar
         const tablesToTry = [
@@ -55,7 +55,12 @@ exports.handler = async (event, context) => {
             'Table 1',
             'Table1',
             'Requests',
-            'requests'
+            'requests',
+            'Tecnicos',
+            'tecnicos',
+            'Usuarios',
+            'usuarios',
+            'SolicitudesAcceso'
         ];
 
         const results = [];
@@ -64,7 +69,7 @@ exports.handler = async (event, context) => {
             try {
                 console.log(`🧪 Probando tabla: ${tableName}`);
                 
-                const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?maxRecords=1`;
+                const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(tableName)}?maxRecords=3`;
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -82,7 +87,8 @@ exports.handler = async (event, context) => {
                         tableName: tableName,
                         status: 'SUCCESS ✅',
                         recordCount: data.records.length,
-                        hasData: data.records.length > 0
+                        hasData: data.records.length > 0,
+                        sampleFields: data.records[0] ? Object.keys(data.records[0].fields || {}) : []
                     });
                     console.log(`✅ ${tableName}: ${data.records.length} records`);
                 } else {
@@ -96,7 +102,8 @@ exports.handler = async (event, context) => {
                     results.push({
                         tableName: tableName,
                         status: `FAILED ❌ (${response.status})`,
-                        error: errorData
+                        error: errorData,
+                        errorType: errorData.error?.type || 'UNKNOWN'
                     });
                     console.log(`❌ ${tableName}: ${response.status}`);
                 }
@@ -108,11 +115,21 @@ exports.handler = async (event, context) => {
                 });
                 console.log(`💥 ${tableName}: ${error.message}`);
             }
+
+            // Pequeña pausa entre requests
+            await new Promise(resolve => setTimeout(resolve, 200));
         }
 
-        // Resultado final
+        // Analizar resultados
         const successfulTables = results.filter(r => r.status.includes('SUCCESS'));
         const failedTables = results.filter(r => !r.status.includes('SUCCESS'));
+
+        // Encontrar la mejor tabla para usar
+        let recommendedTable = null;
+        if (successfulTables.length > 0) {
+            // Preferir tabla con datos
+            recommendedTable = successfulTables.find(t => t.hasData) || successfulTables[0];
+        }
 
         const result = {
             success: true,
@@ -129,14 +146,21 @@ exports.handler = async (event, context) => {
                 failed: failedTables.length
             },
             workingTables: successfulTables,
-            failedTables: failedTables,
+            failedTables: failedTables.slice(0, 5), // Solo primeros 5 errores
             recommendation: successfulTables.length > 0 
-                ? `✅ ¡Conectado! Usa la tabla: "${successfulTables[0].tableName}"`
+                ? `✅ ¡Conectado! Usa la tabla: "${recommendedTable.tableName}"`
                 : '❌ No se encontraron tablas accesibles. Verificar Base ID y permisos.',
-            allResults: results
+            bestTable: recommendedTable,
+            summary: {
+                totalTables: results.length,
+                workingTables: successfulTables.length,
+                tablesWithData: successfulTables.filter(t => t.hasData).length,
+                mainRecommendation: recommendedTable ? recommendedTable.tableName : 'NINGUNA'
+            }
         };
 
-        console.log('🎉 Debug completado exitosamente');
+        console.log('🎉 Debug simple completado exitosamente');
+        console.log(`📊 Resultado: ${successfulTables.length}/${results.length} tablas funcionando`);
 
         return {
             statusCode: 200,
