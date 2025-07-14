@@ -178,7 +178,7 @@
     <div class="container">
         <div class="header">
             <h1>?? Test Completo del Sistema Hospital</h1>
-            <p class="subtitle">Diagn車stico integral de Netlify Functions + Airtable</p>
+            <p class="subtitle">Diagnostico integral de Netlify Functions + Airtable</p>
         </div>
 
         <div class="status-bar">
@@ -196,7 +196,7 @@
                 ?? Ejecutar Todos los Tests
             </button>
             <button class="btn btn-warning" onclick="runCriticalTests()">
-                ? Solo Tests Cr赤ticos
+                ? Solo Tests Criticos
             </button>
             <button class="btn" onclick="resetAllTests()">
                 ?? Resetear Tests
@@ -206,10 +206,10 @@
         <div class="test-grid">
             <!-- Test 1: Hello Function -->
             <div class="test-section">
-                <h3>?? Test 1: Funci車n Hello</h3>
-                <p>Verifica que las funciones Netlify est谷n desplegadas correctamente.</p>
+                <h3>?? Test 1: Funcion Hello</h3>
+                <p>Verifica que las funciones Netlify esten desplegadas correctamente.</p>
                 <button class="btn" onclick="testHelloFunction()" id="btn-hello">
-                    ?? Probar Funci車n Hello
+                    ?? Probar Funcion Hello
                 </button>
                 <div id="hello-result" class="result"></div>
             </div>
@@ -217,7 +217,7 @@
             <!-- Test 2: Config Function -->
             <div class="test-section">
                 <h3>?? Test 2: Variables de Entorno</h3>
-                <p>Confirma que las variables de Airtable est谷n configuradas en Netlify.</p>
+                <p>Confirma que las variables de Airtable esten configuradas en Netlify.</p>
                 <button class="btn" onclick="testConfigFunction()" id="btn-config">
                     ?? Verificar Variables
                 </button>
@@ -227,7 +227,7 @@
             <!-- Test 3: Simple Debug -->
             <div class="test-section">
                 <h3>?? Test 3: Debug Simple Airtable</h3>
-                <p><strong>TEST CR赤TICO:</strong> Encuentra qu谷 tablas existen y funcionan en Airtable.</p>
+                <p><strong>TEST CRITICO:</strong> Encuentra que tablas existen y funcionan en Airtable.</p>
                 <button class="btn btn-success" onclick="testSimpleDebug()" id="btn-simple">
                     ?? Debug Tablas Airtable
                 </button>
@@ -246,10 +246,10 @@
 
             <!-- Test 5: Integration Test -->
             <div class="test-section">
-                <h3>?? Test 5: Integraci車n Completa</h3>
-                <p>Test final usando airtable-config.js como lo har赤a el sistema real.</p>
+                <h3>?? Test 5: Integracion Completa</h3>
+                <p>Test final usando airtable-config.js como lo haria el sistema real.</p>
                 <button class="btn" onclick="testFullIntegration()" id="btn-integration">
-                    ?? Test de Integraci車n
+                    ?? Test de Integracion
                 </button>
                 <div id="integration-result" class="result"></div>
             </div>
@@ -272,6 +272,9 @@
         </div>
     </div>
 
+    <!-- Incluir airtable-config.js para test de integracion -->
+    <script src="airtable-config.js"></script>
+
     <script>
         // Variables globales
         let testResults = {
@@ -285,7 +288,7 @@
         let workingTables = [];
         let recommendedTable = null;
 
-        // Inicializar p芍gina
+        // Inicializar pagina
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('site-url').textContent = window.location.href;
             document.getElementById('hostname').textContent = window.location.hostname;
@@ -328,26 +331,26 @@
             btn.disabled = true;
             btn.textContent = '?? Probando...';
             
-            showResult('hello-result', '?? Ejecutando test de funci車n hello...', 'info');
+            showResult('hello-result', '?? Ejecutando test de funcion hello...', 'info');
             
             try {
                 const response = await fetch('/.netlify/functions/hello');
                 
                 if (response.ok) {
                     const data = await response.json();
-                    const output = `? FUNCI車N HELLO EXITOSA
+                    const output = `? FUNCION HELLO EXITOSA
 
 ?? STATUS: ${response.status} ${response.statusText}
 ?? MENSAJE: ${data.message}
 ? TIMESTAMP: ${data.timestamp}
 
 ?? ENVIRONMENT:
-? Node Version: ${data.environment?.nodeVersion || 'N/A'}
-? Has Airtable Key: ${data.environment?.hasAirtableKey ? '?' : '?'}
-? Has Airtable Base: ${data.environment?.hasAirtableBase ? '?' : '?'}
+‧ Node Version: ${data.environment?.nodeVersion || 'N/A'}
+‧ Has Airtable Key: ${data.environment?.hasAirtableKey ? '?' : '?'}
+‧ Has Airtable Base: ${data.environment?.hasAirtableBase ? '?' : '?'}
 
 ?? NETLIFY INFO:
-? Region: ${data.netlifyInfo?.region || 'N/A'}`;
+‧ Region: ${data.netlifyInfo?.region || 'N/A'}`;
 
                     showResult('hello-result', output, 'success');
                     testResults.hello = true;
@@ -357,12 +360,12 @@
                     testResults.hello = false;
                 }
             } catch (error) {
-                showResult('hello-result', `?? ERROR DE CONEXI車N: ${error.message}`, 'error');
+                showResult('hello-result', `?? ERROR DE CONEXION: ${error.message}`, 'error');
                 testResults.hello = false;
             }
             
             btn.disabled = false;
-            btn.textContent = '?? Probar Funci車n Hello';
+            btn.textContent = '?? Probar Funcion Hello';
             updateProgress();
         }
 
@@ -385,13 +388,13 @@
 ?? BASE ID: ${data.environment?.hasBaseId ? '? Configurada' : '? Faltante'}
 
 ?? DETALLES:
-? API Key Preview: ${data.environment?.apiKeyPreview || 'N/A'}
-? Base ID: ${data.environment?.baseId || 'N/A'}
-? Timestamp: ${data.timestamp}
+‧ API Key Preview: ${data.environment?.apiKeyPreview || 'N/A'}
+‧ Base ID: ${data.environment?.baseId || 'N/A'}
+‧ Timestamp: ${data.timestamp}
 
 ?? NETLIFY:
-? Region: ${data.netlify?.region || 'N/A'}
-? Function: ${data.netlify?.functionName?.substring(0, 10) || 'N/A'}...`;
+‧ Region: ${data.netlify?.region || 'N/A'}
+‧ Function: ${data.netlify?.functionName?.substring(0, 10) || 'N/A'}...`;
 
                     showResult('config-result', output, data.environment?.hasApiKey && data.environment?.hasBaseId ? 'success' : 'error');
                     testResults.config = data.environment?.hasApiKey && data.environment?.hasBaseId;
@@ -410,13 +413,13 @@
             updateProgress();
         }
 
-        // TEST 3: Simple Debug (EL M芍S IMPORTANTE)
+        // TEST 3: Simple Debug (EL MAS IMPORTANTE)
         async function testSimpleDebug() {
             const btn = document.getElementById('btn-simple');
             btn.disabled = true;
             btn.textContent = '?? Analizando tablas...';
             
-            showResult('simple-result', '?? Ejecutando an芍lisis completo de tablas en Airtable...', 'info');
+            showResult('simple-result', '?? Ejecutando analisis completo de tablas en Airtable...', 'info');
             
             try {
                 const response = await fetch('/.netlify/functions/simple-debug');
@@ -427,34 +430,34 @@
                     workingTables = data.workingTables || [];
                     recommendedTable = data.bestTable;
                     
-                    let output = `?? AN芍LISIS COMPLETO DE AIRTABLE
+                    let output = `?? ANALISIS COMPLETO DE AIRTABLE
 
-?? CONFIGURACI車N:
-? API Key: ${data.configuration?.apiKeyConfigured ? '? Configurada' : '? Faltante'}
-? Base ID: ${data.configuration?.baseIdConfigured ? '? Configurada' : '? Faltante'}
-? Base: ${data.configuration?.baseId || 'N/A'}
+?? CONFIGURACION:
+‧ API Key: ${data.configuration?.apiKeyConfigured ? '? Configurada' : '? Faltante'}
+‧ Base ID: ${data.configuration?.baseIdConfigured ? '? Configurada' : '? Faltante'}
+‧ Base: ${data.configuration?.baseId || 'N/A'}
 
 ?? RESULTADOS:
-? Total tablas probadas: ${data.tableTests?.total || 0}
-? Tablas funcionando: ${data.tableTests?.successful || 0}
-? Tablas fallidas: ${data.tableTests?.failed || 0}
+‧ Total tablas probadas: ${data.tableTests?.total || 0}
+‧ Tablas funcionando: ${data.tableTests?.successful || 0}
+‧ Tablas fallidas: ${data.tableTests?.failed || 0}
 `;
 
                     if (workingTables.length > 0) {
                         output += `\n? TABLAS QUE FUNCIONAN:\n`;
                         workingTables.forEach(table => {
-                            output += `? ${table.tableName} (${table.recordCount} records)${table.hasData ? ' ??' : ' ??'}\n`;
+                            output += `‧ ${table.tableName} (${table.recordCount} records)${table.hasData ? ' ??' : ' ??'}\n`;
                             if (table.sampleFields && table.sampleFields.length > 0) {
                                 output += `  Campos: ${table.sampleFields.slice(0, 3).join(', ')}${table.sampleFields.length > 3 ? '...' : ''}\n`;
                             }
                         });
                         
-                        output += `\n?? RECOMENDACI車N: ${data.recommendation}\n`;
+                        output += `\n?? RECOMENDACION: ${data.recommendation}\n`;
                         
                         if (recommendedTable) {
                             output += `\n? MEJOR TABLA PARA USAR: "${recommendedTable.tableName}"\n`;
-                            output += `? Records: ${recommendedTable.recordCount}\n`;
-                            output += `? Tiene datos: ${recommendedTable.hasData ? '? S赤' : '? No'}\n`;
+                            output += `‧ Records: ${recommendedTable.recordCount}\n`;
+                            output += `‧ Tiene datos: ${recommendedTable.hasData ? '? Si' : '? No'}\n`;
                         }
                     } else {
                         output += `\n? NO SE ENCONTRARON TABLAS FUNCIONANDO\n`;
@@ -462,7 +465,7 @@
                         if (data.failedTables && data.failedTables.length > 0) {
                             output += `\n?? ERRORES ENCONTRADOS:\n`;
                             data.failedTables.slice(0, 3).forEach(table => {
-                                output += `? ${table.tableName}: ${table.status}\n`;
+                                output += `‧ ${table.tableName}: ${table.status}\n`;
                                 if (table.errorType) {
                                     output += `  Tipo: ${table.errorType}\n`;
                                 }
@@ -495,7 +498,7 @@
             
             showResult('proxy-result', '?? Probando proxy de Airtable...', 'info');
             
-            // Usar tabla recomendada si est芍 disponible
+            // Usar tabla recomendada si esta disponible
             const tableToTest = recommendedTable ? recommendedTable.tableName : 'Solicitudes';
             
             try {
@@ -512,7 +515,7 @@
 ?? DATOS OBTENIDOS:
 ${JSON.stringify(data, null, 2)}
 
-?? ?EL PROXY EST芍 FUNCIONANDO CORRECTAMENTE!`;
+?? !EL PROXY ESTA FUNCIONANDO CORRECTAMENTE!`;
 
                     showResult('proxy-result', output, 'success');
                     testResults.proxy = true;
@@ -534,15 +537,15 @@ ${JSON.stringify(data, null, 2)}
 ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parsedError}
 
 ?? POSIBLES CAUSAS:
-? Proxy no actualizado con la correcci車n
-? Tabla "${tableToTest}" no existe
-? Problema de permisos espec赤fico`;
+‧ Proxy no actualizado con la correccion
+‧ Tabla "${tableToTest}" no existe
+‧ Problema de permisos especifico`;
 
                     showResult('proxy-result', output, 'error');
                     testResults.proxy = false;
                 }
             } catch (error) {
-                showResult('proxy-result', `?? ERROR DE CONEXI車N: ${error.message}`, 'error');
+                showResult('proxy-result', `?? ERROR DE CONEXION: ${error.message}`, 'error');
                 testResults.proxy = false;
             }
             
@@ -557,52 +560,127 @@ ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parse
             btn.disabled = true;
             btn.textContent = '?? Integrando...';
             
-            showResult('integration-result', '?? Ejecutando test de integraci車n completa...', 'info');
+            showResult('integration-result', '?? Ejecutando test de integracion completa...', 'info');
             
             try {
-                // Simular el uso de airtable-config.js como lo har赤a el sistema real
-                if (typeof window.debugAirtableConnection === 'function') {
+                // Esperar un poco para que airtable-config.js se cargue completamente
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Verificar si airtable-config.js esta cargado
+                const hasAirtableAPI = typeof window.airtableAPI !== 'undefined';
+                const hasDebugFunction = typeof window.debugAirtableConnection === 'function';
+                
+                let output = `?? TEST DE INTEGRACION COMPLETA
+
+?? VERIFICACION DE CARGA:
+‧ airtable-config.js incluido: ${document.querySelector('script[src*="airtable-config"]') ? '? Si' : '? No'}
+‧ window.airtableAPI disponible: ${hasAirtableAPI ? '? Si' : '? No'}
+‧ debugAirtableConnection disponible: ${hasDebugFunction ? '? Si' : '? No'}
+`;
+
+                if (hasAirtableAPI && hasDebugFunction) {
+                    // Ejecutar test de integracion
                     const status = window.debugAirtableConnection();
                     
-                    const output = `?? TEST DE INTEGRACI車N COMPLETA
-
-?? ESTADO DEL SISTEMA:
-? Conectado: ${status.isConnected ? '? S赤' : '? No'}
-? Entorno: ${status.environment}
-? Hostname: ${status.hostname}
-? Proxy habilitado: ${status.useProxy ? '? S赤' : '? No'}
-? Tabla confirmada: ${status.confirmedTable || 'N/A'}
-
+                    output += `
 ?? RESULTADO DEL DEBUG:
+‧ Conectado: ${status.isConnected ? '? Si' : '? No'}
+‧ Entorno: ${status.environment || 'N/A'}
+‧ Hostname: ${status.hostname || 'N/A'}
+‧ Proxy habilitado: ${status.useProxy ? '? Si' : '? No'}
+‧ Tabla confirmada: ${status.confirmedTable || 'N/A'}
+
+?? ESTADO DETALLADO:
 ${JSON.stringify(status, null, 2)}
 
-${status.isConnected ? '?? ?INTEGRACI車N EXITOSA!' : '? Problemas de integraci車n detectados'}`;
+${status.isConnected ? '?? !INTEGRACION COMPLETAMENTE EXITOSA!' : '?? Integracion parcial - revisar conexion'}`;
 
                     showResult('integration-result', output, status.isConnected ? 'success' : 'warning');
                     testResults.integration = status.isConnected;
+                    
+                } else if (hasAirtableAPI && !hasDebugFunction) {
+                    // airtableAPI existe pero no debugAirtableConnection
+                    output += `
+?? PROBLEMA PARCIAL:
+‧ window.airtableAPI esta disponible
+‧ Pero debugAirtableConnection no existe
+
+?? INTENTANDO TEST ALTERNATIVO:
+`;
+                    
+                    try {
+                        const status = window.airtableAPI.getStatus();
+                        output += `‧ getStatus() funciona: ? Si
+‧ Estado: ${JSON.stringify(status, null, 2)}`;
+                        
+                        showResult('integration-result', output, 'warning');
+                        testResults.integration = true;
+                    } catch (error) {
+                        output += `‧ Error en getStatus(): ${error.message}`;
+                        showResult('integration-result', output, 'error');
+                        testResults.integration = false;
+                    }
+                    
                 } else {
-                    showResult('integration-result', `?? airtable-config.js no est芍 cargado o no tiene la funci車n debugAirtableConnection()
+                    // airtable-config.js no esta cargado correctamente
+                    output += `
+? PROBLEMA DE CARGA:
+airtable-config.js no esta cargado o no se ejecuto correctamente
 
-?? RECOMENDACI車N:
-1. Verificar que airtable-config.js est谷 incluido en la p芍gina
-2. Actualizar airtable-config.js con la versi車n corregida
-3. Recargar la p芍gina
+?? PASOS PARA SOLUCIONAR:
+1. Verificar que airtable-config.js existe en la raiz del proyecto
+2. Verificar que no hay errores de JavaScript en la consola
+3. Verificar que el archivo se esta sirviendo correctamente
+4. Refrescar la pagina (Ctrl+F5)
 
-?? ESTADO ACTUAL:
-? window.airtableAPI: ${typeof window.airtableAPI}
-? debugAirtableConnection: ${typeof window.debugAirtableConnection}`, 'warning');
-                    testResults.integration = false;
+?? TEST BASICO DE CONECTIVIDAD:
+Probando conexion directa sin airtable-config.js...`;
+
+                    // Test basico sin airtable-config.js
+                    try {
+                        const response = await fetch('/.netlify/functions/simple-debug');
+                        if (response.ok) {
+                            const data = await response.json();
+                            output += `
+
+? CONECTIVIDAD BASICA FUNCIONA:
+‧ Simple Debug: ? Responde
+‧ Tablas funcionando: ${data.workingTables?.length || 0}
+‧ Recomendacion: ${data.recommendation || 'N/A'}
+
+?? CONCLUSION: El backend funciona, solo falta cargar airtable-config.js correctamente`;
+                            showResult('integration-result', output, 'warning');
+                            testResults.integration = false; // Tecnicamente fallo la integracion
+                        } else {
+                            output += `\n? Simple Debug fallo: ${response.status}`;
+                            showResult('integration-result', output, 'error');
+                            testResults.integration = false;
+                        }
+                    } catch (error) {
+                        output += `\n? Error en test basico: ${error.message}`;
+                        showResult('integration-result', output, 'error');
+                        testResults.integration = false;
+                    }
                 }
+                
             } catch (error) {
-                showResult('integration-result', `?? ERROR EN INTEGRACI車N: ${error.message}
+                const output = `?? ERROR EN INTEGRACION: ${error.message}
 
 ?? Stack trace:
-${error.stack}`, 'error');
+${error.stack}
+
+?? DIAGNOSTICO:
+‧ Tipo de error: ${error.name}
+‧ Momento del error: Durante test de integracion
+‧ Estado de window.airtableAPI: ${typeof window.airtableAPI}
+‧ Estado de debugAirtableConnection: ${typeof window.debugAirtableConnection}`;
+
+                showResult('integration-result', output, 'error');
                 testResults.integration = false;
             }
             
             btn.disabled = false;
-            btn.textContent = '?? Test de Integraci車n';
+            btn.textContent = '?? Test de Integracion';
             updateProgress();
         }
 
@@ -653,12 +731,12 @@ ${error.stack}`, 'error');
             document.getElementById('summary-section').style.display = 'none';
         }
 
-        // Auto-ejecutar test cr赤tico al cargar
+        // Auto-ejecutar test critico al cargar
         window.addEventListener('load', function() {
             console.log('?? Test completo cargado');
             console.log('?? Sitio:', window.location.href);
             
-            // Auto-ejecutar simple debug despu谷s de 3 segundos
+            // Auto-ejecutar simple debug despues de 3 segundos
             setTimeout(() => {
                 console.log('?? Auto-ejecutando simple debug...');
                 testSimpleDebug();
