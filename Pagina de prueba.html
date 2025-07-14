@@ -104,6 +104,13 @@
         </div>
 
         <div class="test-section">
+            <h2>🔍 Test 4: Debug Específico de Airtable</h2>
+            <p>Verifica permisos, tablas disponibles y configuración de Airtable.</p>
+            <button class="btn" onclick="debugAirtable()">🔍 Debug Airtable</button>
+            <div id="debug-result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
             <h2>📋 Lista de Funciones Disponibles</h2>
             <button class="btn" onclick="listFunctions()">📋 Listar Funciones</button>
             <div id="functions-result" class="result" style="display: none;"></div>
@@ -253,12 +260,93 @@ ${typeof parsedError === 'object' ? JSON.stringify(parsedError, null, 2) : parse
             }
         }
 
+        async function debugAirtable() {
+            showResult('debug-result', '🔄 Ejecutando debug específico de Airtable...', 'warning');
+            
+            try {
+                const response = await fetch('/.netlify/functions/debug-airtable', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    let output = `🔍 DEBUG AIRTABLE COMPLETADO
+
+📊 RESUMEN:
+• Tests ejecutados: ${data.summary.total}
+• Exitosos: ${data.summary.passed}
+• Fallidos: ${data.summary.failed}
+• Errores: ${data.summary.errors}
+
+🔑 CONFIGURACIÓN:
+• API Key: ${data.environment.apiKeyPreview}
+• Base ID: ${data.environment.baseId}
+
+📋 RESULTADOS DETALLADOS:
+`;
+
+                    data.tests.forEach((test, index) => {
+                        output += `\n${index + 1}. ${test.test}: `;
+                        
+                        if (test.status === 'SUCCESS') {
+                            output += '✅ EXITOSO';
+                            if (test.test.includes('Tabla') && test.data.recordCount !== undefined) {
+                                output += ` (${test.data.recordCount} records)`;
+                            }
+                        } else if (test.status === 'FAILED') {
+                            output += `❌ FALLÓ (${test.error.status})`;
+                            if (test.error.message && typeof test.error.message === 'object') {
+                                if (test.error.message.error?.message) {
+                                    output += `\n   Detalle: ${test.error.message.error.message}`;
+                                }
+                            }
+                        } else {
+                            output += `💥 ERROR: ${test.error}`;
+                        }
+                    });
+
+                    // Buscar tablas que funcionaron
+                    const workingTables = data.tests.filter(t => t.test.includes('Tabla') && t.status === 'SUCCESS');
+                    if (workingTables.length > 0) {
+                        output += `\n\n✅ TABLAS ENCONTRADAS:`;
+                        workingTables.forEach(table => {
+                            const tableName = table.test.match(/"([^"]+)"/)[1];
+                            output += `\n• ${tableName} (${table.data.recordCount} records)`;
+                        });
+                    }
+
+                    // Buscar información de permisos
+                    const permissionTest = data.tests.find(t => t.test === 'API Key Permissions');
+                    if (permissionTest && permissionTest.status === 'SUCCESS' && permissionTest.data) {
+                        output += `\n\n👤 INFORMACIÓN DE USUARIO:`;
+                        if (permissionTest.data.id) output += `\n• User ID: ${permissionTest.data.id}`;
+                        if (permissionTest.data.email) output += `\n• Email: ${permissionTest.data.email}`;
+                    }
+
+                    output += `\n\n📄 RESPUESTA COMPLETA:\n${JSON.stringify(data, null, 2)}`;
+
+                    showResult('debug-result', output, data.summary.passed > 0 ? 'success' : 'error');
+                } else {
+                    const errorText = await response.text();
+                    showResult('debug-result', `❌ ERROR ${response.status}: ${errorText}`, 'error');
+                }
+
+            } catch (error) {
+                showResult('debug-result', `💥 ERROR DE CONEXIÓN: ${error.message}\n\nStack: ${error.stack}`, 'error');
+            }
+        }
+
         async function listFunctions() {
             showResult('functions-result', '🔄 Verificando funciones disponibles...', 'warning');
             
             const functionsToTest = [
                 'test-config',
-                'airtable-proxy'
+                'airtable-proxy',
+                'debug-airtable'
             ];
 
             let results = '📋 FUNCIONES NETLIFY:\n\n';
