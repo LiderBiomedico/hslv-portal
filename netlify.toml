@@ -1,25 +1,37 @@
 [build]
+  # Directorio de funciones
   functions = "netlify/functions"
+  
+  # Directorio de publicación
   publish = "."
+  
+  # Comando de build (vacío porque es sitio estático)
+  command = "echo 'Build completed'"
 
 [build.environment]
+  # Versión de Node.js
   NODE_VERSION = "18"
+  
+  # Instalar dependencias automáticamente
+  NPM_FLAGS = "--production"
 
+# Headers de seguridad
 [[headers]]
   for = "/*"
   [headers.values]
-    X-Frame-Options = "DENY"
+    X-Frame-Options = "SAMEORIGIN"
     X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
 
+# Headers específicos para las funciones
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
     Access-Control-Allow-Methods = "GET, POST, PATCH, DELETE, OPTIONS"
 
+# Redirects para URLs amigables
 [[redirects]]
   from = "/portal"
   to = "/portal-solicitudes.html"
@@ -28,4 +40,9 @@
 [[redirects]]
   from = "/gestion"
   to = "/portal-gestion.html"
+  status = 200
+
+[[redirects]]
+  from = "/test"
+  to = "/test-netlify.html"
   status = 200
