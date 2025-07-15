@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Solicitudes Cloud - Hospital Susana L¨®pez de Valencia</title>
+    <title>Portal de Solicitudes Cloud - Hospital Susana López de Valencia</title>
     <style>
         * {
             margin: 0;
@@ -682,11 +682,11 @@
             <span id="cloud-status-text" class="cloud-status disconnected">?? Conectando...</span>
         </div>
         <div class="center">
-            ?? Desarrollado por <span>Ing. Paul Eduardo Mu?oz R.</span> - Portal Cloud con Airtable
+            ?? Desarrollado por <span>Ing. Paul Eduardo Muñoz R.</span> - Portal Cloud con Airtable
         </div>
         <div class="right">
             <button onclick="testAirtableConnection()" style="background: none; border: none; color: #60a5fa; cursor: pointer; font-size: 0.75rem;">
-                ?? Test Conexi¨®n
+                ?? Test Conexión
             </button>
         </div>
     </div>
@@ -697,7 +697,7 @@
             <div class="login-header">
                 <div class="hospital-logo">??</div>
                 <h1>Portal de Solicitudes Cloud</h1>
-                <p>Hospital Susana L¨®pez de Valencia S.A.S.</p>
+                <p>Hospital Susana López de Valencia S.A.S.</p>
             </div>
 
             <!-- Cloud Status Indicator -->
@@ -708,7 +708,7 @@
 
             <!-- Auth Tabs -->
             <div class="auth-tabs">
-                <button class="auth-tab active" onclick="showAuthTab('login')">?? Iniciar Sesi¨®n</button>
+                <button class="auth-tab active" onclick="showAuthTab('login')">?? Iniciar Sesión</button>
                 <button class="auth-tab" onclick="showAuthTab('request')">?? Solicitar Acceso</button>
             </div>
 
@@ -718,17 +718,17 @@
                 
                 <div class="alert alert-info">
                     <strong>?? Sistema Cloud Conectado</strong><br>
-                    Su sesi¨®n y datos se sincronizan autom¨¢ticamente con Airtable en la nube.
+                    Su sesión y datos se sincronizan automáticamente con Airtable en la nube.
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">?? Correo Electr¨®nico</label>
-                    <input type="email" class="form-input" id="email" required placeholder="Ingrese su correo electr¨®nico">
+                    <label class="form-label">?? Correo Electrónico</label>
+                    <input type="email" class="form-input" id="email" required placeholder="Ingrese su correo electrónico">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">?? C¨®digo de Acceso (4 d¨ªgitos)</label>
-                    <input type="text" class="form-input" id="access-code" required placeholder="C¨®digo generado por el Portal de Gesti¨®n" maxlength="4" pattern="[0-9]{4}" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.5rem;">
+                    <label class="form-label">?? Código de Acceso (4 dígitos)</label>
+                    <input type="text" class="form-input" id="access-code" required placeholder="Código generado por el Portal de Gestión" maxlength="4" pattern="[0-9]{4}" style="text-align: center; font-size: 1.25rem; letter-spacing: 0.5rem;">
                 </div>
 
                 <button type="submit" class="btn btn-primary" id="login-btn">
@@ -736,7 +736,7 @@
                 </button>
 
                 <div style="text-align: center; margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
-                    ?No tienes acceso? Haz clic en "Solicitar Acceso" y espera la aprobaci¨®n
+                    ¿No tienes acceso? Haz clic en "Solicitar Acceso" y espera la aprobación
                 </div>
             </form>
 
@@ -746,7 +746,7 @@
 
                 <div class="alert alert-info">
                     <strong>?? Solicitud de Acceso Cloud</strong><br>
-                    Su solicitud se enviar¨¢ directamente a Airtable y ser¨¢ visible en tiempo real en el Portal de Gesti¨®n.
+                    Su solicitud se enviará directamente a Airtable y será visible en tiempo real en el Portal de Gestión.
                 </div>
 
                 <div class="form-group">
@@ -755,46 +755,46 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">?? Correo Electr¨®nico *</label>
+                    <label class="form-label">?? Correo Electrónico *</label>
                     <input type="email" class="form-input" id="req-email" required placeholder="correo@hospital.com">
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">?? Servicio/¨¢rea *</label>
+                    <label class="form-label">?? Servicio/Área *</label>
                     <select class="form-select" id="req-service" required>
                         <option value="">Seleccione su servicio</option>
                         <option value="URGENCIAS_ADULTO">Urgencias Adulto</option>
-                        <option value="URGENCIAS_PEDIATRICAS">Urgencias Pedi¨¢tricas</option>
+                        <option value="URGENCIAS_PEDIATRICAS">Urgencias Pediátricas</option>
                         <option value="UCI_ADULTO">UCI Adulto</option>
                         <option value="UCI_NEONATAL">UCI Neonatal</option>
-                        <option value="HOSPITALIZACION_ADULTO">Hospitalizaci¨®n Adulto</option>
-                        <option value="CIRUGIA_ADULTO">Cirug¨ªa Adulto</option>
+                        <option value="HOSPITALIZACION_ADULTO">Hospitalización Adulto</option>
+                        <option value="CIRUGIA_ADULTO">Cirugía Adulto</option>
                         <option value="CONSULTA_EXTERNA">Consulta Externa</option>
-                        <option value="LABORATORIO_CLINICO">Laboratorio Cl¨ªnico</option>
-                        <option value="RADIOLOGIA">Radiolog¨ªa</option>
+                        <option value="LABORATORIO_CLINICO">Laboratorio Clínico</option>
+                        <option value="RADIOLOGIA">Radiología</option>
                         <option value="FARMACIA_CENTRAL">Farmacia Central</option>
                         <option value="FISIOTERAPIA">Fisioterapia</option>
-                        <option value="INGENIERIA_BIOMEDICA">Ingenier¨ªa Biom¨¦dica</option>
+                        <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
                         <option value="INFRAESTRUCTURA">Infraestructura</option>
-                        <option value="MECANICOS">Mec¨¢nicos</option>
+                        <option value="MECANICOS">Mecánicos</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">?? Cargo/Posici¨®n *</label>
+                    <label class="form-label">?? Cargo/Posición *</label>
                     <select class="form-select" id="req-position" required>
                         <option value="">Seleccione su cargo</option>
                         <option value="JEFE_SERVICIO">Jefe de Servicio</option>
                         <option value="COORDINADOR">Coordinador</option>
                         <option value="ENFERMERA_JEFE">Enfermera Jefe</option>
-                        <option value="MEDICO_ESPECIALISTA">M¨¦dico Especialista</option>
-                        <option value="AUXILIAR_ENFERMERIA">Auxiliar de Enfermer¨ªa</option>
+                        <option value="MEDICO_ESPECIALISTA">Médico Especialista</option>
+                        <option value="AUXILIAR_ENFERMERIA">Auxiliar de Enfermería</option>
                         <option value="ADMINISTRATIVO">Personal Administrativo</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">?? Tel¨¦fono/WhatsApp</label>
+                    <label class="form-label">?? Teléfono/WhatsApp</label>
                     <input type="tel" class="form-input" id="req-phone" placeholder="+57 300 123 4567">
                 </div>
 
@@ -803,7 +803,7 @@
                 </button>
 
                 <div style="text-align: center; margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
-                    ?Ya tienes acceso? Haz clic en "Iniciar Sesi¨®n"
+                    ¿Ya tienes acceso? Haz clic en "Iniciar Sesión"
                 </div>
             </form>
         </div>
@@ -819,7 +819,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                     </svg>
                     <div class="hospital-info">
-                        <h1>Hospital Susana L¨®pez de Valencia S.A.S.</h1>
+                        <h1>Hospital Susana López de Valencia S.A.S.</h1>
                         <p>Portal de Solicitudes Cloud - Sincronizado con Airtable</p>
                     </div>
                 </div>
@@ -855,7 +855,7 @@
                 <div class="nav-card active" onclick="showSection('nueva-solicitud')">
                     <span class="nav-card-icon">???</span>
                     <h3>Nueva Solicitud Cloud</h3>
-                    <p>Crear solicitud que se guardar¨¢ autom¨¢ticamente en Airtable</p>
+                    <p>Crear solicitud que se guardará automáticamente en Airtable</p>
                 </div>
                 
                 <div class="nav-card" onclick="showSection('mis-solicitudes')">
@@ -866,8 +866,8 @@
                 
                 <div class="nav-card" onclick="showSection('servicios')">
                     <span class="nav-card-icon">??</span>
-                    <h3>¨¢reas de Ingenier¨ªa</h3>
-                    <p>Informaci¨®n sobre ¨¢reas t¨¦cnicas disponibles</p>
+                    <h3>Áreas de Ingeniería</h3>
+                    <p>Información sobre áreas técnicas disponibles</p>
                 </div>
             </div>
 
@@ -876,7 +876,7 @@
                 <div class="form-section">
                     <div class="form-header">
                         <h2>??? Nueva Solicitud Cloud</h2>
-                        <p>Solicitud guardada autom¨¢ticamente en Airtable</p>
+                        <p>Solicitud guardada automáticamente en Airtable</p>
                     </div>
                     
                     <div class="alert alert-success">
@@ -890,14 +890,14 @@
                         <div id="form-alert"></div>
 
                         <div class="form-group">
-                            <label class="form-label">?? ¨¢rea de Ingenier¨ªa *</label>
+                            <label class="form-label">?? Área de Ingeniería *</label>
                             <select id="area-ingenieria" class="form-select" required>
-                                <option value="">Seleccione el ¨¢rea t¨¦cnica</option>
-                                <option value="INGENIERIA_BIOMEDICA">?? Ingenier¨ªa Biom¨¦dica</option>
-                                <option value="MECANICA">?? Mec¨¢nica</option>
+                                <option value="">Seleccione el área técnica</option>
+                                <option value="INGENIERIA_BIOMEDICA">?? Ingeniería Biomédica</option>
+                                <option value="MECANICA">?? Mecánica</option>
                                 <option value="INFRAESTRUCTURA">??? Infraestructura</option>
                             </select>
-                            <small style="color: #6b7280; font-size: 0.75rem;">Se guardar¨¢ autom¨¢ticamente en Airtable</small>
+                            <small style="color: #6b7280; font-size: 0.75rem;">Se guardará automáticamente en Airtable</small>
                         </div>
 
                         <div class="form-group">
@@ -906,11 +906,11 @@
                                 <option value="">Seleccione el tipo de servicio</option>
                                 <option value="MANTENIMIENTO_PREVENTIVO">?? Mantenimiento Preventivo</option>
                                 <option value="MANTENIMIENTO_CORRECTIVO">??? Mantenimiento Correctivo</option>
-                                <option value="REPARACION">?? Reparaci¨®n</option>
-                                <option value="INSTALACION">?? Instalaci¨®n</option>
-                                <option value="CALIBRACION">?? Calibraci¨®n</option>
-                                <option value="INSPECCION">??? Inspecci¨®n</option>
-                                <option value="ACTUALIZACION">?? Actualizaci¨®n</option>
+                                <option value="REPARACION">?? Reparación</option>
+                                <option value="INSTALACION">?? Instalación</option>
+                                <option value="CALIBRACION">?? Calibración</option>
+                                <option value="INSPECCION">??? Inspección</option>
+                                <option value="ACTUALIZACION">?? Actualización</option>
                                 <option value="EMERGENCIA">?? Emergencia</option>
                             </select>
                         </div>
@@ -919,7 +919,7 @@
                             <label class="form-label">? Prioridad *</label>
                             <select id="prioridad" class="form-select" required>
                                 <option value="">Seleccione la prioridad</option>
-                                <option value="CRITICA">?? Cr¨ªtica (Equipos vitales, falla total)</option>
+                                <option value="CRITICA">?? Crítica (Equipos vitales, falla total)</option>
                                 <option value="ALTA">?? Alta (Equipos importantes, funcionamiento limitado)</option>
                                 <option value="MEDIA">?? Media (Equipos secundarios, funcionamiento normal)</option>
                                 <option value="BAJA">?? Baja (Mantenimiento rutinario)</option>
@@ -928,32 +928,32 @@
 
                         <div class="form-group">
                             <label class="form-label">??? Equipo/Sistema Afectado *</label>
-                            <input type="text" id="equipo" class="form-input" required placeholder="Ej: Ventilador mec¨¢nico Marca X Modelo Y - Habitaci¨®n 201">
+                            <input type="text" id="equipo" class="form-input" required placeholder="Ej: Ventilador mecánico Marca X Modelo Y - Habitación 201">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">?? Ubicaci¨®n Espec¨ªfica *</label>
-                            <input type="text" id="ubicacion" class="form-input" required placeholder="Ej: UCI Adulto - Habitaci¨®n 201 - Cama 3">
+                            <label class="form-label">?? Ubicación Específica *</label>
+                            <input type="text" id="ubicacion" class="form-input" required placeholder="Ej: UCI Adulto - Habitación 201 - Cama 3">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label">?? Descripci¨®n del Problema *</label>
-                            <textarea id="descripcion" class="form-textarea" required placeholder="Describa detalladamente el problema, s¨ªntomas observados, cu¨¢ndo ocurri¨®, etc."></textarea>
+                            <label class="form-label">?? Descripción del Problema *</label>
+                            <textarea id="descripcion" class="form-textarea" required placeholder="Describa detalladamente el problema, síntomas observados, cuándo ocurrió, etc."></textarea>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label">?? Observaciones Adicionales</label>
-                            <textarea id="observaciones" class="form-textarea" placeholder="Informaci¨®n adicional que considere relevante"></textarea>
+                            <textarea id="observaciones" class="form-textarea" placeholder="Información adicional que considere relevante"></textarea>
                         </div>
 
                         <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 3px solid #2563eb;">
                             <h4 style="color: #1e40af; margin-bottom: 0.5rem;">?? Sistema Cloud</h4>
                             <ul style="color: #1e40af; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
-                                <li>Su solicitud se guarda autom¨¢ticamente en Airtable</li>
-                                <li>Visible inmediatamente en el Portal de Gesti¨®n</li>
-                                <li>Sincronizaci¨®n en tiempo real entre dispositivos</li>
+                                <li>Su solicitud se guarda automáticamente en Airtable</li>
+                                <li>Visible inmediatamente en el Portal de Gestión</li>
+                                <li>Sincronización en tiempo real entre dispositivos</li>
                                 <li>Acceso desde cualquier computador con internet</li>
-                                <li>Respaldo autom¨¢tico en la nube</li>
+                                <li>Respaldo automático en la nube</li>
                             </ul>
                         </div>
 
@@ -1000,20 +1000,20 @@
 
             <div id="servicios" class="content-card hidden">
                 <div class="form-header">
-                    <h2>?? ¨¢reas de Ingenier¨ªa Cloud</h2>
+                    <h2>?? Áreas de Ingeniería Cloud</h2>
                     <p>Sistema integrado con base de datos Airtable</p>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                     <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #059669;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">??</div>
-                        <h3 style="color: #065f46; margin-bottom: 1rem;">Ingenier¨ªa Biom¨¦dica</h3>
-                        <p style="color: #047857; margin-bottom: 1rem;">Equipos m¨¦dicos sincronizados con Airtable</p>
+                        <h3 style="color: #065f46; margin-bottom: 1rem;">Ingeniería Biomédica</h3>
+                        <p style="color: #047857; margin-bottom: 1rem;">Equipos médicos sincronizados con Airtable</p>
                         <ul style="color: #047857; font-size: 0.875rem; line-height: 1.6;">
                             <li>Equipos de UCI y monitoreo</li>
-                            <li>Ventiladores mec¨¢nicos</li>
-                            <li>Bombas de infusi¨®n</li>
-                            <li>Equipos de imagenolog¨ªa</li>
+                            <li>Ventiladores mecánicos</li>
+                            <li>Bombas de infusión</li>
+                            <li>Equipos de imagenología</li>
                             <li>Sistemas de gases medicinales</li>
                             <li>Equipos de laboratorio</li>
                         </ul>
@@ -1021,13 +1021,13 @@
 
                     <div style="background: linear-gradient(135deg, #fefbeb 0%, #fef3c7 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #f59e0b;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">??</div>
-                        <h3 style="color: #d97706; margin-bottom: 1rem;">Mec¨¢nica</h3>
-                        <p style="color: #b45309; margin-bottom: 1rem;">Sistemas mec¨¢nicos con gesti¨®n cloud</p>
+                        <h3 style="color: #d97706; margin-bottom: 1rem;">Mecánica</h3>
+                        <p style="color: #b45309; margin-bottom: 1rem;">Sistemas mecánicos con gestión cloud</p>
                         <ul style="color: #b45309; font-size: 0.875rem; line-height: 1.6;">
-                            <li>Sistemas de climatizaci¨®n</li>
+                            <li>Sistemas de climatización</li>
                             <li>Calderas y sistemas de vapor</li>
-                            <li>Compresores y sistemas neum¨¢ticos</li>
-                            <li>Equipos de lavander¨ªa</li>
+                            <li>Compresores y sistemas neumáticos</li>
+                            <li>Equipos de lavandería</li>
                             <li>Ascensores y montacargas</li>
                             <li>Sistemas de bombeo</li>
                         </ul>
@@ -1038,12 +1038,12 @@
                         <h3 style="color: #7c3aed; margin-bottom: 1rem;">Infraestructura</h3>
                         <p style="color: #6d28d9; margin-bottom: 1rem;">Instalaciones con registro en Airtable</p>
                         <ul style="color: #6d28d9; font-size: 0.875rem; line-height: 1.6;">
-                            <li>Sistemas el¨¦ctricos</li>
-                            <li>Redes hidr¨¢ulicas y sanitarias</li>
+                            <li>Sistemas eléctricos</li>
+                            <li>Redes hidráulicas y sanitarias</li>
                             <li>Estructuras y acabados</li>
                             <li>Sistemas de seguridad</li>
-                            <li>Jardines y ¨¢reas exteriores</li>
-                            <li>Se?alizaci¨®n y demarcaci¨®n</li>
+                            <li>Jardines y áreas exteriores</li>
+                            <li>Señalización y demarcación</li>
                         </ul>
                     </div>
                 </div>
@@ -1053,15 +1053,15 @@
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
                         <div>
                             <h5 style="color: #2563eb; margin-bottom: 0.5rem;">1. ?? Solicitud Cloud</h5>
-                            <p style="color: #6b7280; font-size: 0.875rem;">Se guarda autom¨¢ticamente en Airtable</p>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Se guarda automáticamente en Airtable</p>
                         </div>
                         <div>
-                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">2. ?? Sincronizaci¨®n</h5>
-                            <p style="color: #6b7280; font-size: 0.875rem;">Visible inmediatamente en Portal de Gesti¨®n</p>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">2. ?? Sincronización</h5>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Visible inmediatamente en Portal de Gestión</p>
                         </div>
                         <div>
-                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">3. ????? Asignaci¨®n</h5>
-                            <p style="color: #6b7280; font-size: 0.875rem;">T¨¦cnico asignado desde cualquier dispositivo</p>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">3. ????? Asignación</h5>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Técnico asignado desde cualquier dispositivo</p>
                         </div>
                         <div>
                             <h5 style="color: #2563eb; margin-bottom: 0.5rem;">4. ?? Acceso Global</h5>
@@ -1073,31 +1073,31 @@
         </main>
     </div>
 
-    <!-- Incluir el archivo de configuraci¨®n de Airtable -->
+    <!-- Incluir el archivo de configuración de Airtable -->
     <script src="airtable-config.js"></script>
 
     <script>
         // Mapas de servicios y areas
         const serviciosHospitalarios = {
             'URGENCIAS_ADULTO': 'Urgencias Adulto',
-            'URGENCIAS_PEDIATRICAS': 'Urgencias Pedi¨¢tricas',
+            'URGENCIAS_PEDIATRICAS': 'Urgencias Pediátricas',
             'UCI_ADULTO': 'UCI Adulto',
             'UCI_NEONATAL': 'UCI Neonatal',
-            'HOSPITALIZACION_ADULTO': 'Hospitalizaci¨®n Adulto',
-            'CIRUGIA_ADULTO': 'Cirug¨ªa Adulto',
+            'HOSPITALIZACION_ADULTO': 'Hospitalización Adulto',
+            'CIRUGIA_ADULTO': 'Cirugía Adulto',
             'CONSULTA_EXTERNA': 'Consulta Externa',
-            'LABORATORIO_CLINICO': 'Laboratorio Cl¨ªnico',
-            'RADIOLOGIA': 'Radiolog¨ªa',
+            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+            'RADIOLOGIA': 'Radiología',
             'FARMACIA_CENTRAL': 'Farmacia Central',
             'FISIOTERAPIA': 'Fisioterapia',
-            'INGENIERIA_BIOMEDICA': 'Ingenier¨ªa Biom¨¦dica',
+            'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
             'INFRAESTRUCTURA': 'Infraestructura',
-            'MECANICOS': 'Mec¨¢nicos'
+            'MECANICOS': 'Mecánicos'
         };
 
         const areasIngenieria = {
-            'INGENIERIA_BIOMEDICA': 'Ingenier¨ªa Biom¨¦dica',
-            'MECANICA': 'Mec¨¢nica',
+            'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+            'MECANICA': 'Mecánica',
             'INFRAESTRUCTURA': 'Infraestructura'
         };
 
@@ -1106,7 +1106,7 @@
         let myRequests = [];
         let isCloudConnected = false;
 
-        // ?? Funciones de estado de conexi¨®n
+        // ?? Funciones de estado de conexión
         function updateCloudStatus(connected, message = '') {
             isCloudConnected = connected;
             
@@ -1149,46 +1149,46 @@
         }
 
         async function testAirtableConnection() {
-            updateCloudStatus(false, 'Probando conexi¨®n...');
+            updateCloudStatus(false, 'Probando conexión...');
             
             try {
                 if (window.airtableAPI) {
                     const isConnected = await window.airtableAPI.testConnection();
-                    updateCloudStatus(isConnected, isConnected ? 'Airtable Conectado' : 'Error de conexi¨®n');
+                    updateCloudStatus(isConnected, isConnected ? 'Airtable Conectado' : 'Error de conexión');
                     
                     alert(isConnected ? 
-                        '? Conexi¨®n exitosa con Airtable\n\n?? El portal est¨¢ funcionando correctamente en la nube.' :
-                        '? Error de conexi¨®n con Airtable\n\nEl portal funcionar¨¢ en modo local como respaldo.'
+                        '? Conexión exitosa con Airtable\n\n?? El portal está funcionando correctamente en la nube.' :
+                        '? Error de conexión con Airtable\n\nEl portal funcionará en modo local como respaldo.'
                     );
                 } else {
                     updateCloudStatus(false, 'API no disponible');
-                    alert('? No se pudo cargar la configuraci¨®n de Airtable');
+                    alert('? No se pudo cargar la configuración de Airtable');
                 }
             } catch (error) {
-                updateCloudStatus(false, 'Error de conexi¨®n');
-                alert('? Error al probar conexi¨®n: ' + error.message);
+                updateCloudStatus(false, 'Error de conexión');
+                alert('? Error al probar conexión: ' + error.message);
             }
         }
 
-        // Inicializaci¨®n
+        // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('?? Portal de Solicitudes Cloud - Hospital Susana L¨®pez de Valencia');
+            console.log('?? Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
             
             // Esperar a que se cargue airtable-config.js
             setTimeout(async () => {
                 if (window.airtableAPI) {
-                    console.log('?? Probando conexi¨®n con Airtable...');
+                    console.log('?? Probando conexión con Airtable...');
                     try {
                         const isConnected = await window.airtableAPI.testConnection();
                         updateCloudStatus(isConnected);
                         console.log(isConnected ? '? Conectado a Airtable' : '?? Modo local activo');
                     } catch (error) {
-                        console.error('? Error de conexi¨®n:', error);
-                        updateCloudStatus(false, 'Error de conexi¨®n');
+                        console.error('? Error de conexión:', error);
+                        updateCloudStatus(false, 'Error de conexión');
                     }
                 } else {
                     console.error('? No se pudo cargar airtable-config.js');
-                    updateCloudStatus(false, 'Configuraci¨®n no disponible');
+                    updateCloudStatus(false, 'Configuración no disponible');
                 }
             }, 1000);
             
@@ -1262,14 +1262,14 @@
             
             console.log('?? Intentando login cloud con:', { email, accessCode });
             
-            // Validaciones b¨¢sicas
+            // Validaciones básicas
             if (!email || !accessCode) {
                 showAlert(alertDiv, 'error', '? Por favor complete todos los campos');
                 return;
             }
             
             if (accessCode.length !== 4 || !/^[0-9]{4}$/.test(accessCode)) {
-                showAlert(alertDiv, 'error', '? El c¨®digo de acceso debe contener exactamente 4 d¨ªgitos');
+                showAlert(alertDiv, 'error', '? El código de acceso debe contener exactamente 4 dígitos');
                 return;
             }
             
@@ -1295,13 +1295,13 @@
                 
                 // Verificar estado del usuario
                 if (user.estado !== 'ACTIVO') {
-                    showAlert(alertDiv, 'error', `? Su cuenta est¨¢ en estado: ${user.estado}. Contacte al administrador.`);
+                    showAlert(alertDiv, 'error', `? Su cuenta está en estado: ${user.estado}. Contacte al administrador.`);
                     return;
                 }
                 
-                // Verificar c¨®digo de acceso
+                // Verificar código de acceso
                 if (!user.codigoAcceso) {
-                    showAlert(alertDiv, 'error', '? Su cuenta no tiene c¨®digo de acceso asignado. Contacte al administrador.');
+                    showAlert(alertDiv, 'error', '? Su cuenta no tiene código de acceso asignado. Contacte al administrador.');
                     return;
                 }
                 
@@ -1309,7 +1309,7 @@
                 const inputCode = String(accessCode);
                 
                 if (userCode !== inputCode) {
-                    showAlert(alertDiv, 'error', '? C¨®digo de acceso incorrecto.');
+                    showAlert(alertDiv, 'error', '? Código de acceso incorrecto.');
                     return;
                 }
                 
@@ -1320,7 +1320,7 @@
                 
             } catch (error) {
                 console.error('? Error en login cloud:', error);
-                showAlert(alertDiv, 'error', '? Error de conexi¨®n. Intente nuevamente.');
+                showAlert(alertDiv, 'error', '? Error de conexión. Intente nuevamente.');
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '?? Acceder al Portal Cloud';
@@ -1365,12 +1365,12 @@
                     showAlert(alertDiv, 'success', 
                         `? Solicitud enviada a Airtable correctamente\n\n` +
                         `?? DATOS ENVIADOS:\n` +
-                        `? ID: ${formData.id}\n` +
-                        `? Nombre: ${formData.nombreCompleto}\n` +
-                        `? Email: ${formData.email}\n` +
-                        `? Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
-                        `?? Su solicitud estar¨¢ visible inmediatamente en el Portal de Gesti¨®n.\n` +
-                        `?? Recibir¨¢ notificaci¨®n cuando sea aprobada.`
+                        `• ID: ${formData.id}\n` +
+                        `• Nombre: ${formData.nombreCompleto}\n` +
+                        `• Email: ${formData.email}\n` +
+                        `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `?? Su solicitud estará visible inmediatamente en el Portal de Gestión.\n` +
+                        `?? Recibirá notificación cuando sea aprobada.`
                     );
                 } else {
                     // Fallback a localStorage
@@ -1378,7 +1378,7 @@
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '? Solicitud guardada localmente. Se sincronizar¨¢ cuando se restablezca la conexi¨®n a Airtable.');
+                    showAlert(alertDiv, 'success', '? Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
                 // Limpiar formulario
@@ -1397,7 +1397,7 @@
             e.preventDefault();
             
             if (!currentUser) {
-                alert('? Error de sesi¨®n. Por favor inicie sesi¨®n nuevamente.');
+                alert('? Error de sesión. Por favor inicie sesión nuevamente.');
                 return;
             }
             
@@ -1418,7 +1418,7 @@
                 servicioHospitalario: currentUser.service,
                 emailSolicitante: currentUser.email,
                 
-                // Datos de gesti¨®n
+                // Datos de gestión
                 fechaCreacion: new Date().toISOString(),
                 estado: 'PENDIENTE'
             };
@@ -1444,11 +1444,11 @@
                     showAlert(alertDiv, 'success', 
                         `? Solicitud guardada en Airtable exitosamente\n\n` +
                         `?? DETALLES:\n` +
-                        `? N¨²mero: ${formData.numero}\n` +
-                        `? ¨¢rea: ${areasIngenieria[formData.servicioIngenieria]}\n` +
-                        `? Prioridad: ${formData.prioridad}\n` +
-                        `? Equipo: ${formData.equipo}\n\n` +
-                        `?? Su solicitud est¨¢ disponible inmediatamente en el Portal de Gesti¨®n cloud.\n` +
+                        `• Número: ${formData.numero}\n` +
+                        `• Área: ${areasIngenieria[formData.servicioIngenieria]}\n` +
+                        `• Prioridad: ${formData.prioridad}\n` +
+                        `• Equipo: ${formData.equipo}\n\n` +
+                        `?? Su solicitud está disponible inmediatamente en el Portal de Gestión cloud.\n` +
                         `?? Visible desde cualquier dispositivo con internet.`
                     );
                 } else {
@@ -1457,7 +1457,7 @@
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '? Solicitud guardada localmente. Se sincronizar¨¢ con Airtable cuando se restablezca la conexi¨®n.');
+                    showAlert(alertDiv, 'success', '? Solicitud guardada localmente. Se sincronizará con Airtable cuando se restablezca la conexión.');
                 }
                 
                 // Agregar a lista local
@@ -1494,7 +1494,7 @@
                 sessionDuration: 4 * 60 * 60 * 1000 // 4 horas
             };
             
-            // Guardar sesi¨®n
+            // Guardar sesión
             sessionStorage.setItem('hospitalSessionCloud', JSON.stringify(currentUser));
             
             // Cargar solicitudes del usuario desde la nube
@@ -1510,15 +1510,15 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-portal').classList.add('active');
             
-            // Actualizar informaci¨®n del usuario
+            // Actualizar información del usuario
             updateUserInterfaceCloud();
             
-            // Iniciar temporizador de sesi¨®n
+            // Iniciar temporizador de sesión
             startSessionTimer();
             
             // Mensaje de bienvenida
             setTimeout(() => {
-                alert(`? ?Bienvenido al Portal Cloud, ${currentUser.name}!\n\n?? Servicio: ${currentUser.serviceName}\n?? Conectado a Airtable\n? Sesi¨®n v¨¢lida por 4 horas\n\n??? Sus solicitudes se guardan autom¨¢ticamente en la nube`);
+                alert(`? ¡Bienvenido al Portal Cloud, ${currentUser.name}!\n\n?? Servicio: ${currentUser.serviceName}\n?? Conectado a Airtable\n? Sesión válida por 4 horas\n\n??? Sus solicitudes se guardan automáticamente en la nube`);
             }, 500);
         }
 
@@ -1537,7 +1537,7 @@
             
             document.getElementById('user-avatar').textContent = initials;
             
-            // Actualizar informaci¨®n de autenticaci¨®n
+            // Actualizar información de autenticación
             document.getElementById('auth-user-display').textContent = currentUser.name;
             document.getElementById('auth-service-display').textContent = currentUser.serviceName;
             document.getElementById('auth-cloud-status').textContent = isCloudConnected ? 'Conectado a Airtable' : 'Modo Local';
@@ -1598,7 +1598,7 @@
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
-                        <p style="margin-bottom: 1.5rem;">Sus solicitudes aparecer¨¢n aqu¨ª cuando las env¨ªe al sistema cloud</p>
+                        <p style="margin-bottom: 1.5rem;">Sus solicitudes aparecerán aquí cuando las envíe al sistema cloud</p>
                         <button class="btn btn-primary" onclick="showSection('nueva-solicitud')">
                             ??? Crear Primera Solicitud
                         </button>
@@ -1613,7 +1613,7 @@
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 3px solid #059669;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">?? ${myRequests.length} Solicitudes Sincronizadas</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Datos ${isCloudConnected ? 'cargados desde Airtable' : 'disponibles localmente'} - ¨²ltima actualizaci¨®n: ${new Date().toLocaleTimeString('es-CO')}</p>
+                        <p style="color: #047857; font-size: 0.875rem;">Datos ${isCloudConnected ? 'cargados desde Airtable' : 'disponibles localmente'} - Última actualización: ${new Date().toLocaleTimeString('es-CO')}</p>
                     </div>
                     ${requestsHTML}
                 `;
@@ -1671,7 +1671,7 @@
                     
                     <div class="request-details">
                         <div class="request-detail">
-                            <div class="request-detail-label">?? ¨¢rea T¨¦cnica</div>
+                            <div class="request-detail-label">?? Área Técnica</div>
                             <div class="request-detail-value">${areaInfo}</div>
                         </div>
                         <div class="request-detail">
@@ -1683,7 +1683,7 @@
                             <div class="request-detail-value">${request.equipo || 'No especificado'}</div>
                         </div>
                         <div class="request-detail">
-                            <div class="request-detail-label">?? Ubicaci¨®n</div>
+                            <div class="request-detail-label">?? Ubicación</div>
                             <div class="request-detail-value">${request.ubicacion || 'No especificado'}</div>
                         </div>
                         <div class="request-detail">
@@ -1691,13 +1691,13 @@
                             <div class="request-detail-value">${new Date(request.fechaCreacion).toLocaleString('es-CO')}</div>
                         </div>
                         <div class="request-detail">
-                            <div class="request-detail-label">????? T¨¦cnico Asignado</div>
-                            <div class="request-detail-value">${request.tecnicoAsignado || '<span style="color: #f59e0b;">Pendiente de asignaci¨®n</span>'}</div>
+                            <div class="request-detail-label">????? Técnico Asignado</div>
+                            <div class="request-detail-value">${request.tecnicoAsignado || '<span style="color: #f59e0b;">Pendiente de asignación</span>'}</div>
                         </div>
                     </div>
 
                     <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
-                        <div class="request-detail-label">?? Descripci¨®n del Problema</div>
+                        <div class="request-detail-label">?? Descripción del Problema</div>
                         <div style="margin-top: 0.5rem; color: #1f2937;">${request.descripcion || 'No especificada'}</div>
                         ${request.observaciones ? `<div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;"><strong>Observaciones:</strong> ${request.observaciones}</div>` : ''}
                     </div>
@@ -1725,10 +1725,10 @@
                 card.classList.add('hidden');
             });
 
-            // Mostrar secci¨®n seleccionada
+            // Mostrar sección seleccionada
             document.getElementById(sectionName).classList.remove('hidden');
 
-            // Actualizar navegaci¨®n
+            // Actualizar navegación
             document.querySelectorAll('.nav-card').forEach(card => {
                 card.classList.remove('active');
             });
@@ -1756,7 +1756,7 @@
                         return;
                     }
                 } catch (e) {
-                    console.log('Error recuperando sesi¨®n:', e);
+                    console.log('Error recuperando sesión:', e);
                 }
             }
             
@@ -1764,7 +1764,7 @@
         }
 
         function startSessionTimer() {
-            // Implementaci¨®n similar a la versi¨®n original
+            // Implementación similar a la versión original
             const updateTimer = () => {
                 if (!currentUser) return;
                 
@@ -1773,7 +1773,7 @@
                 const remaining = currentUser.sessionDuration - elapsed;
                 
                 if (remaining <= 0) {
-                    logout('Su sesi¨®n ha expirado por seguridad.');
+                    logout('Su sesión ha expirado por seguridad.');
                     return;
                 }
             };
@@ -1783,7 +1783,7 @@
         }
 
         function logout(message = null) {
-            const confirmation = confirm('?Est¨¢ seguro que desea cerrar sesi¨®n?');
+            const confirmation = confirm('¿Está seguro que desea cerrar sesión?');
             if (!confirmation && !message) return;
 
             if (sessionTimeout) {
@@ -1807,15 +1807,15 @@
                 }, 500);
             }
             
-            console.log('?? Sesi¨®n cloud cerrada');
+            console.log('?? Sesión cloud cerrada');
         }
 
-        // Log de inicializaci¨®n
+        // Log de inicialización
         console.log('?? Portal de Solicitudes Cloud con Airtable Iniciado');
-        console.log('?? Sistema de autenticaci¨®n: Email + C¨®digo de 4 d¨ªgitos');
+        console.log('?? Sistema de autenticación: Email + Código de 4 dígitos');
         console.log('??? Funcionalidades: Crear solicitudes cloud, ver mis solicitudes sincronizadas');
-        console.log('?? Sincronizaci¨®n: Airtable como base de datos principal con fallback a localStorage');
+        console.log('?? Sincronización: Airtable como base de datos principal con fallback a localStorage');
     </script>
-	<script src="airtable-config.js"></script>
+    <script src="airtable-config.js"></script>
 </body>
 </html>
