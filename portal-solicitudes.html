@@ -765,6 +765,9 @@
                     <button type="button" class="btn btn-warning btn-sm" onclick="testQuickAccess()" style="width: auto;">
                         Prueba Rapida
                     </button>
+                    <button type="button" class="btn btn-success btn-sm" onclick="configureAirtable()" style="width: auto;">
+                        Configurar Airtable
+                    </button>
                 </div>
 
                 <div style="text-align: center; margin-top: 1rem; font-size: 0.875rem; color: #6b7280;">
@@ -947,7 +950,7 @@
 
                 <div id="my-requests-list">
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">ðŸ“‹</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
                         <p style="margin-bottom: 1.5rem;">Sus solicitudes apareceran aqui una vez que las envie</p>
                         <button class="btn btn-primary" onclick="showSection('nueva-solicitud')">
@@ -1070,9 +1073,10 @@
 
         // Configuracion de la API de Airtable
         const AIRTABLE_CONFIG = {
-            baseId: 'appFyEBCedQGOeJyV', // Tu base ID
-            tableName: 'SolicitudesAcceso', // Nombre de tu tabla
-            apiKey: 'patmJmMxJjxr3RJfE.0123456789abcdef' // Reemplaza con tu API key real
+            baseId: 'appFyEBCedQGOeJyV', // Tu base ID real
+            tableName: 'SolicitudesAcceso', // Nombre exacto de tu tabla
+            apiKey: '', // DEJAR VACIO - Se configurara automaticamente
+            enabled: false // Cambiar a true cuando tengas la API key correcta
         };
 
         let currentUser = null;
@@ -1219,7 +1223,6 @@
                 servicioHospitalario: document.getElementById('req-service').value,
                 cargo: document.getElementById('req-position').value,
                 justificacion: 'Solicitud de acceso al Portal de Solicitudes de Mantenimiento',
-                // Cambiar 'fechaSolicitud' por posibles nombres que acepta Airtable
                 fecha: new Date().toISOString(),
                 fechaCreacion: new Date().toISOString(),
                 estado: 'PENDIENTE',
@@ -1237,28 +1240,31 @@
                 return;
             }
             
-            // Simular envio de solicitud
             const requestBtn = document.getElementById('request-btn');
             requestBtn.disabled = true;
             requestBtn.innerHTML = 'Enviando solicitud...';
             
             try {
-                // Intentar enviar a Airtable
-                await sendToAirtable(formData);
-                
-                // Tambien guardar en localStorage como respaldo
+                // Guardar en localStorage primero (siempre funciona)
                 const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
                 existingRequests.push(formData);
                 localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
                 
+                // Intentar enviar a Airtable solo si esta configurado
+                if (AIRTABLE_CONFIG.enabled && AIRTABLE_CONFIG.apiKey) {
+                    await sendToAirtable(formData);
+                    console.log('Solicitud enviada a Airtable exitosamente');
+                }
+                
                 showAlert(alertDiv, 'success', 
                     `Solicitud de acceso enviada correctamente.\n\n` +
                     `DATOS ENVIADOS:\n` +
-                    `¡E ID: ${formData.id}\n` +
-                    `¡E Nombre: ${formData.nombreCompleto}\n` +
-                    `¡E Email: ${formData.email}\n` +
-                    `¡E Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n` +
-                    `¡E Cargo: ${formData.cargo}\n\n` +
+                    `â€¢ ID: ${formData.id}\n` +
+                    `â€¢ Nombre: ${formData.nombreCompleto}\n` +
+                    `â€¢ Email: ${formData.email}\n` +
+                    `â€¢ Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n` +
+                    `â€¢ Cargo: ${formData.cargo}\n\n` +
+                    `${AIRTABLE_CONFIG.enabled ? 'Solicitud sincronizada con Airtable.' : 'Solicitud guardada localmente.'}\n` +
                     `Recibira una notificacion por correo cuando sea aprobada.\n` +
                     `El proceso de aprobacion puede tomar 24-48 horas.`
                 );
@@ -1267,18 +1273,22 @@
                 document.getElementById('request-form').reset();
                 
             } catch (error) {
-                console.error('Error detallado:', error);
+                console.error('Error al enviar a Airtable:', error);
                 
-                // Guardar en localStorage como respaldo si falla Airtable
-                const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
-                existingRequests.push(formData);
-                localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
-                
-                showAlert(alertDiv, 'warning', 
-                    `Solicitud guardada localmente debido a un error de conexion.\n\n` +
-                    `Error tecnico: ${error.message}\n\n` +
-                    `Su solicitud ha sido guardada y sera sincronizada cuando se resuelva el problema de conexion.`
+                // La solicitud ya esta guardada en localStorage, asi que no se pierde
+                showAlert(alertDiv, 'success', 
+                    `Solicitud guardada exitosamente.\n\n` +
+                    `DATOS GUARDADOS:\n` +
+                    `â€¢ ID: ${formData.id}\n` +
+                    `â€¢ Nombre: ${formData.nombreCompleto}\n` +
+                    `â€¢ Email: ${formData.email}\n` +
+                    `â€¢ Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                    `Su solicitud esta almacenada y sera procesada.\n` +
+                    `Nota: Sincronizacion con base de datos externa pendiente.`
                 );
+                
+                // Limpiar formulario tambien en caso de error
+                document.getElementById('request-form').reset();
             } finally {
                 requestBtn.disabled = false;
                 requestBtn.innerHTML = 'Enviar Solicitud de Acceso';
@@ -1286,11 +1296,19 @@
         }
 
         async function sendToAirtable(data) {
+            // Verificar si Airtable esta configurado
+            if (!AIRTABLE_CONFIG.enabled) {
+                throw new Error('Airtable no esta habilitado en la configuracion');
+            }
+            
+            if (!AIRTABLE_CONFIG.apiKey) {
+                throw new Error('API key de Airtable no configurada');
+            }
+            
             // Mapear los datos a los nombres de campos exactos de Airtable
-            // Estos nombres deben coincidir EXACTAMENTE con los nombres de las columnas en tu tabla de Airtable
             const airtableData = {
                 fields: {
-                    // Cambiar estos nombres por los nombres exactos de las columnas en tu tabla de Airtable
+                    // IMPORTANTE: Estos nombres deben coincidir EXACTAMENTE con las columnas en Airtable
                     "ID": data.id,
                     "Nombre Completo": data.nombreCompleto,
                     "Email": data.email,
@@ -1298,13 +1316,19 @@
                     "Servicio Hospitalario": data.servicioHospitalario,
                     "Cargo": data.cargo,
                     "Justificacion": data.justificacion,
-                    "Fecha": data.fecha, // o "Fecha Solicitud", "fechaCreacion", etc.
+                    "Fecha": data.fecha,
                     "Estado": data.estado,
                     "Es Urgente": data.esUrgente,
                     "Numero Documento": data.numeroDocumento || "",
                     "Jefe Supervisor": data.jefeSupervisor || ""
                 }
             };
+
+            console.log('Enviando a Airtable:', {
+                baseId: AIRTABLE_CONFIG.baseId,
+                tableName: AIRTABLE_CONFIG.tableName,
+                data: airtableData
+            });
 
             const response = await fetch(`https://api.airtable.com/v0/${AIRTABLE_CONFIG.baseId}/${AIRTABLE_CONFIG.tableName}`, {
                 method: 'POST',
@@ -1317,7 +1341,18 @@
 
             if (!response.ok) {
                 const errorData = await response.text();
-                throw new Error(`HTTP ${response.status}: ${errorData}`);
+                let errorMessage = `HTTP ${response.status}: ${errorData}`;
+                
+                // Mejorar mensajes de error comunes
+                if (response.status === 401) {
+                    errorMessage = 'Error de autenticacion: Verifique su API key de Airtable';
+                } else if (response.status === 404) {
+                    errorMessage = 'Base de datos o tabla no encontrada: Verifique Base ID y nombre de tabla';
+                } else if (response.status === 422) {
+                    errorMessage = 'Error en los campos: Verifique que los nombres de columnas coincidan exactamente';
+                }
+                
+                throw new Error(errorMessage);
             }
 
             return await response.json();
@@ -1390,11 +1425,11 @@
                     showAlert(alertDiv, 'success', 
                         `Solicitud enviada exitosamente\n\n` +
                         `DETALLES DE LA SOLICITUD:\n` +
-                        `¡E Numero: ${formData.numero}\n` +
-                        `¡E Area: ${areasIngenieria[formData.servicioIngenieria]}\n` +
-                        `¡E Tipo: ${formData.tipoServicio.replace('_', ' ')}\n` +
-                        `¡E Prioridad: ${formData.prioridad}\n` +
-                        `¡E Equipo: ${formData.equipo}\n\n` +
+                        `â€¢ Numero: ${formData.numero}\n` +
+                        `â€¢ Area: ${areasIngenieria[formData.servicioIngenieria]}\n` +
+                        `â€¢ Tipo: ${formData.tipoServicio.replace('_', ' ')}\n` +
+                        `â€¢ Prioridad: ${formData.prioridad}\n` +
+                        `â€¢ Equipo: ${formData.equipo}\n\n` +
                         `Su solicitud sera asignada automaticamente al area de ${areasIngenieria[formData.servicioIngenieria]}.\n` +
                         `Puede seguir el progreso en la seccion "Mis Solicitudes".`
                     );
@@ -1570,7 +1605,7 @@
             if (myRequests.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">ðŸ“‹</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
                         <p style="margin-bottom: 1.5rem;">Sus solicitudes apareceran aqui una vez que las envie</p>
                         <button class="btn btn-primary" onclick="showSection('nueva-solicitud')">
@@ -1765,8 +1800,8 @@
             const debugInfo = `DEBUG - Sistema de Solicitudes de Acceso
 
 ESTADO DEL LOCALSTORAGE:
-¡E Solicitudes de acceso: ${parsedData ? parsedData.length : 0}
-¡E Usuarios aprobados: ${approvedUsers.length}
+â€¢ Solicitudes de acceso: ${parsedData ? parsedData.length : 0}
+â€¢ Usuarios aprobados: ${approvedUsers.length}
 
 USUARIOS DISPONIBLES PARA LOGIN:
 ${approvedUsers.length > 0 ? 
@@ -1774,15 +1809,24 @@ ${approvedUsers.length > 0 ?
     'No hay usuarios aprobados disponibles'
 }
 
-INSTRUCCIONES:
+CONFIGURACION AIRTABLE:
+â€¢ Habilitado: ${AIRTABLE_CONFIG.enabled ? 'Si' : 'No'}
+â€¢ Base ID: ${AIRTABLE_CONFIG.baseId}
+â€¢ Tabla: ${AIRTABLE_CONFIG.tableName}
+â€¢ API Key: ${AIRTABLE_CONFIG.apiKey ? 'Configurada' : 'NO CONFIGURADA'}
+
+PARA HABILITAR AIRTABLE:
+1. Ve a https://airtable.com/developers/web/api/introduction
+2. Genera tu Personal Access Token
+3. En el codigo, cambia:
+   - AIRTABLE_CONFIG.enabled = true
+   - AIRTABLE_CONFIG.apiKey = "tu_api_key_aqui"
+4. Verifica que Base ID y nombre de tabla sean correctos
+
+INSTRUCCIONES DE USO:
 1. Use el Portal de Gestion para aprobar solicitudes
 2. Los codigos se generan automaticamente al aprobar
-3. Use email + codigo de 4 digitos para hacer login aqui
-
-CONFIGURACION AIRTABLE:
-¡E Base ID: ${AIRTABLE_CONFIG.baseId}
-¡E Tabla: ${AIRTABLE_CONFIG.tableName}
-¡E API Key configurada: ${AIRTABLE_CONFIG.apiKey ? 'Si' : 'No'}`;
+3. Use email + codigo de 4 digitos para hacer login aqui`;
 
             alert(debugInfo);
         }
@@ -1808,12 +1852,34 @@ CONFIGURACION AIRTABLE:
             alert('Formulario llenado para prueba. Haz clic en "Enviar Solicitud" para completar.');
         }
 
+        function configureAirtable() {
+            const currentApiKey = AIRTABLE_CONFIG.apiKey || '';
+            const currentBaseId = AIRTABLE_CONFIG.baseId || '';
+            const currentTableName = AIRTABLE_CONFIG.tableName || '';
+            
+            const newApiKey = prompt(`Configurar API Key de Airtable:\n\nAPI Key actual: ${currentApiKey ? 'Configurada' : 'NO CONFIGURADA'}\n\nIngrese su Personal Access Token de Airtable:\n(Deje vacio para cancelar)`, currentApiKey);
+            
+            if (newApiKey === null) return; // Usuario cancelo
+            
+            if (newApiKey.trim()) {
+                AIRTABLE_CONFIG.apiKey = newApiKey.trim();
+                AIRTABLE_CONFIG.enabled = true;
+                alert(`Airtable configurado exitosamente!\n\nBase ID: ${AIRTABLE_CONFIG.baseId}\nTabla: ${AIRTABLE_CONFIG.tableName}\nAPI Key: Configurada\nEstado: Habilitado\n\nAhora las solicitudes se sincronizaran con Airtable.`);
+            } else {
+                AIRTABLE_CONFIG.enabled = false;
+                alert(`Airtable deshabilitado.\n\nLas solicitudes se guardaran solo localmente.`);
+            }
+        }
+
         // Log de inicializacion
         console.log('Portal de Solicitudes con Funcionalidad Completa Iniciado');
         console.log('Sistema de autenticacion: Email + Codigo de 4 digitos');
         console.log('Funcionalidades: Crear solicitudes, ver mis solicitudes, informacion de areas');
         console.log('Sincronizacion: localStorage con Portal de Gestion');
-        console.log('Integracion: Airtable API configurada');
+        console.log(`Airtable: ${AIRTABLE_CONFIG.enabled ? 'HABILITADO' : 'DESHABILITADO'}`);
+        if (!AIRTABLE_CONFIG.enabled) {
+            console.log('Para habilitar Airtable: Haz clic en "Configurar Airtable" y agrega tu API key');
+        }
     </script>
 </body>
 </html>
