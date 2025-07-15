@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
     <style>
-        /* Mismo CSS que el archivo original pero con algunos ajustes para gestión de accesos */
+        /* Mismo CSS que el archivo original pero con algunos ajustes para indicadores de conexión */
         * {
             margin: 0;
             padding: 0;
@@ -114,6 +114,7 @@
             color: #fef3c7;
         }
 
+        /* Resto del CSS igual al archivo original... */
         .nav-tabs {
             display: flex;
             gap: 0.5rem;
@@ -331,7 +332,7 @@
             color: #dc2626;
         }
 
-        /* Botones y otros elementos */
+        /* Botones y otros elementos igual que el original... */
         .btn {
             padding: 0.625rem 1.25rem;
             border-radius: 0.5rem;
@@ -368,258 +369,12 @@
             box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
         }
 
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .btn-warning:hover {
-            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
-        }
-
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
         }
 
-        /* Access Request Cards */
-        .access-request-card {
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.2s;
-        }
-
-        .access-request-card:hover {
-            border-color: #2563eb;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .access-request-card.pending {
-            border-left: 4px solid #f59e0b;
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        }
-
-        .access-request-card.approved {
-            border-left: 4px solid #059669;
-            background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
-        }
-
-        .access-request-card.rejected {
-            border-left: 4px solid #ef4444;
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-        }
-
-        .access-request-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .access-request-id {
-            font-weight: 600;
-            color: #1f2937;
-            font-size: 1.125rem;
-        }
-
-        .access-request-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.875rem;
-        }
-
-        .access-request-detail {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .access-request-detail-label {
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .access-request-detail-value {
-            color: #1f2937;
-        }
-
-        .access-request-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-        }
-
-        .status-pendiente {
-            background: #fef3c7;
-            color: #d97706;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-aprobada {
-            background: #dcfce7;
-            color: #166534;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-rechazada {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-activo {
-            background: #dcfce7;
-            color: #166534;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-inactivo {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-        }
-
-        .modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 2rem;
-            border-radius: 1rem;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6b7280;
-            padding: 0;
-            width: 2rem;
-            height: 2rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 0.5rem;
-            transition: all 0.2s;
-        }
-
-        .close:hover {
-            background: #f3f4f6;
-            color: #1f2937;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-input, .form-select, .form-textarea {
-            width: 100%;
-            padding: 0.875rem;
-            border: 2px solid #d1d5db;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            transition: all 0.2s;
-            background: white;
-        }
-
-        .form-input:focus, .form-select:focus, .form-textarea:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .access-code-display {
-            background: #f0f9ff;
-            border: 2px solid #2563eb;
-            padding: 1rem;
-            border-radius: 0.75rem;
-            text-align: center;
-            margin: 1rem 0;
-        }
-
-        .access-code-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #2563eb;
-            letter-spacing: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        /* Loading spinner */
+        /* Loading indicator */
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -650,20 +405,6 @@
                 position: static;
                 justify-content: center;
                 margin-top: 1rem;
-            }
-
-            .access-request-details {
-                grid-template-columns: 1fr;
-            }
-
-            .access-request-actions {
-                flex-direction: column;
-            }
-
-            .modal-content {
-                width: 95%;
-                margin: 2% auto;
-                padding: 1.5rem;
             }
         }
     </style>
@@ -728,7 +469,7 @@
                     <button class="btn btn-primary btn-sm" onclick="testCloudConnection()">
                         🧪 Probar Conexión
                     </button>
-                    <button class="btn btn-success btn-sm" onclick="showAirtableStatus()">
+                    <button class="btn btn-secondary btn-sm" onclick="showAirtableStatus()">
                         📊 Estado de Airtable
                     </button>
                 </div>
@@ -768,7 +509,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">🏥 Personal Biomédica</h2>
-                        <span class="status-activo" id="biomedica-personnel-count">- registrados</span>
+                        <span class="status-disponible" id="biomedica-personnel-count">- registrados</span>
                     </div>
                     <div class="card-content">
                         <div id="biomedica-personnel-summary">
@@ -780,7 +521,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">⚙️ Personal Mecánica</h2>
-                        <span class="status-activo" id="mecanica-personnel-count">- registrados</span>
+                        <span class="status-disponible" id="mecanica-personnel-count">- registrados</span>
                     </div>
                     <div class="card-content">
                         <div id="mecanica-personnel-summary">
@@ -792,7 +533,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h2 class="card-title">🏗️ Personal Infraestructura</h2>
-                        <span class="status-activo" id="infraestructura-personnel-count">- registrados</span>
+                        <span class="status-disponible" id="infraestructura-personnel-count">- registrados</span>
                     </div>
                     <div class="card-content">
                         <div id="infraestructura-personnel-summary">
@@ -803,7 +544,7 @@
             </div>
         </div>
 
-        <!-- Solicitudes View -->
+        <!-- Otros views (solicitudes, tecnicos, accesos) similar estructura -->
         <div id="solicitudes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
@@ -829,7 +570,6 @@
             </div>
         </div>
 
-        <!-- Técnicos View -->
         <div id="tecnicos-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
@@ -855,63 +595,20 @@
             </div>
         </div>
 
-        <!-- Accesos View -->
         <div id="accesos-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
                     <h2 class="card-title">🔐 Gestión de Accesos (Cloud)</h2>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-success btn-sm" onclick="refreshAccessFromCloud()">
                             🔄 Actualizar desde Airtable
                         </button>
                         <button class="btn btn-primary btn-sm" onclick="approveAllPending()">
-                            ✅ Aprobar Todas Pendientes
-                        </button>
-                        <button class="btn btn-warning btn-sm" onclick="showGenerateCodesModal()">
-                            🔑 Generar Códigos Masivo
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="showDeleteRejectedModal()">
-                            🗑️ Limpiar Rechazadas
+                            ✅ Aprobar Todas
                         </button>
                     </div>
                 </div>
                 <div class="card-content">
-                    <!-- Estadísticas de Accesos -->
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
-                        <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; text-align: center; border: 2px solid #f59e0b;">
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #d97706;" id="access-stats-pending">-</div>
-                            <div style="font-size: 0.75rem; color: #b45309;">Pendientes</div>
-                        </div>
-                        <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; text-align: center; border: 2px solid #059669;">
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #059669;" id="access-stats-approved">-</div>
-                            <div style="font-size: 0.75rem; color: #047857;">Aprobadas</div>
-                        </div>
-                        <div style="background: #fee2e2; padding: 1rem; border-radius: 0.5rem; text-align: center; border: 2px solid #ef4444;">
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #ef4444;" id="access-stats-rejected">-</div>
-                            <div style="font-size: 0.75rem; color: #dc2626;">Rechazadas</div>
-                        </div>
-                        <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; text-align: center; border: 2px solid #2563eb;">
-                            <div style="font-size: 1.5rem; font-weight: bold; color: #2563eb;" id="access-stats-active">-</div>
-                            <div style="font-size: 0.75rem; color: #1e40af;">Usuarios Activos</div>
-                        </div>
-                    </div>
-
-                    <!-- Filtros -->
-                    <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-primary btn-sm" onclick="filterAccessRequests('all')">
-                            📋 Todas
-                        </button>
-                        <button class="btn btn-warning btn-sm" onclick="filterAccessRequests('PENDIENTE')">
-                            ⏳ Pendientes
-                        </button>
-                        <button class="btn btn-success btn-sm" onclick="filterAccessRequests('APROBADA')">
-                            ✅ Aprobadas
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="filterAccessRequests('RECHAZADA')">
-                            ❌ Rechazadas
-                        </button>
-                    </div>
-
                     <div id="access-requests-container">
                         <div style="text-align: center; padding: 3rem; color: #6b7280;">
                             <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
@@ -924,21 +621,9 @@
         </div>
     </main>
 
-    <!-- Modal para Aprobar/Rechazar Solicitud -->
-    <div id="access-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modal-title">Gestionar Solicitud de Acceso</h2>
-                <button class="close" onclick="closeAccessModal()">&times;</button>
-            </div>
-            
-            <div id="modal-content-area">
-                <!-- Contenido dinámico -->
-            </div>
-        </div>
-    </div>
+    <!-- Incluir el archivo de configuración de Airtable -->
+    <script src="airtable-config.js"></script>
 
-    <!-- JavaScript -->
     <script>
         // Variables globales para datos de la nube
         let cloudSolicitudes = [];
@@ -946,25 +631,6 @@
         let cloudUsuarios = [];
         let cloudSolicitudesAcceso = [];
         let isConnectedToAirtable = false;
-        let currentAccessFilter = 'all';
-
-        // Mapas de servicios y areas
-        const serviciosHospitalarios = {
-            'URGENCIAS_ADULTO': 'Urgencias Adulto',
-            'URGENCIAS_PEDIATRICAS': 'Urgencias Pediátricas',
-            'UCI_ADULTO': 'UCI Adulto',
-            'UCI_NEONATAL': 'UCI Neonatal',
-            'HOSPITALIZACION_ADULTO': 'Hospitalización Adulto',
-            'CIRUGIA_ADULTO': 'Cirugía Adulto',
-            'CONSULTA_EXTERNA': 'Consulta Externa',
-            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
-            'RADIOLOGIA': 'Radiología',
-            'FARMACIA_CENTRAL': 'Farmacia Central',
-            'FISIOTERAPIA': 'Fisioterapia',
-            'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
-            'INFRAESTRUCTURA': 'Infraestructura',
-            'MECANICOS': 'Mecánicos'
-        };
 
         // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
@@ -1016,8 +682,8 @@
         }
 
         function showAirtableStatus() {
-            const baseId = window.airtableAPI?.baseId || 'No configurado';
-            const hasApiKey = window.airtableAPI?.apiKey && window.airtableAPI.apiKey !== 'pat1234567890abcdef';
+            const baseId = window.airtableAPI.baseId;
+            const hasApiKey = window.airtableAPI.apiKey && window.airtableAPI.apiKey !== 'pat1234567890abcdef';
             
             alert(`📊 ESTADO DE AIRTABLE\n\n🔧 Configuración:\n• Base ID: ${baseId}\n• API Key: ${hasApiKey ? '✅ Configurado' : '❌ Pendiente'}\n• Estado: ${isConnectedToAirtable ? '🟢 Conectado' : '🔴 Desconectado'}\n\n${!hasApiKey ? '⚠️ Configure las credenciales en airtable-config.js' : '✅ Sistema listo para usar'}`);
         }
@@ -1125,17 +791,7 @@
 
             // Contadores de accesos
             const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length;
-            const approvedAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'APROBADA').length;
-            const rejectedAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'RECHAZADA').length;
-            const activeUsers = cloudUsuarios.filter(u => u.estado === 'ACTIVO').length;
-
             document.getElementById('pending-access-count').textContent = pendingAccess;
-            
-            // Actualizar estadísticas de accesos
-            document.getElementById('access-stats-pending').textContent = pendingAccess;
-            document.getElementById('access-stats-approved').textContent = approvedAccess;
-            document.getElementById('access-stats-rejected').textContent = rejectedAccess;
-            document.getElementById('access-stats-active').textContent = activeUsers;
 
             console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} técnicos, ${pendingAccess} accesos pendientes`);
         }
@@ -1238,7 +894,7 @@
             }
         }
 
-        // 📋 Funciones de actualización de listas (simplificadas)
+        // 📋 Funciones de actualización de listas (simplificadas para el ejemplo)
         function updateSolicitudesList() {
             const container = document.getElementById('solicitudes-list');
             
@@ -1305,638 +961,36 @@
             }
         }
 
-        // 🔐 Funciones de gestión de accesos
         function updateAccessRequestsList() {
             const container = document.getElementById('access-requests-container');
             
-            // Filtrar según el filtro actual
-            let filteredRequests = cloudSolicitudesAcceso;
-            if (currentAccessFilter !== 'all') {
-                filteredRequests = cloudSolicitudesAcceso.filter(req => req.estado === currentAccessFilter);
-            }
-            
-            if (filteredRequests.length === 0) {
-                const message = currentAccessFilter === 'all' ? 
-                    'No hay solicitudes de acceso' : 
-                    `No hay solicitudes de acceso ${currentAccessFilter.toLowerCase()}s`;
-                    
+            if (cloudSolicitudesAcceso.length === 0) {
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">🔐</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">${message}</h3>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes de acceso</h3>
                         <p>Las solicitudes aparecerán aquí cuando los usuarios las envíen</p>
                     </div>
                 `;
             } else {
-                const sortedRequests = filteredRequests.sort((a, b) => {
-                    // Priorizar pendientes primero
-                    if (a.estado === 'PENDIENTE' && b.estado !== 'PENDIENTE') return -1;
-                    if (b.estado === 'PENDIENTE' && a.estado !== 'PENDIENTE') return 1;
-                    // Luego por fecha de solicitud (más recientes primero)
-                    return new Date(b.fechaSolicitud) - new Date(a.fechaSolicitud);
-                });
-
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${filteredRequests.length} Solicitudes de Acceso desde Airtable</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Solicitudes sincronizadas desde la nube - Filtro: ${currentAccessFilter === 'all' ? 'Todas' : currentAccessFilter}</p>
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudesAcceso.length} Solicitudes de Acceso desde Airtable</h4>
+                        <p style="color: #047857; font-size: 0.875rem;">Solicitudes sincronizadas desde la nube</p>
                     </div>
-                    ${sortedRequests.map(solicitud => createAccessRequestCard(solicitud)).join('')}
+                    ${cloudSolicitudesAcceso.map(solicitud => `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <strong>${solicitud.nombreCompleto}</strong>
+                                <span style="background: #fef3c7; color: #d97706; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">${solicitud.estado || 'PENDIENTE'}</span>
+                            </div>
+                            <p><strong>Email:</strong> ${solicitud.email}</p>
+                            <p><strong>Servicio:</strong> ${solicitud.servicioHospitalario}</p>
+                            <p><strong>Cargo:</strong> ${solicitud.cargo}</p>
+                        </div>
+                    `).join('')}
                 `;
             }
-        }
-
-        function createAccessRequestCard(solicitud) {
-            const estado = solicitud.estado || 'PENDIENTE';
-            const cardClass = {
-                'PENDIENTE': 'pending',
-                'APROBADA': 'approved',
-                'RECHAZADA': 'rejected'
-            }[estado] || 'pending';
-
-            const statusClass = {
-                'PENDIENTE': 'pendiente',
-                'APROBADA': 'aprobada',
-                'RECHAZADA': 'rechazada'
-            }[estado] || 'pendiente';
-
-            const servicioNombre = serviciosHospitalarios[solicitud.servicioHospitalario] || solicitud.servicioHospitalario;
-            
-            // Buscar si ya existe un usuario aprobado para este email
-            const existingUser = cloudUsuarios.find(u => u.email === solicitud.email);
-            
-            return `
-                <div class="access-request-card ${cardClass}">
-                    <div class="access-request-header">
-                        <div class="access-request-id">👤 ${solicitud.nombreCompleto}</div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <span class="status-${statusClass}">${estado}</span>
-                            ${existingUser ? `<span class="status-activo">Usuario Activo</span>` : ''}
-                        </div>
-                    </div>
-                    
-                    <div class="access-request-details">
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">📧 Email</div>
-                            <div class="access-request-detail-value">${solicitud.email}</div>
-                        </div>
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">🏥 Servicio</div>
-                            <div class="access-request-detail-value">${servicioNombre}</div>
-                        </div>
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">💼 Cargo</div>
-                            <div class="access-request-detail-value">${solicitud.cargo || 'No especificado'}</div>
-                        </div>
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">📱 Teléfono</div>
-                            <div class="access-request-detail-value">${solicitud.telefono || 'No especificado'}</div>
-                        </div>
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">📅 Fecha Solicitud</div>
-                            <div class="access-request-detail-value">${new Date(solicitud.fechaSolicitud).toLocaleString('es-CO')}</div>
-                        </div>
-                        ${existingUser?.codigoAcceso ? `
-                        <div class="access-request-detail">
-                            <div class="access-request-detail-label">🔑 Código de Acceso</div>
-                            <div class="access-request-detail-value" style="font-weight: bold; color: #2563eb;">${existingUser.codigoAcceso}</div>
-                        </div>
-                        ` : ''}
-                    </div>
-
-                    ${solicitud.justificacion ? `
-                    <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
-                        <div class="access-request-detail-label">📝 Justificación</div>
-                        <div style="margin-top: 0.5rem; color: #1f2937;">${solicitud.justificacion}</div>
-                    </div>
-                    ` : ''}
-
-                    <div class="access-request-actions">
-                        ${estado === 'PENDIENTE' ? `
-                            <button class="btn btn-success btn-sm" onclick="approveAccessRequest('${solicitud.id}')">
-                                ✅ Aprobar
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="rejectAccessRequest('${solicitud.id}')">
-                                ❌ Rechazar
-                            </button>
-                        ` : ''}
-                        
-                        ${estado === 'APROBADA' && !existingUser ? `
-                            <button class="btn btn-primary btn-sm" onclick="generateAccessCodeForRequest('${solicitud.id}')">
-                                🔑 Generar Código de Acceso
-                            </button>
-                        ` : ''}
-                        
-                        ${existingUser ? `
-                            <button class="btn btn-warning btn-sm" onclick="editUser('${existingUser.id}')">
-                                ✏️ Editar Usuario
-                            </button>
-                            <button class="btn btn-danger btn-sm" onclick="deactivateUser('${existingUser.id}')">
-                                🚫 Desactivar
-                            </button>
-                        ` : ''}
-
-                        <button class="btn btn-primary btn-sm" onclick="viewAccessRequestDetails('${solicitud.id}')">
-                            👁️ Ver Detalles
-                        </button>
-                        
-                        ${estado === 'RECHAZADA' ? `
-                            <button class="btn btn-danger btn-sm" onclick="deleteAccessRequest('${solicitud.id}')">
-                                🗑️ Eliminar
-                            </button>
-                        ` : ''}
-                    </div>
-                </div>
-            `;
-        }
-
-        // 🔐 Funciones específicas de gestión de accesos
-        async function approveAccessRequest(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-            if (!solicitud) {
-                alert('❌ No se encontró la solicitud');
-                return;
-            }
-
-            const confirmation = confirm(`✅ ¿Aprobar solicitud de acceso?\n\n👤 Usuario: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n🏥 Servicio: ${serviciosHospitalarios[solicitud.servicioHospitalario] || solicitud.servicioHospitalario}`);
-            
-            if (!confirmation) return;
-
-            try {
-                // Actualizar estado en Airtable
-                await window.airtableAPI.updateSolicitudAcceso(requestId, {
-                    estado: 'APROBADA',
-                    fechaAprobacion: new Date().toISOString(),
-                    aprobadoPor: 'Portal de Gestión'
-                });
-
-                // Actualizar localmente
-                solicitud.estado = 'APROBADA';
-                solicitud.fechaAprobacion = new Date().toISOString();
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`✅ Solicitud aprobada correctamente\n\n👤 ${solicitud.nombreCompleto} puede acceder al sistema.\n\n🔑 Ahora genere un código de acceso para completar el proceso.`);
-
-            } catch (error) {
-                console.error('❌ Error aprobando solicitud:', error);
-                alert('❌ Error al aprobar la solicitud: ' + error.message);
-            }
-        }
-
-        async function rejectAccessRequest(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-            if (!solicitud) {
-                alert('❌ No se encontró la solicitud');
-                return;
-            }
-
-            const reason = prompt(`❌ ¿Rechazar solicitud de acceso?\n\n👤 Usuario: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n\nIngrese el motivo del rechazo (opcional):`);
-            
-            if (reason === null) return; // Usuario canceló
-
-            try {
-                // Actualizar estado en Airtable
-                await window.airtableAPI.updateSolicitudAcceso(requestId, {
-                    estado: 'RECHAZADA',
-                    fechaRechazo: new Date().toISOString(),
-                    motivoRechazo: reason || 'Sin motivo especificado',
-                    rechazadoPor: 'Portal de Gestión'
-                });
-
-                // Actualizar localmente
-                solicitud.estado = 'RECHAZADA';
-                solicitud.fechaRechazo = new Date().toISOString();
-                solicitud.motivoRechazo = reason;
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`❌ Solicitud rechazada\n\n👤 ${solicitud.nombreCompleto} ha sido notificado del rechazo.`);
-
-            } catch (error) {
-                console.error('❌ Error rechazando solicitud:', error);
-                alert('❌ Error al rechazar la solicitud: ' + error.message);
-            }
-        }
-
-        async function generateAccessCodeForRequest(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-            if (!solicitud) {
-                alert('❌ No se encontró la solicitud');
-                return;
-            }
-
-            if (solicitud.estado !== 'APROBADA') {
-                alert('⚠️ La solicitud debe estar aprobada para generar código de acceso');
-                return;
-            }
-
-            try {
-                // Generar código de 4 dígitos único
-                let codigoAcceso;
-                let isUnique = false;
-                let attempts = 0;
-                
-                while (!isUnique && attempts < 100) {
-                    codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
-                    isUnique = !cloudUsuarios.find(u => u.codigoAcceso === codigoAcceso);
-                    attempts++;
-                }
-
-                if (!isUnique) {
-                    alert('❌ No se pudo generar un código único. Intente nuevamente.');
-                    return;
-                }
-
-                // Crear usuario en Airtable
-                const newUser = {
-                    id: `USR${Date.now()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
-                    nombreCompleto: solicitud.nombreCompleto,
-                    email: solicitud.email,
-                    telefono: solicitud.telefono,
-                    servicioHospitalario: solicitud.servicioHospitalario,
-                    cargo: solicitud.cargo,
-                    codigoAcceso: codigoAcceso,
-                    estado: 'ACTIVO',
-                    fechaCreacion: new Date().toISOString(),
-                    creadoPor: 'Portal de Gestión',
-                    solicitudOrigenId: requestId
-                };
-
-                await window.airtableAPI.createUsuario(newUser);
-
-                // Agregar a lista local
-                cloudUsuarios.push(newUser);
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                // Mostrar código generado
-                showAccessCodeModal(newUser);
-
-            } catch (error) {
-                console.error('❌ Error generando código:', error);
-                alert('❌ Error al generar código de acceso: ' + error.message);
-            }
-        }
-
-        function showAccessCodeModal(user) {
-            const modal = document.getElementById('access-modal');
-            const modalContent = document.getElementById('modal-content-area');
-            
-            modalContent.innerHTML = `
-                <div style="text-align: center;">
-                    <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
-                    <h3 style="color: #059669; margin-bottom: 1rem;">¡Código de Acceso Generado!</h3>
-                    
-                    <div class="access-code-display">
-                        <div class="access-code-number">${user.codigoAcceso}</div>
-                        <p style="color: #2563eb; font-weight: 600;">Código de Acceso de 4 Dígitos</p>
-                    </div>
-                    
-                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border-left: 3px solid #059669;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">📋 Datos del Usuario</h4>
-                        <p><strong>👤 Nombre:</strong> ${user.nombreCompleto}</p>
-                        <p><strong>📧 Email:</strong> ${user.email}</p>
-                        <p><strong>🏥 Servicio:</strong> ${serviciosHospitalarios[user.servicioHospitalario] || user.servicioHospitalario}</p>
-                        <p><strong>💼 Cargo:</strong> ${user.cargo}</p>
-                    </div>
-                    
-                    <div style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0; border-left: 3px solid #2563eb;">
-                        <h4 style="color: #2563eb; margin-bottom: 0.5rem;">📱 Instrucciones para el Usuario</h4>
-                        <ol style="text-align: left; color: #1e40af; padding-left: 1rem;">
-                            <li>Ingrese a: <strong>[URL del Portal de Solicitudes]</strong></li>
-                            <li>Use su email: <strong>${user.email}</strong></li>
-                            <li>Ingrese el código: <strong>${user.codigoAcceso}</strong></li>
-                            <li>Comenzar a crear solicitudes de mantenimiento</li>
-                        </ol>
-                    </div>
-                    
-                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem;">
-                        <button class="btn btn-primary" onclick="copyAccessCode('${user.codigoAcceso}')">
-                            📋 Copiar Código
-                        </button>
-                        <button class="btn btn-success" onclick="sendAccessNotification('${user.id}')">
-                            📧 Enviar por Email
-                        </button>
-                        <button class="btn btn-secondary" onclick="closeAccessModal()">
-                            ✅ Cerrar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            modal.style.display = 'block';
-        }
-
-        function copyAccessCode(code) {
-            navigator.clipboard.writeText(code).then(() => {
-                alert(`📋 Código ${code} copiado al portapapeles`);
-            }).catch(() => {
-                alert(`🔑 Código de acceso: ${code}\n\n(Copie manualmente)`);
-            });
-        }
-
-        function sendAccessNotification(userId) {
-            const user = cloudUsuarios.find(u => u.id === userId);
-            if (!user) return;
-            
-            alert(`📧 Funcionalidad de envío de email en desarrollo\n\n🔑 Por ahora, comparta manualmente:\n\n👤 Usuario: ${user.nombreCompleto}\n📧 Email: ${user.email}\n🔑 Código: ${user.codigoAcceso}`);
-        }
-
-        async function approveAllPending() {
-            const pendingRequests = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE');
-            
-            if (pendingRequests.length === 0) {
-                alert('ℹ️ No hay solicitudes pendientes para aprobar');
-                return;
-            }
-
-            const confirmation = confirm(`✅ ¿Aprobar TODAS las solicitudes pendientes?\n\n📊 Total a aprobar: ${pendingRequests.length} solicitudes\n\n⚠️ Esta acción no se puede deshacer.`);
-            
-            if (!confirmation) return;
-
-            try {
-                let approved = 0;
-                let errors = 0;
-
-                for (const solicitud of pendingRequests) {
-                    try {
-                        await window.airtableAPI.updateSolicitudAcceso(solicitud.id, {
-                            estado: 'APROBADA',
-                            fechaAprobacion: new Date().toISOString(),
-                            aprobadoPor: 'Portal de Gestión (Aprobación Masiva)'
-                        });
-                        
-                        solicitud.estado = 'APROBADA';
-                        solicitud.fechaAprobacion = new Date().toISOString();
-                        approved++;
-                        
-                    } catch (error) {
-                        console.error(`Error aprobando ${solicitud.id}:`, error);
-                        errors++;
-                    }
-                }
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`✅ Aprobación masiva completada\n\n📊 Aprobadas: ${approved}\n❌ Errores: ${errors}\n\n🔑 Ahora genere códigos de acceso para los usuarios aprobados.`);
-
-            } catch (error) {
-                console.error('❌ Error en aprobación masiva:', error);
-                alert('❌ Error en aprobación masiva: ' + error.message);
-            }
-        }
-
-        function showGenerateCodesModal() {
-            const approvedWithoutCode = cloudSolicitudesAcceso.filter(s => {
-                const isApproved = s.estado === 'APROBADA';
-                const hasNoUser = !cloudUsuarios.find(u => u.email === s.email);
-                return isApproved && hasNoUser;
-            });
-
-            if (approvedWithoutCode.length === 0) {
-                alert('ℹ️ No hay solicitudes aprobadas sin código de acceso');
-                return;
-            }
-
-            const confirmation = confirm(`🔑 ¿Generar códigos para todas las solicitudes aprobadas?\n\n📊 Total: ${approvedWithoutCode.length} usuarios\n\n✅ Se crearán usuarios con códigos de 4 dígitos únicos.`);
-            
-            if (!confirmation) return;
-
-            generateCodesForApproved(approvedWithoutCode);
-        }
-
-        async function generateCodesForApproved(approvedRequests) {
-            try {
-                let generated = 0;
-                let errors = 0;
-                const generatedCodes = [];
-
-                for (const solicitud of approvedRequests) {
-                    try {
-                        // Generar código único
-                        let codigoAcceso;
-                        let isUnique = false;
-                        let attempts = 0;
-                        
-                        while (!isUnique && attempts < 100) {
-                            codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
-                            isUnique = !cloudUsuarios.find(u => u.codigoAcceso === codigoAcceso) && 
-                                      !generatedCodes.includes(codigoAcceso);
-                            attempts++;
-                        }
-
-                        if (!isUnique) {
-                            errors++;
-                            continue;
-                        }
-
-                        const newUser = {
-                            id: `USR${Date.now()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`,
-                            nombreCompleto: solicitud.nombreCompleto,
-                            email: solicitud.email,
-                            telefono: solicitud.telefono,
-                            servicioHospitalario: solicitud.servicioHospitalario,
-                            cargo: solicitud.cargo,
-                            codigoAcceso: codigoAcceso,
-                            estado: 'ACTIVO',
-                            fechaCreacion: new Date().toISOString(),
-                            creadoPor: 'Portal de Gestión (Generación Masiva)',
-                            solicitudOrigenId: solicitud.id
-                        };
-
-                        await window.airtableAPI.createUsuario(newUser);
-                        cloudUsuarios.push(newUser);
-                        generatedCodes.push(codigoAcceso);
-                        generated++;
-                        
-                    } catch (error) {
-                        console.error(`Error generando código para ${solicitud.email}:`, error);
-                        errors++;
-                    }
-                }
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`🔑 Generación masiva completada\n\n✅ Códigos generados: ${generated}\n❌ Errores: ${errors}\n\n📧 Los usuarios ya pueden acceder al sistema con sus códigos.`);
-
-            } catch (error) {
-                console.error('❌ Error en generación masiva:', error);
-                alert('❌ Error en generación masiva: ' + error.message);
-            }
-        }
-
-        function showDeleteRejectedModal() {
-            const rejectedRequests = cloudSolicitudesAcceso.filter(s => s.estado === 'RECHAZADA');
-            
-            if (rejectedRequests.length === 0) {
-                alert('ℹ️ No hay solicitudes rechazadas para eliminar');
-                return;
-            }
-
-            const confirmation = confirm(`🗑️ ¿Eliminar TODAS las solicitudes rechazadas?\n\n📊 Total a eliminar: ${rejectedRequests.length} solicitudes\n\n⚠️ Esta acción no se puede deshacer.`);
-            
-            if (!confirmation) return;
-
-            deleteRejectedRequests(rejectedRequests);
-        }
-
-        async function deleteRejectedRequests(rejectedRequests) {
-            try {
-                let deleted = 0;
-                let errors = 0;
-
-                for (const solicitud of rejectedRequests) {
-                    try {
-                        await window.airtableAPI.deleteSolicitudAcceso(solicitud.id);
-                        
-                        // Remover de lista local
-                        const index = cloudSolicitudesAcceso.findIndex(s => s.id === solicitud.id);
-                        if (index > -1) {
-                            cloudSolicitudesAcceso.splice(index, 1);
-                        }
-                        
-                        deleted++;
-                        
-                    } catch (error) {
-                        console.error(`Error eliminando ${solicitud.id}:`, error);
-                        errors++;
-                    }
-                }
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`🗑️ Limpieza completada\n\n✅ Eliminadas: ${deleted}\n❌ Errores: ${errors}`);
-
-            } catch (error) {
-                console.error('❌ Error eliminando rechazadas:', error);
-                alert('❌ Error eliminando solicitudes: ' + error.message);
-            }
-        }
-
-        async function deleteAccessRequest(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-            if (!solicitud) {
-                alert('❌ No se encontró la solicitud');
-                return;
-            }
-
-            const confirmation = confirm(`🗑️ ¿Eliminar solicitud?\n\n👤 Usuario: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n\n⚠️ Esta acción no se puede deshacer.`);
-            
-            if (!confirmation) return;
-
-            try {
-                await window.airtableAPI.deleteSolicitudAcceso(requestId);
-                
-                // Remover de lista local
-                const index = cloudSolicitudesAcceso.findIndex(s => s.id === requestId);
-                if (index > -1) {
-                    cloudSolicitudesAcceso.splice(index, 1);
-                }
-
-                updateAccessRequestsList();
-                updateAllCounters();
-
-                alert(`🗑️ Solicitud eliminada correctamente`);
-
-            } catch (error) {
-                console.error('❌ Error eliminando solicitud:', error);
-                alert('❌ Error al eliminar la solicitud: ' + error.message);
-            }
-        }
-
-        function filterAccessRequests(filter) {
-            currentAccessFilter = filter;
-            
-            // Actualizar botones de filtro
-            document.querySelectorAll('[onclick^="filterAccessRequests"]').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            updateAccessRequestsList();
-        }
-
-        function viewAccessRequestDetails(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-            if (!solicitud) {
-                alert('❌ No se encontró la solicitud');
-                return;
-            }
-
-            const existingUser = cloudUsuarios.find(u => u.email === solicitud.email);
-            const servicioNombre = serviciosHospitalarios[solicitud.servicioHospitalario] || solicitud.servicioHospitalario;
-            
-            const modal = document.getElementById('access-modal');
-            const modalContent = document.getElementById('modal-content-area');
-            
-            modalContent.innerHTML = `
-                <div>
-                    <h3 style="color: #1f2937; margin-bottom: 1rem;">📋 Detalles de Solicitud de Acceso</h3>
-                    
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #2563eb; margin-bottom: 0.5rem;">👤 Información Personal</h4>
-                        <p><strong>Nombre:</strong> ${solicitud.nombreCompleto}</p>
-                        <p><strong>Email:</strong> ${solicitud.email}</p>
-                        <p><strong>Teléfono:</strong> ${solicitud.telefono || 'No especificado'}</p>
-                    </div>
-                    
-                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">🏥 Información Laboral</h4>
-                        <p><strong>Servicio:</strong> ${servicioNombre}</p>
-                        <p><strong>Cargo:</strong> ${solicitud.cargo}</p>
-                    </div>
-                    
-                    <div style="background: #fffbeb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #d97706; margin-bottom: 0.5rem;">📅 Estados y Fechas</h4>
-                        <p><strong>Estado:</strong> <span class="status-${solicitud.estado?.toLowerCase() || 'pendiente'}">${solicitud.estado || 'PENDIENTE'}</span></p>
-                        <p><strong>Fecha Solicitud:</strong> ${new Date(solicitud.fechaSolicitud).toLocaleString('es-CO')}</p>
-                        ${solicitud.fechaAprobacion ? `<p><strong>Fecha Aprobación:</strong> ${new Date(solicitud.fechaAprobacion).toLocaleString('es-CO')}</p>` : ''}
-                        ${solicitud.fechaRechazo ? `<p><strong>Fecha Rechazo:</strong> ${new Date(solicitud.fechaRechazo).toLocaleString('es-CO')}</p>` : ''}
-                    </div>
-                    
-                    ${existingUser ? `
-                    <div style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #2563eb; margin-bottom: 0.5rem;">🔑 Usuario Creado</h4>
-                        <p><strong>Código de Acceso:</strong> <span style="font-size: 1.2rem; font-weight: bold; color: #2563eb;">${existingUser.codigoAcceso}</span></p>
-                        <p><strong>Estado:</strong> <span class="status-${existingUser.estado?.toLowerCase() || 'activo'}">${existingUser.estado || 'ACTIVO'}</span></p>
-                        <p><strong>Fecha Creación:</strong> ${new Date(existingUser.fechaCreacion).toLocaleString('es-CO')}</p>
-                    </div>
-                    ` : ''}
-                    
-                    ${solicitud.justificacion ? `
-                    <div style="background: #f3f4f6; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #4b5563; margin-bottom: 0.5rem;">📝 Justificación</h4>
-                        <p>${solicitud.justificacion}</p>
-                    </div>
-                    ` : ''}
-                    
-                    ${solicitud.motivoRechazo ? `
-                    <div style="background: #fef2f2; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #ef4444; margin-bottom: 0.5rem;">❌ Motivo de Rechazo</h4>
-                        <p>${solicitud.motivoRechazo}</p>
-                    </div>
-                    ` : ''}
-                    
-                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem;">
-                        <button class="btn btn-secondary" onclick="closeAccessModal()">
-                            🔙 Cerrar
-                        </button>
-                    </div>
-                </div>
-            `;
-            
-            modal.style.display = 'block';
-        }
-
-        function closeAccessModal() {
-            document.getElementById('access-modal').style.display = 'none';
         }
 
         // 🎯 Funciones de acción (simplificadas)
@@ -1962,14 +1016,7 @@
         }
 
         function showNotifications() {
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length;
-            const approvedWithoutCode = cloudSolicitudesAcceso.filter(s => {
-                const isApproved = s.estado === 'APROBADA';
-                const hasNoUser = !cloudUsuarios.find(u => u.email === s.email);
-                return isApproved && hasNoUser;
-            }).length;
-
-            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 DATOS SINCRONIZADOS:\n• ${cloudSolicitudes.length} Solicitudes de mantenimiento\n• ${cloudTecnicos.length} Técnicos registrados\n• ${cloudUsuarios.length} Usuarios con acceso\n• ${cloudSolicitudesAcceso.length} Solicitudes de acceso\n\n🔐 GESTIÓN DE ACCESOS:\n• ${pendingAccess} Solicitudes pendientes de aprobar\n• ${approvedWithoutCode} Aprobadas sin código de acceso\n\n🌐 CONEXIÓN:\n• Airtable: ${isConnectedToAirtable ? '🟢 Conectado' : '🔴 Desconectado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n\n✅ Sistema funcionando ${isConnectedToAirtable ? 'en la nube' : 'en modo local'}`);
+            alert(`🔔 ESTADO DEL SISTEMA CLOUD\n\n📊 DATOS SINCRONIZADOS:\n• ${cloudSolicitudes.length} Solicitudes de mantenimiento\n• ${cloudTecnicos.length} Técnicos registrados\n• ${cloudUsuarios.length} Usuarios con acceso\n• ${cloudSolicitudesAcceso.length} Solicitudes de acceso\n\n🌐 CONEXIÓN:\n• Airtable: ${isConnectedToAirtable ? '🟢 Conectado' : '🔴 Desconectado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n\n✅ Sistema funcionando ${isConnectedToAirtable ? 'en la nube' : 'en modo local'}`);
         }
 
         // Funciones placeholder para mantener compatibilidad
@@ -1989,99 +1036,26 @@
             alert('➕ Modal de agregar técnico en desarrollo para la versión cloud');
         }
 
-        function editUser(userId) {
-            alert('✏️ Función de editar usuario en desarrollo');
-        }
-
-        function deactivateUser(userId) {
-            alert('🚫 Función de desactivar usuario en desarrollo');
+        function approveAllPending() {
+            alert('✅ Función de aprobación masiva en desarrollo para la versión cloud');
         }
 
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia');
             
-            // Simular API de Airtable si no está disponible
-            if (!window.airtableAPI) {
-                window.airtableAPI = {
-                    baseId: 'appXXXXXXXXXXXXXX',
-                    apiKey: 'patXXXXXXXXXXXXXX',
-                    
-                    async testConnection() {
-                        return false; // Simular sin conexión
-                    },
-                    
-                    async getSolicitudes() {
-                        return JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
-                    },
-                    
-                    async getTecnicos() {
-                        const tecnicosObj = JSON.parse(localStorage.getItem('hospital_technicians') || '{}');
-                        const tecnicos = [];
-                        Object.entries(tecnicosObj).forEach(([area, tecnicosArea]) => {
-                            tecnicosArea.forEach(tecnico => {
-                                tecnicos.push({ ...tecnico, area });
-                            });
-                        });
-                        return tecnicos;
-                    },
-                    
-                    async getUsuarios() {
-                        return JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
-                    },
-                    
-                    async getSolicitudesAcceso() {
-                        return JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
-                    },
-                    
-                    async updateSolicitudAcceso(id, data) {
-                        const requests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
-                        const index = requests.findIndex(r => r.id === id);
-                        if (index > -1) {
-                            requests[index] = { ...requests[index], ...data };
-                            localStorage.setItem('hospital_access_requests', JSON.stringify(requests));
-                        }
-                    },
-                    
-                    async createUsuario(user) {
-                        const users = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
-                        users.push(user);
-                        localStorage.setItem('hospital_approved_users', JSON.stringify(users));
-                    },
-                    
-                    async deleteSolicitudAcceso(id) {
-                        const requests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
-                        const filtered = requests.filter(r => r.id !== id);
-                        localStorage.setItem('hospital_access_requests', JSON.stringify(filtered));
-                    }
-                };
-            }
-            
-            // Esperar a que se cargue airtable-config.js o usar API simulada
+            // Esperar a que airtable-config.js se cargue
             setTimeout(async () => {
-                console.log('🔗 Conectando con Airtable...');
-                try {
-                    const isConnected = await window.airtableAPI.testConnection();
-                    updateConnectionStatus(isConnected ? 'connected' : 'fallback');
-                    console.log(isConnected ? '✅ Conectado a Airtable' : '⚠️ Modo local activo');
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
                     await loadAllDataFromCloud();
-                } catch (error) {
-                    console.error('❌ Error de conexión:', error);
-                    updateConnectionStatus('fallback', 'Modo Local');
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
                     loadDataFromLocalStorage();
                 }
             }, 1000);
-            
-            console.log('✅ Sistema Cloud iniciado');
         });
-
-        // Cerrar modal al hacer clic fuera
-        window.onclick = function(event) {
-            const modal = document.getElementById('access-modal');
-            if (event.target === modal) {
-                closeAccessModal();
-            }
-        }
     </script>
 </body>
 </html>
