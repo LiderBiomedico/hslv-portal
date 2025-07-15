@@ -1,454 +1,481 @@
-// 🛡️ Configuración FUNCIONANDO de Airtable API - Hospital Susana López de Valencia
-// airtable-config.js - Versión integrada con tests exitosos
+// airtable-config.js
+// Configuración de Airtable para el Portal Cloud del Hospital Susana López de Valencia
+// Desarrollado por: Ing. Paul Eduardo Muñoz R.
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN FUNCIONANDO)...');
-
-class AirtableAPI {
-    constructor() {
-        console.log('🔧 Inicializando AirtableAPI...');
-        
-        this.hostname = window.location.hostname;
-        this.isLocalDevelopment = this.hostname === 'localhost' || 
-                                 this.hostname === '127.0.0.1' ||
-                                 this.hostname.startsWith('localhost:') ||
-                                 this.hostname.startsWith('127.0.0.1:');
-        
-        console.log('🔍 Hostname:', this.hostname);
-        console.log('🏠 Es desarrollo local:', this.isLocalDevelopment);
-        
-        if (this.isLocalDevelopment) {
-            this.useProxy = false;
-            this.baseUrl = 'https://api.airtable.com/v0/appFyEBCedQGOeJyV';
-            this.directApiKey = 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
-            console.log('🔧 MODO DESARROLLO: Conexión directa');
-        } else {
-            this.useProxy = true;
-            this.baseUrl = '/.netlify/functions/airtable-proxy';
-            this.directApiKey = null;
-            console.log('🛡️ MODO PRODUCCIÓN: Usando proxy Netlify LIMPIO');
-        }
-        
-        // 📋 Tablas CONFIRMADAS que funcionan (basado en simple-debug)
-        this.tables = {
-            solicitudes: 'Solicitudes',        // ✅ CONFIRMADO funcionando (1 record)
-            tecnicos: 'Tecnicos', 
-            usuarios: 'Usuarios',
-            solicitudesAcceso: 'SolicitudesAcceso'
+window.airtableAPI = {
+    // 🔧 CONFIGURACIÓN DE AIRTABLE
+    baseId: 'appFyEBCedQGOeJyV', // Reemplazar con el ID real de tu base de Airtable
+    apiKey: 'pat7xJ5u0pzGcbOO3.43982b73b388d10497b60186516f35fcebae2a03ce602439037aef3aa8c29d7d', // Reemplazar con tu Personal Access Token de Airtable
+    
+    // 📋 NOMBRES DE LAS TABLAS EN AIRTABLE
+    tables: {
+        solicitudes: 'Solicitudes', // Tabla para solicitudes de mantenimiento
+        tecnicos: 'Tecnicos', // Tabla para personal técnico
+        usuarios: 'Usuarios', // Tabla para usuarios con acceso al portal
+        solicitudesAcceso: 'Solicitudes_Acceso' // Tabla para solicitudes de acceso
+    },
+    
+    // 🌐 URL base de la API de Airtable
+    get baseUrl() {
+        return `https://api.airtable.com/v0/${this.baseId}`;
+    },
+    
+    // 🔗 Headers para las peticiones
+    get headers() {
+        return {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json'
         };
-        
-        this.connectionStatus = 'connecting';
-        
-        console.log('📡 URL base:', this.baseUrl);
-        console.log('🛡️ Usando proxy:', this.useProxy);
-        console.log('✅ Tabla principal confirmada: "Solicitudes"');
-        
-        // 🔄 Test inicial suave (sin bloquear carga)
-        this.initializeConnectionAsync();
-    }
-
-    async initializeConnectionAsync() {
-        // Ejecutar test en background sin bloquear
-        setTimeout(async () => {
-            try {
-                const isConnected = await this.testConnection();
-                
-                if (isConnected) {
-                    this.connectionStatus = 'connected';
-                    this.notifyConnectionStatus(true);
-                    console.log('✅ Conectado exitosamente a tabla "Solicitudes"');
-                } else {
-                    this.connectionStatus = 'disconnected';
-                    this.notifyConnectionStatus(false);
-                    console.warn('⚠️ Modo localStorage activo');
-                }
-            } catch (error) {
-                console.error('❌ Error en inicialización:', error);
-                this.connectionStatus = 'disconnected';
-                this.notifyConnectionStatus(false);
-            }
-        }, 2000); // Delay de 2 segundos para no interferir con carga
-    }
-
-    notifyConnectionStatus(connected) {
-        try {
-            const event = new CustomEvent('airtableConnectionUpdate', {
-                detail: { 
-                    connected, 
-                    timestamp: new Date(),
-                    method: this.useProxy ? 'proxy' : 'direct',
-                    hostname: this.hostname,
-                    table: 'Solicitudes'
-                }
-            });
-            window.dispatchEvent(event);
-        } catch (error) {
-            console.warn('⚠️ No se pudo notificar cambio de estado:', error);
-        }
-    }
-
-    async makeRequest(endpoint, method = 'GET', data = null) {
-        console.log('📡 Request:', method, endpoint);
-        
-        try {
-            let url, options;
-            
-            if (this.useProxy) {
-                url = `${this.baseUrl}/${endpoint}`;
-                options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors',
-                    credentials: 'same-origin'
-                };
-                
-                console.log('📡 PROXY Request (LIMPIO)');
-                
-            } else {
-                url = `${this.baseUrl}/${endpoint}`;
-                options = {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${this.directApiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors'
-                };
-                
-                console.log('📡 DIRECT Request');
-            }
-            
-            if (data && (method === 'POST' || method === 'PATCH')) {
-                options.body = JSON.stringify(data);
-            }
-            
-            console.log('🎯 URL final:', url);
-            
-            const response = await fetch(url, options);
-            
-            console.log('📨 Status:', response.status);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Error response:', errorText);
-                
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const result = await response.json();
-            console.log('✅ Request exitoso - Records:', result.records?.length || 'N/A');
-            
-            if (this.connectionStatus !== 'connected') {
-                this.connectionStatus = 'connected';
-                this.notifyConnectionStatus(true);
-            }
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Request falló:', error);
-            
-            if (this.connectionStatus !== 'disconnected') {
-                this.connectionStatus = 'disconnected';
-                this.notifyConnectionStatus(false);
-            }
-            
-            // 💾 Usar fallback para operaciones de lectura
-            if (method === 'GET') {
-                console.warn('⚠️ Usando localStorage fallback');
-                return this.localStorageFallback(endpoint, method, data);
-            }
-            
-            throw error;
-        }
-    }
-
-    localStorageFallback(endpoint, method, data) {
-        console.log('💾 Usando localStorage para:', endpoint);
-        
-        const tableName = endpoint.split('/')[0].replace(/\?.*/, '');
-        const storageKey = `hospital_${tableName.toLowerCase()}`;
-        
-        try {
-            switch (method) {
-                case 'GET':
-                    const stored = localStorage.getItem(storageKey);
-                    const records = stored ? JSON.parse(stored) : [];
-                    
-                    return {
-                        records: records.map(item => ({
-                            id: item.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
-                            fields: item
-                        }))
-                    };
-                    
-                case 'POST':
-                    const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    const newRecord = { ...data.fields };
-                    newRecord.id = newRecord.id || `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`;
-                    newRecord._isLocal = true;
-                    newRecord._timestamp = new Date().toISOString();
-                    
-                    existing.push(newRecord);
-                    localStorage.setItem(storageKey, JSON.stringify(existing));
-                    
-                    console.log('💾 Guardado localmente:', newRecord.id);
-                    return { id: newRecord.id, fields: newRecord };
-                    
-                default:
-                    console.warn('⚠️ Operación no soportada en modo local:', method);
-                    return { records: [] };
-            }
-        } catch (localError) {
-            console.error('❌ Error en localStorage:', localError);
-            return { records: [] };
-        }
-    }
-
+    },
+    
+    // 🧪 Probar conexión con Airtable
     async testConnection() {
-        console.log('🧪 Test de conexión con tabla "Solicitudes"...');
-        
         try {
-            let url, options;
+            console.log('🔍 Probando conexión con Airtable...');
             
-            if (this.useProxy) {
-                // Usar la tabla CONFIRMADA que funciona
-                url = `${this.baseUrl}/Solicitudes?maxRecords=1`;
-                options = {
-                    method: 'GET',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors',
-                    credentials: 'same-origin'
-                };
-                console.log('🧪 Test via PROXY LIMPIO');
-            } else {
-                url = `${this.baseUrl}/Solicitudes?maxRecords=1`;
-                options = {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${this.directApiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors'
-                };
-                console.log('🧪 Test DIRECTO');
-            }
-            
-            console.log('🔗 Test URL:', url);
-            
-            const response = await fetch(url, options);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Test falló:', response.status, errorText);
+            // Verificar si las credenciales están configuradas
+            if (this.baseId === 'appXXXXXXXXXXXXXX' || this.apiKey === 'patXXXXXXXXXXXXXX') {
+                console.log('⚠️ Credenciales de Airtable no configuradas');
                 return false;
             }
             
-            const result = await response.json();
-            console.log('✅ Test exitoso - Records encontrados:', result.records?.length || 0);
+            // Hacer una petición simple para probar la conexión
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudes}?maxRecords=1`, {
+                method: 'GET',
+                headers: this.headers
+            });
+            
+            if (response.ok) {
+                console.log('✅ Conexión exitosa con Airtable');
+                return true;
+            } else {
+                console.log('❌ Error de autenticación o configuración');
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('❌ Error de conexión:', error);
+            return false;
+        }
+    },
+    
+    // 📋 Obtener todas las solicitudes de mantenimiento
+    async getSolicitudes() {
+        try {
+            console.log('📋 Cargando solicitudes desde Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudes}`, {
+                method: 'GET',
+                headers: this.headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const solicitudes = data.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+            
+            console.log(`✅ ${solicitudes.length} solicitudes cargadas desde Airtable`);
+            return solicitudes;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo solicitudes:', error);
+            throw error;
+        }
+    },
+    
+    // 👥 Obtener todos los técnicos
+    async getTecnicos() {
+        try {
+            console.log('👥 Cargando técnicos desde Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.tecnicos}`, {
+                method: 'GET',
+                headers: this.headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const tecnicos = data.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+            
+            console.log(`✅ ${tecnicos.length} técnicos cargados desde Airtable`);
+            return tecnicos;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo técnicos:', error);
+            throw error;
+        }
+    },
+    
+    // 👤 Obtener todos los usuarios
+    async getUsuarios() {
+        try {
+            console.log('👤 Cargando usuarios desde Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.usuarios}`, {
+                method: 'GET',
+                headers: this.headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const usuarios = data.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+            
+            console.log(`✅ ${usuarios.length} usuarios cargados desde Airtable`);
+            return usuarios;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo usuarios:', error);
+            throw error;
+        }
+    },
+    
+    // 🔐 Obtener todas las solicitudes de acceso
+    async getSolicitudesAcceso() {
+        try {
+            console.log('🔐 Cargando solicitudes de acceso desde Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudesAcceso}`, {
+                method: 'GET',
+                headers: this.headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const solicitudesAcceso = data.records.map(record => ({
+                id: record.id,
+                airtableId: record.id, // Guardar ID de Airtable para actualizaciones
+                ...record.fields
+            }));
+            
+            console.log(`✅ ${solicitudesAcceso.length} solicitudes de acceso cargadas desde Airtable`);
+            return solicitudesAcceso;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo solicitudes de acceso:', error);
+            throw error;
+        }
+    },
+    
+    // ✍️ Crear nueva solicitud de mantenimiento
+    async createSolicitud(solicitudData) {
+        try {
+            console.log('✍️ Creando solicitud en Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudes}`, {
+                method: 'POST',
+                headers: this.headers,
+                body: JSON.stringify({
+                    fields: solicitudData
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Solicitud ${solicitudData.numero} creada en Airtable`);
+            return data;
+            
+        } catch (error) {
+            console.error('❌ Error creando solicitud:', error);
+            throw error;
+        }
+    },
+    
+    // 📝 Crear nueva solicitud de acceso
+    async createSolicitudAcceso(solicitudData) {
+        try {
+            console.log('📝 Creando solicitud de acceso en Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudesAcceso}`, {
+                method: 'POST',
+                headers: this.headers,
+                body: JSON.stringify({
+                    fields: solicitudData
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Solicitud de acceso ${solicitudData.nombreCompleto} creada en Airtable`);
+            return data;
+            
+        } catch (error) {
+            console.error('❌ Error creando solicitud de acceso:', error);
+            throw error;
+        }
+    },
+    
+    // 👤 Crear nuevo usuario
+    async createUsuario(usuarioData) {
+        try {
+            console.log('👤 Creando usuario en Airtable...');
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.usuarios}`, {
+                method: 'POST',
+                headers: this.headers,
+                body: JSON.stringify({
+                    fields: usuarioData
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Usuario ${usuarioData.nombreCompleto} creado en Airtable`);
+            return data;
+            
+        } catch (error) {
+            console.error('❌ Error creando usuario:', error);
+            throw error;
+        }
+    },
+    
+    // 🔄 Actualizar solicitud de acceso
+    async updateSolicitudAcceso(solicitudId, updateData) {
+        try {
+            console.log(`🔄 Actualizando solicitud ${solicitudId} en Airtable...`);
+            
+            // Si solicitudId no tiene el formato de Airtable, buscar el registro
+            let airtableId = solicitudId;
+            if (!solicitudId.startsWith('rec')) {
+                // Buscar por ID personalizado
+                const allRecords = await this.getSolicitudesAcceso();
+                const record = allRecords.find(r => r.id === solicitudId);
+                if (record && record.airtableId) {
+                    airtableId = record.airtableId;
+                } else {
+                    throw new Error('No se encontró el registro en Airtable');
+                }
+            }
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudesAcceso}/${airtableId}`, {
+                method: 'PATCH',
+                headers: this.headers,
+                body: JSON.stringify({
+                    fields: updateData
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Solicitud ${solicitudId} actualizada en Airtable`);
+            return data;
+            
+        } catch (error) {
+            console.error('❌ Error actualizando solicitud de acceso:', error);
+            throw error;
+        }
+    },
+    
+    // 🗑️ Eliminar solicitud de acceso
+    async deleteSolicitudAcceso(solicitudId) {
+        try {
+            console.log(`🗑️ Eliminando solicitud ${solicitudId} de Airtable...`);
+            
+            // Si solicitudId no tiene el formato de Airtable, buscar el registro
+            let airtableId = solicitudId;
+            if (!solicitudId.startsWith('rec')) {
+                // Buscar por ID personalizado
+                const allRecords = await this.getSolicitudesAcceso();
+                const record = allRecords.find(r => r.id === solicitudId);
+                if (record && record.airtableId) {
+                    airtableId = record.airtableId;
+                } else {
+                    throw new Error('No se encontró el registro en Airtable');
+                }
+            }
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.solicitudesAcceso}/${airtableId}`, {
+                method: 'DELETE',
+                headers: this.headers
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            console.log(`✅ Solicitud ${solicitudId} eliminada de Airtable`);
             return true;
             
         } catch (error) {
-            console.error('❌ Test falló:', error.message);
-            return false;
+            console.error('❌ Error eliminando solicitud de acceso:', error);
+            throw error;
         }
-    }
-
-    // 📋 MÉTODOS PRINCIPALES
-    async getSolicitudes() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudes);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo solicitudes:', error);
-            return [];
-        }
-    }
-
-    async createSolicitud(solicitudData) {
-        const data = {
-            fields: {
-                numero: solicitudData.numero,
-                servicioIngenieria: solicitudData.servicioIngenieria,
-                tipoServicio: solicitudData.tipoServicio,
-                prioridad: solicitudData.prioridad,
-                equipo: solicitudData.equipo,
-                ubicacion: solicitudData.ubicacion,
-                descripcion: solicitudData.descripcion,
-                observaciones: solicitudData.observaciones || '',
-                solicitante: solicitudData.solicitante,
-                servicioHospitalario: solicitudData.servicioHospitalario,
-                emailSolicitante: solicitudData.emailSolicitante,
-                fechaCreacion: solicitudData.fechaCreacion,
-                estado: solicitudData.estado || 'PENDIENTE'
-            }
-        };
-        
-        return await this.makeRequest(this.tables.solicitudes, 'POST', data);
-    }
-
-    async createSolicitudAcceso(solicitudData) {
-        const data = {
-            fields: {
-                id: solicitudData.id,
-                nombreCompleto: solicitudData.nombreCompleto,
-                email: solicitudData.email,
-                telefono: solicitudData.telefono || '',
-                servicioHospitalario: solicitudData.servicioHospitalario,
-                cargo: solicitudData.cargo,
-                justificacion: solicitudData.justificacion || '',
-                fechaSolicitud: solicitudData.fechaSolicitud,
-                estado: solicitudData.estado || 'PENDIENTE',
-                esUrgente: solicitudData.esUrgente || false
-            }
-        };
-        
-        return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
-    }
-
-    // Métodos adicionales
-    async getTecnicos() {
-        try {
-            const result = await this.makeRequest(this.tables.tecnicos);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo técnicos:', error);
-            return [];
-        }
-    }
-
-    async getUsuarios() {
-        try {
-            const result = await this.makeRequest(this.tables.usuarios);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo usuarios:', error);
-            return [];
-        }
-    }
-
-    async getSolicitudesAcceso() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudesAcceso);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo solicitudes de acceso:', error);
-            return [];
-        }
-    }
-
-    getStatus() {
-        return {
-            isConnected: this.connectionStatus === 'connected',
-            useProxy: this.useProxy,
-            environment: this.isLocalDevelopment ? 'development' : 'production',
-            hostname: this.hostname,
-            baseUrl: this.baseUrl,
-            confirmedTable: 'Solicitudes',
-            timestamp: new Date().toISOString(),
-            version: '2.0-working'
-        };
-    }
-}
-
-// 🌍 Crear instancia global de forma segura
-try {
-    console.log('🔧 Creando instancia global segura...');
-    window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente');
-} catch (error) {
-    console.error('❌ Error creando airtableAPI:', error);
-}
-
-// 📡 Event listener seguro
-try {
-    window.addEventListener('airtableConnectionUpdate', function(event) {
-        console.log('🔄 Estado actualizado:', event.detail);
-        
-        if (typeof updateConnectionStatus === 'function') {
-            const status = event.detail.connected ? 'connected' : 'disconnected';
-            const message = event.detail.connected 
-                ? `✅ Conectado a tabla "${event.detail.table}" via ${event.detail.method}` 
-                : 'Modo Local Fallback';
-            
-            updateConnectionStatus(status, message);
-        }
-    });
-} catch (error) {
-    console.warn('⚠️ No se pudo configurar event listener:', error);
-}
-
-// 🛠️ Función de diagnóstico segura
-try {
-    window.debugAirtableConnection = function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return {
-                error: 'airtableAPI no disponible',
-                timestamp: new Date().toISOString()
-            };
-        }
-        
-        const status = window.airtableAPI.getStatus();
-        
-        console.log('🔍 DIAGNÓSTICO COMPLETO');
-        console.log('=======================');
-        console.log('🌐 Hostname:', status.hostname);
-        console.log('🏠 Entorno:', status.environment);
-        console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO (LIMPIO)' : 'DESHABILITADO');
-        console.log('📡 URL base:', status.baseUrl);
-        console.log('✅ Tabla confirmada:', status.confirmedTable);
-        console.log('🔍 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
-        console.log('📋 Versión:', status.version);
-        console.log('🕐 Timestamp:', status.timestamp);
-        
-        // Test inmediato
-        console.log('\n🧪 Ejecutando test con tabla confirmada...');
-        window.airtableAPI.testConnection().then(result => {
-            console.log('🔍 Resultado:', result ? '✅ EXITOSO' : '❌ FALLÓ');
-            
-            if (result) {
-                console.log('🎉 ¡SISTEMA COMPLETAMENTE FUNCIONAL!');
-                console.log('📋 Tabla "Solicitudes" funcionando correctamente');
-                console.log('🛡️ Proxy limpio sin errores');
-            }
-        }).catch(error => {
-            console.error('❌ Error en test:', error);
-        });
-        
-        return status;
-    };
+    },
     
-    console.log('✅ debugAirtableConnection creado exitosamente');
-} catch (error) {
-    console.error('❌ Error creando debugAirtableConnection:', error);
-}
-
-console.log('✅ airtable-config.js (VERSIÓN FUNCIONANDO) cargado completamente');
-console.log('🎯 Tabla confirmada: "Solicitudes" con 1 record');
-console.log('🛡️ Proxy limpio configurado');
-console.log('🔧 Para test: debugAirtableConnection()');
-
-// Auto-verificación silenciosa
-setTimeout(() => {
-    if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
-        console.log('🔄 Auto-verificación: Todo cargado correctamente');
-    } else {
-        console.warn('⚠️ Auto-verificación: Algunos componentes no se cargaron');
+    // 🔄 Actualizar usuario
+    async updateUsuario(usuarioId, updateData) {
+        try {
+            console.log(`🔄 Actualizando usuario ${usuarioId} en Airtable...`);
+            
+            const response = await fetch(`${this.baseUrl}/${this.tables.usuarios}/${usuarioId}`, {
+                method: 'PATCH',
+                headers: this.headers,
+                body: JSON.stringify({
+                    fields: updateData
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(`✅ Usuario ${usuarioId} actualizado en Airtable`);
+            return data;
+            
+        } catch (error) {
+            console.error('❌ Error actualizando usuario:', error);
+            throw error;
+        }
+    },
+    
+    // 📊 Obtener estadísticas del sistema
+    async getSystemStats() {
+        try {
+            console.log('📊 Obteniendo estadísticas del sistema...');
+            
+            const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+                this.getSolicitudes(),
+                this.getTecnicos(),
+                this.getUsuarios(),
+                this.getSolicitudesAcceso()
+            ]);
+            
+            const stats = {
+                solicitudes: {
+                    total: solicitudes.length,
+                    pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
+                    asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA').length,
+                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length
+                },
+                tecnicos: {
+                    total: tecnicos.length,
+                    disponibles: tecnicos.filter(t => t.estado === 'disponible').length,
+                    ocupados: tecnicos.filter(t => t.estado === 'ocupado').length
+                },
+                usuarios: {
+                    total: usuarios.length,
+                    activos: usuarios.filter(u => u.estado === 'ACTIVO').length,
+                    inactivos: usuarios.filter(u => u.estado === 'INACTIVO').length
+                },
+                accesos: {
+                    total: solicitudesAcceso.length,
+                    pendientes: solicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length,
+                    aprobadas: solicitudesAcceso.filter(s => s.estado === 'APROBADA').length,
+                    rechazadas: solicitudesAcceso.filter(s => s.estado === 'RECHAZADA').length
+                }
+            };
+            
+            console.log('✅ Estadísticas del sistema obtenidas');
+            return stats;
+            
+        } catch (error) {
+            console.error('❌ Error obteniendo estadísticas:', error);
+            throw error;
+        }
     }
-}, 5000);
+};
+
+// 🚀 Inicialización y verificación
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔧 Configuración de Airtable cargada');
+    console.log('🌐 Base ID:', window.airtableAPI.baseId);
+    console.log('🔑 API Key configurado:', window.airtableAPI.apiKey !== 'patXXXXXXXXXXXXXX');
+    
+    // Mostrar instrucciones si no está configurado
+    if (window.airtableAPI.baseId === 'appXXXXXXXXXXXXXX' || window.airtableAPI.apiKey === 'patXXXXXXXXXXXXXX') {
+        console.warn('⚠️ CONFIGURACIÓN PENDIENTE DE AIRTABLE');
+        console.warn('📋 Pasos para configurar:');
+        console.warn('1. Crear una base en Airtable con las tablas necesarias');
+        console.warn('2. Obtener el Base ID desde https://airtable.com/api');
+        console.warn('3. Generar un Personal Access Token');
+        console.warn('4. Actualizar las credenciales en este archivo');
+    }
+});
+
+// 📋 ESTRUCTURA RECOMENDADA PARA LAS TABLAS EN AIRTABLE:
+
+/*
+🔧 TABLA "Solicitudes" (Solicitudes de Mantenimiento):
+- numero (Single line text) - Primary field
+- servicioIngenieria (Single select: INGENIERIA_BIOMEDICA, MECANICA, INFRAESTRUCTURA)
+- tipoServicio (Single select: MANTENIMIENTO_PREVENTIVO, MANTENIMIENTO_CORRECTIVO, etc.)
+- prioridad (Single select: CRITICA, ALTA, MEDIA, BAJA)
+- equipo (Long text)
+- ubicacion (Single line text)
+- descripcion (Long text)
+- observaciones (Long text)
+- solicitante (Single line text)
+- servicioHospitalario (Single line text)
+- emailSolicitante (Email)
+- fechaCreacion (Date and time)
+- estado (Single select: PENDIENTE, ASIGNADA, EN_PROCESO, COMPLETADA)
+- tecnicoAsignado (Single line text)
+
+👥 TABLA "Tecnicos" (Personal Técnico):
+- nombre (Single line text) - Primary field
+- area (Single select: INGENIERIA_BIOMEDICA, MECANICA, INFRAESTRUCTURA)
+- tipo (Single select: INTERNO, EXTERNO)
+- especialidad (Single line text)
+- email (Email)
+- telefono (Phone number)
+- estado (Single select: disponible, ocupado, inactivo)
+
+👤 TABLA "Usuarios" (Usuarios del Portal):
+- nombreCompleto (Single line text) - Primary field
+- email (Email)
+- telefono (Phone number)
+- servicioHospitalario (Single line text)
+- cargo (Single line text)
+- codigoAcceso (Single line text)
+- estado (Single select: ACTIVO, INACTIVO)
+- fechaCreacion (Date and time)
+- creadoPor (Single line text)
+- solicitudOrigenId (Single line text)
+
+🔐 TABLA "Solicitudes_Acceso" (Solicitudes de Acceso):
+- nombreCompleto (Single line text) - Primary field
+- email (Email)
+- telefono (Phone number)
+- servicioHospitalario (Single line text)
+- cargo (Single line text)
+- justificacion (Long text)
+- fechaSolicitud (Date and time)
+- estado (Single select: PENDIENTE, APROBADA, RECHAZADA)
+- fechaAprobacion (Date and time)
+- fechaRechazo (Date and time)
+- motivoRechazo (Long text)
+- aprobadoPor (Single line text)
+- rechazadoPor (Single line text)
+*/
