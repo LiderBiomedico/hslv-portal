@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
     <style>
-        /* Mismo CSS que el archivo original pero con algunos ajustes para indicadores de conexión */
         * {
             margin: 0;
             padding: 0;
@@ -114,7 +113,6 @@
             color: #fef3c7;
         }
 
-        /* Resto del CSS igual al archivo original... */
         .nav-tabs {
             display: flex;
             gap: 0.5rem;
@@ -332,7 +330,7 @@
             color: #dc2626;
         }
 
-        /* Botones y otros elementos igual que el original... */
+        /* Botones */
         .btn {
             padding: 0.625rem 1.25rem;
             border-radius: 0.5rem;
@@ -369,12 +367,196 @@
             box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
         }
 
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
         }
 
-        /* Loading indicator */
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Solicitudes de Acceso */
+        .access-request-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .access-request-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .access-request-card.pending {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .access-request-card.approved {
+            border-left: 4px solid #059669;
+            background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
+        }
+
+        .access-request-card.rejected {
+            border-left: 4px solid #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .request-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.125rem;
+        }
+
+        .request-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .request-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .request-detail-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .request-detail-value {
+            color: #1f2937;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-pendiente {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-aprobada {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-rechazada {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: #1f2937;
+        }
+
+        /* Loading spinner */
         .loading-spinner {
             display: inline-block;
             width: 1rem;
@@ -405,6 +587,15 @@
                 position: static;
                 justify-content: center;
                 margin-top: 1rem;
+            }
+
+            .request-actions {
+                flex-direction: column;
+            }
+
+            .request-actions .btn {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
@@ -544,7 +735,7 @@
             </div>
         </div>
 
-        <!-- Otros views (solicitudes, tecnicos, accesos) similar estructura -->
+        <!-- Solicitudes View -->
         <div id="solicitudes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
@@ -570,6 +761,7 @@
             </div>
         </div>
 
+        <!-- Técnicos View -->
         <div id="tecnicos-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
@@ -595,20 +787,32 @@
             </div>
         </div>
 
+        <!-- Vista de Gestión de Accesos -->
         <div id="accesos-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">🔐 Gestión de Accesos (Cloud)</h2>
+                    <h2 class="card-title">🔐 Gestión de Accesos al Portal</h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-success btn-sm" onclick="refreshAccessFromCloud()">
                             🔄 Actualizar desde Airtable
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="approveAllPending()">
-                            ✅ Aprobar Todas
+                        <button class="btn btn-warning btn-sm" onclick="approveAllPending()">
+                            ✅ Aprobar Todas Pendientes
                         </button>
                     </div>
                 </div>
                 <div class="card-content">
+                    <div class="alert alert-info">
+                        <h4 style="margin-bottom: 0.5rem;">🔐 Gestión de Accesos al Portal</h4>
+                        <p>Desde aquí puedes aprobar solicitudes de acceso al Portal de Solicitudes. Al aprobar una solicitud:</p>
+                        <ul style="margin: 0.5rem 0 0 1rem;">
+                            <li>✅ Se genera automáticamente un <strong>código de 4 dígitos único</strong></li>
+                            <li>👤 Se crea el usuario en la tabla de usuarios</li>
+                            <li>📧 El usuario podrá ingresar con su <strong>email + código</strong> al Portal de Solicitudes</li>
+                            <li>🌐 Todo se sincroniza automáticamente con Airtable</li>
+                        </ul>
+                    </div>
+
                     <div id="access-requests-container">
                         <div style="text-align: center; padding: 3rem; color: #6b7280;">
                             <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
@@ -620,6 +824,32 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal de Confirmación de Aprobación -->
+    <div id="approval-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✅ Confirmar Aprobación</h3>
+                <button class="modal-close" onclick="closeApprovalModal()">&times;</button>
+            </div>
+            <div id="approval-modal-content">
+                <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="result-modal-title">Resultado</h3>
+                <button class="modal-close" onclick="closeResultModal()">&times;</button>
+            </div>
+            <div id="result-modal-content">
+                <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
 
     <!-- Incluir el archivo de configuración de Airtable -->
     <script src="airtable-config.js"></script>
@@ -776,7 +1006,6 @@
             document.getElementById('metric-infraestructura').textContent = infraestructura;
             document.getElementById('metric-pendientes').textContent = pendientes;
             document.getElementById('total-count').textContent = total;
-            document.getElementById('notification-count').textContent = pendientes;
 
             // Contadores de técnicos
             const totalTechnicians = cloudTecnicos.length;
@@ -790,8 +1019,9 @@
             document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
 
             // Contadores de accesos
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length;
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
             document.getElementById('pending-access-count').textContent = pendingAccess;
+            document.getElementById('notification-count').textContent = pendingAccess + pendientes;
 
             console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} técnicos, ${pendingAccess} accesos pendientes`);
         }
@@ -894,7 +1124,7 @@
             }
         }
 
-        // 📋 Funciones de actualización de listas (simplificadas para el ejemplo)
+        // 📋 Funciones de actualización de listas
         function updateSolicitudesList() {
             const container = document.getElementById('solicitudes-list');
             
@@ -969,31 +1199,452 @@
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">🔐</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes de acceso</h3>
-                        <p>Las solicitudes aparecerán aquí cuando los usuarios las envíen</p>
+                        <p>Las solicitudes aparecerán aquí cuando los usuarios las envíen desde el Portal de Solicitudes</p>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #0ea5e9;">
+                            <h4 style="color: #0369a1; margin-bottom: 0.5rem;">💡 ¿Cómo funciona?</h4>
+                            <p style="color: #0c4a6e; font-size: 0.875rem;">
+                                1. Los usuarios llenan el formulario de solicitud de acceso en el Portal de Solicitudes<br>
+                                2. Las solicitudes aparecen aquí automáticamente<br>
+                                3. Al aprobar, se genera un código de 4 dígitos único<br>
+                                4. El usuario puede ingresar con email + código al Portal de Solicitudes
+                            </p>
+                        </div>
                     </div>
                 `;
             } else {
-                container.innerHTML = `
+                // Agrupar por estado
+                const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
+                const aprobadas = cloudSolicitudesAcceso.filter(s => s.estado === 'APROBADA');
+                const rechazadas = cloudSolicitudesAcceso.filter(s => s.estado === 'RECHAZADA');
+
+                let html = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudesAcceso.length} Solicitudes de Acceso desde Airtable</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Solicitudes sincronizadas desde la nube</p>
+                        <p style="color: #047857; font-size: 0.875rem;">
+                            📊 Pendientes: ${pendientes.length} | Aprobadas: ${aprobadas.length} | Rechazadas: ${rechazadas.length}
+                        </p>
                     </div>
-                    ${cloudSolicitudesAcceso.map(solicitud => `
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <strong>${solicitud.nombreCompleto}</strong>
-                                <span style="background: #fef3c7; color: #d97706; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">${solicitud.estado || 'PENDIENTE'}</span>
-                            </div>
-                            <p><strong>Email:</strong> ${solicitud.email}</p>
-                            <p><strong>Servicio:</strong> ${solicitud.servicioHospitalario}</p>
-                            <p><strong>Cargo:</strong> ${solicitud.cargo}</p>
-                        </div>
-                    `).join('')}
                 `;
+
+                // Mostrar pendientes primero
+                if (pendientes.length > 0) {
+                    html += '<h3 style="color: #f59e0b; margin: 1.5rem 0 1rem 0;">⏳ Solicitudes Pendientes</h3>';
+                    pendientes.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'pending');
+                    });
+                }
+
+                // Mostrar aprobadas
+                if (aprobadas.length > 0) {
+                    html += '<h3 style="color: #059669; margin: 1.5rem 0 1rem 0;">✅ Solicitudes Aprobadas</h3>';
+                    aprobadas.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'approved');
+                    });
+                }
+
+                // Mostrar rechazadas
+                if (rechazadas.length > 0) {
+                    html += '<h3 style="color: #ef4444; margin: 1.5rem 0 1rem 0;">❌ Solicitudes Rechazadas</h3>';
+                    rechazadas.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'rejected');
+                    });
+                }
+
+                container.innerHTML = html;
             }
         }
 
-        // 🎯 Funciones de acción (simplificadas)
+        function createAccessRequestCard(solicitud, status) {
+            const statusMap = {
+                'pending': { class: 'pending', label: 'PENDIENTE', style: 'status-pendiente' },
+                'approved': { class: 'approved', label: 'APROBADA', style: 'status-aprobada' },
+                'rejected': { class: 'rejected', label: 'RECHAZADA', style: 'status-rechazada' }
+            };
+
+            const statusInfo = statusMap[status] || statusMap['pending'];
+            
+            // Buscar usuario creado si está aprobada
+            let userInfo = '';
+            if (status === 'approved') {
+                const user = cloudUsuarios.find(u => u.solicitudOrigenId === solicitud.id);
+                if (user) {
+                    userInfo = `
+                        <div style="background: #dcfce7; padding: 0.75rem; border-radius: 0.5rem; margin-top: 1rem;">
+                            <h5 style="color: #166534; margin-bottom: 0.5rem;">👤 Usuario Creado</h5>
+                            <p style="color: #047857; font-size: 0.875rem; margin: 0;">
+                                <strong>Código de Acceso:</strong> ${user.codigoAcceso || 'No disponible'}<br>
+                                <strong>Estado:</strong> ${user.estado || 'ACTIVO'}<br>
+                                <strong>Fecha:</strong> ${user.fechaCreacion ? new Date(user.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+
+            return `
+                <div class="access-request-card ${statusInfo.class}">
+                    <div class="request-header">
+                        <span class="request-name">${solicitud.nombreCompleto || 'Sin nombre'}</span>
+                        <span class="${statusInfo.style}">${statusInfo.label}</span>
+                    </div>
+                    
+                    <div class="request-details">
+                        <div class="request-detail">
+                            <div class="request-detail-label">📧 Email</div>
+                            <div class="request-detail-value">${solicitud.email || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🏥 Servicio</div>
+                            <div class="request-detail-value">${getServiceName(solicitud.servicioHospitalario)}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">💼 Cargo</div>
+                            <div class="request-detail-value">${getPositionName(solicitud.cargo)}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📱 Teléfono</div>
+                            <div class="request-detail-value">${solicitud.telefono || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📅 Fecha Solicitud</div>
+                            <div class="request-detail-value">${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🆔 ID Solicitud</div>
+                            <div class="request-detail-value">${solicitud.id || 'No disponible'}</div>
+                        </div>
+                    </div>
+
+                    ${solicitud.justificacion ? `
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div class="request-detail-label">📝 Justificación</div>
+                            <div style="margin-top: 0.5rem; color: #1f2937;">${solicitud.justificacion}</div>
+                        </div>
+                    ` : ''}
+
+                    ${userInfo}
+
+                    ${status === 'pending' ? `
+                        <div class="request-actions">
+                            <button class="btn btn-success" onclick="approveAccessRequest('${solicitud.id}')">
+                                ✅ Aprobar y Generar Código
+                            </button>
+                            <button class="btn btn-danger" onclick="rejectAccessRequest('${solicitud.id}')">
+                                ❌ Rechazar
+                            </button>
+                            <button class="btn btn-warning" onclick="viewRequestDetails('${solicitud.id}')">
+                                👁️ Ver Detalles
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function getServiceName(service) {
+            const services = {
+                'URGENCIAS_ADULTO': 'Urgencias Adulto',
+                'URGENCIAS_PEDIATRICAS': 'Urgencias Pediátricas',
+                'UCI_ADULTO': 'UCI Adulto',
+                'UCI_NEONATAL': 'UCI Neonatal',
+                'HOSPITALIZACION_ADULTO': 'Hospitalización Adulto',
+                'CIRUGIA_ADULTO': 'Cirugía Adulto',
+                'CONSULTA_EXTERNA': 'Consulta Externa',
+                'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+                'RADIOLOGIA': 'Radiología',
+                'FARMACIA_CENTRAL': 'Farmacia Central',
+                'FISIOTERAPIA': 'Fisioterapia',
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'INFRAESTRUCTURA': 'Infraestructura',
+                'MECANICOS': 'Mecánicos'
+            };
+            return services[service] || service || 'No especificado';
+        }
+
+        function getPositionName(position) {
+            const positions = {
+                'JEFE_SERVICIO': 'Jefe de Servicio',
+                'COORDINADOR': 'Coordinador',
+                'ENFERMERA_JEFE': 'Enfermera Jefe',
+                'MEDICO_ESPECIALISTA': 'Médico Especialista',
+                'AUXILIAR_ENFERMERIA': 'Auxiliar de Enfermería',
+                'ADMINISTRATIVO': 'Personal Administrativo'
+            };
+            return positions[position] || position || 'No especificado';
+        }
+
+        // 🎯 Funciones de gestión de accesos
+        async function approveAccessRequest(requestId) {
+            console.log('✅ Iniciando aprobación de solicitud:', requestId);
+            
+            try {
+                // Buscar la solicitud
+                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+                if (!solicitud) {
+                    alert('❌ Error: Solicitud no encontrada');
+                    return;
+                }
+
+                // Mostrar modal de confirmación
+                showApprovalModal(solicitud);
+
+            } catch (error) {
+                console.error('❌ Error iniciando aprobación:', error);
+                alert('❌ Error al procesar la solicitud: ' + error.message);
+            }
+        }
+
+        function showApprovalModal(solicitud) {
+            const modal = document.getElementById('approval-modal');
+            const content = document.getElementById('approval-modal-content');
+            
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h4 style="color: #1f2937; margin-bottom: 0.5rem;">Aprobar Solicitud de Acceso</h4>
+                    <p style="color: #6b7280;">Se generará automáticamente un código de 4 dígitos para el usuario</p>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📋 Datos del Solicitante</h5>
+                    <p><strong>Nombre:</strong> ${solicitud.nombreCompleto}</p>
+                    <p><strong>Email:</strong> ${solicitud.email}</p>
+                    <p><strong>Servicio:</strong> ${getServiceName(solicitud.servicioHospitalario)}</p>
+                    <p><strong>Cargo:</strong> ${getPositionName(solicitud.cargo)}</p>
+                </div>
+
+                <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #166534; margin-bottom: 0.75rem;">🔐 Al aprobar esta solicitud:</h5>
+                    <ul style="color: #047857; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>✅ Se generará un código de acceso único de 4 dígitos</li>
+                        <li>👤 Se creará el usuario en la base de datos</li>
+                        <li>📧 El usuario podrá ingresar con email + código</li>
+                        <li>🌐 Todo se sincronizará automáticamente con Airtable</li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button class="btn btn-success" onclick="confirmApproveRequest('${solicitud.id}')" style="min-width: 150px;">
+                        ✅ Confirmar Aprobación
+                    </button>
+                    <button class="btn btn-warning" onclick="closeApprovalModal()" style="min-width: 120px;">
+                        ↩️ Cancelar
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        async function confirmApproveRequest(requestId) {
+            console.log('🚀 Confirmando aprobación de solicitud:', requestId);
+            
+            try {
+                // Cerrar modal de confirmación
+                closeApprovalModal();
+                
+                // Mostrar indicador de carga
+                showLoadingResult('⏳ Procesando aprobación...', 'Generando código de acceso y creando usuario...');
+                
+                // Llamar al método de aprobación
+                const result = await window.airtableAPI.approveAccessRequestAndCreateUser(requestId);
+                
+                if (result.success) {
+                    // Actualizar datos locales
+                    await refreshAccessFromCloud();
+                    
+                    // Mostrar resultado exitoso
+                    showSuccessResult(result, requestId);
+                } else {
+                    throw new Error('La aprobación no fue exitosa');
+                }
+
+            } catch (error) {
+                console.error('❌ Error en confirmación de aprobación:', error);
+                showErrorResult(error.message);
+            }
+        }
+
+        function showLoadingResult(title, message) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = title;
+            content.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div class="loading-spinner" style="width: 3rem; height: 3rem; border-width: 4px; margin: 0 auto 1rem;"></div>
+                    <p style="color: #6b7280; font-size: 1rem;">${message}</p>
+                    <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 0.5rem;">Por favor espere...</p>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function showSuccessResult(result, requestId) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = '🎉 ¡Aprobación Exitosa!';
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                    <h4 style="color: #059669; margin-bottom: 0.5rem;">Usuario creado exitosamente</h4>
+                </div>
+                
+                <div style="background: #dcfce7; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #166534; margin-bottom: 1rem;">👤 Datos del Usuario Creado</h5>
+                    <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                        <p><strong>Nombre:</strong> ${result.user.nombreCompleto}</p>
+                        <p><strong>Email:</strong> ${result.user.email}</p>
+                        <p><strong>Servicio:</strong> ${getServiceName(result.user.servicioHospitalario)}</p>
+                        <p><strong>Estado:</strong> ${result.user.estado}</p>
+                    </div>
+                </div>
+
+                <div style="background: #fef3c7; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
+                    <h5 style="color: #d97706; margin-bottom: 1rem;">🔐 Código de Acceso Generado</h5>
+                    <div style="font-size: 2rem; font-weight: bold; color: #b45309; letter-spacing: 0.5rem; background: white; padding: 1rem; border-radius: 0.5rem; border: 2px solid #f59e0b;">
+                        ${result.accessCode}
+                    </div>
+                    <p style="color: #92400e; font-size: 0.875rem; margin-top: 0.75rem;">
+                        El usuario podrá ingresar al Portal de Solicitudes con su email y este código
+                    </p>
+                </div>
+
+                <div style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1e40af; margin-bottom: 0.75rem;">📱 Instrucciones para el Usuario</h5>
+                    <ol style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>Ir al Portal de Solicitudes</li>
+                        <li>Hacer clic en "Iniciar Sesión"</li>
+                        <li>Ingresar email: <strong>${result.user.email}</strong></li>
+                        <li>Ingresar código: <strong>${result.accessCode}</strong></li>
+                        <li>¡Ya puede usar el sistema!</li>
+                    </ol>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="closeResultModal()" style="min-width: 150px;">
+                        ✅ Entendido
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function showErrorResult(errorMessage) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = '❌ Error en Aprobación';
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">❌</div>
+                    <h4 style="color: #ef4444; margin-bottom: 0.5rem;">No se pudo completar la aprobación</h4>
+                </div>
+                
+                <div style="background: #fee2e2; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #dc2626; margin-bottom: 0.5rem;">📋 Detalles del Error</h5>
+                    <p style="color: #b91c1c; font-size: 0.875rem;">${errorMessage}</p>
+                </div>
+
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1e40af; margin-bottom: 0.75rem;">🔧 Posibles Soluciones</h5>
+                    <ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>Verificar conexión a internet</li>
+                        <li>Refrescar la página y volver a intentar</li>
+                        <li>Verificar que la solicitud aún esté pendiente</li>
+                        <li>Contactar al administrador del sistema</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-danger" onclick="closeResultModal()" style="min-width: 120px;">
+                        ↩️ Cerrar
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        async function rejectAccessRequest(requestId) {
+            const confirmed = confirm('❌ ¿Está seguro que desea rechazar esta solicitud?\n\nEsta acción no se puede deshacer.');
+            if (!confirmed) return;
+
+            try {
+                await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                    estado: 'RECHAZADA',
+                    fechaRechazo: new Date().toISOString()
+                });
+
+                await refreshAccessFromCloud();
+                alert('❌ Solicitud rechazada correctamente');
+
+            } catch (error) {
+                console.error('❌ Error rechazando solicitud:', error);
+                alert('❌ Error al rechazar la solicitud: ' + error.message);
+            }
+        }
+
+        function viewRequestDetails(requestId) {
+            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+            if (!solicitud) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            alert(`📋 DETALLES DE LA SOLICITUD\n\n👤 Nombre: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n🏥 Servicio: ${getServiceName(solicitud.servicioHospitalario)}\n💼 Cargo: ${getPositionName(solicitud.cargo)}\n📱 Teléfono: ${solicitud.telefono || 'No especificado'}\n📅 Fecha: ${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}\n📝 Justificación: ${solicitud.justificacion || 'No especificada'}\n🆔 ID: ${solicitud.id}`);
+        }
+
+        async function approveAllPending() {
+            const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
+            
+            if (pendientes.length === 0) {
+                alert('ℹ️ No hay solicitudes pendientes para aprobar');
+                return;
+            }
+
+            const confirmed = confirm(`✅ ¿Aprobar todas las ${pendientes.length} solicitudes pendientes?\n\nSe generarán códigos automáticamente para todos los usuarios.`);
+            if (!confirmed) return;
+
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const solicitud of pendientes) {
+                    try {
+                        await window.airtableAPI.approveAccessRequestAndCreateUser(solicitud.id);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Error aprobando ${solicitud.id}:`, error);
+                        errorCount++;
+                    }
+                }
+
+                await refreshAccessFromCloud();
+                alert(`📊 RESULTADO DE APROBACIÓN MASIVA\n\n✅ Exitosas: ${successCount}\n❌ Errores: ${errorCount}\n📋 Total procesadas: ${pendientes.length}`);
+
+            } catch (error) {
+                console.error('❌ Error en aprobación masiva:', error);
+                alert('❌ Error en aprobación masiva: ' + error.message);
+            }
+        }
+
+        // Funciones de modal
+        function closeApprovalModal() {
+            document.getElementById('approval-modal').classList.remove('show');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.remove('show');
+        }
+
+        // 🎯 Otras funciones existentes
         function showView(viewName) {
             document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
             document.getElementById(viewName + '-view').classList.remove('hidden');
@@ -1016,7 +1667,10 @@
         }
 
         function showNotifications() {
-            alert(`🔔 ESTADO DEL SISTEMA CLOUD\n\n📊 DATOS SINCRONIZADOS:\n• ${cloudSolicitudes.length} Solicitudes de mantenimiento\n• ${cloudTecnicos.length} Técnicos registrados\n• ${cloudUsuarios.length} Usuarios con acceso\n• ${cloudSolicitudesAcceso.length} Solicitudes de acceso\n\n🌐 CONEXIÓN:\n• Airtable: ${isConnectedToAirtable ? '🟢 Conectado' : '🔴 Desconectado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n\n✅ Sistema funcionando ${isConnectedToAirtable ? 'en la nube' : 'en modo local'}`);
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
+            const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
+            
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total técnicos: ${cloudTecnicos.length}`);
         }
 
         // Funciones placeholder para mantener compatibilidad
@@ -1029,20 +1683,23 @@
         }
 
         function autoAssignPending() {
-            alert('🤖 Función de auto-asignación en desarrollo para la versión cloud');
+            alert('🤖 Función de auto-asignación en desarrollo');
         }
 
         function showAddTechnicianModal() {
-            alert('➕ Modal de agregar técnico en desarrollo para la versión cloud');
-        }
-
-        function approveAllPending() {
-            alert('✅ Función de aprobación masiva en desarrollo para la versión cloud');
+            alert('➕ Modal de agregar técnico en desarrollo');
         }
 
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia');
+            
+            // Cerrar modales al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
             
             // Esperar a que airtable-config.js se cargue
             setTimeout(async () => {
