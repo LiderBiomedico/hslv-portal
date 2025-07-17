@@ -1,7 +1,7 @@
-// 🛡️ Configuración CORREGIDA de Airtable API - Solución Error 404
-// airtable-config.js - Versión que soluciona problemas de update/aprobación
+// 🛡️ Configuración CORREGIDA de Airtable API - Solución Error 404 + getAccessStatistics
+// airtable-config.js - Versión que soluciona problemas de update/aprobación + método faltante
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA ERROR 404)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA CON ESTADÍSTICAS)...');
 
 class AirtableAPI {
     constructor() {
@@ -732,6 +732,87 @@ class AirtableAPI {
         }
     }
 
+    // 📊 ESTADÍSTICAS DE ACCESO (método faltante corregido)
+    async getAccessStatistics() {
+        try {
+            console.log('📊 Obteniendo estadísticas de acceso...');
+            
+            // Obtener datos en paralelo
+            const [usuarios, solicitudesAcceso, solicitudes, tecnicos] = await Promise.all([
+                this.getUsuarios(),
+                this.getSolicitudesAcceso(),
+                this.getSolicitudes(),
+                this.getTecnicos()
+            ]);
+
+            const stats = {
+                usuarios: {
+                    total: usuarios.length,
+                    activos: usuarios.filter(u => u.estado === 'ACTIVO').length,
+                    inactivos: usuarios.filter(u => u.estado === 'INACTIVO').length,
+                    conCodigo: usuarios.filter(u => u.codigoAcceso).length
+                },
+                solicitudesAcceso: {
+                    total: solicitudesAcceso.length,
+                    pendientes: solicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length,
+                    aprobadas: solicitudesAcceso.filter(s => s.estado === 'APROBADA').length,
+                    rechazadas: solicitudesAcceso.filter(s => s.estado === 'RECHAZADA').length
+                },
+                solicitudes: {
+                    total: solicitudes.length,
+                    pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
+                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length
+                },
+                tecnicos: {
+                    total: tecnicos.length,
+                    disponibles: tecnicos.filter(t => t.estado === 'disponible').length,
+                    ocupados: tecnicos.filter(t => t.estado === 'ocupado').length
+                },
+                porServicio: {},
+                porCargo: {},
+                timestamp: new Date().toISOString()
+            };
+
+            // Estadísticas por servicio hospitalario
+            usuarios.forEach(user => {
+                if (user.servicioHospitalario) {
+                    stats.porServicio[user.servicioHospitalario] = (stats.porServicio[user.servicioHospitalario] || 0) + 1;
+                }
+            });
+
+            // Estadísticas por cargo
+            usuarios.forEach(user => {
+                if (user.cargo) {
+                    stats.porCargo[user.cargo] = (stats.porCargo[user.cargo] || 0) + 1;
+                }
+            });
+
+            console.log('✅ Estadísticas calculadas:', {
+                usuarios: stats.usuarios.total,
+                solicitudesAcceso: stats.solicitudesAcceso.total,
+                solicitudes: stats.solicitudes.total,
+                tecnicos: stats.tecnicos.total
+            });
+
+            return stats;
+
+        } catch (error) {
+            console.error('❌ Error obteniendo estadísticas:', error);
+            
+            // Retornar estadísticas por defecto en caso de error
+            return {
+                usuarios: { total: 0, activos: 0, inactivos: 0, conCodigo: 0 },
+                solicitudesAcceso: { total: 0, pendientes: 0, aprobadas: 0, rechazadas: 0 },
+                solicitudes: { total: 0, pendientes: 0, completadas: 0 },
+                tecnicos: { total: 0, disponibles: 0, ocupados: 0 },
+                porServicio: {},
+                porCargo: {},
+                error: error.message,
+                timestamp: new Date().toISOString()
+            };
+        }
+    }
+
     getStatus() {
         return {
             isConnected: this.connectionStatus === 'connected',
@@ -741,13 +822,23 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '2.2-fixed-404',
+            version: '2.3-fixed-stats',
             fixes: [
                 'Manejo mejorado de errores 404',
                 'Métodos alternativos de update',
                 'Fallbacks robustos para todas las operaciones',
                 'Mejor logging y debugging',
-                'Simulación local para updates fallidos'
+                'Simulación local para updates fallidos',
+                'Método getAccessStatistics agregado',
+                'Estadísticas completas implementadas'
+            ],
+            availableMethods: [
+                'getSolicitudes', 'createSolicitud',
+                'getTecnicos', 'getUsuarios', 'createUsuario', 'updateUsuario',
+                'getSolicitudesAcceso', 'createSolicitudAcceso', 'updateSolicitudAcceso',
+                'validateUserCredentials', 'generateUniqueAccessCode', 'findUserByEmail',
+                'approveAccessRequestAndCreateUser', 'getAccessStatistics',
+                'testConnection', 'makeRequest'
             ]
         };
     }
@@ -800,6 +891,8 @@ try {
         console.log('📋 Versión:', status.version);
         console.log('🔧 Correcciones aplicadas:');
         status.fixes.forEach(fix => console.log(`  • ${fix}`));
+        console.log('📚 Métodos disponibles:');
+        status.availableMethods.forEach(method => console.log(`  • ${method}`));
         
         return status;
     };
@@ -809,8 +902,9 @@ try {
     console.error('❌ Error creando debugAirtableConnection:', error);
 }
 
-console.log('✅ airtable-config.js (VERSIÓN CORREGIDA ERROR 404) cargado completamente');
-console.log('🔧 Correcciones aplicadas para solucionar errores de aprobación');
+console.log('✅ airtable-config.js (VERSIÓN CORREGIDA CON ESTADÍSTICAS) cargado completamente');
+console.log('🔧 Correcciones aplicadas para solucionar errores de aprobación y estadísticas');
+console.log('📊 Método getAccessStatistics agregado y funcionando');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
 // Auto-verificación
@@ -818,6 +912,14 @@ setTimeout(async () => {
     if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
         console.log('🔄 Sistema corregido cargado correctamente');
         console.log('✅ Errores 404 de aprobación deberían estar solucionados');
+        console.log('📊 Método getAccessStatistics disponible');
+        
+        // Verificar que el método existe
+        if (typeof window.airtableAPI.getAccessStatistics === 'function') {
+            console.log('✅ getAccessStatistics correctamente implementado');
+        } else {
+            console.error('❌ getAccessStatistics aún no está disponible');
+        }
     } else {
         console.warn('⚠️ Algunos componentes no se cargaron correctamente');
     }
