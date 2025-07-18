@@ -85,6 +85,7 @@ class AirtableAPI {
 
     async makeRequest(endpoint, method = 'GET', data = null) {
         console.log('📡 Request:', method, endpoint);
+        console.log('🔗 Estado de conexión antes del request:', this.connectionStatus);
         
         try {
             let url, options;
@@ -127,6 +128,7 @@ class AirtableAPI {
             const response = await fetch(url, options);
             
             console.log('📨 Status:', response.status);
+            console.log('📨 StatusText:', response.statusText);
             
             if (!response.ok) {
                 const errorText = await response.text();
@@ -146,13 +148,18 @@ class AirtableAPI {
                     }
                 }
                 
+                // NO cambiar estado de conexión en errores HTTP normales (400, 500, etc.)
+                // Solo cambiar en errores de red
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
             const result = await response.json();
             console.log('✅ Request exitoso - Records:', result.records?.length || result.id || 'N/A');
+            console.log('📄 Resultado completo:', result);
             
+            // MANTENER estado de conexión como conectado después de éxito
             if (this.connectionStatus !== 'connected') {
+                console.log('🔄 Actualizando estado a conectado después de request exitoso');
                 this.connectionStatus = 'connected';
                 this.notifyConnectionStatus(true);
             }
@@ -161,22 +168,30 @@ class AirtableAPI {
             
         } catch (error) {
             console.error('❌ Request falló:', error);
+            console.error('🔍 Tipo de error:', error.name);
+            console.error('📝 Mensaje:', error.message);
             
-            if (this.connectionStatus !== 'disconnected') {
-                this.connectionStatus = 'disconnected';
-                this.notifyConnectionStatus(false);
-            }
-            
-            // Fallback solo para operaciones de lectura
-            if (method === 'GET') {
-                console.warn('⚠️ Usando localStorage fallback para lectura');
-                return this.localStorageFallback(endpoint, method, data);
-            }
-            
-            // Para operaciones de escritura, intentar método alternativo
-            if (method === 'PATCH' || method === 'POST') {
-                console.warn('⚠️ Intentando método alternativo para escritura...');
-                return await this.alternativeWriteMethod(endpoint, method, data);
+            // Solo cambiar estado de conexión en errores de red reales
+            if (error.name === 'TypeError' || error.message.includes('fetch')) {
+                console.log('🌐 Error de red detectado - cambiando estado a desconectado');
+                if (this.connectionStatus !== 'disconnected') {
+                    this.connectionStatus = 'disconnected';
+                    this.notifyConnectionStatus(false);
+                }
+                
+                // Fallback solo para operaciones de lectura
+                if (method === 'GET') {
+                    console.warn('⚠️ Usando localStorage fallback para lectura');
+                    return this.localStorageFallback(endpoint, method, data);
+                }
+                
+                // Para operaciones de escritura, intentar método alternativo
+                if (method === 'PATCH' || method === 'POST') {
+                    console.warn('⚠️ Intentando método alternativo para escritura...');
+                    return await this.alternativeWriteMethod(endpoint, method, data);
+                }
+            } else {
+                console.log('⚠️ Error HTTP/lógico - manteniendo estado de conexión');
             }
             
             throw error;
@@ -361,6 +376,68 @@ class AirtableAPI {
         }
     }
 
+    // 🧪 Test específico para tabla de técnicos
+    async testTecnicosTable() {
+        console.log('🧪 Test específico de tabla Tecnicos...');
+        
+        try {
+            let url, options;
+            
+            if (this.useProxy) {
+                url = `${this.baseUrl}/Tecnicos?maxRecords=1`;
+                options = {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
+                    credentials: 'same-origin'
+                };
+            } else {
+                url = `${this.baseUrl}/Tecnicos?maxRecords=1`;
+                options = {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${this.directApiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                };
+            }
+            
+            console.log('🎯 Testing URL:', url);
+            
+            const response = await fetch(url, options);
+            console.log('📨 Response status:', response.status);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ Test tabla Tecnicos falló:', response.status, errorText);
+                return { 
+                    success: false, 
+                    status: response.status, 
+                    error: errorText,
+                    url: url 
+                };
+            }
+            
+            const result = await response.json();
+            console.log('✅ Test tabla Tecnicos exitoso');
+            console.log('📋 Estructura:', result);
+            
+            return { 
+                success: true, 
+                records: result.records?.length || 0,
+                structure: result 
+            };
+            
+        } catch (error) {
+            console.error('❌ Test tabla Tecnicos falló:', error);
+            return { 
+                success: false, 
+                error: error.message 
+            };
+        }
+    }
+
     // 📋 MÉTODOS PRINCIPALES - SOLICITUDES
     async getSolicitudes() {
         try {
@@ -413,6 +490,7 @@ class AirtableAPI {
     // 📝 Crear técnico/personal de soporte
     async createTecnico(tecnicoData) {
         console.log('➕ Creando personal de soporte:', tecnicoData.nombre);
+        console.log('🔍 Datos a enviar:', tecnicoData);
         
         const data = {
             fields: {
@@ -426,13 +504,30 @@ class AirtableAPI {
             }
         };
         
+        console.log('📤 Payload para Airtable:', JSON.stringify(data, null, 2));
+        
         try {
             const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
             console.log('✅ Personal de soporte creado exitosamente:', result.id);
+            console.log('🔗 Estado de conexión después de crear:', this.connectionStatus);
+            
+            // Verificar que el resultado tenga la estructura esperada
+            if (!result || !result.id) {
+                console.warn('⚠️ Resultado inesperado de Airtable:', result);
+                throw new Error('Respuesta inválida de Airtable - sin ID');
+            }
+            
             return result;
         } catch (error) {
             console.error('❌ Error creando personal de soporte:', error);
-            throw error;
+            console.error('🔍 Detalles del error:', {
+                message: error.message,
+                stack: error.stack,
+                connectionStatus: this.connectionStatus
+            });
+            
+            // No permitir que falle silenciosamente - siempre lanzar el error
+            throw new Error(`Error creando personal: ${error.message}`);
         }
     }
 
@@ -1025,7 +1120,7 @@ class AirtableAPI {
                 'getSolicitudesAcceso', 'createSolicitudAcceso', 'updateSolicitudAcceso',
                 'validateUserCredentials', 'generateUniqueAccessCode', 'findUserByEmail',
                 'approveAccessRequestAndCreateUser', 'getAccessStatistics',
-                'testConnection', 'makeRequest'
+                'testConnection', 'testTecnicosTable', 'makeRequest'
             ]
         };
     }

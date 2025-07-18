@@ -776,6 +776,9 @@
                         <button class="btn btn-warning btn-sm" onclick="showPersonalStatistics()">
                             📊 Estadísticas
                         </button>
+                        <button class="btn btn-secondary btn-sm" onclick="debugPersonalConnection()">
+                            🔧 Debug Conexión
+                        </button>
                     </div>
                 </div>
                 <div class="card-content">
@@ -1454,6 +1457,8 @@
                 estado: document.getElementById('personal-estado').value
             };
 
+            console.log('📝 Datos del formulario:', formData);
+
             // Validaciones
             if (!formData.nombre || !formData.email || !formData.area || !formData.tipo) {
                 alert('❌ Por favor complete todos los campos obligatorios (*)');
@@ -1472,38 +1477,89 @@
                 const submitBtn = event.target.querySelector('button[type="submit"]');
                 const originalText = submitBtn.innerHTML;
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Guardando...';
+                submitBtn.innerHTML = '⏳ Guardando en Airtable...';
 
-                // Crear en Airtable
-                const result = await window.airtableAPI.createTecnico(formData);
-                
-                if (result) {
-                    // Agregar a lista local
-                    cloudTecnicos.push({
-                        id: result.id,
-                        ...formData
-                    });
+                console.log('🚀 Iniciando creación en Airtable...');
+                console.log('🔗 Estado de conexión antes:', isConnectedToAirtable);
 
-                    // Actualizar displays
-                    updateTechniciansList();
-                    updateAllCounters();
-                    
-                    // Cerrar modal y mostrar éxito
-                    closeAddPersonalModal();
-                    
-                    alert(`✅ Personal agregado exitosamente\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${formData.area}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n\n🌐 Sincronizado con Airtable`);
-                } else {
-                    throw new Error('No se recibió confirmación de creación');
+                // Verificar conexión antes de proceder
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
                 }
 
+                // Test rápido de conexión
+                const connectionTest = await window.airtableAPI.testConnection();
+                console.log('🧪 Test de conexión previo:', connectionTest);
+
+                if (!connectionTest) {
+                    console.warn('⚠️ Test de conexión falló, pero intentando crear...');
+                }
+
+                // Crear en Airtable
+                console.log('📤 Enviando datos a Airtable...');
+                const result = await window.airtableAPI.createTecnico(formData);
+                console.log('✅ Resultado de Airtable:', result);
+                
+                if (!result || !result.id) {
+                    throw new Error('Respuesta inválida de Airtable - no se recibió ID');
+                }
+
+                // Agregar a lista local SOLO después de confirmación exitosa
+                const newPersonal = {
+                    id: result.id,
+                    ...result.fields,
+                    // Asegurar que tenemos todos los campos
+                    nombre: formData.nombre,
+                    email: formData.email,
+                    area: formData.area,
+                    tipo: formData.tipo,
+                    especialidad: formData.especialidad,
+                    estado: formData.estado
+                };
+
+                console.log('➕ Agregando a lista local:', newPersonal);
+                cloudTecnicos.push(newPersonal);
+
+                // Actualizar displays después de confirmación exitosa
+                console.log('🔄 Actualizando displays...');
+                updateTechniciansList();
+                updateAllCounters();
+                updatePersonnelSummaries();
+                
+                // Verificar estado de conexión después de la operación
+                console.log('🔗 Estado de conexión después:', window.airtableAPI.connectionStatus);
+                
+                // Forzar actualización del estado de conexión si es necesario
+                if (window.airtableAPI.connectionStatus === 'connected' && !isConnectedToAirtable) {
+                    console.log('🔄 Forzando actualización de estado de conexión...');
+                    updateConnectionStatus('connected', 'Conectado a Airtable');
+                }
+                
+                // Cerrar modal y mostrar éxito
+                closeAddPersonalModal();
+                
+                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${formData.area}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente`);
+
             } catch (error) {
-                console.error('❌ Error agregando personal:', error);
-                alert('❌ Error al agregar personal: ' + error.message);
+                console.error('❌ Error completo agregando personal:', error);
+                console.error('🔍 Stack trace:', error.stack);
+                
+                // Diagnóstico detallado
+                console.log('🔍 Diagnóstico del error:');
+                console.log('  - API disponible:', !!window.airtableAPI);
+                console.log('  - Estado conexión:', window.airtableAPI?.connectionStatus);
+                console.log('  - Hostname:', window.location.hostname);
+                console.log('  - useProxy:', window.airtableAPI?.useProxy);
+                
+                alert(`❌ Error al agregar personal: ${error.message}\n\n🔍 Detalles técnicos:\n• API disponible: ${!!window.airtableAPI}\n• Estado: ${window.airtableAPI?.connectionStatus}\n• Método: ${window.airtableAPI?.useProxy ? 'Proxy' : 'Directo'}\n\n💡 Intente:\n1. Verificar conexión a internet\n2. Refrescar la página\n3. Revisar configuración de Airtable`);
+                
             } finally {
                 // Restaurar botón
                 const submitBtn = event.target.querySelector('button[type="submit"]');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '💾 Guardar Personal';
+                }
             }
         }
 
@@ -1696,6 +1752,122 @@
             const auxiliares = cloudTecnicos.filter(p => p.tipo === 'auxiliar').length;
 
             alert(`📊 ESTADÍSTICAS DE PERSONAL DE SOPORTE\n\n📋 TOTALES:\n• Total registrado: ${total}\n\n📊 POR ESTADO:\n• 🟢 Disponibles: ${disponibles}\n• 🟡 Ocupados: ${ocupados}\n• 🔴 Inactivos: ${inactivos}\n\n🏥 POR ÁREA:\n• Biomédica: ${biomedica}\n• Mecánica: ${mecanica}\n• Infraestructura: ${infraestructura}\n\n👨‍💼 POR TIPO:\n• 🎓 Ingenieros: ${ingenieros}\n• 🔧 Técnicos: ${tecnicos}\n• 🛠️ Auxiliares: ${auxiliares}\n\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+        }
+
+        async function debugPersonalConnection() {
+            console.log('🔧 INICIANDO DEBUG DE PERSONAL DE SOPORTE');
+            
+            try {
+                const results = {
+                    general: {},
+                    tecnicosTable: {},
+                    currentData: {}
+                };
+
+                // Test general de conexión
+                console.log('1. 🧪 Test general de conexión...');
+                results.general.connected = await window.airtableAPI.testConnection();
+                results.general.status = window.airtableAPI.connectionStatus;
+                results.general.useProxy = window.airtableAPI.useProxy;
+                results.general.hostname = window.location.hostname;
+
+                // Test específico de tabla Tecnicos
+                console.log('2. 🧪 Test específico de tabla Tecnicos...');
+                results.tecnicosTable = await window.airtableAPI.testTecnicosTable();
+
+                // Información de datos actuales
+                console.log('3. 📊 Revisando datos actuales...');
+                results.currentData.localCount = cloudTecnicos.length;
+                results.currentData.isConnectedVar = isConnectedToAirtable;
+                results.currentData.lastSync = new Date().toISOString();
+
+                // Intentar cargar técnicos desde Airtable
+                console.log('4. 📋 Intentando cargar técnicos...');
+                try {
+                    const remoteTecnicos = await window.airtableAPI.getTecnicos();
+                    results.currentData.remoteCount = remoteTecnicos.length;
+                    results.currentData.loadSuccess = true;
+                } catch (loadError) {
+                    results.currentData.loadError = loadError.message;
+                    results.currentData.loadSuccess = false;
+                }
+
+                console.log('📋 RESULTADOS DEL DEBUG:', results);
+
+                // Mostrar resultados
+                let message = `🔧 DEBUG DE PERSONAL DE SOPORTE\n\n`;
+                message += `🌐 CONEXIÓN GENERAL:\n`;
+                message += `• Estado: ${results.general.connected ? '✅ Conectado' : '❌ Desconectado'}\n`;
+                message += `• Status API: ${results.general.status}\n`;
+                message += `• Método: ${results.general.useProxy ? 'Proxy Netlify' : 'Directo'}\n`;
+                message += `• Hostname: ${results.general.hostname}\n\n`;
+
+                message += `🔧 TABLA TECNICOS:\n`;
+                if (results.tecnicosTable.success) {
+                    message += `• Test: ✅ Exitoso\n`;
+                    message += `• Records: ${results.tecnicosTable.records} encontrados\n`;
+                } else {
+                    message += `• Test: ❌ Falló\n`;
+                    message += `• Error: ${results.tecnicosTable.error}\n`;
+                    if (results.tecnicosTable.status) {
+                        message += `• Status HTTP: ${results.tecnicosTable.status}\n`;
+                    }
+                }
+
+                message += `\n📊 DATOS ACTUALES:\n`;
+                message += `• Local: ${results.currentData.localCount} registros\n`;
+                message += `• Variable conexión: ${results.currentData.isConnectedVar ? '✅' : '❌'}\n`;
+                if (results.currentData.loadSuccess) {
+                    message += `• Remoto: ${results.currentData.remoteCount} registros\n`;
+                    message += `• Carga: ✅ Exitosa\n`;
+                } else {
+                    message += `• Carga: ❌ Falló\n`;
+                    message += `• Error: ${results.currentData.loadError}\n`;
+                }
+
+                message += `\n🕐 ${new Date().toLocaleTimeString('es-CO')}`;
+
+                alert(message);
+
+                // Si hay problemas, intentar soluciones
+                if (!results.tecnicosTable.success) {
+                    const retry = confirm(`❌ Se detectaron problemas con la tabla Tecnicos.\n\n¿Desea intentar:\n1. Refrescar conexión\n2. Recargar datos\n3. Verificar configuración?`);
+                    
+                    if (retry) {
+                        await attemptPersonalFix();
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ Error en debug:', error);
+                alert(`❌ Error durante debug: ${error.message}\n\nRevise la consola para más detalles.`);
+            }
+        }
+
+        async function attemptPersonalFix() {
+            try {
+                console.log('🔧 Intentando corregir problemas de personal...');
+                
+                // 1. Reconectar
+                updateConnectionStatus('connecting', 'Intentando reconectar...');
+                
+                // 2. Test de tabla específica
+                const tableTest = await window.airtableAPI.testTecnicosTable();
+                
+                if (tableTest.success) {
+                    // 3. Recargar datos
+                    await syncTechniciansWithCloud();
+                    updateConnectionStatus('connected', 'Reconectado exitosamente');
+                    alert('✅ Problemas corregidos\n\nConexión restablecida y datos sincronizados.');
+                } else {
+                    updateConnectionStatus('disconnected', 'Error persistente');
+                    alert(`❌ No se pudo corregir automáticamente\n\nError: ${tableTest.error}\n\n💡 Posibles soluciones:\n1. Verificar que existe la tabla "Tecnicos" en Airtable\n2. Revisar permisos de API\n3. Verificar configuración de campos`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en intento de corrección:', error);
+                alert(`❌ Error durante corrección: ${error.message}`);
+            }
         }
 
         function updateAccessRequestsList() {
