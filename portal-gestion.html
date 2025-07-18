@@ -625,8 +625,8 @@
                 <button class="nav-tab" onclick="showView('solicitudes')" data-view="solicitudes">
                     📋 Solicitudes (<span id="total-count">-</span>)
                 </button>
-                <button class="nav-tab" onclick="showView('tecnicos')" data-view="tecnicos">
-                    👥 Técnicos (<span id="total-technicians-nav">-</span>)
+                <button class="nav-tab" onclick="showView('personal')" data-view="personal">
+                    👥 Personal de Soporte (<span id="total-technicians-nav">-</span>)
                 </button>
                 <button class="nav-tab" onclick="showView('accesos')" data-view="accesos">
                     🔐 Accesos (<span id="pending-access-count">-</span>)
@@ -761,14 +761,14 @@
             </div>
         </div>
 
-        <!-- Técnicos View -->
-        <div id="tecnicos-view" class="view hidden">
+        <!-- Personal de Soporte View -->
+        <div id="personal-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">👥 Gestión de Técnicos (Cloud)</h2>
+                    <h2 class="card-title">👥 Gestión de Personal de Soporte (Cloud)</h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-success btn-sm" onclick="showAddTechnicianModal()">
-                            ➕ Agregar Técnico
+                            ➕ Agregar Personal
                         </button>
                         <button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
                             🔄 Sincronizar con Airtable
@@ -779,7 +779,7 @@
                     <div id="technicians-container">
                         <div style="text-align: center; padding: 3rem; color: #6b7280;">
                             <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal técnico desde Airtable...</h3>
+                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal de soporte desde Airtable...</h3>
                             <p>Conectando con la base de datos en la nube</p>
                         </div>
                     </div>
@@ -940,7 +940,7 @@
                 cloudUsuarios = usuarios;
                 cloudSolicitudesAcceso = solicitudesAcceso;
                 
-                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} técnicos, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
+                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
                 
                 // Actualizar interfaz
                 updateAllCounters();
@@ -966,7 +966,7 @@
                 const localUsers = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
                 const localAccessRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
                 
-                // Convertir técnicos del formato anterior
+                // Convertir personal del formato anterior
                 cloudTecnicos = [];
                 Object.entries(localTechnicians).forEach(([area, tecnicosArea]) => {
                     tecnicosArea.forEach(tecnico => {
@@ -1007,7 +1007,7 @@
             document.getElementById('metric-pendientes').textContent = pendientes;
             document.getElementById('total-count').textContent = total;
 
-            // Contadores de técnicos
+            // Contadores de personal de soporte
             const totalTechnicians = cloudTecnicos.length;
             const biomedicaTecnicos = cloudTecnicos.filter(t => t.area === 'INGENIERIA_BIOMEDICA').length;
             const mecanicaTecnicos = cloudTecnicos.filter(t => t.area === 'MECANICA').length;
@@ -1023,7 +1023,7 @@
             document.getElementById('pending-access-count').textContent = pendingAccess;
             document.getElementById('notification-count').textContent = pendingAccess + pendientes;
 
-            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} técnicos, ${pendingAccess} accesos pendientes`);
+            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} personal, ${pendingAccess} accesos pendientes`);
         }
 
         function updateAllDisplays() {
@@ -1092,17 +1092,17 @@
         }
 
         async function syncTechniciansWithCloud() {
-            console.log('🔄 Sincronizando técnicos con Airtable...');
+            console.log('🔄 Sincronizando personal de soporte con Airtable...');
             
             try {
                 cloudTecnicos = await window.airtableAPI.getTecnicos();
                 updateTechniciansList();
                 updateAllCounters();
                 
-                alert(`✅ Técnicos sincronizados con Airtable\n\n📊 Total: ${cloudTecnicos.length} técnicos\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
-                console.error('❌ Error sincronizando técnicos:', error);
+                console.error('❌ Error sincronizando personal:', error);
                 alert('❌ Error al sincronizar con Airtable. Verificar conexión.');
             }
         }
@@ -1151,7 +1151,7 @@
                             <p><strong>Área:</strong> ${solicitud.servicioIngenieria || 'No especificada'}</p>
                             <p><strong>Equipo:</strong> ${solicitud.equipo || 'No especificado'}</p>
                             <p><strong>Ubicación:</strong> ${solicitud.ubicacion || 'No especificada'}</p>
-                            <p><strong>Técnico:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
+                            <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
                         </div>
                     `).join('')}
                 `;
@@ -1165,15 +1165,15 @@
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay técnicos registrados</h3>
-                        <p>El personal técnico aparecerá aquí cuando se agregue</p>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay personal de soporte registrado</h3>
+                        <p>El personal de soporte aparecerá aquí cuando se agregue</p>
                     </div>
                 `;
             } else {
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Técnicos Cargados desde Airtable</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Personal técnico sincronizado desde la nube</p>
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Cargado desde Airtable</h4>
+                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube</p>
                     </div>
                     ${cloudTecnicos.map(tecnico => `
                         <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
@@ -1657,7 +1657,7 @@
                 case 'solicitudes':
                     updateSolicitudesList();
                     break;
-                case 'tecnicos':
+                case 'personal':
                     updateTechniciansList();
                     break;
                 case 'accesos':
@@ -1670,7 +1670,7 @@
             const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
             const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
             
-            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total técnicos: ${cloudTecnicos.length}`);
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
         }
 
         // Funciones placeholder para mantener compatibilidad
@@ -1687,7 +1687,7 @@
         }
 
         function showAddTechnicianModal() {
-            alert('➕ Modal de agregar técnico en desarrollo');
+            alert('➕ Modal de agregar personal de soporte en desarrollo');
         }
 
         // 🚀 Inicialización
