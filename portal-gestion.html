@@ -767,15 +767,57 @@
                 <div class="card-header">
                     <h2 class="card-title">👥 Gestión de Personal de Soporte (Cloud)</h2>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="showAddTechnicianModal()">
+                        <button class="btn btn-success btn-sm" onclick="showAddPersonalModal()">
                             ➕ Agregar Personal
                         </button>
                         <button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
                             🔄 Sincronizar con Airtable
                         </button>
+                        <button class="btn btn-warning btn-sm" onclick="showPersonalStatistics()">
+                            📊 Estadísticas
+                        </button>
                     </div>
                 </div>
                 <div class="card-content">
+                    <!-- Filtros de Personal -->
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
+                        <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Personal</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Área:</label>
+                                <select id="filter-area" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todas las áreas</option>
+                                    <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                                    <option value="MECANICA">Mecánica</option>
+                                    <option value="INFRAESTRUCTURA">Infraestructura</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Estado:</label>
+                                <select id="filter-estado" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todos los estados</option>
+                                    <option value="disponible">Disponible</option>
+                                    <option value="ocupado">Ocupado</option>
+                                    <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Tipo:</label>
+                                <select id="filter-tipo" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="ingeniero">Ingeniero</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="auxiliar">Auxiliar</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: end;">
+                                <button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="width: 100%;">
+                                    🗑️ Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="technicians-container">
                         <div style="text-align: center; padding: 3rem; color: #6b7280;">
                             <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
@@ -847,6 +889,92 @@
             </div>
             <div id="result-modal-content">
                 <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Personal -->
+    <div id="add-personal-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Agregar Personal de Soporte</h3>
+                <button class="modal-close" onclick="closeAddPersonalModal()">&times;</button>
+            </div>
+            <div id="add-personal-content">
+                <form id="add-personal-form">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👤 Nombre Completo *</label>
+                            <input type="text" id="personal-nombre" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="Nombres y apellidos">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📧 Email *</label>
+                            <input type="email" id="personal-email" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="correo@hospital.com">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">🏥 Área de Trabajo *</label>
+                            <select id="personal-area" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="">Seleccione área</option>
+                                <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                                <option value="MECANICA">Mecánica</option>
+                                <option value="INFRAESTRUCTURA">Infraestructura</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👨‍💼 Tipo de Personal *</label>
+                            <select id="personal-tipo" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="">Seleccione tipo</option>
+                                <option value="ingeniero">🎓 Ingeniero</option>
+                                <option value="tecnico">🔧 Técnico</option>
+                                <option value="auxiliar">🛠️ Auxiliar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">⚙️ Especialidad</label>
+                            <input type="text" id="personal-especialidad" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="Especialidad o certificaciones">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📊 Estado Inicial</label>
+                            <select id="personal-estado" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="disponible">🟢 Disponible</option>
+                                <option value="ocupado">🟡 Ocupado</option>
+                                <option value="inactivo">🔴 Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid #3b82f6;">
+                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Información Importante</h5>
+                        <ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                            <li>El personal registrado podrá ser asignado a solicitudes de mantenimiento</li>
+                            <li>Los datos se guardan automáticamente en Airtable</li>
+                            <li>El estado puede cambiarse posteriormente</li>
+                            <li>La especialidad ayuda en la asignación adecuada de tareas</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 150px;">
+                            💾 Guardar Personal
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddPersonalModal()" style="min-width: 120px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Personal -->
+    <div id="edit-personal-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
+                <button class="modal-close" onclick="closeEditPersonalModal()">&times;</button>
+            </div>
+            <div id="edit-personal-content">
+                <!-- Contenido dinámico del modal de edición -->
             </div>
         </div>
     </div>
@@ -1167,28 +1295,407 @@
                         <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay personal de soporte registrado</h3>
                         <p>El personal de soporte aparecerá aquí cuando se agregue</p>
+                        <button class="btn btn-success" onclick="showAddPersonalModal()" style="margin-top: 1rem;">
+                            ➕ Agregar Primer Personal
+                        </button>
                     </div>
                 `;
             } else {
+                // Aplicar filtros si existen
+                let filteredPersonal = [...cloudTecnicos];
+                
+                const filterArea = document.getElementById('filter-area')?.value;
+                const filterEstado = document.getElementById('filter-estado')?.value;
+                const filterTipo = document.getElementById('filter-tipo')?.value;
+                
+                if (filterArea) {
+                    filteredPersonal = filteredPersonal.filter(p => p.area === filterArea);
+                }
+                if (filterEstado) {
+                    filteredPersonal = filteredPersonal.filter(p => p.estado === filterEstado);
+                }
+                if (filterTipo) {
+                    filteredPersonal = filteredPersonal.filter(p => p.tipo === filterTipo);
+                }
+
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Cargado desde Airtable</h4>
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Total (${filteredPersonal.length} mostrados)</h4>
                         <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube</p>
                     </div>
-                    ${cloudTecnicos.map(tecnico => `
-                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                                <strong>${tecnico.nombre}</strong>
-                                <span style="background: #dcfce7; color: #166534; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">${tecnico.estado || 'disponible'}</span>
-                            </div>
-                            <p><strong>Área:</strong> ${tecnico.area}</p>
-                            <p><strong>Tipo:</strong> ${tecnico.tipo}</p>
-                            <p><strong>Especialidad:</strong> ${tecnico.especialidad}</p>
-                            <p><strong>Email:</strong> ${tecnico.email}</p>
+                    
+                    ${filteredPersonal.length === 0 ? `
+                        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <h4 style="color: #1f2937;">No se encontró personal con los filtros aplicados</h4>
+                            <button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="margin-top: 1rem;">
+                                🗑️ Limpiar Filtros
+                            </button>
                         </div>
-                    `).join('')}
+                    ` : ''}
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                        ${filteredPersonal.map(personal => createPersonalCard(personal)).join('')}
+                    </div>
                 `;
             }
+        }
+
+        function createPersonalCard(personal) {
+            const getStatusColor = (estado) => {
+                const colors = {
+                    'disponible': { bg: '#dcfce7', color: '#166534', icon: '🟢' },
+                    'ocupado': { bg: '#fef3c7', color: '#d97706', icon: '🟡' },
+                    'inactivo': { bg: '#fee2e2', color: '#dc2626', icon: '🔴' }
+                };
+                return colors[estado] || colors['disponible'];
+            };
+
+            const getAreaInfo = (area) => {
+                const areas = {
+                    'INGENIERIA_BIOMEDICA': { name: 'Ing. Biomédica', icon: '🏥', color: '#059669' },
+                    'MECANICA': { name: 'Mecánica', icon: '⚙️', color: '#f59e0b' },
+                    'INFRAESTRUCTURA': { name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' }
+                };
+                return areas[area] || { name: area, icon: '🔧', color: '#6b7280' };
+            };
+
+            const getTipoInfo = (tipo) => {
+                const tipos = {
+                    'ingeniero': { name: 'Ingeniero', icon: '🎓' },
+                    'tecnico': { name: 'Técnico', icon: '🔧' },
+                    'auxiliar': { name: 'Auxiliar', icon: '🛠️' }
+                };
+                return tipos[tipo] || { name: tipo, icon: '👤' };
+            };
+
+            const statusColor = getStatusColor(personal.estado);
+            const areaInfo = getAreaInfo(personal.area);
+            const tipoInfo = getTipoInfo(personal.tipo);
+
+            return `
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; position: relative; border-left: 4px solid ${areaInfo.color};">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <h4 style="color: #1f2937; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 600;">
+                                ${tipoInfo.icon} ${personal.nombre}
+                            </h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">
+                                ${areaInfo.icon} ${areaInfo.name}
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background: ${statusColor.bg}; color: ${statusColor.color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                ${statusColor.icon} ${personal.estado}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: #6b7280; font-weight: 600;">👨‍💼 Tipo:</span>
+                            <span style="color: #1f2937;">${tipoInfo.name}</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: #6b7280; font-weight: 600;">📧 Email:</span>
+                            <span style="color: #1f2937;">${personal.email}</span>
+                        </div>
+                        
+                        ${personal.especialidad ? `
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #6b7280; font-weight: 600;">⚙️ Especialidad:</span>
+                                <span style="color: #1f2937;">${personal.especialidad}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-sm" onclick="editPersonal('${personal.id}')">
+                            ✏️ Editar
+                        </button>
+                        <button class="btn btn-${personal.estado === 'disponible' ? 'warning' : 'success'} btn-sm" onclick="togglePersonalStatus('${personal.id}')">
+                            ${personal.estado === 'disponible' ? '⏸️ Ocupar' : '▶️ Liberar'}
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="viewPersonalDetails('${personal.id}')">
+                            👁️ Ver
+                        </button>
+                    </div>
+
+                    <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: ${areaInfo.color}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.65rem; font-weight: 600;">
+                        ${areaInfo.icon} ID: ${personal.id ? personal.id.substring(personal.id.length - 4) : 'N/A'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 🔄 Funciones del módulo de Personal de Soporte
+
+        function showAddPersonalModal() {
+            const modal = document.getElementById('add-personal-modal');
+            modal.classList.add('show');
+            
+            // Limpiar formulario
+            document.getElementById('add-personal-form').reset();
+        }
+
+        function closeAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.remove('show');
+        }
+
+        async function handleAddPersonalForm(event) {
+            event.preventDefault();
+            
+            const formData = {
+                nombre: document.getElementById('personal-nombre').value.trim(),
+                email: document.getElementById('personal-email').value.trim(),
+                area: document.getElementById('personal-area').value,
+                tipo: document.getElementById('personal-tipo').value,
+                especialidad: document.getElementById('personal-especialidad').value.trim(),
+                estado: document.getElementById('personal-estado').value
+            };
+
+            // Validaciones
+            if (!formData.nombre || !formData.email || !formData.area || !formData.tipo) {
+                alert('❌ Por favor complete todos los campos obligatorios (*)');
+                return;
+            }
+
+            // Verificar email único
+            const existingPersonal = cloudTecnicos.find(p => p.email === formData.email);
+            if (existingPersonal) {
+                alert('❌ Ya existe personal registrado con este email');
+                return;
+            }
+
+            try {
+                // Mostrar loading
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Guardando...';
+
+                // Crear en Airtable
+                const result = await window.airtableAPI.createTecnico(formData);
+                
+                if (result) {
+                    // Agregar a lista local
+                    cloudTecnicos.push({
+                        id: result.id,
+                        ...formData
+                    });
+
+                    // Actualizar displays
+                    updateTechniciansList();
+                    updateAllCounters();
+                    
+                    // Cerrar modal y mostrar éxito
+                    closeAddPersonalModal();
+                    
+                    alert(`✅ Personal agregado exitosamente\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${formData.area}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n\n🌐 Sincronizado con Airtable`);
+                } else {
+                    throw new Error('No se recibió confirmación de creación');
+                }
+
+            } catch (error) {
+                console.error('❌ Error agregando personal:', error);
+                alert('❌ Error al agregar personal: ' + error.message);
+            } finally {
+                // Restaurar botón
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        function editPersonal(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const modal = document.getElementById('edit-personal-modal');
+            const content = document.getElementById('edit-personal-content');
+            
+            content.innerHTML = `
+                <form id="edit-personal-form" onsubmit="handleEditPersonalForm(event, '${personalId}')">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👤 Nombre Completo</label>
+                        <input type="text" id="edit-personal-nombre" value="${personal.nombre}" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📧 Email</label>
+                        <input type="email" id="edit-personal-email" value="${personal.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">⚙️ Especialidad</label>
+                        <input type="text" id="edit-personal-especialidad" value="${personal.especialidad || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📊 Estado</label>
+                        <select id="edit-personal-estado" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="disponible" ${personal.estado === 'disponible' ? 'selected' : ''}>🟢 Disponible</option>
+                            <option value="ocupado" ${personal.estado === 'ocupado' ? 'selected' : ''}>🟡 Ocupado</option>
+                            <option value="inactivo" ${personal.estado === 'inactivo' ? 'selected' : ''}>🔴 Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">📋 Información Actual</h5>
+                        <p style="color: #1e3a8a; font-size: 0.875rem; margin: 0;">
+                            <strong>Área:</strong> ${personal.area}<br>
+                            <strong>Tipo:</strong> ${personal.tipo}<br>
+                            <strong>ID:</strong> ${personal.id}
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 120px;">
+                            💾 Actualizar
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditPersonalModal()" style="min-width: 100px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeEditPersonalModal() {
+            document.getElementById('edit-personal-modal').classList.remove('show');
+        }
+
+        async function handleEditPersonalForm(event, personalId) {
+            event.preventDefault();
+            
+            const updateData = {
+                nombre: document.getElementById('edit-personal-nombre').value.trim(),
+                email: document.getElementById('edit-personal-email').value.trim(),
+                especialidad: document.getElementById('edit-personal-especialidad').value.trim(),
+                estado: document.getElementById('edit-personal-estado').value
+            };
+
+            try {
+                // Mostrar loading
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Actualizando...';
+
+                // Actualizar en Airtable
+                await window.airtableAPI.updateTecnico(personalId, updateData);
+                
+                // Actualizar en lista local
+                const personalIndex = cloudTecnicos.findIndex(p => p.id === personalId);
+                if (personalIndex !== -1) {
+                    cloudTecnicos[personalIndex] = { ...cloudTecnicos[personalIndex], ...updateData };
+                }
+
+                // Actualizar displays
+                updateTechniciansList();
+                updateAllCounters();
+                
+                // Cerrar modal y mostrar éxito
+                closeEditPersonalModal();
+                
+                alert(`✅ Personal actualizado exitosamente\n\n👤 ${updateData.nombre}\n📊 Estado: ${updateData.estado}\n\n🌐 Sincronizado con Airtable`);
+
+            } catch (error) {
+                console.error('❌ Error actualizando personal:', error);
+                alert('❌ Error al actualizar personal: ' + error.message);
+            } finally {
+                // Restaurar botón
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        async function togglePersonalStatus(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const newStatus = personal.estado === 'disponible' ? 'ocupado' : 'disponible';
+            const action = newStatus === 'ocupado' ? 'ocupar' : 'liberar';
+            
+            const confirmed = confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} a ${personal.nombre}?\n\nCambiará de "${personal.estado}" a "${newStatus}"`);
+            if (!confirmed) return;
+
+            try {
+                // Actualizar en Airtable
+                await window.airtableAPI.updateTecnico(personalId, { estado: newStatus });
+                
+                // Actualizar localmente
+                personal.estado = newStatus;
+                
+                // Actualizar displays
+                updateTechniciansList();
+                updateAllCounters();
+                
+                alert(`✅ Estado actualizado\n\n👤 ${personal.nombre}\n📊 Nuevo estado: ${newStatus}`);
+
+            } catch (error) {
+                console.error('❌ Error cambiando estado:', error);
+                alert('❌ Error al cambiar estado: ' + error.message);
+            }
+        }
+
+        function viewPersonalDetails(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const areas = {
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'MECANICA': 'Mecánica',
+                'INFRAESTRUCTURA': 'Infraestructura'
+            };
+
+            const tipos = {
+                'ingeniero': 'Ingeniero',
+                'tecnico': 'Técnico', 
+                'auxiliar': 'Auxiliar'
+            };
+
+            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areas[personal.area] || personal.area}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}`);
+        }
+
+        function filterPersonal() {
+            updateTechniciansList();
+        }
+
+        function clearPersonalFilters() {
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-tipo').value = '';
+            updateTechniciansList();
+        }
+
+        function showPersonalStatistics() {
+            const total = cloudTecnicos.length;
+            const disponibles = cloudTecnicos.filter(p => p.estado === 'disponible').length;
+            const ocupados = cloudTecnicos.filter(p => p.estado === 'ocupado').length;
+            const inactivos = cloudTecnicos.filter(p => p.estado === 'inactivo').length;
+
+            const biomedica = cloudTecnicos.filter(p => p.area === 'INGENIERIA_BIOMEDICA').length;
+            const mecanica = cloudTecnicos.filter(p => p.area === 'MECANICA').length;
+            const infraestructura = cloudTecnicos.filter(p => p.area === 'INFRAESTRUCTURA').length;
+
+            const ingenieros = cloudTecnicos.filter(p => p.tipo === 'ingeniero').length;
+            const tecnicos = cloudTecnicos.filter(p => p.tipo === 'tecnico').length;
+            const auxiliares = cloudTecnicos.filter(p => p.tipo === 'auxiliar').length;
+
+            alert(`📊 ESTADÍSTICAS DE PERSONAL DE SOPORTE\n\n📋 TOTALES:\n• Total registrado: ${total}\n\n📊 POR ESTADO:\n• 🟢 Disponibles: ${disponibles}\n• 🟡 Ocupados: ${ocupados}\n• 🔴 Inactivos: ${inactivos}\n\n🏥 POR ÁREA:\n• Biomédica: ${biomedica}\n• Mecánica: ${mecanica}\n• Infraestructura: ${infraestructura}\n\n👨‍💼 POR TIPO:\n• 🎓 Ingenieros: ${ingenieros}\n• 🔧 Técnicos: ${tecnicos}\n• 🛠️ Auxiliares: ${auxiliares}\n\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
         }
 
         function updateAccessRequestsList() {
@@ -1687,7 +2194,7 @@
         }
 
         function showAddTechnicianModal() {
-            alert('➕ Modal de agregar personal de soporte en desarrollo');
+            showAddPersonalModal();
         }
 
         // 🚀 Inicialización
@@ -1700,6 +2207,9 @@
                     e.target.classList.remove('show');
                 }
             });
+            
+            // Event listener para formulario de agregar personal
+            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
             
             // Esperar a que airtable-config.js se cargue
             setTimeout(async () => {
