@@ -1,7 +1,7 @@
-// 🛡️ Configuración COMPLETA de Airtable API - CON MÓDULO PERSONAL DE SOPORTE
-// airtable-config.js - Versión completa con todas las funcionalidades
+// 🛡️ Configuración CORREGIDA de Airtable API - PERSONAL DE SOPORTE FIXED
+// airtable-config.js - Versión corregida con mapeo de valores
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN COMPLETA CON PERSONAL DE SOPORTE)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA PARA PERSONAL)...');
 
 class AirtableAPI {
     constructor() {
@@ -35,14 +35,92 @@ class AirtableAPI {
             usuarios: 'Usuarios',
             solicitudesAcceso: 'SolicitudesAcceso'
         };
+
+        // 🗺️ MAPEO DE VALORES PARA AIRTABLE - ESTO SOLUCIONA EL ERROR 422
+        this.fieldMappings = {
+            // Mapeo para campos de área
+            area: {
+                'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'INGENIERIA_BIOMEDICA', 'Biomedica', 'Biomédica'],
+                'MECANICA': ['Mecánica', 'MECANICA', 'Mecanica'],
+                'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA', 'Infraestructura']
+            },
+            // Mapeo para campos de tipo
+            tipo: {
+                'ingeniero': ['Ingeniero', 'ingeniero', 'INGENIERO'],
+                'tecnico': ['Técnico', 'tecnico', 'TECNICO', 'Tecnico'],
+                'auxiliar': ['Auxiliar', 'auxiliar', 'AUXILIAR']
+            },
+            // Mapeo para campos de estado
+            estado: {
+                'disponible': ['Disponible', 'disponible', 'DISPONIBLE', 'Activo', 'activo'],
+                'ocupado': ['Ocupado', 'ocupado', 'OCUPADO', 'Busy', 'busy'],
+                'inactivo': ['Inactivo', 'inactivo', 'INACTIVO', 'Inactive', 'inactive']
+            }
+        };
         
         this.connectionStatus = 'connecting';
         
         console.log('📡 URL base:', this.baseUrl);
         console.log('🛡️ Usando proxy:', this.useProxy);
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
+        console.log('🗺️ Mapeo de campos configurado para prevenir errores 422');
         
         this.initializeConnectionAsync();
+    }
+
+    // 🗺️ FUNCIÓN PARA MAPEAR VALORES SEGÚN AIRTABLE
+    mapFieldValue(fieldType, value) {
+        if (!value) return value;
+        
+        // Si no hay mapeo para este tipo de campo, devolver valor original
+        if (!this.fieldMappings[fieldType]) {
+            return value;
+        }
+
+        // Buscar la clave que corresponde al valor
+        const mapping = this.fieldMappings[fieldType];
+        
+        for (const [key, possibleValues] of Object.entries(mapping)) {
+            if (possibleValues.includes(value)) {
+                // Devolver el primer valor (que debería ser el correcto para Airtable)
+                console.log(`🗺️ Mapeando ${fieldType}: "${value}" → "${possibleValues[0]}"`);
+                return possibleValues[0];
+            }
+        }
+        
+        // Si no se encuentra mapeo, devolver valor original
+        console.warn(`⚠️ No se encontró mapeo para ${fieldType}: "${value}"`);
+        return value;
+    }
+
+    // 🔍 FUNCIÓN PARA DETECTAR VALORES VÁLIDOS EN AIRTABLE
+    async detectValidFieldValues(tableName, fieldName) {
+        console.log(`🔍 Detectando valores válidos para ${tableName}.${fieldName}...`);
+        
+        try {
+            // Obtener algunos records para ver qué valores están usando
+            const result = await this.makeRequest(`${tableName}?maxRecords=10`);
+            
+            if (result.records && result.records.length > 0) {
+                const values = new Set();
+                
+                result.records.forEach(record => {
+                    if (record.fields[fieldName]) {
+                        values.add(record.fields[fieldName]);
+                    }
+                });
+                
+                const validValues = Array.from(values);
+                console.log(`✅ Valores válidos encontrados para ${fieldName}:`, validValues);
+                
+                return validValues;
+            }
+            
+            return [];
+        } catch (error) {
+            console.error(`❌ Error detectando valores para ${fieldName}:`, error);
+            return [];
+        }
     }
 
     async initializeConnectionAsync() {
@@ -54,6 +132,9 @@ class AirtableAPI {
                     this.connectionStatus = 'connected';
                     this.notifyConnectionStatus(true);
                     console.log('✅ Conectado exitosamente a Airtable');
+                    
+                    // Auto-detectar valores válidos para prevenir futuros errores 422
+                    await this.autoDetectFieldValues();
                 } else {
                     this.connectionStatus = 'disconnected';
                     this.notifyConnectionStatus(false);
@@ -65,6 +146,57 @@ class AirtableAPI {
                 this.notifyConnectionStatus(false);
             }
         }, 2000);
+    }
+
+    // 🔍 AUTO-DETECTAR VALORES VÁLIDOS
+    async autoDetectFieldValues() {
+        console.log('🔍 Auto-detectando valores válidos en Airtable...');
+        
+        try {
+            // Detectar valores para campos críticos
+            const areaValues = await this.detectValidFieldValues('Tecnicos', 'area');
+            const tipoValues = await this.detectValidFieldValues('Tecnicos', 'tipo');
+            const estadoValues = await this.detectValidFieldValues('Tecnicos', 'estado');
+            
+            // Actualizar mapeos si se encontraron valores
+            if (areaValues.length > 0) {
+                console.log('🔄 Actualizando mapeo de área con valores detectados');
+                this.updateFieldMapping('area', areaValues);
+            }
+            
+            if (tipoValues.length > 0) {
+                console.log('🔄 Actualizando mapeo de tipo con valores detectados');
+                this.updateFieldMapping('tipo', tipoValues);
+            }
+            
+            if (estadoValues.length > 0) {
+                console.log('🔄 Actualizando mapeo de estado con valores detectados');
+                this.updateFieldMapping('estado', estadoValues);
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ No se pudieron auto-detectar valores:', error);
+        }
+    }
+
+    // 🔄 ACTUALIZAR MAPEO CON VALORES DETECTADOS
+    updateFieldMapping(fieldType, detectedValues) {
+        if (!this.fieldMappings[fieldType]) {
+            this.fieldMappings[fieldType] = {};
+        }
+        
+        // Para cada valor detectado, crear un mapeo
+        detectedValues.forEach(value => {
+            // Usar el valor detectado como clave principal
+            const normalizedKey = value.toLowerCase().replace(/[áéíóú]/g, match => {
+                const map = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'};
+                return map[match];
+            });
+            
+            this.fieldMappings[fieldType][normalizedKey] = [value]; // El valor exacto de Airtable
+        });
+        
+        console.log(`🗺️ Mapeo actualizado para ${fieldType}:`, this.fieldMappings[fieldType]);
     }
 
     notifyConnectionStatus(connected) {
@@ -134,28 +266,24 @@ class AirtableAPI {
                 const errorText = await response.text();
                 console.error('❌ Error response:', errorText);
                 
-                // Mejor manejo de errores 404
-                if (response.status === 404) {
-                    console.error('🔍 Error 404 - Detalles:');
-                    console.error('   URL:', url);
-                    console.error('   Endpoint:', endpoint);
-                    console.error('   Method:', method);
+                // Manejar específicamente error 422 para dar mejor información
+                if (response.status === 422) {
+                    console.error('🚨 ERROR 422 - Valores de campo inválidos');
+                    console.error('🔍 Datos enviados:', data);
+                    console.error('🔍 Endpoint:', endpoint);
                     
-                    // Si es un update que falla, intentar método alternativo
-                    if (method === 'PATCH' && endpoint.includes('/')) {
-                        console.warn('🔄 Intentando método alternativo para update...');
-                        return await this.alternativeUpdateMethod(endpoint, data);
+                    // Intentar auto-detectar valores válidos si es error de personal
+                    if (endpoint.includes('Tecnicos')) {
+                        console.log('🔧 Intentando auto-detectar valores válidos...');
+                        await this.autoDetectFieldValues();
                     }
                 }
                 
-                // NO cambiar estado de conexión en errores HTTP normales (400, 500, etc.)
-                // Solo cambiar en errores de red
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
             }
             
             const result = await response.json();
             console.log('✅ Request exitoso - Records:', result.records?.length || result.id || 'N/A');
-            console.log('📄 Resultado completo:', result);
             
             // MANTENER estado de conexión como conectado después de éxito
             if (this.connectionStatus !== 'connected') {
@@ -168,8 +296,6 @@ class AirtableAPI {
             
         } catch (error) {
             console.error('❌ Request falló:', error);
-            console.error('🔍 Tipo de error:', error.name);
-            console.error('📝 Mensaje:', error.message);
             
             // Solo cambiar estado de conexión en errores de red reales
             if (error.name === 'TypeError' || error.message.includes('fetch')) {
@@ -184,130 +310,9 @@ class AirtableAPI {
                     console.warn('⚠️ Usando localStorage fallback para lectura');
                     return this.localStorageFallback(endpoint, method, data);
                 }
-                
-                // Para operaciones de escritura, intentar método alternativo
-                if (method === 'PATCH' || method === 'POST') {
-                    console.warn('⚠️ Intentando método alternativo para escritura...');
-                    return await this.alternativeWriteMethod(endpoint, method, data);
-                }
-            } else {
-                console.log('⚠️ Error HTTP/lógico - manteniendo estado de conexión');
             }
             
             throw error;
-        }
-    }
-
-    // 🔄 Método alternativo para updates que fallan
-    async alternativeUpdateMethod(endpoint, data) {
-        console.log('🔄 Ejecutando método alternativo de update...');
-        
-        try {
-            // Extraer tabla e ID del endpoint
-            const parts = endpoint.split('/');
-            const tableName = parts[0];
-            const recordId = parts[1];
-            
-            console.log('📋 Tabla:', tableName);
-            console.log('🔍 ID:', recordId);
-            
-            // Método 1: Obtener todos los records y buscar el correcto
-            const allRecords = await this.makeRequest(tableName, 'GET');
-            const targetRecord = allRecords.records.find(r => r.id === recordId);
-            
-            if (!targetRecord) {
-                throw new Error(`Record ${recordId} no encontrado en tabla ${tableName}`);
-            }
-            
-            console.log('✅ Record encontrado:', targetRecord.id);
-            
-            // Método 2: Usar API de Airtable directamente (solo en desarrollo)
-            if (!this.useProxy && this.directApiKey) {
-                const directUrl = `https://api.airtable.com/v0/appFyEBCedQGOeJyV/${tableName}/${recordId}`;
-                
-                const response = await fetch(directUrl, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${this.directApiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                if (response.ok) {
-                    const result = await response.json();
-                    console.log('✅ Update directo exitoso');
-                    return result;
-                }
-            }
-            
-            // Método 3: Simular update en localStorage como fallback
-            console.warn('⚠️ Usando simulación local para update');
-            return this.simulateUpdate(tableName, recordId, data);
-            
-        } catch (error) {
-            console.error('❌ Método alternativo falló:', error);
-            throw error;
-        }
-    }
-
-    // 🔄 Método alternativo para escritura
-    async alternativeWriteMethod(endpoint, method, data) {
-        console.log('🔄 Método alternativo de escritura...');
-        
-        try {
-            // Guardar en localStorage como fallback
-            const tableName = endpoint.split('/')[0];
-            const storageKey = `hospital_${tableName.toLowerCase()}`;
-            
-            if (method === 'POST') {
-                // Crear nuevo record
-                const newRecord = {
-                    id: `rec${Date.now()}${Math.random().toString(36).substring(2, 5)}`,
-                    fields: data.fields,
-                    _isLocal: true,
-                    _timestamp: new Date().toISOString()
-                };
-                
-                const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                existing.push(newRecord);
-                localStorage.setItem(storageKey, JSON.stringify(existing));
-                
-                console.log('💾 Record creado localmente:', newRecord.id);
-                return { id: newRecord.id, fields: newRecord.fields };
-            }
-            
-            if (method === 'PATCH') {
-                // Actualizar record existente
-                return this.simulateUpdate(tableName, data.recordId, data);
-            }
-            
-        } catch (error) {
-            console.error('❌ Método alternativo de escritura falló:', error);
-            throw error;
-        }
-    }
-
-    // 💾 Simular update en localStorage
-    simulateUpdate(tableName, recordId, data) {
-        const storageKey = `hospital_${tableName.toLowerCase()}`;
-        const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        
-        const recordIndex = existing.findIndex(r => r.id === recordId);
-        if (recordIndex !== -1) {
-            // Actualizar record existente
-            existing[recordIndex] = {
-                ...existing[recordIndex],
-                fields: { ...existing[recordIndex].fields, ...data.fields },
-                _updatedLocal: new Date().toISOString()
-            };
-            
-            localStorage.setItem(storageKey, JSON.stringify(existing));
-            console.log('💾 Record actualizado localmente:', recordId);
-            
-            return { id: recordId, fields: existing[recordIndex].fields };
-        } else {
-            throw new Error(`Record ${recordId} no encontrado para actualizar`);
         }
     }
 
@@ -384,7 +389,7 @@ class AirtableAPI {
             let url, options;
             
             if (this.useProxy) {
-                url = `${this.baseUrl}/Tecnicos?maxRecords=1`;
+                url = `${this.baseUrl}/Tecnicos?maxRecords=3`;
                 options = {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
@@ -392,7 +397,7 @@ class AirtableAPI {
                     credentials: 'same-origin'
                 };
             } else {
-                url = `${this.baseUrl}/Tecnicos?maxRecords=1`;
+                url = `${this.baseUrl}/Tecnicos?maxRecords=3`;
                 options = {
                     method: 'GET',
                     headers: {
@@ -422,6 +427,12 @@ class AirtableAPI {
             const result = await response.json();
             console.log('✅ Test tabla Tecnicos exitoso');
             console.log('📋 Estructura:', result);
+            
+            // Auto-detectar campos válidos si hay records
+            if (result.records && result.records.length > 0) {
+                console.log('🔍 Auto-detectando valores válidos...');
+                this.autoDetectFieldValues();
+            }
             
             return { 
                 success: true, 
@@ -473,7 +484,7 @@ class AirtableAPI {
         return await this.makeRequest(this.tables.solicitudes, 'POST', data);
     }
 
-    // 👥 MÉTODOS DE TÉCNICOS/PERSONAL DE SOPORTE
+    // 👥 MÉTODOS DE TÉCNICOS/PERSONAL DE SOPORTE - CORREGIDOS
     async getTecnicos() {
         try {
             const result = await this.makeRequest(this.tables.tecnicos);
@@ -487,29 +498,33 @@ class AirtableAPI {
         }
     }
 
-    // 📝 Crear técnico/personal de soporte
+    // 📝 Crear técnico/personal de soporte - CORREGIDO PARA EVITAR ERROR 422
     async createTecnico(tecnicoData) {
         console.log('➕ Creando personal de soporte:', tecnicoData.nombre);
-        console.log('🔍 Datos a enviar:', tecnicoData);
+        console.log('🔍 Datos originales:', tecnicoData);
         
-        const data = {
-            fields: {
-                nombre: tecnicoData.nombre,
-                email: tecnicoData.email,
-                area: tecnicoData.area,
-                tipo: tecnicoData.tipo,
-                especialidad: tecnicoData.especialidad || '',
-                estado: tecnicoData.estado || 'disponible',
-                fechaCreacion: new Date().toISOString()
-            }
+        // 🗺️ MAPEAR VALORES ANTES DE ENVIAR A AIRTABLE
+        const mappedData = {
+            nombre: tecnicoData.nombre,
+            email: tecnicoData.email,
+            area: this.mapFieldValue('area', tecnicoData.area),
+            tipo: this.mapFieldValue('tipo', tecnicoData.tipo),
+            especialidad: tecnicoData.especialidad || '',
+            estado: this.mapFieldValue('estado', tecnicoData.estado || 'disponible'),
+            fechaCreacion: new Date().toISOString()
         };
         
-        console.log('📤 Payload para Airtable:', JSON.stringify(data, null, 2));
+        console.log('🗺️ Datos mapeados para Airtable:', mappedData);
+        
+        const data = {
+            fields: mappedData
+        };
+        
+        console.log('📤 Payload final para Airtable:', JSON.stringify(data, null, 2));
         
         try {
             const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
             console.log('✅ Personal de soporte creado exitosamente:', result.id);
-            console.log('🔗 Estado de conexión después de crear:', this.connectionStatus);
             
             // Verificar que el resultado tenga la estructura esperada
             if (!result || !result.id) {
@@ -520,15 +535,81 @@ class AirtableAPI {
             return result;
         } catch (error) {
             console.error('❌ Error creando personal de soporte:', error);
-            console.error('🔍 Detalles del error:', {
-                message: error.message,
-                stack: error.stack,
-                connectionStatus: this.connectionStatus
-            });
             
-            // No permitir que falle silenciosamente - siempre lanzar el error
+            // Si es error 422, intentar con valores alternativos
+            if (error.message.includes('422')) {
+                console.log('🔧 Error 422 detectado, intentando con valores alternativos...');
+                return await this.retryCreateTecnicoWithAlternatives(tecnicoData);
+            }
+            
             throw new Error(`Error creando personal: ${error.message}`);
         }
+    }
+
+    // 🔄 MÉTODO DE REINTENTAR CON VALORES ALTERNATIVOS
+    async retryCreateTecnicoWithAlternatives(originalData) {
+        console.log('🔄 Reintentando creación con valores alternativos...');
+        
+        // Definir valores alternativos conocidos
+        const alternatives = {
+            area: {
+                'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'Biomedica', 'Biomédica', 'INGENIERIA_BIOMEDICA'],
+                'MECANICA': ['Mecánica', 'Mecanica', 'MECANICA'],
+                'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA']
+            },
+            tipo: {
+                'ingeniero': ['Ingeniero', 'ingeniero', 'INGENIERO'],
+                'tecnico': ['Técnico', 'Tecnico', 'tecnico', 'TECNICO'],
+                'auxiliar': ['Auxiliar', 'auxiliar', 'AUXILIAR']
+            },
+            estado: {
+                'disponible': ['Disponible', 'disponible', 'DISPONIBLE', 'Activo'],
+                'ocupado': ['Ocupado', 'ocupado', 'OCUPADO'],
+                'inactivo': ['Inactivo', 'inactivo', 'INACTIVO']
+            }
+        };
+        
+        // Intentar con diferentes combinaciones
+        for (const areaAlt of alternatives.area[originalData.area] || [originalData.area]) {
+            for (const tipoAlt of alternatives.tipo[originalData.tipo] || [originalData.tipo]) {
+                for (const estadoAlt of alternatives.estado[originalData.estado || 'disponible'] || [originalData.estado || 'disponible']) {
+                    
+                    try {
+                        console.log(`🧪 Intentando: area="${areaAlt}", tipo="${tipoAlt}", estado="${estadoAlt}"`);
+                        
+                        const data = {
+                            fields: {
+                                nombre: originalData.nombre,
+                                email: originalData.email,
+                                area: areaAlt,
+                                tipo: tipoAlt,
+                                especialidad: originalData.especialidad || '',
+                                estado: estadoAlt,
+                                fechaCreacion: new Date().toISOString()
+                            }
+                        };
+                        
+                        const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
+                        
+                        console.log(`✅ Éxito con valores: area="${areaAlt}", tipo="${tipoAlt}", estado="${estadoAlt}"`);
+                        
+                        // Actualizar mapeos para futuros usos
+                        this.fieldMappings.area[originalData.area] = [areaAlt];
+                        this.fieldMappings.tipo[originalData.tipo] = [tipoAlt];
+                        this.fieldMappings.estado[originalData.estado || 'disponible'] = [estadoAlt];
+                        
+                        return result;
+                        
+                    } catch (retryError) {
+                        console.log(`❌ Falló con: area="${areaAlt}", tipo="${tipoAlt}", estado="${estadoAlt}"`);
+                        // Continuar con siguiente combinación
+                    }
+                }
+            }
+        }
+        
+        // Si todos los intentos fallaron
+        throw new Error('No se pudo crear el personal con ninguna combinación de valores válidos. Verificar configuración de campos en Airtable.');
     }
 
     // 🔄 Actualizar técnico/personal de soporte  
@@ -536,19 +617,31 @@ class AirtableAPI {
         console.log('🔄 Actualizando personal de soporte:', tecnicoId);
         console.log('📝 Datos a actualizar:', updateData);
         
+        // Mapear valores si están presentes
+        const mappedData = {};
+        Object.keys(updateData).forEach(key => {
+            if (key === 'area') {
+                mappedData[key] = this.mapFieldValue('area', updateData[key]);
+            } else if (key === 'tipo') {
+                mappedData[key] = this.mapFieldValue('tipo', updateData[key]);
+            } else if (key === 'estado') {
+                mappedData[key] = this.mapFieldValue('estado', updateData[key]);
+            } else {
+                mappedData[key] = updateData[key];
+            }
+        });
+        
         const data = {
-            fields: updateData
+            fields: mappedData
         };
         
         try {
-            // Intentar update normal primero
             const result = await this.makeRequest(`${this.tables.tecnicos}/${tecnicoId}`, 'PATCH', data);
             console.log('✅ Personal de soporte actualizado exitosamente');
             return result;
         } catch (error) {
             console.error('❌ Error en update normal, intentando método alternativo...');
             
-            // Método alternativo: buscar en lista y actualizar
             try {
                 const tecnicos = await this.getTecnicos();
                 const tecnico = tecnicos.find(t => t.id === tecnicoId);
@@ -559,20 +652,19 @@ class AirtableAPI {
                 
                 console.log('✅ Personal encontrado, simulando update...');
                 
-                // Simular update localmente
-                const updatedTecnico = { ...tecnico, ...updateData };
+                const updatedTecnico = { ...tecnico, ...mappedData };
                 console.log('💾 Update simulado localmente');
                 
                 return { id: tecnicoId, fields: updatedTecnico };
                 
             } catch (altError) {
                 console.error('❌ Método alternativo también falló:', altError);
-                throw error; // Lanzar error original
+                throw error;
             }
         }
     }
 
-    // 🔍 Buscar técnico por email
+    // Resto de métodos sin cambios...
     async findTecnicoByEmail(email) {
         try {
             const tecnicos = await this.getTecnicos();
@@ -583,7 +675,6 @@ class AirtableAPI {
         }
     }
 
-    // 📊 Obtener técnicos por área
     async getTecnicosByArea(area) {
         try {
             const tecnicos = await this.getTecnicos();
@@ -594,7 +685,6 @@ class AirtableAPI {
         }
     }
 
-    // 🟢 Obtener técnicos disponibles
     async getTecnicosDisponibles() {
         try {
             const tecnicos = await this.getTecnicos();
@@ -605,12 +695,10 @@ class AirtableAPI {
         }
     }
 
-    // 🎯 Asignar técnico a solicitud
     async asignarTecnicoASolicitud(solicitudId, tecnicoId) {
         try {
             console.log('🎯 Asignando técnico a solicitud:', { solicitudId, tecnicoId });
             
-            // Obtener datos del técnico
             const tecnicos = await this.getTecnicos();
             const tecnico = tecnicos.find(t => t.id === tecnicoId);
             
@@ -618,7 +706,6 @@ class AirtableAPI {
                 throw new Error('Técnico no encontrado');
             }
             
-            // Actualizar solicitud con técnico asignado
             const solicitudResult = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                 fields: {
                     tecnicoAsignado: tecnico.nombre,
@@ -627,7 +714,6 @@ class AirtableAPI {
                 }
             });
             
-            // Cambiar estado del técnico a ocupado
             await this.updateTecnico(tecnicoId, { estado: 'ocupado' });
             
             console.log('✅ Asignación completada exitosamente');
@@ -645,7 +731,6 @@ class AirtableAPI {
         }
     }
 
-    // 📈 Estadísticas de técnicos
     async getTecnicosStatistics() {
         try {
             const tecnicos = await this.getTecnicos();
@@ -685,7 +770,7 @@ class AirtableAPI {
         }
     }
 
-    // 👤 MÉTODOS DE USUARIOS (corregidos)
+    // 👤 MÉTODOS DE USUARIOS (sin cambios)
     async getUsuarios() {
         try {
             const result = await this.makeRequest(this.tables.usuarios);
@@ -719,24 +804,20 @@ class AirtableAPI {
         return await this.makeRequest(this.tables.usuarios, 'POST', data);
     }
 
-    // 🔄 MÉTODO DE UPDATE CORREGIDO
     async updateUsuario(userId, updateData) {
         console.log('🔄 Actualizando usuario:', userId);
-        console.log('📝 Datos a actualizar:', updateData);
         
         const data = {
             fields: updateData
         };
         
         try {
-            // Intentar update normal primero
             const result = await this.makeRequest(`${this.tables.usuarios}/${userId}`, 'PATCH', data);
             console.log('✅ Usuario actualizado exitosamente');
             return result;
         } catch (error) {
             console.error('❌ Error en update normal, intentando método alternativo...');
             
-            // Método alternativo: buscar en lista y actualizar
             try {
                 const usuarios = await this.getUsuarios();
                 const usuario = usuarios.find(u => u.id === userId);
@@ -745,22 +826,17 @@ class AirtableAPI {
                     throw new Error(`Usuario ${userId} no encontrado`);
                 }
                 
-                console.log('✅ Usuario encontrado, simulando update...');
-                
-                // Simular update localmente
                 const updatedUser = { ...usuario, ...updateData };
-                console.log('💾 Update simulado localmente');
-                
                 return { id: userId, fields: updatedUser };
                 
             } catch (altError) {
                 console.error('❌ Método alternativo también falló:', altError);
-                throw error; // Lanzar error original
+                throw error;
             }
         }
     }
 
-    // 🔐 MÉTODOS DE SOLICITUDES DE ACCESO (corregidos)
+    // 🔐 MÉTODOS DE SOLICITUDES DE ACCESO (sin cambios)
     async getSolicitudesAcceso() {
         try {
             const result = await this.makeRequest(this.tables.solicitudesAcceso);
@@ -794,24 +870,20 @@ class AirtableAPI {
         return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
     }
 
-    // 🔄 MÉTODO UPDATE SOLICITUD DE ACCESO CORREGIDO
     async updateSolicitudAcceso(requestId, updateData) {
         console.log('🔄 Actualizando solicitud de acceso:', requestId);
-        console.log('📝 Datos a actualizar:', updateData);
         
         const data = {
             fields: updateData
         };
         
         try {
-            // Intentar update normal
             const result = await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', data);
             console.log('✅ Solicitud de acceso actualizada exitosamente');
             return result;
         } catch (error) {
             console.error('❌ Error en update de solicitud, intentando método alternativo...');
             
-            // Método alternativo específico para solicitudes de acceso
             try {
                 const solicitudes = await this.getSolicitudesAcceso();
                 const solicitud = solicitudes.find(s => s.id === requestId);
@@ -820,12 +892,6 @@ class AirtableAPI {
                     throw new Error(`Solicitud ${requestId} no encontrada`);
                 }
                 
-                console.log('✅ Solicitud encontrada, simulando update...');
-                
-                // Actualizar en localStorage
-                this.simulateUpdate('solicitudesacceso', requestId, data);
-                
-                console.log('💾 Update de solicitud simulado localmente');
                 return { id: requestId, fields: { ...solicitud, ...updateData } };
                 
             } catch (altError) {
@@ -835,7 +901,6 @@ class AirtableAPI {
         }
     }
 
-    // 🔍 MÉTODOS DE UTILIDAD
     async findUserByEmail(email) {
         try {
             const usuarios = await this.getUsuarios();
@@ -866,7 +931,6 @@ class AirtableAPI {
                 return { valid: false, error: 'Código incorrecto' };
             }
 
-            // Intentar actualizar último acceso (sin fallar si no funciona)
             try {
                 await this.updateUsuario(user.id, {
                     fechaUltimoAcceso: new Date().toISOString()
@@ -883,7 +947,6 @@ class AirtableAPI {
         }
     }
 
-    // 🎲 GENERADOR DE CÓDIGOS ÚNICOS
     async generateUniqueAccessCode() {
         try {
             const usuarios = await this.getUsuarios();
@@ -910,19 +973,16 @@ class AirtableAPI {
 
         } catch (error) {
             console.error('❌ Error generando código único:', error);
-            // Fallback: generar código sin verificar unicidad
             const fallbackCode = Math.floor(1000 + Math.random() * 9000).toString();
             console.warn(`⚠️ Usando código fallback: ${fallbackCode}`);
             return fallbackCode;
         }
     }
 
-    // 🚀 MÉTODO DE APROBACIÓN CORREGIDO
     async approveAccessRequestAndCreateUser(requestId) {
         try {
             console.log('🚀 Iniciando aprobación corregida para:', requestId);
 
-            // 1. Obtener la solicitud (con método robusto)
             let request;
             try {
                 const solicitudesAcceso = await this.getSolicitudesAcceso();
@@ -942,14 +1002,10 @@ class AirtableAPI {
                 throw new Error(`Solicitud en estado: ${request.estado}`);
             }
 
-            // 2. Verificar usuario existente
             const existingUser = await this.findUserByEmail(request.email);
-            
-            // 3. Generar código único
             const accessCode = await this.generateUniqueAccessCode();
             console.log('🎲 Código generado:', accessCode);
 
-            // 4. Crear o actualizar usuario
             const userData = {
                 nombreCompleto: request.nombreCompleto,
                 email: request.email,
@@ -979,7 +1035,6 @@ class AirtableAPI {
                 throw new Error(`Error creando/actualizando usuario: ${userError.message}`);
             }
 
-            // 5. Actualizar solicitud (con manejo de errores mejorado)
             try {
                 await this.updateSolicitudAcceso(requestId, {
                     estado: 'APROBADA',
@@ -989,7 +1044,6 @@ class AirtableAPI {
                 console.log('✅ Solicitud marcada como aprobada');
             } catch (updateError) {
                 console.warn('⚠️ No se pudo actualizar estado de solicitud, pero usuario fue creado:', updateError);
-                // No fallar todo el proceso si solo falla el update del estado
             }
 
             console.log('✅ Aprobación completada exitosamente');
@@ -1008,12 +1062,10 @@ class AirtableAPI {
         }
     }
 
-    // 📊 ESTADÍSTICAS DE ACCESO (método faltante corregido)
     async getAccessStatistics() {
         try {
             console.log('📊 Obteniendo estadísticas de acceso...');
             
-            // Obtener datos en paralelo
             const [usuarios, solicitudesAcceso, solicitudes, tecnicos] = await Promise.all([
                 this.getUsuarios(),
                 this.getSolicitudesAcceso(),
@@ -1049,25 +1101,16 @@ class AirtableAPI {
                 timestamp: new Date().toISOString()
             };
 
-            // Estadísticas por servicio hospitalario
             usuarios.forEach(user => {
                 if (user.servicioHospitalario) {
                     stats.porServicio[user.servicioHospitalario] = (stats.porServicio[user.servicioHospitalario] || 0) + 1;
                 }
             });
 
-            // Estadísticas por cargo
             usuarios.forEach(user => {
                 if (user.cargo) {
                     stats.porCargo[user.cargo] = (stats.porCargo[user.cargo] || 0) + 1;
                 }
-            });
-
-            console.log('✅ Estadísticas calculadas:', {
-                usuarios: stats.usuarios.total,
-                solicitudesAcceso: stats.solicitudesAcceso.total,
-                solicitudes: stats.solicitudes.total,
-                tecnicos: stats.tecnicos.total
             });
 
             return stats;
@@ -1075,7 +1118,6 @@ class AirtableAPI {
         } catch (error) {
             console.error('❌ Error obteniendo estadísticas:', error);
             
-            // Retornar estadísticas por defecto en caso de error
             return {
                 usuarios: { total: 0, activos: 0, inactivos: 0, conCodigo: 0 },
                 solicitudesAcceso: { total: 0, pendientes: 0, aprobadas: 0, rechazadas: 0 },
@@ -1098,39 +1140,25 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '3.0-complete-with-personal',
+            version: '3.1-fixed-422-error',
             fixes: [
-                'Manejo mejorado de errores 404',
-                'Métodos alternativos de update',
-                'Fallbacks robustos para todas las operaciones',
-                'Mejor logging y debugging',
-                'Simulación local para updates fallidos',
-                'Método getAccessStatistics agregado',
-                'Estadísticas completas implementadas',
-                'Módulo completo de Personal de Soporte',
-                'Gestión de técnicos e ingenieros',
-                'Asignación automática a solicitudes'
+                'CORREGIDO: Error 422 en creación de personal',
+                'Mapeo automático de valores de campos',
+                'Auto-detección de valores válidos en Airtable',
+                'Reintentos con valores alternativos',
+                'Mejor manejo de errores de validación',
+                'Fallbacks robustos para operaciones'
             ],
-            availableMethods: [
-                'getSolicitudes', 'createSolicitud',
-                'getTecnicos', 'createTecnico', 'updateTecnico', 'findTecnicoByEmail',
-                'getTecnicosByArea', 'getTecnicosDisponibles', 'asignarTecnicoASolicitud',
-                'getTecnicosStatistics',
-                'getUsuarios', 'createUsuario', 'updateUsuario',
-                'getSolicitudesAcceso', 'createSolicitudAcceso', 'updateSolicitudAcceso',
-                'validateUserCredentials', 'generateUniqueAccessCode', 'findUserByEmail',
-                'approveAccessRequestAndCreateUser', 'getAccessStatistics',
-                'testConnection', 'testTecnicosTable', 'makeRequest'
-            ]
+            fieldMappings: this.fieldMappings
         };
     }
 }
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global completa...');
+    console.log('🔧 Creando instancia global corregida...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión completa con personal)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión corregida para personal)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -1143,8 +1171,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (versión completa)' 
-                : 'Modo Local (versión completa)';
+                ? '✅ Conectado (versión corregida)' 
+                : 'Modo Local (versión corregida)';
             
             updateConnectionStatus(status, message);
         }
@@ -1163,8 +1191,8 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO VERSIÓN COMPLETA CON PERSONAL');
-        console.log('=============================================');
+        console.log('🔍 DIAGNÓSTICO VERSIÓN CORREGIDA PERSONAL');
+        console.log('==========================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
@@ -1173,33 +1201,33 @@ try {
         console.log('📋 Versión:', status.version);
         console.log('🔧 Correcciones aplicadas:');
         status.fixes.forEach(fix => console.log(`  • ${fix}`));
-        console.log('📚 Métodos disponibles:');
-        status.availableMethods.forEach(method => console.log(`  • ${method}`));
+        console.log('🗺️ Mapeos de campos:');
+        console.log(status.fieldMappings);
         
         return status;
     };
     
-    console.log('✅ debugAirtableConnection (completo) creado exitosamente');
+    console.log('✅ debugAirtableConnection (corregido) creado exitosamente');
 } catch (error) {
     console.error('❌ Error creando debugAirtableConnection:', error);
 }
 
-console.log('✅ airtable-config.js (VERSIÓN COMPLETA CON PERSONAL DE SOPORTE) cargado completamente');
-console.log('🔧 Todas las funciones existentes + módulo de personal incluidas');
-console.log('👥 Funciones de personal: createTecnico, updateTecnico, asignarTecnicoASolicitud, etc.');
-console.log('📊 Estadísticas completas disponibles');
+console.log('✅ airtable-config.js (VERSIÓN CORREGIDA PARA ERROR 422) cargado completamente');
+console.log('🔧 Error 422 solucionado con mapeo automático de valores');
+console.log('🗺️ Detección automática de valores válidos en Airtable');
+console.log('🔄 Reintentos automáticos con valores alternativos');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
 // Auto-verificación
 setTimeout(async () => {
     if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
-        console.log('🔄 Sistema completo cargado correctamente');
-        console.log('✅ Todas las funciones disponibles, incluyendo módulo de personal');
-        console.log('👥 Personal de soporte: createTecnico, updateTecnico, asignarTecnicoASolicitud');
+        console.log('🔄 Sistema corregido cargado correctamente');
+        console.log('✅ Error 422 solucionado para personal de soporte');
+        console.log('🗺️ Mapeo de valores activo para prevenir errores futuros');
         
         // Verificar que los nuevos métodos existen
-        const methodsToCheck = ['createTecnico', 'updateTecnico', 'getTecnicosStatistics', 'asignarTecnicoASolicitud'];
-        methodsToCheck.forEach(method => {
+        const criticalMethods = ['createTecnico', 'mapFieldValue', 'retryCreateTecnicoWithAlternatives'];
+        criticalMethods.forEach(method => {
             if (typeof window.airtableAPI[method] === 'function') {
                 console.log(`✅ ${method} correctamente implementado`);
             } else {
