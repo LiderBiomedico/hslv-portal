@@ -1,0 +1,1 @@
+perfecto ahora ayudame a desarrollar en el portal de gestion, solictudes la asiganacion del personal para realizar la actividad el tiempo de respuesta las solicitudes si son biomedicas deben iniciar con SOLBIO00001 si son mecanicas con SOLMEC00001 Y y para infraestructura SOLINFRA00001
