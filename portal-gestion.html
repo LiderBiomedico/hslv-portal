@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Gestión Avanzado - Hospital Susana López de Valencia</title>
+    <title>Portal de Gestión Completo - Hospital Susana López de Valencia</title>
     <style>
         * {
             margin: 0;
@@ -756,7 +756,7 @@
             <div class="hospital-info">
                 <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
                 <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
-                <p>Portal de Gestión Avanzado - Sistema con Airtable y Asignación Inteligente</p>
+                <p>Portal de Gestión Completo - Sistema con Numeración Automática y Asignación Inteligente</p>
             </div>
 
             <nav class="nav-tabs">
@@ -788,7 +788,7 @@
         <div id="dashboard-view" class="view">
             <!-- Alert de conexión -->
             <div id="connection-alert" class="alert alert-info">
-                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Avanzado Conectado</h3>
+                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Completo Conectado</h3>
                 <p>Portal de Gestión funcionando con <strong>Airtable</strong>, numeración automática y asignación inteligente.</p>
                 <ul style="margin: 0.5rem 0 0 1rem;">
                     <li><strong>✅ Numeración Automática:</strong> SOLBIO00001, SOLMEC00001, SOLINFRA00001</li>
@@ -895,11 +895,11 @@
             </div>
         </div>
 
-        <!-- Solicitudes View Mejorado -->
+        <!-- Solicitudes View Completo -->
         <div id="solicitudes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">📋 Gestión Avanzada de Solicitudes</h2>
+                    <h2 class="card-title">📋 Gestión Completa de Solicitudes</h2>
                     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
                             🔄 Actualizar desde Airtable
@@ -969,13 +969,13 @@
         <div id="asignaciones-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">🎯 Centro de Asignaciones</h2>
+                    <h2 class="card-title">🎯 Centro de Asignaciones Inteligentes</h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-success btn-sm" onclick="autoAssignAll()">
                             🤖 Auto-asignar Todo
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="showAssignmentRules()">
-                            ⚙️ Reglas de Asignación
+                        <button class="btn btn-primary btn-sm" onclick="refreshAssignmentView()">
+                            🔄 Actualizar
                         </button>
                     </div>
                 </div>
@@ -987,21 +987,55 @@
             </div>
         </div>
 
-        <!-- Personal View (mantener el existente) -->
+        <!-- Personal View -->
         <div id="personal-view" class="view hidden">
-            <!-- El contenido existente de personal se mantiene igual -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">👥 Gestión de Personal Técnico</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary btn-sm" onclick="refreshPersonal()">
+                            🔄 Actualizar Personal
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="showPersonalStats()">
+                            📊 Estadísticas
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="personal-content">
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">Cargando personal...</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Accesos View (mantener el existente) -->
+        <!-- Accesos View -->
         <div id="accesos-view" class="view hidden">
-            <!-- El contenido existente de accesos se mantiene igual -->
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔐 Gestión de Accesos</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary btn-sm" onclick="refreshAccessRequests()">
+                            🔄 Actualizar Solicitudes
+                        </button>
+                        <button class="btn btn-success btn-sm" onclick="showAccessStats()">
+                            📊 Estadísticas
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="accesos-content">
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">Cargando solicitudes de acceso...</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Nueva Vista de Reportes -->
+        <!-- Reportes View -->
         <div id="reportes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">📊 Reportes y Análisis</h2>
+                    <h2 class="card-title">📊 Reportes y Análisis Avanzados</h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-primary btn-sm" onclick="generateTimeReport()">
                             📈 Reporte de Tiempos
@@ -1066,7 +1100,7 @@
         </div>
     </div>
 
-    <!-- Incluir airtable-config.js mejorado -->
+    <!-- Incluir airtable-config.js -->
     <script src="airtable-config.js"></script>
 
     <script>
@@ -1080,7 +1114,7 @@
 
         // 🔗 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Portal de Gestión Avanzado - Hospital Susana López de Valencia');
+            console.log('🚀 Portal de Gestión Completo - Hospital Susana López de Valencia');
             
             // Event listeners
             setupEventListeners();
@@ -1106,7 +1140,7 @@
             });
         }
 
-        // 🔄 Funciones de carga de datos
+        // 🔄 FUNCIONES DE CARGA DE DATOS
         async function loadAllDataFromCloud() {
             console.log('🌐 Cargando todos los datos desde Airtable...');
             
@@ -1133,7 +1167,7 @@
                 updateAllDisplays();
                 updateConnectionStatus('connected');
                 
-                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal`);
+                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} técnicos`);
                 
             } catch (error) {
                 console.error('❌ Error cargando datos:', error);
@@ -1153,7 +1187,7 @@
             }
         }
 
-        // 📊 Actualizar contadores
+        // 📊 ACTUALIZAR CONTADORES
         function updateAllCounters() {
             const total = cloudSolicitudes.length;
             const biomedica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length;
@@ -1196,7 +1230,7 @@
                 areas.forEach(area => {
                     const tiempoElement = document.getElementById(`metric-${area}-tiempo`);
                     if (tiempoElement) {
-                        // Calcular tiempo promedio por área (simplificado)
+                        // Calcular tiempo promedio por área
                         const areaUpper = area.toUpperCase().replace('BIOMEDICA', 'INGENIERIA_BIOMEDICA');
                         const solicitudesArea = cloudSolicitudes.filter(s => 
                             s.servicioIngenieria === areaUpper && s.tiempoRespuestaHoras
@@ -1276,7 +1310,7 @@
             });
         }
 
-        // 📋 Actualizar lista de solicitudes
+        // 📋 ACTUALIZAR LISTA DE SOLICITUDES
         function updateSolicitudesList() {
             const container = document.getElementById('solicitudes-list');
             
@@ -1315,7 +1349,7 @@
                 <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                     <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudes.length} Solicitudes Totales - ${filteredSolicitudes.length} Mostradas</h4>
                     <p style="color: #047857; font-size: 0.875rem;">
-                        Sistema con numeración automática y gestión de tiempos. Última actualización: ${new Date().toLocaleTimeString('es-CO')}
+                        Sistema con numeración automática: SOLBIO, SOLMEC, SOLINFRA. Última actualización: ${new Date().toLocaleTimeString('es-CO')}
                     </p>
                 </div>
             `;
@@ -1559,7 +1593,7 @@
             return buttons.join('');
         }
 
-        // 🎯 Funciones de asignación
+        // 🎯 FUNCIONES DE ASIGNACIÓN
         async function showAssignmentModal(solicitudId) {
             const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
             if (!solicitud) {
@@ -1606,7 +1640,7 @@
                                     <option value="${tecnico.id}">
                                         ${tecnico.nombre} - ${getAreaName(tecnico.area)} 
                                         ${tecnico.area === solicitud.servicioIngenieria ? '✅' : '⚠️'} 
-                                        (${tecnico.tipo})
+                                        (${tecnico.tipo || 'Técnico'})
                                     </option>
                                 `).join('')}
                             </select>
@@ -1627,7 +1661,7 @@
                                 <li>Cambio de estado a "ASIGNADA"</li>
                                 <li>Registro de tiempo de respuesta</li>
                                 <li>Personal marcado como "ocupado"</li>
-                                <li>Notificación automática al técnico</li>
+                                <li>Actualización automática de métricas</li>
                             </ul>
                         </div>
 
@@ -1693,6 +1727,12 @@
             } catch (error) {
                 console.error('❌ Error en asignación:', error);
                 alert('❌ Error al asignar técnico: ' + error.message);
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🎯 Confirmar Asignación';
+                }
             }
         }
 
@@ -1700,7 +1740,127 @@
             document.getElementById('assignment-modal').classList.remove('show');
         }
 
-        // 🤖 Auto-asignación
+        // ✅ COMPLETAR SOLICITUD
+        async function showCompleteModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            const modal = document.getElementById('complete-modal');
+            const content = document.getElementById('complete-modal-content');
+            
+            const html = `
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h4 style="color: #166534; margin-bottom: 0.5rem;">📋 Completar Solicitud</h4>
+                    <p><strong>Número:</strong> ${solicitud.numero}</p>
+                    <p><strong>Técnico:</strong> ${solicitud.tecnicoAsignado}</p>
+                    <p><strong>Estado actual:</strong> ${solicitud.estado}</p>
+                </div>
+
+                <form id="complete-form" onsubmit="completeSolicitud(event, '${solicitudId}')">
+                    <div class="form-group">
+                        <label class="form-label">📝 Observaciones de Completado *</label>
+                        <textarea id="complete-observations" class="form-textarea" required
+                            placeholder="Describa el trabajo realizado, materiales utilizados, etc."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="require-approval" style="margin-right: 0.5rem;">
+                            ✅ Requiere aprobación adicional
+                        </label>
+                        <small style="color: #6b7280; display: block; margin-top: 0.25rem;">
+                            Marcar si el trabajo necesita validación antes del cierre final
+                        </small>
+                    </div>
+
+                    <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h5 style="color: #166534; margin-bottom: 0.5rem;">✅ Al completar se ejecutará:</h5>
+                        <ul style="color: #047857; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                            <li>Cálculo automático de tiempos de resolución</li>
+                            <li>Liberación del técnico si no requiere aprobación</li>
+                            <li>Actualización de métricas y estadísticas</li>
+                            <li>Registro de observaciones finales</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 150px;">
+                            ✅ Completar Solicitud
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeCompleteModal()" style="min-width: 120px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            content.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        async function completeSolicitud(event, solicitudId) {
+            event.preventDefault();
+            
+            const observaciones = document.getElementById('complete-observations').value.trim();
+            const requiereAprobacion = document.getElementById('require-approval').checked;
+            
+            if (!observaciones) {
+                alert('❌ Por favor ingrese observaciones del trabajo completado');
+                return;
+            }
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Completando...';
+
+                const resultado = await window.airtableAPI.completarSolicitud(
+                    solicitudId, 
+                    observaciones,
+                    requiereAprobacion
+                );
+
+                if (resultado.success) {
+                    closeCompleteModal();
+                    
+                    // Recargar datos
+                    await loadAllDataFromCloud();
+                    
+                    // Mostrar resultado
+                    const estadoFinal = requiereAprobacion ? 'PENDIENTE DE APROBACIÓN' : 'COMPLETADA';
+                    showSuccessResult(
+                        '🎉 Solicitud Completada',
+                        `✅ Solicitud completada exitosamente\n\n` +
+                        `📋 Número: ${resultado.solicitud.numero}\n` +
+                        `📊 Estado final: ${estadoFinal}\n` +
+                        `⏰ Tiempo resolución: ${resultado.tiempos.tiempoResolucionHoras}h\n` +
+                        `📅 Tiempo total: ${resultado.tiempos.tiempoTotalHoras}h\n\n` +
+                        `📝 Observaciones registradas correctamente.`
+                    );
+                } else {
+                    throw new Error('No se pudo completar la solicitud');
+                }
+
+            } catch (error) {
+                console.error('❌ Error completando solicitud:', error);
+                alert('❌ Error al completar solicitud: ' + error.message);
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '✅ Completar Solicitud';
+                }
+            }
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('complete-modal').classList.remove('show');
+        }
+
+        // 🤖 AUTO-ASIGNACIÓN
         async function autoAssignAll() {
             const confirmed = confirm(
                 '🤖 ¿Activar auto-asignación inteligente?\n\n' +
@@ -1743,7 +1903,7 @@
             }
         }
 
-        // 🔄 Funciones auxiliares
+        // 🔄 FUNCIONES AUXILIARES
         function getAreaName(area) {
             const areas = {
                 'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
@@ -1798,7 +1958,7 @@
             document.getElementById('result-modal').classList.remove('show');
         }
 
-        // 🔄 Funciones de navegación y filtros
+        // 🔄 FUNCIONES DE NAVEGACIÓN Y FILTROS
         function showView(viewName) {
             document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
             document.getElementById(viewName + '-view').classList.remove('hidden');
@@ -1814,6 +1974,15 @@
                 case 'asignaciones':
                     loadAsignacionesView();
                     break;
+                case 'personal':
+                    loadPersonalView();
+                    break;
+                case 'accesos':
+                    loadAccesosView();
+                    break;
+                case 'reportes':
+                    loadReportesView();
+                    break;
             }
         }
 
@@ -1828,7 +1997,7 @@
             updateSolicitudesList();
         }
 
-        // 🔗 Funciones de conexión
+        // 🔗 FUNCIONES DE CONEXIÓN
         function updateConnectionStatus(status, message) {
             isConnectedToAirtable = (status === 'connected');
             
@@ -1890,17 +2059,176 @@
             }
         }
 
-        // Funciones placeholder para funcionalidades futuras
+        // FUNCIONES DE VISTAS ADICIONALES
         function loadAsignacionesView() {
             const container = document.getElementById('asignaciones-content');
+            const pendientesList = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE');
+            const asignadasList = cloudSolicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'EN_PROCESO');
+
+            let html = `
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🎯 Centro de Asignaciones</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">${pendientesList.length}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Pendientes</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #3b82f6;">${asignadasList.length}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Asignadas</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold; color: #059669;">${cloudTecnicos.filter(t => t.estado === 'disponible').length}</div>
+                            <div style="font-size: 0.875rem; color: #6b7280;">Técnicos Disponibles</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (pendientesList.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
+                        <h3 style="color: #1f2937;">¡Todas las solicitudes están asignadas!</h3>
+                        <p>No hay solicitudes pendientes de asignación.</p>
+                    </div>
+                `;
+            } else {
+                html += `<h4 style="margin-bottom: 1rem;">⏳ Solicitudes Pendientes de Asignación</h4>`;
+                pendientesList.forEach(solicitud => {
+                    html += `
+                        <div style="background: #fffbeb; border: 1px solid #fbbf24; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 0.5rem;">
+                                <div>
+                                    <strong>${solicitud.numero}</strong> - ${getAreaName(solicitud.servicioIngenieria)}
+                                    <span style="background: #fecaca; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">
+                                        ${solicitud.prioridad}
+                                    </span>
+                                </div>
+                                <button class="btn btn-primary btn-sm" onclick="showAssignmentModal('${solicitud.id}')">
+                                    🎯 Asignar
+                                </button>
+                            </div>
+                            <p style="font-size: 0.875rem; color: #6b7280;">${solicitud.equipo} - ${solicitud.ubicacion}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            container.innerHTML = html;
+        }
+
+        function loadPersonalView() {
+            const container = document.getElementById('personal-content');
+            
+            if (cloudTecnicos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
+                        <h3 style="color: #1f2937;">No hay personal técnico registrado</h3>
+                        <p>El personal aparecerá aquí cuando se registre en el sistema.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const areas = [
+                { key: 'INGENIERIA_BIOMEDICA', name: 'Ingeniería Biomédica', icon: '🏥', color: '#059669' },
+                { key: 'MECANICA', name: 'Mecánica', icon: '⚙️', color: '#f59e0b' },
+                { key: 'INFRAESTRUCTURA', name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' }
+            ];
+
+            let html = `
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h4 style="color: #166534; margin-bottom: 0.5rem;">👥 Personal Técnico</h4>
+                    <p style="color: #047857; font-size: 0.875rem;">
+                        Total: ${cloudTecnicos.length} técnicos registrados
+                    </p>
+                </div>
+            `;
+
+            areas.forEach(area => {
+                const personalArea = cloudTecnicos.filter(t => t.area === area.key);
+                const disponibles = personalArea.filter(p => p.estado === 'disponible');
+                const ocupados = personalArea.filter(p => p.estado === 'ocupado');
+                const inactivos = personalArea.filter(p => p.estado === 'inactivo');
+
+                html += `
+                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 1rem;">
+                        <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                            <span style="font-size: 2rem; margin-right: 1rem;">${area.icon}</span>
+                            <div>
+                                <h4 style="color: ${area.color}; margin-bottom: 0.25rem;">${area.name}</h4>
+                                <p style="color: #6b7280; font-size: 0.875rem;">
+                                    ${personalArea.length} técnicos - ${disponibles.length} disponibles
+                                </p>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1rem;">
+                            <div style="text-align: center; padding: 1rem; background: #dcfce7; border-radius: 0.5rem;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #059669;">${disponibles.length}</div>
+                                <div style="font-size: 0.75rem; color: #166534;">Disponibles</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">${ocupados.length}</div>
+                                <div style="font-size: 0.75rem; color: #d97706;">Ocupados</div>
+                            </div>
+                            <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem;">
+                                <div style="font-size: 1.5rem; font-weight: bold; color: #ef4444;">${inactivos.length}</div>
+                                <div style="font-size: 0.75rem; color: #dc2626;">Inactivos</div>
+                            </div>
+                        </div>
+
+                        ${personalArea.length === 0 ? 
+                            '<p style="text-align: center; color: #6b7280;">No hay personal registrado en esta área</p>' :
+                            personalArea.map(tecnico => `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: #f8fafc; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                                    <div>
+                                        <strong>${tecnico.nombre}</strong>
+                                        <span style="color: #6b7280; font-size: 0.875rem; margin-left: 0.5rem;">
+                                            (${tecnico.tipo || 'Técnico'})
+                                        </span>
+                                    </div>
+                                    <span style="padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;
+                                        ${tecnico.estado === 'disponible' ? 'background: #dcfce7; color: #166534;' :
+                                          tecnico.estado === 'ocupado' ? 'background: #fef3c7; color: #d97706;' :
+                                          'background: #fee2e2; color: #dc2626;'}">
+                                        ${tecnico.estado?.toUpperCase() || 'INACTIVO'}
+                                    </span>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function loadAccesosView() {
+            const container = document.getElementById('accesos-content');
             container.innerHTML = `
                 <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                    <h4 style="color: #1f2937;">Centro de Asignaciones</h4>
-                    <p>Vista en desarrollo - funcionalidades de asignación avanzada</p>
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🔐</div>
+                    <h3 style="color: #1f2937;">Gestión de Accesos</h3>
+                    <p>Vista en desarrollo - funcionalidades de gestión de usuarios</p>
                 </div>
             `;
         }
 
+        function loadReportesView() {
+            const container = document.getElementById('reportes-content');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
+                    <h3 style="color: #1f2937;">Reportes Avanzados</h3>
+                    <p>Vista en desarrollo - análisis y reportes detallados</p>
+                </div>
+            `;
+        }
+
+        // FUNCIONES PLACEHOLDER PARA OTRAS FUNCIONALIDADES
         function autoAssignPending() {
             autoAssignAll();
         }
@@ -1920,9 +2248,9 @@
         }
 
         function showAtrasadas() {
-            document.getElementById('filter-estado').value = 'PENDIENTE';
-            applyFilters();
+            // Mostrar solo las atrasadas filtrando por fecha
             showView('solicitudes');
+            // TODO: Implementar filtro específico para atrasadas
         }
 
         function showTimeStats() {
@@ -1955,7 +2283,45 @@
             );
         }
 
-        console.log('✅ Portal de Gestión Avanzado cargado completamente');
+        function reasignarSolicitud(solicitudId) {
+            if (confirm('¿Desea reasignar esta solicitud a otro técnico?')) {
+                showAssignmentModal(solicitudId);
+            }
+        }
+
+        function refreshAssignmentView() {
+            loadAsignacionesView();
+        }
+
+        function refreshPersonal() {
+            loadPersonalView();
+        }
+
+        function refreshAccessRequests() {
+            loadAccesosView();
+        }
+
+        function showPersonalStats() {
+            alert('Vista de estadísticas de personal en desarrollo');
+        }
+
+        function showAccessStats() {
+            alert('Vista de estadísticas de acceso en desarrollo');
+        }
+
+        function generateTimeReport() {
+            alert('Generación de reportes en desarrollo');
+        }
+
+        function generateEfficiencyReport() {
+            alert('Análisis de eficiencia en desarrollo');
+        }
+
+        function exportReports() {
+            alert('Exportación de datos en desarrollo');
+        }
+
+        console.log('✅ Portal de Gestión Completo cargado correctamente');
     </script>
 </body>
 </html>
