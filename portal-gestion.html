@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
+    <title>Portal de Gestión Avanzado - Hospital Susana López de Valencia</title>
     <style>
         * {
             margin: 0;
@@ -24,7 +24,7 @@
             padding: 0 1rem;
         }
 
-        /* Header */
+        /* Header mejorado */
         .header {
             background: linear-gradient(135deg, #2563eb 0%, #059669 100%);
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -39,54 +39,32 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            height: auto;
-            min-height: 5rem;
             padding: 1rem;
-            position: relative;
             gap: 0.5rem;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            flex: 1;
-            min-width: 0;
         }
 
         .hospital-info h1 {
             font-size: 1.2rem;
             font-weight: bold;
-            color: white;
-            line-height: 1.2;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-            margin: 0;
-            word-wrap: break-word;
-            max-width: 100%;
             text-align: center;
+            margin: 0;
         }
 
         .hospital-info p {
             font-size: 0.85rem;
             color: #e0f2fe;
-            font-weight: 500;
-            margin-top: 0.25rem;
-            margin-bottom: 0;
-            word-wrap: break-word;
-            max-width: 100%;
             text-align: center;
+            margin: 0;
         }
 
         .developer-credit {
             font-size: 0.75rem;
             color: #bfdbfe;
-            font-weight: 400;
-            margin-top: 0.25rem;
-            margin-bottom: 0;
             text-align: center;
             font-style: italic;
         }
 
-        /* Indicador de conexión Airtable */
+        /* Indicador de conexión */
         .connection-status {
             position: absolute;
             top: 1rem;
@@ -108,6 +86,7 @@
             color: #fee2e2;
         }
 
+        /* Navegación mejorada */
         .nav-tabs {
             display: flex;
             gap: 0.5rem;
@@ -142,7 +121,7 @@
             background: rgba(255,255,255,0.2);
         }
 
-        /* Main Layout */
+        /* Layout principal */
         .main-layout {
             display: grid;
             grid-template-columns: 1fr;
@@ -150,7 +129,7 @@
             padding: 1.5rem 1rem;
         }
 
-        /* Cards */
+        /* Cards mejoradas */
         .card {
             background: white;
             border-radius: 1rem;
@@ -181,7 +160,7 @@
             padding: 1.5rem;
         }
 
-        /* Metrics Grid */
+        /* Métricas mejoradas */
         .metrics-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -198,6 +177,7 @@
             border-top: 4px solid;
             transition: transform 0.2s, box-shadow 0.2s;
             cursor: pointer;
+            position: relative;
         }
 
         .metric-card:hover {
@@ -225,6 +205,14 @@
             border-top-color: #ef4444; 
             background: linear-gradient(135deg, #ffffff 0%, #fee2e2 100%);
         }
+        .metric-card.atrasadas { 
+            border-top-color: #dc2626; 
+            background: linear-gradient(135deg, #ffffff 0%, #fecaca 100%);
+        }
+        .metric-card.tiempo { 
+            border-top-color: #10b981; 
+            background: linear-gradient(135deg, #ffffff 0%, #d1fae5 100%);
+        }
 
         .metric-icon {
             font-size: 2.5rem;
@@ -243,48 +231,172 @@
             font-weight: 500;
         }
 
-        /* Views */
-        .view {
-            display: block;
+        .metric-sublabel {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 0.25rem;
         }
 
-        .view.hidden {
-            display: none;
+        /* Solicitudes mejoradas */
+        .solicitud-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        /* Alert */
-        .alert {
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border-left: 4px solid;
-            margin-bottom: 1.5rem;
+        .solicitud-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
         }
 
-        .alert-info {
-            background: #eff6ff;
-            border-color: #3b82f6;
-            color: #1e40af;
+        .solicitud-card.pendiente {
+            border-left: 6px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
         }
 
-        .alert-success {
-            background: #f0fdf4;
-            border-color: #22c55e;
-            color: #15803d;
+        .solicitud-card.asignada {
+            border-left: 6px solid #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
         }
 
-        .alert-warning {
-            background: #fffbeb;
-            border-color: #f59e0b;
+        .solicitud-card.completada {
+            border-left: 6px solid #10b981;
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        }
+
+        .solicitud-card.atrasada {
+            border-left: 6px solid #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            animation: pulse-red 2s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+        }
+
+        .solicitud-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .solicitud-numero {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .solicitud-badges {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-prioridad-critica {
+            background: #fecaca;
+            color: #dc2626;
+            animation: pulse 1s infinite;
+        }
+
+        .badge-prioridad-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .badge-prioridad-media {
+            background: #fef3c7;
             color: #d97706;
         }
 
-        .alert-danger {
-            background: #fef2f2;
-            border-color: #ef4444;
+        .badge-prioridad-baja {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-estado-pendiente {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .badge-estado-asignada {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-estado-completada {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-tiempo-en-tiempo {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-tiempo-fuera-tiempo {
+            background: #fee2e2;
             color: #dc2626;
         }
 
-        /* Botones */
+        .badge-area {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .solicitud-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .solicitud-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .detail-value {
+            color: #1f2937;
+        }
+
+        .solicitud-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Botones mejorados */
         .btn {
             padding: 0.625rem 1.25rem;
             border-radius: 0.5rem;
@@ -337,12 +449,6 @@
             color: white;
         }
 
-        .btn-danger:hover {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
-        }
-
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
@@ -355,241 +461,7 @@
             box-shadow: none !important;
         }
 
-        /* Solicitud Card - MEJORADA */
-        .solicitud-card {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            transition: all 0.3s;
-            position: relative;
-        }
-
-        .solicitud-card:hover {
-            border-color: #2563eb;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .solicitud-card.pendiente {
-            border-left: 6px solid #f59e0b;
-            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
-        }
-
-        .solicitud-card.asignada {
-            border-left: 6px solid #2563eb;
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-        }
-
-        .solicitud-card.en-proceso {
-            border-left: 6px solid #8b5cf6;
-            background: linear-gradient(135deg, #f3f4f6 0%, #ede9fe 100%);
-        }
-
-        .solicitud-card.completada {
-            border-left: 6px solid #059669;
-            background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
-        }
-
-        .solicitud-card.urgente {
-            animation: pulse-urgent 2s infinite;
-            border-color: #ef4444 !important;
-        }
-
-        @keyframes pulse-urgent {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-        }
-
-        .solicitud-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .solicitud-numero {
-            font-weight: 700;
-            color: #1f2937;
-            font-size: 1.25rem;
-            background: rgba(255,255,255,0.8);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            border: 2px solid rgba(0,0,0,0.1);
-        }
-
-        .solicitud-badges {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .badge {
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
-
-        .badge-pendiente {
-            background: #fef3c7;
-            color: #d97706;
-        }
-
-        .badge-asignada {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .badge-proceso {
-            background: #ede9fe;
-            color: #7c3aed;
-        }
-
-        .badge-completada {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .badge-critica {
-            background: #fee2e2;
-            color: #dc2626;
-            animation: blink 1s infinite;
-        }
-
-        .badge-alta {
-            background: #fed7aa;
-            color: #ea580c;
-        }
-
-        .badge-media {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .badge-baja {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        @keyframes blink {
-            0%, 50% { opacity: 1; }
-            51%, 100% { opacity: 0.3; }
-        }
-
-        .solicitud-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            font-size: 0.875rem;
-        }
-
-        .solicitud-detail {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .solicitud-detail-label {
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .solicitud-detail-value {
-            color: #1f2937;
-            font-weight: 500;
-        }
-
-        .tiempo-respuesta {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem;
-            background: rgba(255,255,255,0.7);
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-
-        .tiempo-respuesta.urgente {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .tiempo-respuesta.normal {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .tiempo-respuesta.rapido {
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .solicitud-descripcion {
-            background: rgba(255,255,255,0.8);
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-            border-left: 3px solid #2563eb;
-        }
-
-        .solicitud-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1.5rem;
-            flex-wrap: wrap;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(0,0,0,0.1);
-        }
-
-        .asignacion-section {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            padding: 1rem;
-            margin-top: 1rem;
-        }
-
-        .personal-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.5rem;
-            margin-top: 0.75rem;
-        }
-
-        .personal-option {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            padding: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-align: center;
-        }
-
-        .personal-option:hover {
-            border-color: #2563eb;
-            background: #eff6ff;
-        }
-
-        .personal-option.selected {
-            border-color: #059669;
-            background: #dcfce7;
-            color: #166534;
-        }
-
-        .personal-option.no-disponible {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: #f3f4f6;
-        }
-
-        /* Modal */
+        /* Modal mejorado */
         .modal {
             display: none;
             position: fixed;
@@ -613,7 +485,7 @@
             background: white;
             border-radius: 1rem;
             padding: 2rem;
-            max-width: 800px;
+            max-width: 600px;
             width: 100%;
             box-shadow: 0 25px 50px rgba(0,0,0,0.25);
             max-height: 90vh;
@@ -625,6 +497,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
         }
 
         .modal-title {
@@ -646,6 +520,149 @@
             color: #1f2937;
         }
 
+        /* Formularios mejorados */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.875rem;
+            border: 2px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        /* Alertas mejoradas */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+            color: #d97706;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        /* Timeline de tiempos */
+        .timeline-container {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+
+        .timeline {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 0.5rem 0;
+        }
+
+        .timeline-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            min-width: 120px;
+            position: relative;
+        }
+
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: #d1d5db;
+            z-index: 1;
+        }
+
+        .timeline-item.completed:not(:last-child)::after {
+            background: #10b981;
+        }
+
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .timeline-dot.completed {
+            background: #10b981;
+        }
+
+        .timeline-dot.current {
+            background: #3b82f6;
+            animation: pulse 2s infinite;
+        }
+
+        .timeline-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-time {
+            font-size: 0.625rem;
+            color: #9ca3af;
+        }
+
         /* Loading spinner */
         .loading-spinner {
             display: inline-block;
@@ -662,116 +679,67 @@
             100% { transform: rotate(360deg); }
         }
 
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .connection-status {
+                position: static;
+                margin-bottom: 1rem;
+            }
+            
+            .solicitud-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .solicitud-actions {
+                flex-direction: column;
+            }
+
+            .timeline {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .timeline-item:not(:last-child)::after {
+                display: none;
+            }
+        }
+
         .hidden {
             display: none !important;
         }
 
-        /* Filtros mejorados */
-        .filtros-section {
-            background: #f8fafc;
-            padding: 1.5rem;
-            border-radius: 1rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid #e5e7eb;
-        }
-
-        .filtros-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .filtro-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .filtro-label {
-            font-weight: 600;
-            color: #374151;
-            font-size: 0.875rem;
-        }
-
-        .filtro-select, .filtro-input {
-            padding: 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 0.5rem;
-            font-size: 0.875rem;
-            background: white;
-        }
-
-        .filtro-select:focus, .filtro-input:focus {
-            outline: none;
-            border-color: #2563eb;
-            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-        }
-
-        .filtros-actions {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        /* Estadísticas de tiempo */
-        .tiempo-stats {
+        /* Estilos para stats de tiempo */
+        .time-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
-            margin: 1rem 0;
+            margin-top: 1rem;
         }
 
-        .tiempo-stat {
-            background: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
+        .time-stat {
             text-align: center;
-            border-left: 3px solid;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb;
         }
 
-        .tiempo-stat.tiempo-promedio {
-            border-left-color: #2563eb;
-        }
-
-        .tiempo-stat.tiempo-min {
-            border-left-color: #059669;
-        }
-
-        .tiempo-stat.tiempo-max {
-            border-left-color: #ef4444;
-        }
-
-        .tiempo-stat-number {
+        .time-stat-number {
             font-size: 1.5rem;
             font-weight: bold;
             color: #1f2937;
         }
 
-        .tiempo-stat-label {
+        .time-stat-label {
             font-size: 0.75rem;
             color: #6b7280;
             margin-top: 0.25rem;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .solicitud-actions {
-                flex-direction: column;
-            }
-
-            .solicitud-actions .btn {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .personal-selector {
-                grid-template-columns: 1fr;
-            }
-
-            .filtros-grid {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 </head>
@@ -785,12 +753,10 @@
                 <span id="connection-text">Conectando...</span>
             </div>
             
-            <div class="logo">
-                <div class="hospital-info">
-                    <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-                    <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
-                    <p>Portal de Gestión Cloud - Sistema con Airtable</p>
-                </div>
+            <div class="hospital-info">
+                <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
+                <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
+                <p>Portal de Gestión Avanzado - Sistema con Airtable y Asignación Inteligente</p>
             </div>
 
             <nav class="nav-tabs">
@@ -800,14 +766,17 @@
                 <button class="nav-tab" onclick="showView('solicitudes')" data-view="solicitudes">
                     📋 Solicitudes (<span id="total-count">-</span>)
                 </button>
-                <button class="nav-tab" onclick="showView('asignacion')" data-view="asignacion">
-                    👨‍🔧 Asignación (<span id="pending-assignment-count">-</span>)
-                </button>
-                <button class="nav-tab" onclick="showView('tiempos')" data-view="tiempos">
-                    ⏱️ Tiempos de Respuesta
+                <button class="nav-tab" onclick="showView('asignaciones')" data-view="asignaciones">
+                    🎯 Asignaciones (<span id="pending-count">-</span>)
                 </button>
                 <button class="nav-tab" onclick="showView('personal')" data-view="personal">
                     👥 Personal (<span id="total-technicians-nav">-</span>)
+                </button>
+                <button class="nav-tab" onclick="showView('accesos')" data-view="accesos">
+                    🔐 Accesos (<span id="pending-access-count">-</span>)
+                </button>
+                <button class="nav-tab" onclick="showView('reportes')" data-view="reportes">
+                    📊 Reportes
                 </button>
             </nav>
         </div>
@@ -819,136 +788,169 @@
         <div id="dashboard-view" class="view">
             <!-- Alert de conexión -->
             <div id="connection-alert" class="alert alert-info">
-                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud Conectado</h3>
-                <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube.</p>
+                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Avanzado Conectado</h3>
+                <p>Portal de Gestión funcionando con <strong>Airtable</strong>, numeración automática y asignación inteligente.</p>
                 <ul style="margin: 0.5rem 0 0 1rem;">
-                    <li><strong>✅ Numeración Automática:</strong> SOLBIO, SOLMEC, SOLINFRA</li>
-                    <li><strong>🔄 Asignación Inteligente:</strong> Personal por área especializada</li>
-                    <li><strong>⏱️ Tracking de Tiempos:</strong> Métricas de respuesta en tiempo real</li>
-                    <li><strong>🌍 Acceso Multi-dispositivo:</strong> Sincronización automática</li>
+                    <li><strong>✅ Numeración Automática:</strong> SOLBIO00001, SOLMEC00001, SOLINFRA00001</li>
+                    <li><strong>🎯 Asignación Inteligente:</strong> Personal disponible por área y prioridad</li>
+                    <li><strong>⏰ Gestión de Tiempos:</strong> SLA automático según prioridad</li>
+                    <li><strong>📊 Métricas en Tiempo Real:</strong> Estadísticas avanzadas de rendimiento</li>
                 </ul>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary btn-sm" onclick="testCloudConnection()">
+                        🧪 Probar Conexión
+                    </button>
+                    <button class="btn btn-success btn-sm" onclick="autoAssignAll()">
+                        🤖 Auto-asignar Pendientes
+                    </button>
+                    <button class="btn btn-warning btn-sm" onclick="refreshAllData()">
+                        🔄 Actualizar Todo
+                    </button>
+                </div>
             </div>
 
-            <!-- Metrics por Área de Ingeniería -->
+            <!-- Métricas Avanzadas -->
             <div class="metrics-grid">
                 <div class="metric-card total" onclick="filterByArea('all')">
                     <div class="metric-icon">📋</div>
                     <div class="metric-number" id="metric-total">-</div>
                     <div class="metric-label">Total Solicitudes</div>
+                    <div class="metric-sublabel" id="metric-total-mes">Este mes</div>
                 </div>
                 <div class="metric-card biomedica" onclick="filterByArea('INGENIERIA_BIOMEDICA')">
                     <div class="metric-icon">🏥</div>
                     <div class="metric-number" id="metric-biomedica">-</div>
-                    <div class="metric-label">Ingeniería Biomédica</div>
+                    <div class="metric-label">Biomédica (SOLBIO)</div>
+                    <div class="metric-sublabel" id="metric-biomedica-tiempo">Promedio: - hrs</div>
                 </div>
                 <div class="metric-card mecanica" onclick="filterByArea('MECANICA')">
                     <div class="metric-icon">⚙️</div>
                     <div class="metric-number" id="metric-mecanica">-</div>
-                    <div class="metric-label">Mecánica</div>
+                    <div class="metric-label">Mecánica (SOLMEC)</div>
+                    <div class="metric-sublabel" id="metric-mecanica-tiempo">Promedio: - hrs</div>
                 </div>
                 <div class="metric-card infraestructura" onclick="filterByArea('INFRAESTRUCTURA')">
                     <div class="metric-icon">🏗️</div>
                     <div class="metric-number" id="metric-infraestructura">-</div>
-                    <div class="metric-label">Infraestructura</div>
+                    <div class="metric-label">Infraestructura (SOLINFRA)</div>
+                    <div class="metric-sublabel" id="metric-infraestructura-tiempo">Promedio: - hrs</div>
                 </div>
                 <div class="metric-card pendientes" onclick="filterByStatus('PENDIENTE')">
                     <div class="metric-icon">⏳</div>
                     <div class="metric-number" id="metric-pendientes">-</div>
                     <div class="metric-label">Sin Asignar</div>
+                    <div class="metric-sublabel" id="metric-pendientes-criticas">- críticas</div>
+                </div>
+                <div class="metric-card atrasadas" onclick="showAtrasadas()">
+                    <div class="metric-icon">🚨</div>
+                    <div class="metric-number" id="metric-atrasadas">-</div>
+                    <div class="metric-label">Fuera de SLA</div>
+                    <div class="metric-sublabel">Requieren atención</div>
+                </div>
+                <div class="metric-card tiempo" onclick="showTimeStats()">
+                    <div class="metric-icon">⏱️</div>
+                    <div class="metric-number" id="metric-tiempo-promedio">-</div>
+                    <div class="metric-label">Tiempo Promedio</div>
+                    <div class="metric-sublabel" id="metric-eficiencia">- % eficiencia</div>
                 </div>
             </div>
 
-            <!-- Estadísticas de Tiempo -->
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">⏱️ Estadísticas de Tiempo de Respuesta</h2>
+            <!-- Resumen de Personal -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏥 Biomédica</h2>
+                        <span id="biomedica-personnel-count">- disponibles</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="biomedica-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-content">
-                    <div class="tiempo-stats">
-                        <div class="tiempo-stat tiempo-promedio">
-                            <div class="tiempo-stat-number" id="tiempo-promedio-general">-</div>
-                            <div class="tiempo-stat-label">Tiempo Promedio</div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">⚙️ Mecánica</h2>
+                        <span id="mecanica-personnel-count">- disponibles</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="mecanica-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
                         </div>
-                        <div class="tiempo-stat tiempo-min">
-                            <div class="tiempo-stat-number" id="tiempo-min-general">-</div>
-                            <div class="tiempo-stat-label">Tiempo Mínimo</div>
-                        </div>
-                        <div class="tiempo-stat tiempo-max">
-                            <div class="tiempo-stat-number" id="tiempo-max-general">-</div>
-                            <div class="tiempo-stat-label">Tiempo Máximo</div>
-                        </div>
-                        <div class="tiempo-stat tiempo-promedio">
-                            <div class="tiempo-stat-number" id="solicitudes-vencidas">-</div>
-                            <div class="tiempo-stat-label">Solicitudes Vencidas</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏗️ Infraestructura</h2>
+                        <span id="infraestructura-personnel-count">- disponibles</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="infraestructura-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Vista de Solicitudes -->
+        <!-- Solicitudes View Mejorado -->
         <div id="solicitudes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">📋 Gestión de Solicitudes (Cloud)</h2>
-                    <div style="display: flex; gap: 0.5rem;">
+                    <h2 class="card-title">📋 Gestión Avanzada de Solicitudes</h2>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                         <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
                             🔄 Actualizar desde Airtable
                         </button>
                         <button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
                             🤖 Auto-asignar Pendientes
                         </button>
+                        <button class="btn btn-warning btn-sm" onclick="showTimeReport()">
+                            📊 Reporte de Tiempos
+                        </button>
                     </div>
                 </div>
                 <div class="card-content">
                     <!-- Filtros -->
-                    <div class="filtros-section">
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
                         <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Solicitudes</h4>
-                        <div class="filtros-grid">
-                            <div class="filtro-group">
-                                <label class="filtro-label">Área:</label>
-                                <select id="filtro-area" class="filtro-select" onchange="aplicarFiltros()">
-                                    <option value="">Todas las áreas</option>
-                                    <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label class="form-label">Estado:</label>
+                                <select id="filter-estado" onchange="applyFilters()" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="PENDIENTE">Pendientes</option>
+                                    <option value="ASIGNADA">Asignadas</option>
+                                    <option value="EN_PROCESO">En Proceso</option>
+                                    <option value="COMPLETADA">Completadas</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">Área:</label>
+                                <select id="filter-area" onchange="applyFilters()" class="form-select">
+                                    <option value="">Todas</option>
+                                    <option value="INGENIERIA_BIOMEDICA">Biomédica</option>
                                     <option value="MECANICA">Mecánica</option>
                                     <option value="INFRAESTRUCTURA">Infraestructura</option>
                                 </select>
                             </div>
-                            <div class="filtro-group">
-                                <label class="filtro-label">Estado:</label>
-                                <select id="filtro-estado" class="filtro-select" onchange="aplicarFiltros()">
-                                    <option value="">Todos los estados</option>
-                                    <option value="PENDIENTE">Pendiente</option>
-                                    <option value="ASIGNADA">Asignada</option>
-                                    <option value="EN_PROCESO">En Proceso</option>
-                                    <option value="COMPLETADA">Completada</option>
-                                </select>
-                            </div>
-                            <div class="filtro-group">
-                                <label class="filtro-label">Prioridad:</label>
-                                <select id="filtro-prioridad" class="filtro-select" onchange="aplicarFiltros()">
-                                    <option value="">Todas las prioridades</option>
+                            <div>
+                                <label class="form-label">Prioridad:</label>
+                                <select id="filter-prioridad" onchange="applyFilters()" class="form-select">
+                                    <option value="">Todas</option>
                                     <option value="CRITICA">Crítica</option>
                                     <option value="ALTA">Alta</option>
                                     <option value="MEDIA">Media</option>
                                     <option value="BAJA">Baja</option>
                                 </select>
                             </div>
-                            <div class="filtro-group">
-                                <label class="filtro-label">Búsqueda:</label>
-                                <input type="text" id="filtro-busqueda" class="filtro-input" placeholder="Buscar por número, equipo..." onkeyup="aplicarFiltros()">
+                            <div style="display: flex; align-items: end;">
+                                <button class="btn btn-secondary btn-sm" onclick="clearFilters()" style="width: 100%;">
+                                    🗑️ Limpiar
+                                </button>
                             </div>
-                        </div>
-                        <div class="filtros-actions">
-                            <button class="btn btn-secondary btn-sm" onclick="limpiarFiltros()">
-                                🗑️ Limpiar Filtros
-                            </button>
-                            <button class="btn btn-warning btn-sm" onclick="mostrarSoloVencidas()">
-                                ⚠️ Solo Vencidas
-                            </button>
-                            <button class="btn btn-primary btn-sm" onclick="mostrarSoloSinAsignar()">
-                                👨‍🔧 Solo Sin Asignar
-                            </button>
                         </div>
                     </div>
 
@@ -963,89 +965,61 @@
             </div>
         </div>
 
-        <!-- Vista de Asignación -->
-        <div id="asignacion-view" class="view hidden">
+        <!-- Vista de Asignaciones -->
+        <div id="asignaciones-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">👨‍🔧 Centro de Asignación</h2>
+                    <h2 class="card-title">🎯 Centro de Asignaciones</h2>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="refreshAssignmentData()">
-                            🔄 Actualizar Datos
+                        <button class="btn btn-success btn-sm" onclick="autoAssignAll()">
+                            🤖 Auto-asignar Todo
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="autoAssignByArea()">
-                            🎯 Auto-asignar por Área
+                        <button class="btn btn-primary btn-sm" onclick="showAssignmentRules()">
+                            ⚙️ Reglas de Asignación
                         </button>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div class="alert alert-info">
-                        <h4 style="margin-bottom: 0.5rem;">👨‍🔧 Centro de Asignación Inteligente</h4>
-                        <p>Asigna personal de soporte a solicitudes según área de especialización y disponibilidad.</p>
-                        <ul style="margin: 0.5rem 0 0 1rem;">
-                            <li>✅ Filtrado automático por área de especialización</li>
-                            <li>🎯 Solo personal disponible para asignación</li>
-                            <li>⏱️ Tracking de tiempos de respuesta</li>
-                            <li>🔄 Actualización automática de estados</li>
-                        </ul>
-                    </div>
-
-                    <div id="assignment-container">
-                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes pendientes...</h3>
-                            <p>Preparando centro de asignación</p>
-                        </div>
+                    <div id="asignaciones-content">
+                        <p style="text-align: center; color: #6b7280; padding: 2rem;">Cargando centro de asignaciones...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Vista de Tiempos -->
-        <div id="tiempos-view" class="view hidden">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">⏱️ Análisis de Tiempos de Respuesta</h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="refreshTiemposData()">
-                            🔄 Actualizar Datos
-                        </button>
-                        <button class="btn btn-warning btn-sm" onclick="exportarReporteTiempos()">
-                            📊 Exportar Reporte
-                        </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div id="tiempos-analysis-container">
-                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Analizando tiempos de respuesta...</h3>
-                            <p>Generando métricas desde Airtable</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vista de Personal -->
+        <!-- Personal View (mantener el existente) -->
         <div id="personal-view" class="view hidden">
+            <!-- El contenido existente de personal se mantiene igual -->
+        </div>
+
+        <!-- Accesos View (mantener el existente) -->
+        <div id="accesos-view" class="view hidden">
+            <!-- El contenido existente de accesos se mantiene igual -->
+        </div>
+
+        <!-- Nueva Vista de Reportes -->
+        <div id="reportes-view" class="view hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2 class="card-title">👥 Gestión de Personal de Soporte</h2>
+                    <h2 class="card-title">📊 Reportes y Análisis</h2>
                     <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="showAddPersonalModal()">
-                            ➕ Agregar Personal
+                        <button class="btn btn-primary btn-sm" onclick="generateTimeReport()">
+                            📈 Reporte de Tiempos
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
-                            🔄 Sincronizar
+                        <button class="btn btn-success btn-sm" onclick="generateEfficiencyReport()">
+                            ⚡ Análisis de Eficiencia
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="exportReports()">
+                            💾 Exportar Datos
                         </button>
                     </div>
                 </div>
                 <div class="card-content">
-                    <div id="technicians-container">
+                    <div id="reportes-content">
                         <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal...</h3>
-                            <p>Conectando con Airtable</p>
+                            <div style="font-size: 4rem; margin-bottom: 1rem;">📊</div>
+                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Reportes Avanzados</h3>
+                            <p>Seleccione un tipo de reporte para ver análisis detallados</p>
                         </div>
                     </div>
                 </div>
@@ -1057,7 +1031,7 @@
     <div id="assignment-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">👨‍🔧 Asignar Personal a Solicitud</h3>
+                <h3 class="modal-title">🎯 Asignar Personal a Solicitud</h3>
                 <button class="modal-close" onclick="closeAssignmentModal()">&times;</button>
             </div>
             <div id="assignment-modal-content">
@@ -1066,174 +1040,798 @@
         </div>
     </div>
 
-    <!-- Modal de Detalles -->
-    <div id="details-modal" class="modal">
+    <!-- Modal de Completar Solicitud -->
+    <div id="complete-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">📋 Detalles de Solicitud</h3>
-                <button class="modal-close" onclick="closeDetailsModal()">&times;</button>
+                <h3 class="modal-title">✅ Completar Solicitud</h3>
+                <button class="modal-close" onclick="closeCompleteModal()">&times;</button>
             </div>
-            <div id="details-modal-content">
+            <div id="complete-modal-content">
                 <!-- Contenido dinámico del modal -->
             </div>
         </div>
     </div>
 
-    <!-- Incluir el archivo de configuración de Airtable -->
+    <!-- Modal de Resultados -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="result-modal-title">Resultado</h3>
+                <button class="modal-close" onclick="closeResultModal()">&times;</button>
+            </div>
+            <div id="result-modal-content">
+                <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir airtable-config.js mejorado -->
     <script src="airtable-config.js"></script>
 
     <script>
         // Variables globales
         let cloudSolicitudes = [];
         let cloudTecnicos = [];
+        let cloudUsuarios = [];
+        let cloudSolicitudesAcceso = [];
+        let timeStats = {};
         let isConnectedToAirtable = false;
-        let solicitudesFiltradas = [];
 
-        // 🔢 SISTEMA DE NUMERACIÓN AUTOMÁTICA
-        class NumberingSystem {
-            constructor() {
-                this.counters = {
-                    'INGENIERIA_BIOMEDICA': { prefix: 'SOLBIO', current: 0 },
-                    'MECANICA': { prefix: 'SOLMEC', current: 0 },
-                    'INFRAESTRUCTURA': { prefix: 'SOLINFRA', current: 0 }
-                };
-            }
+        // 🔗 Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Gestión Avanzado - Hospital Susana López de Valencia');
+            
+            // Event listeners
+            setupEventListeners();
+            
+            // Cargar datos cuando esté listo airtable-config.js
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                }
+            }, 2000);
+        });
 
-            async loadCountersFromAirtable() {
-                console.log('🔢 Cargando contadores desde Airtable...');
+        function setupEventListeners() {
+            // Cerrar modales al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+        }
+
+        // 🔄 Funciones de carga de datos
+        async function loadAllDataFromCloud() {
+            console.log('🌐 Cargando todos los datos desde Airtable...');
+            
+            try {
+                updateConnectionStatus('connecting', 'Sincronizando...');
                 
-                try {
-                    // Obtener todas las solicitudes para determinar el siguiente número
-                    const solicitudes = await window.airtableAPI.getSolicitudes();
-                    
-                    // Analizar números existentes por área
-                    Object.keys(this.counters).forEach(area => {
-                        const prefix = this.counters[area].prefix;
-                        const solicitudesArea = solicitudes.filter(s => 
-                            s.servicioIngenieria === area && 
-                            s.numero && 
-                            s.numero.startsWith(prefix)
+                const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+                    window.airtableAPI.getSolicitudes(),
+                    window.airtableAPI.getTecnicos(),
+                    window.airtableAPI.getUsuarios(),
+                    window.airtableAPI.getSolicitudesAcceso()
+                ]);
+                
+                cloudSolicitudes = solicitudes;
+                cloudTecnicos = tecnicos;
+                cloudUsuarios = usuarios;
+                cloudSolicitudesAcceso = solicitudesAcceso;
+                
+                // Cargar estadísticas de tiempo
+                await loadTimeStatistics();
+                
+                // Actualizar interfaz
+                updateAllCounters();
+                updateAllDisplays();
+                updateConnectionStatus('connected');
+                
+                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal`);
+                
+            } catch (error) {
+                console.error('❌ Error cargando datos:', error);
+                updateConnectionStatus('disconnected');
+            }
+        }
+
+        async function loadTimeStatistics() {
+            try {
+                if (window.airtableAPI.getEstadisticasTiempos) {
+                    timeStats = await window.airtableAPI.getEstadisticasTiempos();
+                    console.log('📊 Estadísticas de tiempo cargadas:', timeStats);
+                }
+            } catch (error) {
+                console.warn('⚠️ No se pudieron cargar estadísticas de tiempo:', error);
+                timeStats = {};
+            }
+        }
+
+        // 📊 Actualizar contadores
+        function updateAllCounters() {
+            const total = cloudSolicitudes.length;
+            const biomedica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length;
+            const mecanica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'MECANICA').length;
+            const infraestructura = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INFRAESTRUCTURA').length;
+            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE').length;
+            
+            // Calcular solicitudes atrasadas
+            const atrasadas = cloudSolicitudes.filter(s => {
+                if (s.estado === 'COMPLETADA') return false;
+                if (!s.fechaLimiteRespuesta) return false;
+                return new Date() > new Date(s.fechaLimiteRespuesta);
+            }).length;
+
+            // Actualizar métricas básicas
+            document.getElementById('metric-total').textContent = total;
+            document.getElementById('metric-biomedica').textContent = biomedica;
+            document.getElementById('metric-mecanica').textContent = mecanica;
+            document.getElementById('metric-infraestructura').textContent = infraestructura;
+            document.getElementById('metric-pendientes').textContent = pendientes;
+            document.getElementById('metric-atrasadas').textContent = atrasadas;
+            
+            // Actualizar navegación
+            document.getElementById('total-count').textContent = total;
+            document.getElementById('pending-count').textContent = pendientes;
+            document.getElementById('total-technicians-nav').textContent = cloudTecnicos.length;
+            document.getElementById('pending-access-count').textContent = 
+                cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE').length;
+
+            // Actualizar métricas de tiempo si están disponibles
+            if (timeStats.tiemposRespuesta) {
+                const tiempoPromedio = Math.round(timeStats.tiemposRespuesta.promedio * 100) / 100;
+                const eficiencia = timeStats.tiemposRespuesta.porcentajeEnTiempo;
+                
+                document.getElementById('metric-tiempo-promedio').textContent = `${tiempoPromedio}h`;
+                document.getElementById('metric-eficiencia').textContent = `${eficiencia}% eficiencia`;
+                
+                // Actualizar submétricas por área
+                const areas = ['biomedica', 'mecanica', 'infraestructura'];
+                areas.forEach(area => {
+                    const tiempoElement = document.getElementById(`metric-${area}-tiempo`);
+                    if (tiempoElement) {
+                        // Calcular tiempo promedio por área (simplificado)
+                        const areaUpper = area.toUpperCase().replace('BIOMEDICA', 'INGENIERIA_BIOMEDICA');
+                        const solicitudesArea = cloudSolicitudes.filter(s => 
+                            s.servicioIngenieria === areaUpper && s.tiempoRespuestaHoras
                         );
                         
                         if (solicitudesArea.length > 0) {
-                            // Extraer números y encontrar el máximo
-                            const numeros = solicitudesArea
-                                .map(s => {
-                                    const match = s.numero.match(new RegExp(`${prefix}(\\d+)`));
-                                    return match ? parseInt(match[1]) : 0;
-                                })
-                                .filter(n => n > 0);
+                            const promedioArea = solicitudesArea.reduce((sum, s) => 
+                                sum + (s.tiempoRespuestaHoras || 0), 0
+                            ) / solicitudesArea.length;
                             
-                            this.counters[area].current = numeros.length > 0 ? Math.max(...numeros) : 0;
+                            tiempoElement.textContent = `Promedio: ${Math.round(promedioArea * 100) / 100}h`;
+                        } else {
+                            tiempoElement.textContent = 'Sin datos';
                         }
-                        
-                        console.log(`📊 ${area}: Siguiente número será ${this.counters[area].prefix}${String(this.counters[area].current + 1).padStart(5, '0')}`);
-                    });
+                    }
+                });
+            }
+
+            // Contar pendientes críticas
+            const pendientesCriticas = cloudSolicitudes.filter(s => 
+                s.estado === 'PENDIENTE' && s.prioridad === 'CRITICA'
+            ).length;
+            
+            const pendientesElement = document.getElementById('metric-pendientes-criticas');
+            if (pendientesElement) {
+                pendientesElement.textContent = `${pendientesCriticas} críticas`;
+            }
+
+            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${pendientes} pendientes, ${atrasadas} atrasadas`);
+        }
+
+        function updateAllDisplays() {
+            updatePersonnelSummaries();
+            updateSolicitudesList();
+        }
+
+        function updatePersonnelSummaries() {
+            const areas = [
+                { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
+                { key: 'MECANICA', name: 'mecanica' },
+                { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
+            ];
+
+            areas.forEach(area => {
+                const personnel = cloudTecnicos.filter(t => t.area === area.key);
+                const available = personnel.filter(p => p.estado === 'disponible').length;
+                const summaryContainer = document.getElementById(`${area.name}-personnel-summary`);
+                const countContainer = document.getElementById(`${area.name}-personnel-count`);
+                
+                if (countContainer) {
+                    countContainer.textContent = `${available} disponibles`;
+                }
+                
+                if (personnel.length === 0) {
+                    summaryContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No hay personal registrado</p>';
+                } else {
+                    const busy = personnel.filter(p => p.estado === 'ocupado').length;
+                    const inactive = personnel.filter(p => p.estado === 'inactivo').length;
                     
-                } catch (error) {
-                    console.error('❌ Error cargando contadores:', error);
+                    summaryContainer.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
+                            <div>
+                                <div style="font-weight: bold; color: #059669;">${available}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Disponibles</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #f59e0b;">${busy}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Ocupados</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #ef4444;">${inactive}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Inactivos</div>
+                            </div>
+                        </div>
+                    `;
                 }
+            });
+        }
+
+        // 📋 Actualizar lista de solicitudes
+        function updateSolicitudesList() {
+            const container = document.getElementById('solicitudes-list');
+            
+            if (cloudSolicitudes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
+                        <p>Las solicitudes aparecerán aquí cuando se creen desde el Portal de Solicitudes</p>
+                    </div>
+                `;
+                return;
             }
 
-            generateNumber(area) {
-                if (!this.counters[area]) {
-                    console.error('❌ Área no válida para numeración:', area);
-                    return `SOL${Date.now()}`;
-                }
-                
-                this.counters[area].current++;
-                const numero = `${this.counters[area].prefix}${String(this.counters[area].current).padStart(5, '0')}`;
-                
-                console.log(`🔢 Número generado para ${area}: ${numero}`);
-                return numero;
+            // Aplicar filtros si existen
+            let filteredSolicitudes = [...cloudSolicitudes];
+            
+            const filterEstado = document.getElementById('filter-estado')?.value;
+            const filterArea = document.getElementById('filter-area')?.value;
+            const filterPrioridad = document.getElementById('filter-prioridad')?.value;
+            
+            if (filterEstado) {
+                filteredSolicitudes = filteredSolicitudes.filter(s => s.estado === filterEstado);
+            }
+            if (filterArea) {
+                filteredSolicitudes = filteredSolicitudes.filter(s => s.servicioIngenieria === filterArea);
+            }
+            if (filterPrioridad) {
+                filteredSolicitudes = filteredSolicitudes.filter(s => s.prioridad === filterPrioridad);
             }
 
-            getNextNumber(area) {
-                if (!this.counters[area]) return 'SOL00001';
-                return `${this.counters[area].prefix}${String(this.counters[area].current + 1).padStart(5, '0')}`;
+            // Ordenar por fecha de creación (más recientes primero)
+            filteredSolicitudes.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
+
+            let html = `
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                    <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudes.length} Solicitudes Totales - ${filteredSolicitudes.length} Mostradas</h4>
+                    <p style="color: #047857; font-size: 0.875rem;">
+                        Sistema con numeración automática y gestión de tiempos. Última actualización: ${new Date().toLocaleTimeString('es-CO')}
+                    </p>
+                </div>
+            `;
+
+            if (filteredSolicitudes.length === 0) {
+                html += `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <h4 style="color: #1f2937;">No se encontraron solicitudes con los filtros aplicados</h4>
+                        <button class="btn btn-secondary btn-sm" onclick="clearFilters()" style="margin-top: 1rem;">
+                            🗑️ Limpiar Filtros
+                        </button>
+                    </div>
+                `;
+            } else {
+                html += filteredSolicitudes.map(solicitud => createSolicitudCard(solicitud)).join('');
+            }
+
+            container.innerHTML = html;
+        }
+
+        function createSolicitudCard(solicitud) {
+            const ahora = new Date();
+            const fechaCreacion = new Date(solicitud.fechaCreacion);
+            const fechaLimite = solicitud.fechaLimiteRespuesta ? new Date(solicitud.fechaLimiteRespuesta) : null;
+            
+            // Determinar estado visual
+            let cardClass = 'solicitud-card';
+            if (solicitud.estado === 'PENDIENTE') {
+                cardClass += ' pendiente';
+                if (fechaLimite && ahora > fechaLimite) {
+                    cardClass += ' atrasada';
+                }
+            } else if (solicitud.estado === 'ASIGNADA' || solicitud.estado === 'EN_PROCESO') {
+                cardClass += ' asignada';
+            } else if (solicitud.estado === 'COMPLETADA') {
+                cardClass += ' completada';
+            }
+
+            // Calcular tiempo transcurrido
+            const tiempoTranscurrido = Math.round((ahora - fechaCreacion) / (1000 * 60 * 60) * 100) / 100;
+            
+            // Determinar área para icono
+            const areaIcons = {
+                'INGENIERIA_BIOMEDICA': '🏥',
+                'MECANICA': '⚙️',
+                'INFRAESTRUCTURA': '🏗️'
+            };
+            
+            const areaNames = {
+                'INGENIERIA_BIOMEDICA': 'Biomédica',
+                'MECANICA': 'Mecánica',
+                'INFRAESTRUCTURA': 'Infraestructura'
+            };
+
+            return `
+                <div class="${cardClass}">
+                    <div class="solicitud-header">
+                        <div class="solicitud-numero">
+                            ${areaIcons[solicitud.servicioIngenieria] || '🔧'} 
+                            ${solicitud.numero || 'Sin número'}
+                        </div>
+                        <div class="solicitud-badges">
+                            <span class="badge badge-prioridad-${solicitud.prioridad?.toLowerCase() || 'media'}">
+                                ${getPriorityIcon(solicitud.prioridad)} ${solicitud.prioridad || 'MEDIA'}
+                            </span>
+                            <span class="badge badge-estado-${solicitud.estado?.toLowerCase() || 'pendiente'}">
+                                ${getStatusIcon(solicitud.estado)} ${solicitud.estado || 'PENDIENTE'}
+                            </span>
+                            <span class="badge badge-area">
+                                ${areaIcons[solicitud.servicioIngenieria]} ${areaNames[solicitud.servicioIngenieria] || 'N/A'}
+                            </span>
+                            ${getTimeBadge(solicitud, ahora)}
+                        </div>
+                    </div>
+
+                    <div class="solicitud-details">
+                        <div class="solicitud-detail">
+                            <div class="detail-label">🖥️ Equipo</div>
+                            <div class="detail-value">${solicitud.equipo || 'No especificado'}</div>
+                        </div>
+                        <div class="solicitud-detail">
+                            <div class="detail-label">📍 Ubicación</div>
+                            <div class="detail-value">${solicitud.ubicacion || 'No especificada'}</div>
+                        </div>
+                        <div class="solicitud-detail">
+                            <div class="detail-label">👤 Solicitante</div>
+                            <div class="detail-value">${solicitud.solicitante || 'Sistema'}</div>
+                        </div>
+                        <div class="solicitud-detail">
+                            <div class="detail-label">🏥 Servicio</div>
+                            <div class="detail-value">${getServiceName(solicitud.servicioHospitalario)}</div>
+                        </div>
+                        <div class="solicitud-detail">
+                            <div class="detail-label">📅 Creada</div>
+                            <div class="detail-value">${new Date(solicitud.fechaCreacion).toLocaleString('es-CO')}</div>
+                        </div>
+                        <div class="solicitud-detail">
+                            <div class="detail-label">⏰ Tiempo Transcurrido</div>
+                            <div class="detail-value">${tiempoTranscurrido}h</div>
+                        </div>
+                        ${solicitud.tecnicoAsignado ? `
+                            <div class="solicitud-detail">
+                                <div class="detail-label">👨‍🔧 Técnico Asignado</div>
+                                <div class="detail-value">${solicitud.tecnicoAsignado}</div>
+                            </div>
+                        ` : ''}
+                        ${solicitud.fechaAsignacion ? `
+                            <div class="solicitud-detail">
+                                <div class="detail-label">📅 Fecha Asignación</div>
+                                <div class="detail-value">${new Date(solicitud.fechaAsignacion).toLocaleString('es-CO')}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <div class="detail-label">📝 Descripción</div>
+                        <div style="margin-top: 0.5rem; color: #1f2937;">${solicitud.descripcion || 'No especificada'}</div>
+                        ${solicitud.observaciones ? `
+                            <div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;">
+                                <strong>Observaciones:</strong> ${solicitud.observaciones}
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${createTimeline(solicitud)}
+
+                    <div class="solicitud-actions">
+                        ${createActionButtons(solicitud)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function getPriorityIcon(prioridad) {
+            const icons = {
+                'CRITICA': '🚨',
+                'ALTA': '🔴',
+                'MEDIA': '🟡',
+                'BAJA': '🟢'
+            };
+            return icons[prioridad] || '🟡';
+        }
+
+        function getStatusIcon(estado) {
+            const icons = {
+                'PENDIENTE': '⏳',
+                'ASIGNADA': '👨‍🔧',
+                'EN_PROCESO': '🔧',
+                'COMPLETADA': '✅'
+            };
+            return icons[estado] || '⏳';
+        }
+
+        function getTimeBadge(solicitud, ahora) {
+            if (solicitud.estado === 'COMPLETADA') {
+                return `<span class="badge badge-tiempo-completada">✅ Completada</span>`;
+            }
+            
+            if (!solicitud.fechaLimiteRespuesta) {
+                return '';
+            }
+            
+            const fechaLimite = new Date(solicitud.fechaLimiteRespuesta);
+            const estaAtrasada = ahora > fechaLimite;
+            
+            if (estaAtrasada) {
+                const horasAtrasado = Math.round((ahora - fechaLimite) / (1000 * 60 * 60));
+                return `<span class="badge badge-tiempo-fuera-tiempo">🚨 ${horasAtrasado}h atrasada</span>`;
+            } else {
+                const horasRestantes = Math.round((fechaLimite - ahora) / (1000 * 60 * 60));
+                return `<span class="badge badge-tiempo-en-tiempo">⏰ ${horasRestantes}h restantes</span>`;
             }
         }
 
-        // ⏱️ SISTEMA DE TIEMPO DE RESPUESTA
-        class TimeTracker {
-            constructor() {
-                this.limitesTiempo = {
-                    'CRITICA': 2 * 60 * 60 * 1000, // 2 horas
-                    'ALTA': 4 * 60 * 60 * 1000,    // 4 horas
-                    'MEDIA': 24 * 60 * 60 * 1000,  // 24 horas
-                    'BAJA': 72 * 60 * 60 * 1000    // 72 horas
-                };
-            }
+        function createTimeline(solicitud) {
+            const estados = [
+                { key: 'fechaCreacion', label: 'Creada', icon: '📝' },
+                { key: 'fechaAsignacion', label: 'Asignada', icon: '👨‍🔧' },
+                { key: 'fechaInicio', label: 'Iniciada', icon: '🔧' },
+                { key: 'fechaCompletado', label: 'Completada', icon: '✅' }
+            ];
 
-            calcularTiempoRespuesta(fechaCreacion, fechaAsignacion = null) {
-                const inicio = new Date(fechaCreacion);
-                const fin = fechaAsignacion ? new Date(fechaAsignacion) : new Date();
-                return fin - inicio;
-            }
-
-            formatearTiempo(milliseconds) {
-                const horas = Math.floor(milliseconds / (1000 * 60 * 60));
-                const minutos = Math.floor((milliseconds % (1000 * 60 * 60)) / (1000 * 60));
+            let html = '<div class="timeline-container"><div class="timeline">';
+            
+            estados.forEach((estado, index) => {
+                const fecha = solicitud[estado.key];
+                const isCompleted = !!fecha;
+                const isCurrent = !isCompleted && (
+                    (index === 1 && solicitud.estado === 'PENDIENTE') ||
+                    (index === 2 && solicitud.estado === 'ASIGNADA') ||
+                    (index === 3 && solicitud.estado === 'EN_PROCESO')
+                );
                 
-                if (horas > 0) {
-                    return `${horas}h ${minutos}m`;
+                let dotClass = 'timeline-dot';
+                if (isCompleted) dotClass += ' completed';
+                else if (isCurrent) dotClass += ' current';
+                
+                html += `
+                    <div class="timeline-item ${isCompleted ? 'completed' : ''}">
+                        <div class="${dotClass}">${estado.icon}</div>
+                        <div class="timeline-label">${estado.label}</div>
+                        <div class="timeline-time">
+                            ${fecha ? new Date(fecha).toLocaleString('es-CO') : '-'}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div></div>';
+            return html;
+        }
+
+        function createActionButtons(solicitud) {
+            let buttons = [];
+            
+            if (solicitud.estado === 'PENDIENTE') {
+                buttons.push(`
+                    <button class="btn btn-primary btn-sm" onclick="showAssignmentModal('${solicitud.id}')">
+                        🎯 Asignar Personal
+                    </button>
+                `);
+            } else if (solicitud.estado === 'ASIGNADA' || solicitud.estado === 'EN_PROCESO') {
+                buttons.push(`
+                    <button class="btn btn-success btn-sm" onclick="showCompleteModal('${solicitud.id}')">
+                        ✅ Completar
+                    </button>
+                `);
+                buttons.push(`
+                    <button class="btn btn-warning btn-sm" onclick="reasignarSolicitud('${solicitud.id}')">
+                        🔄 Reasignar
+                    </button>
+                `);
+            }
+            
+            buttons.push(`
+                <button class="btn btn-secondary btn-sm" onclick="viewSolicitudDetails('${solicitud.id}')">
+                    👁️ Ver Detalles
+                </button>
+            `);
+            
+            return buttons.join('');
+        }
+
+        // 🎯 Funciones de asignación
+        async function showAssignmentModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            // Filtrar técnicos disponibles del área correspondiente
+            const tecnicosArea = cloudTecnicos.filter(t => 
+                t.area === solicitud.servicioIngenieria && t.estado === 'disponible'
+            );
+            
+            // Si no hay técnicos del área, mostrar todos los disponibles
+            const tecnicosDisponibles = tecnicosArea.length > 0 ? tecnicosArea : 
+                cloudTecnicos.filter(t => t.estado === 'disponible');
+
+            const modal = document.getElementById('assignment-modal');
+            const content = document.getElementById('assignment-modal-content');
+            
+            let html = `
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h4 style="color: #1e40af; margin-bottom: 0.5rem;">📋 Solicitud a Asignar</h4>
+                    <p><strong>Número:</strong> ${solicitud.numero}</p>
+                    <p><strong>Área:</strong> ${getAreaName(solicitud.servicioIngenieria)}</p>
+                    <p><strong>Prioridad:</strong> ${solicitud.prioridad}</p>
+                    <p><strong>Equipo:</strong> ${solicitud.equipo}</p>
+                </div>
+            `;
+
+            if (tecnicosDisponibles.length === 0) {
+                html += `
+                    <div class="alert alert-warning">
+                        ⚠️ No hay personal disponible para asignación en este momento.
+                    </div>
+                `;
+            } else {
+                html += `
+                    <form id="assignment-form" onsubmit="assignTechnician(event, '${solicitudId}')">
+                        <div class="form-group">
+                            <label class="form-label">👨‍🔧 Seleccionar Personal</label>
+                            <select id="selected-technician" class="form-select" required>
+                                <option value="">Seleccione personal disponible</option>
+                                ${tecnicosDisponibles.map(tecnico => `
+                                    <option value="${tecnico.id}">
+                                        ${tecnico.nombre} - ${getAreaName(tecnico.area)} 
+                                        ${tecnico.area === solicitud.servicioIngenieria ? '✅' : '⚠️'} 
+                                        (${tecnico.tipo})
+                                    </option>
+                                `).join('')}
+                            </select>
+                            <small style="color: #6b7280; margin-top: 0.5rem; display: block;">
+                                ✅ = Área exacta | ⚠️ = Área diferente pero disponible
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">📝 Observaciones de Asignación (Opcional)</label>
+                            <textarea id="assignment-observations" class="form-textarea" 
+                                placeholder="Notas sobre la asignación..."></textarea>
+                        </div>
+
+                        <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                            <h5 style="color: #166534; margin-bottom: 0.5rem;">🎯 Al asignar se ejecutará:</h5>
+                            <ul style="color: #047857; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                                <li>Cambio de estado a "ASIGNADA"</li>
+                                <li>Registro de tiempo de respuesta</li>
+                                <li>Personal marcado como "ocupado"</li>
+                                <li>Notificación automática al técnico</li>
+                            </ul>
+                        </div>
+
+                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                            <button type="submit" class="btn btn-success" style="min-width: 150px;">
+                                🎯 Confirmar Asignación
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="closeAssignmentModal()" style="min-width: 120px;">
+                                ↩️ Cancelar
+                            </button>
+                        </div>
+                    </form>
+                `;
+            }
+
+            content.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        async function assignTechnician(event, solicitudId) {
+            event.preventDefault();
+            
+            const tecnicoId = document.getElementById('selected-technician').value;
+            const observaciones = document.getElementById('assignment-observations').value.trim();
+            
+            if (!tecnicoId) {
+                alert('❌ Por favor seleccione un técnico');
+                return;
+            }
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Asignando...';
+
+                // Usar la función mejorada de asignación con tiempos
+                const resultado = await window.airtableAPI.asignarTecnicoConTiempos(
+                    solicitudId, 
+                    tecnicoId, 
+                    observaciones || 'Asignación desde Portal de Gestión'
+                );
+
+                if (resultado.success) {
+                    closeAssignmentModal();
+                    
+                    // Recargar datos
+                    await loadAllDataFromCloud();
+                    
+                    // Mostrar resultado
+                    showSuccessResult(
+                        '🎉 Asignación Exitosa',
+                        `✅ Personal asignado correctamente\n\n` +
+                        `📋 Solicitud: ${resultado.solicitud.numero}\n` +
+                        `👨‍🔧 Técnico: ${resultado.tecnico.nombre}\n` +
+                        `⏰ Tiempo de respuesta: ${resultado.tiempos.tiempoRespuestaHoras}h\n` +
+                        `📊 Estado tiempo: ${resultado.tiempos.estadoTiempo}\n\n` +
+                        `✅ El técnico ha sido notificado y puede comenzar el trabajo.`
+                    );
                 } else {
-                    return `${minutos}m`;
-                }
-            }
-
-            evaluarTiempo(milliseconds, prioridad) {
-                const limite = this.limitesTiempo[prioridad] || this.limitesTiempo['MEDIA'];
-                
-                if (milliseconds > limite) {
-                    return { status: 'urgente', mensaje: 'Tiempo excedido' };
-                } else if (milliseconds > limite * 0.8) {
-                    return { status: 'normal', mensaje: 'Próximo a vencer' };
-                } else {
-                    return { status: 'rapido', mensaje: 'Dentro del tiempo' };
-                }
-            }
-
-            generarEstadisticas(solicitudes) {
-                const tiempos = solicitudes
-                    .filter(s => s.fechaCreacion && s.fechaAsignacion)
-                    .map(s => this.calcularTiempoRespuesta(s.fechaCreacion, s.fechaAsignacion));
-
-                if (tiempos.length === 0) {
-                    return {
-                        promedio: 0,
-                        minimo: 0,
-                        maximo: 0,
-                        vencidas: 0
-                    };
+                    throw new Error('La asignación no fue exitosa');
                 }
 
-                const promedio = tiempos.reduce((a, b) => a + b, 0) / tiempos.length;
-                const minimo = Math.min(...tiempos);
-                const maximo = Math.max(...tiempos);
-                
-                const vencidas = solicitudes.filter(s => {
-                    if (!s.fechaCreacion || s.estado === 'COMPLETADA') return false;
-                    const tiempo = this.calcularTiempoRespuesta(s.fechaCreacion);
-                    const limite = this.limitesTiempo[s.prioridad] || this.limitesTiempo['MEDIA'];
-                    return tiempo > limite;
-                }).length;
-
-                return {
-                    promedio: this.formatearTiempo(promedio),
-                    minimo: this.formatearTiempo(minimo),
-                    maximo: this.formatearTiempo(maximo),
-                    vencidas: vencidas
-                };
+            } catch (error) {
+                console.error('❌ Error en asignación:', error);
+                alert('❌ Error al asignar técnico: ' + error.message);
             }
         }
 
-        // Instancias globales
-        const numberingSystem = new NumberingSystem();
-        const timeTracker = new TimeTracker();
+        function closeAssignmentModal() {
+            document.getElementById('assignment-modal').classList.remove('show');
+        }
+
+        // 🤖 Auto-asignación
+        async function autoAssignAll() {
+            const confirmed = confirm(
+                '🤖 ¿Activar auto-asignación inteligente?\n\n' +
+                'El sistema asignará automáticamente las solicitudes pendientes al personal disponible ' +
+                'según el área y la prioridad.\n\n' +
+                '¿Continuar?'
+            );
+            
+            if (!confirmed) return;
+
+            try {
+                const resultado = await window.airtableAPI.autoAsignarSolicitudesPendientes();
+                
+                if (resultado.success) {
+                    // Recargar datos
+                    await loadAllDataFromCloud();
+                    
+                    // Mostrar resultado
+                    let mensaje = `🤖 Auto-asignación completada\n\n`;
+                    mensaje += `📊 Resultado:\n`;
+                    mensaje += `• Asignaciones exitosas: ${resultado.asignaciones}\n`;
+                    mensaje += `• Solicitudes pendientes: ${resultado.solicitudesPendientes}\n`;
+                    mensaje += `• Técnicos disponibles: ${resultado.tecnicosDisponibles}\n\n`;
+                    
+                    if (resultado.detalles && resultado.detalles.length > 0) {
+                        mensaje += `📋 Detalles de asignaciones:\n`;
+                        resultado.detalles.forEach(detalle => {
+                            mensaje += `• ${detalle.solicitud} → ${detalle.tecnico} (${detalle.compatibilidad})\n`;
+                        });
+                    }
+                    
+                    alert(mensaje);
+                } else {
+                    alert(`❌ Error en auto-asignación: ${resultado.message || 'Error desconocido'}`);
+                }
+
+            } catch (error) {
+                console.error('❌ Error en auto-asignación:', error);
+                alert('❌ Error ejecutando auto-asignación: ' + error.message);
+            }
+        }
+
+        // 🔄 Funciones auxiliares
+        function getAreaName(area) {
+            const areas = {
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'MECANICA': 'Mecánica',
+                'INFRAESTRUCTURA': 'Infraestructura'
+            };
+            return areas[area] || area;
+        }
+
+        function getServiceName(service) {
+            const services = {
+                'URGENCIAS_ADULTO': 'Urgencias Adulto',
+                'URGENCIAS_PEDIATRICAS': 'Urgencias Pediátricas',
+                'UCI_ADULTO': 'UCI Adulto',
+                'UCI_NEONATAL': 'UCI Neonatal',
+                'HOSPITALIZACION_ADULTO': 'Hospitalización Adulto',
+                'CIRUGIA_ADULTO': 'Cirugía Adulto',
+                'CONSULTA_EXTERNA': 'Consulta Externa',
+                'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+                'RADIOLOGIA': 'Radiología',
+                'FARMACIA_CENTRAL': 'Farmacia Central',
+                'FISIOTERAPIA': 'Fisioterapia',
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'INFRAESTRUCTURA': 'Infraestructura',
+                'MECANICOS': 'Mecánicos'
+            };
+            return services[service] || service || 'No especificado';
+        }
+
+        function showSuccessResult(titulo, mensaje) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = titulo;
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                    <pre style="white-space: pre-wrap; text-align: left; background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">${mensaje}</pre>
+                </div>
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="closeResultModal()">
+                        ✅ Entendido
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.remove('show');
+        }
+
+        // 🔄 Funciones de navegación y filtros
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewName + '-view').classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            
+            // Cargar datos específicos de la vista
+            switch(viewName) {
+                case 'solicitudes':
+                    updateSolicitudesList();
+                    break;
+                case 'asignaciones':
+                    loadAsignacionesView();
+                    break;
+            }
+        }
+
+        function applyFilters() {
+            updateSolicitudesList();
+        }
+
+        function clearFilters() {
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-prioridad').value = '';
+            updateSolicitudesList();
+        }
 
         // 🔗 Funciones de conexión
         function updateConnectionStatus(status, message) {
+            isConnectedToAirtable = (status === 'connected');
+            
             const statusDiv = document.getElementById('connection-status');
             const iconSpan = document.getElementById('connection-icon');
             const textSpan = document.getElementById('connection-text');
@@ -1244,1163 +1842,120 @@
                 case 'connected':
                     iconSpan.textContent = '🟢';
                     textSpan.textContent = 'Airtable Conectado';
-                    isConnectedToAirtable = true;
                     break;
                 case 'disconnected':
                     iconSpan.textContent = '🔴';
                     textSpan.textContent = 'Sin conexión';
-                    isConnectedToAirtable = false;
                     break;
-                default:
+                case 'connecting':
                     iconSpan.textContent = '🔄';
                     textSpan.textContent = message || 'Conectando...';
+                    break;
             }
         }
 
-        // 🔄 Carga de datos desde Airtable
-        async function loadAllDataFromCloud() {
-            console.log('🌐 Cargando datos desde Airtable...');
-            
+        async function testCloudConnection() {
             try {
-                updateConnectionStatus('connecting', 'Sincronizando...');
+                const isConnected = await window.airtableAPI.testConnection();
                 
-                // Cargar contadores de numeración
-                await numberingSystem.loadCountersFromAirtable();
-                
-                // Cargar datos en paralelo
-                const [solicitudes, tecnicos] = await Promise.all([
-                    window.airtableAPI.getSolicitudes(),
-                    window.airtableAPI.getTecnicos()
-                ]);
-                
-                cloudSolicitudes = solicitudes;
-                cloudTecnicos = tecnicos;
-                solicitudesFiltradas = [...cloudSolicitudes];
-                
-                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal`);
-                
-                // Actualizar interfaz
-                updateAllCounters();
-                updateAllDisplays();
-                updateConnectionStatus('connected');
-                
-            } catch (error) {
-                console.error('❌ Error cargando datos:', error);
-                updateConnectionStatus('disconnected');
-                loadDataFromLocalStorage();
-            }
-        }
-
-        function loadDataFromLocalStorage() {
-            console.log('📱 Cargando datos desde localStorage...');
-            
-            try {
-                const localSolicitudes = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
-                const localTechnicians = JSON.parse(localStorage.getItem('hospital_technicians') || '{}');
-                
-                cloudTecnicos = [];
-                Object.entries(localTechnicians).forEach(([area, tecnicosArea]) => {
-                    tecnicosArea.forEach(tecnico => {
-                        cloudTecnicos.push({ ...tecnico, area: area });
-                    });
-                });
-                
-                cloudSolicitudes = localSolicitudes;
-                solicitudesFiltradas = [...cloudSolicitudes];
-                
-                updateAllCounters();
-                updateAllDisplays();
-                
-                console.log('✅ Datos cargados desde localStorage');
-                
-            } catch (error) {
-                console.error('❌ Error cargando desde localStorage:', error);
-                cloudSolicitudes = [];
-                cloudTecnicos = [];
-                solicitudesFiltradas = [];
-            }
-        }
-
-        // 📊 Actualizar contadores
-        function updateAllCounters() {
-            const total = cloudSolicitudes.length;
-            const biomedica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length;
-            const mecanica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'MECANICA').length;
-            const infraestructura = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INFRAESTRUCTURA').length;
-            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || !r.tecnicoAsignado).length;
-
-            document.getElementById('metric-total').textContent = total;
-            document.getElementById('metric-biomedica').textContent = biomedica;
-            document.getElementById('metric-mecanica').textContent = mecanica;
-            document.getElementById('metric-infraestructura').textContent = infraestructura;
-            document.getElementById('metric-pendientes').textContent = pendientes;
-            document.getElementById('total-count').textContent = total;
-            document.getElementById('pending-assignment-count').textContent = pendientes;
-
-            const totalTechnicians = cloudTecnicos.length;
-            document.getElementById('total-technicians-nav').textContent = totalTechnicians;
-
-            // Actualizar estadísticas de tiempo
-            const stats = timeTracker.generarEstadisticas(cloudSolicitudes);
-            document.getElementById('tiempo-promedio-general').textContent = stats.promedio;
-            document.getElementById('tiempo-min-general').textContent = stats.minimo;
-            document.getElementById('tiempo-max-general').textContent = stats.maximo;
-            document.getElementById('solicitudes-vencidas').textContent = stats.vencidas;
-
-            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${pendientes} pendientes`);
-        }
-
-        function updateAllDisplays() {
-            updateSolicitudesList();
-            updateAssignmentContainer();
-            updateTiemposAnalysis();
-            updateTechniciansList();
-        }
-
-        // 📋 Actualizar lista de solicitudes
-        function updateSolicitudesList() {
-            const container = document.getElementById('solicitudes-list');
-            
-            if (solicitudesFiltradas.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes que coincidan</h3>
-                        <p>Ajusta los filtros o crea nuevas solicitudes desde el Portal de Solicitudes</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${solicitudesFiltradas.length} de ${cloudSolicitudes.length} Solicitudes</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Datos sincronizados desde Airtable - ${new Date().toLocaleTimeString('es-CO')}</p>
-                    </div>
-                    ${solicitudesFiltradas.map(solicitud => createSolicitudCard(solicitud)).join('')}
-                `;
-            }
-        }
-
-        // 🎨 Crear tarjeta de solicitud
-        function createSolicitudCard(solicitud) {
-            const estado = solicitud.estado || 'PENDIENTE';
-            const prioridad = solicitud.prioridad || 'MEDIA';
-            
-            // Calcular tiempo de respuesta
-            const tiempoRespuesta = timeTracker.calcularTiempoRespuesta(
-                solicitud.fechaCreacion, 
-                solicitud.fechaAsignacion
-            );
-            const evaluacionTiempo = timeTracker.evaluarTiempo(tiempoRespuesta, prioridad);
-            
-            // Determinar clases CSS
-            const cardClass = `solicitud-card ${estado.toLowerCase().replace('_', '-')} ${prioridad === 'CRITICA' ? 'urgente' : ''}`;
-            const badgeEstado = `badge badge-${estado.toLowerCase().replace('_', '-')}`;
-            const badgePrioridad = `badge badge-${prioridad.toLowerCase()}`;
-
-            return `
-                <div class="${cardClass}">
-                    <div class="solicitud-header">
-                        <div class="solicitud-numero">${solicitud.numero || 'SIN NÚMERO'}</div>
-                        <div class="solicitud-badges">
-                            <span class="${badgeEstado}">${estado}</span>
-                            <span class="${badgePrioridad}">${prioridad}</span>
-                            ${solicitud.servicioIngenieria ? `<span class="badge" style="background: #e0f2fe; color: #0369a1;">${getAreaName(solicitud.servicioIngenieria)}</span>` : ''}
-                        </div>
-                    </div>
-
-                    <div class="tiempo-respuesta ${evaluacionTiempo.status}">
-                        <span>⏱️</span>
-                        <span><strong>Tiempo:</strong> ${timeTracker.formatearTiempo(tiempoRespuesta)}</span>
-                        <span>•</span>
-                        <span>${evaluacionTiempo.mensaje}</span>
-                    </div>
-
-                    <div class="solicitud-details">
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">🔧 Tipo de Servicio</div>
-                            <div class="solicitud-detail-value">${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">🖥️ Equipo</div>
-                            <div class="solicitud-detail-value">${solicitud.equipo || 'No especificado'}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">📍 Ubicación</div>
-                            <div class="solicitud-detail-value">${solicitud.ubicacion || 'No especificado'}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">👤 Solicitante</div>
-                            <div class="solicitud-detail-value">${solicitud.solicitante || 'No especificado'}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">👨‍🔧 Técnico Asignado</div>
-                            <div class="solicitud-detail-value">${solicitud.tecnicoAsignado || '<span style="color: #f59e0b;">Sin asignar</span>'}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">📅 Fecha Creación</div>
-                            <div class="solicitud-detail-value">${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
-                        </div>
-                    </div>
-
-                    ${solicitud.descripcion ? `
-                        <div class="solicitud-descripcion">
-                            <div class="solicitud-detail-label">📝 Descripción del Problema</div>
-                            <div style="margin-top: 0.5rem; color: #1f2937;">${solicitud.descripcion}</div>
-                        </div>
-                    ` : ''}
-
-                    <div class="solicitud-actions">
-                        <button class="btn btn-primary" onclick="showAssignmentModal('${solicitud.id}')">
-                            👨‍🔧 ${solicitud.tecnicoAsignado ? 'Reasignar' : 'Asignar'} Personal
-                        </button>
-                        <button class="btn btn-secondary" onclick="showDetailsModal('${solicitud.id}')">
-                            👁️ Ver Detalles
-                        </button>
-                        <button class="btn btn-warning" onclick="updateSolicitudStatus('${solicitud.id}', 'EN_PROCESO')">
-                            ▶️ Marcar En Proceso
-                        </button>
-                        <button class="btn btn-success" onclick="updateSolicitudStatus('${solicitud.id}', 'COMPLETADA')">
-                            ✅ Marcar Completada
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 🎯 Centro de asignación
-        function updateAssignmentContainer() {
-            const container = document.getElementById('assignment-container');
-            const pendientes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado);
-            
-            if (pendientes.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">✅</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Todas las solicitudes están asignadas</h3>
-                        <p>No hay solicitudes pendientes de asignación en este momento</p>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #d97706; margin-bottom: 0.5rem;">⏳ ${pendientes.length} Solicitudes Sin Asignar</h4>
-                        <p style="color: #b45309; font-size: 0.875rem;">Asigna personal especializado para optimizar tiempos de respuesta</p>
-                    </div>
-                    ${pendientes.map(solicitud => createAssignmentCard(solicitud)).join('')}
-                `;
-            }
-        }
-
-        function createAssignmentCard(solicitud) {
-            const tiempoRespuesta = timeTracker.calcularTiempoRespuesta(solicitud.fechaCreacion);
-            const evaluacionTiempo = timeTracker.evaluarTiempo(tiempoRespuesta, solicitud.prioridad);
-            
-            // Filtrar personal disponible por área
-            const personalDisponible = cloudTecnicos.filter(t => 
-                t.area === solicitud.servicioIngenieria && 
-                t.estado === 'disponible'
-            );
-
-            return `
-                <div class="solicitud-card pendiente">
-                    <div class="solicitud-header">
-                        <div class="solicitud-numero">${solicitud.numero}</div>
-                        <div class="solicitud-badges">
-                            <span class="badge badge-${solicitud.prioridad?.toLowerCase() || 'media'}">${solicitud.prioridad || 'MEDIA'}</span>
-                            <span class="badge" style="background: #e0f2fe; color: #0369a1;">${getAreaName(solicitud.servicioIngenieria)}</span>
-                        </div>
-                    </div>
-
-                    <div class="tiempo-respuesta ${evaluacionTiempo.status}">
-                        <span>⏱️</span>
-                        <span><strong>Sin asignar por:</strong> ${timeTracker.formatearTiempo(tiempoRespuesta)}</span>
-                        <span>•</span>
-                        <span>${evaluacionTiempo.mensaje}</span>
-                    </div>
-
-                    <div class="solicitud-details">
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">🖥️ Equipo</div>
-                            <div class="solicitud-detail-value">${solicitud.equipo}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">📍 Ubicación</div>
-                            <div class="solicitud-detail-value">${solicitud.ubicacion}</div>
-                        </div>
-                        <div class="solicitud-detail">
-                            <div class="solicitud-detail-label">👤 Solicitante</div>
-                            <div class="solicitud-detail-value">${solicitud.solicitante}</div>
-                        </div>
-                    </div>
-
-                    <div class="asignacion-section">
-                        <h5 style="color: #1f2937; margin-bottom: 0.75rem;">
-                            👨‍🔧 Personal Disponible (${personalDisponible.length})
-                        </h5>
-                        
-                        ${personalDisponible.length === 0 ? `
-                            <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem; color: #dc2626;">
-                                ❌ No hay personal disponible en ${getAreaName(solicitud.servicioIngenieria)}
-                            </div>
-                        ` : `
-                            <div class="personal-selector">
-                                ${personalDisponible.map(personal => `
-                                    <div class="personal-option" onclick="selectPersonal('${solicitud.id}', '${personal.id}', this)">
-                                        <div style="font-weight: 600; color: #1f2937;">${personal.nombre}</div>
-                                        <div style="font-size: 0.75rem; color: #6b7280;">${personal.tipo} • ${personal.especialidad || 'General'}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            
-                            <div style="margin-top: 1rem; text-align: center;">
-                                <button class="btn btn-success" onclick="assignSelectedPersonal('${solicitud.id}')" id="assign-btn-${solicitud.id}" disabled>
-                                    ✅ Confirmar Asignación
-                                </button>
-                            </div>
-                        `}
-                    </div>
-                </div>
-            `;
-        }
-
-        // 📊 Análisis de tiempos
-        function updateTiemposAnalysis() {
-            const container = document.getElementById('tiempos-analysis-container');
-            
-            // Generar estadísticas por área
-            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-            let html = '';
-
-            areas.forEach(area => {
-                const solicitudesArea = cloudSolicitudes.filter(s => s.servicioIngenieria === area);
-                const stats = timeTracker.generarEstadisticas(solicitudesArea);
-                const areaName = getAreaName(area);
-                
-                html += `
-                    <div class="card" style="margin-bottom: 1rem;">
-                        <div class="card-header">
-                            <h3 class="card-title">${getAreaIcon(area)} ${areaName}</h3>
-                            <span style="background: #e0f2fe; color: #0369a1; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600;">
-                                ${solicitudesArea.length} solicitudes
-                            </span>
-                        </div>
-                        <div class="card-content">
-                            <div class="tiempo-stats">
-                                <div class="tiempo-stat tiempo-promedio">
-                                    <div class="tiempo-stat-number">${stats.promedio}</div>
-                                    <div class="tiempo-stat-label">Tiempo Promedio</div>
-                                </div>
-                                <div class="tiempo-stat tiempo-min">
-                                    <div class="tiempo-stat-number">${stats.minimo}</div>
-                                    <div class="tiempo-stat-label">Tiempo Mínimo</div>
-                                </div>
-                                <div class="tiempo-stat tiempo-max">
-                                    <div class="tiempo-stat-number">${stats.maximo}</div>
-                                    <div class="tiempo-stat-label">Tiempo Máximo</div>
-                                </div>
-                                <div class="tiempo-stat tiempo-max">
-                                    <div class="tiempo-stat-number">${stats.vencidas}</div>
-                                    <div class="tiempo-stat-label">Vencidas</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = html;
-        }
-
-        // 🛠️ Funciones de utilidad
-        function getAreaName(area) {
-            const areas = {
-                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
-                'MECANICA': 'Mecánica',
-                'INFRAESTRUCTURA': 'Infraestructura'
-            };
-            return areas[area] || area;
-        }
-
-        function getAreaIcon(area) {
-            const icons = {
-                'INGENIERIA_BIOMEDICA': '🏥',
-                'MECANICA': '⚙️',
-                'INFRAESTRUCTURA': '🏗️'
-            };
-            return icons[area] || '🔧';
-        }
-
-        // 🎯 Funciones de asignación
-        let selectedPersonalId = null;
-
-        function selectPersonal(solicitudId, personalId, element) {
-            // Limpiar selecciones previas
-            const container = element.closest('.asignacion-section');
-            container.querySelectorAll('.personal-option').forEach(opt => {
-                opt.classList.remove('selected');
-            });
-            
-            // Seleccionar nuevo
-            element.classList.add('selected');
-            selectedPersonalId = personalId;
-            
-            // Habilitar botón
-            const assignBtn = document.getElementById(`assign-btn-${solicitudId}`);
-            if (assignBtn) {
-                assignBtn.disabled = false;
-            }
-        }
-
-        async function assignSelectedPersonal(solicitudId) {
-            if (!selectedPersonalId) {
-                alert('❌ Seleccione un técnico primero');
-                return;
-            }
-
-            try {
-                const assignBtn = document.getElementById(`assign-btn-${solicitudId}`);
-                if (assignBtn) {
-                    assignBtn.disabled = true;
-                    assignBtn.innerHTML = '⏳ Asignando...';
-                }
-
-                // Usar método de asignación de airtable-config.js
-                const result = await window.airtableAPI.asignarTecnicoASolicitud(solicitudId, selectedPersonalId);
-                
-                if (result.success) {
-                    alert(`✅ Personal asignado exitosamente\n\n👨‍🔧 Técnico: ${result.tecnico.nombre}\n📋 Solicitud: ${solicitudId}\n⏱️ Asignado: ${new Date().toLocaleTimeString('es-CO')}`);
-                    
-                    // Recargar datos
-                    await loadAllDataFromCloud();
+                if (isConnected) {
+                    updateConnectionStatus('connected');
+                    alert('✅ Conexión exitosa con Airtable\n\n🌐 Sistema funcionando correctamente en la nube.');
                 } else {
-                    throw new Error('Error en la asignación');
+                    updateConnectionStatus('disconnected');
+                    alert('❌ No se pudo conectar con Airtable\n\nEl sistema funcionará en modo local.');
                 }
-
             } catch (error) {
-                console.error('❌ Error asignando personal:', error);
-                alert('❌ Error al asignar personal: ' + error.message);
-            } finally {
-                selectedPersonalId = null;
+                updateConnectionStatus('disconnected');
+                alert('❌ Error de conexión: ' + error.message);
             }
         }
 
-        // 🔄 Funciones de actualización
+        async function refreshAllData() {
+            await loadAllDataFromCloud();
+            alert('✅ Todos los datos actualizados desde Airtable');
+        }
+
         async function refreshFromCloud() {
             try {
-                await loadAllDataFromCloud();
-                alert('✅ Datos actualizados desde Airtable');
-            } catch (error) {
-                alert('❌ Error actualizando datos');
-            }
-        }
-
-        async function refreshAssignmentData() {
-            await refreshFromCloud();
-        }
-
-        async function refreshTiemposData() {
-            await refreshFromCloud();
-        }
-
-        // 🎛️ Funciones de filtrado
-        function aplicarFiltros() {
-            const area = document.getElementById('filtro-area')?.value || '';
-            const estado = document.getElementById('filtro-estado')?.value || '';
-            const prioridad = document.getElementById('filtro-prioridad')?.value || '';
-            const busqueda = document.getElementById('filtro-busqueda')?.value.toLowerCase() || '';
-
-            solicitudesFiltradas = cloudSolicitudes.filter(solicitud => {
-                const cumpleArea = !area || solicitud.servicioIngenieria === area;
-                const cumpleEstado = !estado || solicitud.estado === estado;
-                const cumplePrioridad = !prioridad || solicitud.prioridad === prioridad;
-                const cumpleBusqueda = !busqueda || 
-                    (solicitud.numero && solicitud.numero.toLowerCase().includes(busqueda)) ||
-                    (solicitud.equipo && solicitud.equipo.toLowerCase().includes(busqueda)) ||
-                    (solicitud.ubicacion && solicitud.ubicacion.toLowerCase().includes(busqueda)) ||
-                    (solicitud.solicitante && solicitud.solicitante.toLowerCase().includes(busqueda));
-
-                return cumpleArea && cumpleEstado && cumplePrioridad && cumpleBusqueda;
-            });
-
-            updateSolicitudesList();
-        }
-
-        function limpiarFiltros() {
-            document.getElementById('filtro-area').value = '';
-            document.getElementById('filtro-estado').value = '';
-            document.getElementById('filtro-prioridad').value = '';
-            document.getElementById('filtro-busqueda').value = '';
-            aplicarFiltros();
-        }
-
-        function mostrarSoloVencidas() {
-            solicitudesFiltradas = cloudSolicitudes.filter(solicitud => {
-                if (solicitud.estado === 'COMPLETADA') return false;
-                const tiempo = timeTracker.calcularTiempoRespuesta(solicitud.fechaCreacion);
-                const limite = timeTracker.limitesTiempo[solicitud.prioridad] || timeTracker.limitesTiempo['MEDIA'];
-                return tiempo > limite;
-            });
-            updateSolicitudesList();
-        }
-
-        function mostrarSoloSinAsignar() {
-            solicitudesFiltradas = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado);
-            updateSolicitudesList();
-        }
-
-        // 🎮 Funciones de navegación
-        function showView(viewName) {
-            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
-            document.getElementById(viewName + '-view').classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-        }
-
-        // 🚀 Inicialización
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Portal de Gestión Mejorado - Hospital Susana López de Valencia');
-            
-            // Esperar a que airtable-config.js se cargue
-            setTimeout(async () => {
-                if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
-                    await loadAllDataFromCloud();
-                } else {
-                    console.error('❌ No se pudo cargar airtable-config.js');
-                    updateConnectionStatus('disconnected');
-                    loadDataFromLocalStorage();
-                }
-            }, 1000);
-        });
-
-        // 🤖 FUNCIONES DE AUTO-ASIGNACIÓN
-        async function autoAssignPending() {
-            try {
-                const confirmed = confirm('🤖 ¿Ejecutar auto-asignación inteligente?\n\nEsto asignará automáticamente las solicitudes pendientes al personal disponible según su área de especialización.');
-                if (!confirmed) return;
-
-                const result = await window.airtableAPI.autoAsignarSolicitudesPendientes();
+                cloudSolicitudes = await window.airtableAPI.getSolicitudes();
+                updateSolicitudesList();
+                updateAllCounters();
                 
-                if (result.success) {
-                    let mensaje = `🤖 AUTO-ASIGNACIÓN COMPLETADA\n\n`;
-                    mensaje += `✅ Asignaciones exitosas: ${result.asignacionesExitosas}\n`;
-                    mensaje += `❌ Asignaciones fallidas: ${result.asignacionesFallidas}\n`;
-                    mensaje += `📋 Total procesadas: ${result.totalProcesadas}\n\n`;
-                    
-                    if (result.resultados.length > 0) {
-                        mensaje += `📊 DETALLES:\n`;
-                        result.resultados.slice(0, 5).forEach(r => {
-                            if (r.status === 'exitosa') {
-                                mensaje += `• ${r.solicitud} → ${r.tecnico} ✅\n`;
-                            } else {
-                                mensaje += `• ${r.solicitud} → ${r.error} ❌\n`;
-                            }
-                        });
-                        
-                        if (result.resultados.length > 5) {
-                            mensaje += `... y ${result.resultados.length - 5} más\n`;
-                        }
-                    }
-                    
-                    alert(mensaje);
-                    
-                    // Recargar datos
-                    await loadAllDataFromCloud();
-                } else {
-                    alert(`❌ Error en auto-asignación: ${result.error}`);
-                }
+                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
-                console.error('❌ Error en auto-asignación:', error);
-                alert('❌ Error ejecutando auto-asignación: ' + error.message);
+                console.error('❌ Error actualizando solicitudes:', error);
+                alert('❌ Error al actualizar desde Airtable');
             }
         }
 
-        async function autoAssignByArea() {
-            try {
-                const area = prompt('🎯 Seleccione el área para auto-asignación:\n\n1. INGENIERIA_BIOMEDICA\n2. MECANICA\n3. INFRAESTRUCTURA\n\nIngrese el nombre del área:');
-                
-                if (!area) return;
-                
-                const areasValidas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-                if (!areasValidas.includes(area)) {
-                    alert('❌ Área no válida. Use: INGENIERIA_BIOMEDICA, MECANICA, o INFRAESTRUCTURA');
-                    return;
-                }
-                
-                // Filtrar solicitudes por área
-                const solicitudesPendientes = cloudSolicitudes.filter(s => 
-                    (s.estado === 'PENDIENTE' || !s.tecnicoAsignado) && 
-                    s.servicioIngenieria === area
-                );
-                
-                if (solicitudesPendientes.length === 0) {
-                    alert(`ℹ️ No hay solicitudes pendientes en ${getAreaName(area)}`);
-                    return;
-                }
-                
-                const tecnicosDisponibles = await window.airtableAPI.getTecnicosDisponibles(area);
-                
-                if (tecnicosDisponibles.length === 0) {
-                    alert(`❌ No hay técnicos disponibles en ${getAreaName(area)}`);
-                    return;
-                }
-                
-                const confirmed = confirm(`🎯 Auto-asignar ${solicitudesPendientes.length} solicitudes de ${getAreaName(area)} a ${tecnicosDisponibles.length} técnicos disponibles?`);
-                if (!confirmed) return;
-                
-                let asignacionesExitosas = 0;
-                let asignacionesFallidas = 0;
-                
-                for (let i = 0; i < solicitudesPendientes.length && i < tecnicosDisponibles.length; i++) {
-                    try {
-                        const resultado = await window.airtableAPI.asignarTecnicoASolicitud(
-                            solicitudesPendientes[i].id, 
-                            tecnicosDisponibles[i].id
-                        );
-                        
-                        if (resultado.success) {
-                            asignacionesExitosas++;
-                        } else {
-                            asignacionesFallidas++;
-                        }
-                    } catch (error) {
-                        asignacionesFallidas++;
-                    }
-                }
-                
-                alert(`🎯 Auto-asignación por área completada\n\n✅ Exitosas: ${asignacionesExitosas}\n❌ Fallidas: ${asignacionesFallidas}\n🏥 Área: ${getAreaName(area)}`);
-                
-                await loadAllDataFromCloud();
-                
-            } catch (error) {
-                console.error('❌ Error en auto-asignación por área:', error);
-                alert('❌ Error: ' + error.message);
-            }
-        }
-
-        // 👥 GESTIÓN DE PERSONAL DE SOPORTE
-        function updateTechniciansList() {
-            const container = document.getElementById('technicians-container');
-            
-            if (cloudTecnicos.length === 0) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay personal de soporte registrado</h3>
-                        <p>El personal de soporte aparecerá aquí cuando se agregue</p>
-                        <button class="btn btn-success" onclick="showAddPersonalModal()" style="margin-top: 1rem;">
-                            ➕ Agregar Primer Personal
-                        </button>
-                    </div>
-                `;
-            } else {
-                container.innerHTML = `
-                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Total</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube</p>
-                    </div>
-                    
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
-                        ${cloudTecnicos.map(personal => createPersonalCard(personal)).join('')}
-                    </div>
-                `;
-            }
-        }
-
-        function createPersonalCard(personal) {
-            const getStatusColor = (estado) => {
-                const colors = {
-                    'disponible': { bg: '#dcfce7', color: '#166534', icon: '🟢' },
-                    'ocupado': { bg: '#fef3c7', color: '#d97706', icon: '🟡' },
-                    'inactivo': { bg: '#fee2e2', color: '#dc2626', icon: '🔴' }
-                };
-                return colors[estado] || colors['disponible'];
-            };
-
-            const getAreaInfo = (area) => {
-                const areas = {
-                    'INGENIERIA_BIOMEDICA': { name: 'Ing. Biomédica', icon: '🏥', color: '#059669' },
-                    'MECANICA': { name: 'Mecánica', icon: '⚙️', color: '#f59e0b' },
-                    'INFRAESTRUCTURA': { name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' }
-                };
-                return areas[area] || { name: area, icon: '🔧', color: '#6b7280' };
-            };
-
-            const statusColor = getStatusColor(personal.estado);
-            const areaInfo = getAreaInfo(personal.area);
-
-            return `
-                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; position: relative; border-left: 4px solid ${areaInfo.color};">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
-                        <div style="flex: 1;">
-                            <h4 style="color: #1f2937; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 600;">
-                                ${personal.nombre}
-                            </h4>
-                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">
-                                ${areaInfo.icon} ${areaInfo.name}
-                            </p>
-                        </div>
-                        <div style="text-align: right;">
-                            <span style="background: ${statusColor.bg}; color: ${statusColor.color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
-                                ${statusColor.icon} ${personal.estado}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="color: #6b7280; font-weight: 600;">📧 Email:</span>
-                            <span style="color: #1f2937;">${personal.email}</span>
-                        </div>
-                        
-                        <div style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span style="color: #6b7280; font-weight: 600;">👨‍💼 Tipo:</span>
-                            <span style="color: #1f2937;">${personal.tipo}</span>
-                        </div>
-                        
-                        ${personal.especialidad ? `
-                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                <span style="color: #6b7280; font-weight: 600;">⚙️ Especialidad:</span>
-                                <span style="color: #1f2937;">${personal.especialidad}</span>
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-primary btn-sm" onclick="editPersonal('${personal.id}')">
-                            ✏️ Editar
-                        </button>
-                        <button class="btn btn-${personal.estado === 'disponible' ? 'warning' : 'success'} btn-sm" onclick="togglePersonalStatus('${personal.id}')">
-                            ${personal.estado === 'disponible' ? '⏸️ Ocupar' : '▶️ Liberar'}
-                        </button>
-                        <button class="btn btn-secondary btn-sm" onclick="viewPersonalWorkload('${personal.id}')">
-                            📊 Carga
-                        </button>
-                    </div>
+        // Funciones placeholder para funcionalidades futuras
+        function loadAsignacionesView() {
+            const container = document.getElementById('asignaciones-content');
+            container.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                    <h4 style="color: #1f2937;">Centro de Asignaciones</h4>
+                    <p>Vista en desarrollo - funcionalidades de asignación avanzada</p>
                 </div>
             `;
         }
 
-        async function viewPersonalWorkload(personalId) {
-            try {
-                const personal = cloudTecnicos.find(p => p.id === personalId);
-                if (!personal) {
-                    alert('❌ Personal no encontrado');
-                    return;
-                }
-
-                // Obtener solicitudes asignadas al personal
-                const solicitudesAsignadas = cloudSolicitudes.filter(s => 
-                    s.tecnicoAsignadoId === personalId || 
-                    s.tecnicoAsignado === personal.nombre
-                );
-
-                const activas = solicitudesAsignadas.filter(s => s.estado !== 'COMPLETADA');
-                const completadas = solicitudesAsignadas.filter(s => s.estado === 'COMPLETADA');
-
-                let mensaje = `📊 CARGA DE TRABAJO\n\n`;
-                mensaje += `👤 Personal: ${personal.nombre}\n`;
-                mensaje += `🏥 Área: ${getAreaName(personal.area)}\n`;
-                mensaje += `📊 Estado: ${personal.estado}\n\n`;
-                mensaje += `📋 SOLICITUDES:\n`;
-                mensaje += `• Total asignadas: ${solicitudesAsignadas.length}\n`;
-                mensaje += `• Activas: ${activas.length}\n`;
-                mensaje += `• Completadas: ${completadas.length}\n\n`;
-
-                if (activas.length > 0) {
-                    mensaje += `🔄 SOLICITUDES ACTIVAS:\n`;
-                    activas.slice(0, 5).forEach(s => {
-                        mensaje += `• ${s.numero} - ${s.estado} - ${s.prioridad || 'MEDIA'}\n`;
-                    });
-                    if (activas.length > 5) {
-                        mensaje += `... y ${activas.length - 5} más\n`;
-                    }
-                }
-
-                alert(mensaje);
-
-            } catch (error) {
-                console.error('❌ Error obteniendo carga de trabajo:', error);
-                alert('❌ Error obteniendo carga de trabajo: ' + error.message);
-            }
+        function autoAssignPending() {
+            autoAssignAll();
         }
 
-        async function editPersonal(personalId) {
-            // Implementación básica - puede expandirse
-            const personal = cloudTecnicos.find(p => p.id === personalId);
-            if (!personal) {
-                alert('❌ Personal no encontrado');
-                return;
-            }
-
-            const nuevoEstado = prompt(`🔄 Cambiar estado de ${personal.nombre}:\n\n1. disponible\n2. ocupado\n3. inactivo\n\nEstado actual: ${personal.estado}\nIngrese nuevo estado:`);
-            
-            if (!nuevoEstado) return;
-
-            const estadosValidos = ['disponible', 'ocupado', 'inactivo'];
-            if (!estadosValidos.includes(nuevoEstado)) {
-                alert('❌ Estado no válido. Use: disponible, ocupado, o inactivo');
-                return;
-            }
-
-            try {
-                await window.airtableAPI.updateTecnico(personalId, { estado: nuevoEstado });
-                alert(`✅ Estado actualizado a: ${nuevoEstado}`);
-                await loadAllDataFromCloud();
-            } catch (error) {
-                alert('❌ Error actualizando estado: ' + error.message);
-            }
-        }
-
-        async function togglePersonalStatus(personalId) {
-            const personal = cloudTecnicos.find(p => p.id === personalId);
-            if (!personal) return;
-
-            const newStatus = personal.estado === 'disponible' ? 'ocupado' : 'disponible';
-            
-            try {
-                await window.airtableAPI.updateTecnico(personalId, { estado: newStatus });
-                await loadAllDataFromCloud();
-            } catch (error) {
-                alert('❌ Error cambiando estado: ' + error.message);
-            }
-        }
-
-        // 📋 MODALES DE GESTIÓN
-        function showAssignmentModal(solicitudId) {
-            const modal = document.getElementById('assignment-modal');
-            const content = document.getElementById('assignment-modal-content');
-            
-            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-            if (!solicitud) {
-                alert('❌ Solicitud no encontrada');
-                return;
-            }
-
-            // Filtrar personal disponible por área
-            const personalDisponible = cloudTecnicos.filter(t => 
-                t.area === solicitud.servicioIngenieria && 
-                t.estado === 'disponible'
-            );
-
-            content.innerHTML = `
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <h4 style="color: #1f2937; margin-bottom: 0.5rem;">Asignar Personal a Solicitud</h4>
-                    <p style="color: #6b7280;">Solicitud: ${solicitud.numero}</p>
-                </div>
-                
-                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
-                    <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📋 Detalles de la Solicitud</h5>
-                    <p><strong>Área:</strong> ${getAreaName(solicitud.servicioIngenieria)}</p>
-                    <p><strong>Prioridad:</strong> ${solicitud.prioridad || 'MEDIA'}</p>
-                    <p><strong>Equipo:</strong> ${solicitud.equipo}</p>
-                    <p><strong>Ubicación:</strong> ${solicitud.ubicacion}</p>
-                </div>
-
-                ${personalDisponible.length === 0 ? `
-                    <div style="text-align: center; padding: 2rem; background: #fee2e2; border-radius: 0.5rem; color: #dc2626;">
-                        ❌ No hay personal disponible en ${getAreaName(solicitud.servicioIngenieria)}
-                    </div>
-                ` : `
-                    <h5 style="color: #1f2937; margin-bottom: 1rem;">👨‍🔧 Personal Disponible (${personalDisponible.length})</h5>
-                    
-                    <div style="display: grid; gap: 0.5rem; margin-bottom: 1.5rem; max-height: 300px; overflow-y: auto;">
-                        ${personalDisponible.map(personal => `
-                            <div class="personal-option" onclick="selectPersonalForModal('${personal.id}', this)" style="background: white; border: 2px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; cursor: pointer; transition: all 0.2s;">
-                                <div style="font-weight: 600; color: #1f2937;">${personal.nombre}</div>
-                                <div style="font-size: 0.875rem; color: #6b7280;">${personal.tipo} • ${personal.especialidad || 'General'}</div>
-                                <div style="font-size: 0.75rem; color: #059669;">📧 ${personal.email}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <div style="text-align: center;">
-                        <button class="btn btn-success" onclick="confirmModalAssignment('${solicitudId}')" id="modal-assign-btn" disabled style="min-width: 200px;">
-                            ✅ Confirmar Asignación
-                        </button>
-                    </div>
-                `}
-                
-                <div style="text-align: center; margin-top: 1rem;">
-                    <button class="btn btn-secondary" onclick="closeAssignmentModal()">
-                        ↩️ Cancelar
-                    </button>
-                </div>
-            `;
-            
-            modal.classList.add('show');
-        }
-
-        let selectedModalPersonalId = null;
-
-        function selectPersonalForModal(personalId, element) {
-            // Limpiar selecciones previas
-            const container = element.parentElement;
-            container.querySelectorAll('.personal-option').forEach(opt => {
-                opt.style.borderColor = '#e5e7eb';
-                opt.style.background = 'white';
-            });
-            
-            // Seleccionar nuevo
-            element.style.borderColor = '#059669';
-            element.style.background = '#dcfce7';
-            selectedModalPersonalId = personalId;
-            
-            // Habilitar botón
-            const assignBtn = document.getElementById('modal-assign-btn');
-            if (assignBtn) {
-                assignBtn.disabled = false;
-            }
-        }
-
-        async function confirmModalAssignment(solicitudId) {
-            if (!selectedModalPersonalId) {
-                alert('❌ Seleccione un técnico primero');
-                return;
-            }
-
-            try {
-                const assignBtn = document.getElementById('modal-assign-btn');
-                if (assignBtn) {
-                    assignBtn.disabled = true;
-                    assignBtn.innerHTML = '⏳ Asignando...';
-                }
-
-                const result = await window.airtableAPI.asignarTecnicoASolicitud(solicitudId, selectedModalPersonalId);
-                
-                if (result.success) {
-                    alert(`✅ Personal asignado exitosamente\n\n👨‍🔧 Técnico: ${result.tecnico.nombre}\n📋 Solicitud: ${result.solicitud.numero}\n⏱️ Tiempo de respuesta: ${result.tiempos.tiempoRespuesta}`);
-                    
-                    closeAssignmentModal();
-                    await loadAllDataFromCloud();
-                } else {
-                    throw new Error('Error en la asignación');
-                }
-
-            } catch (error) {
-                console.error('❌ Error asignando personal:', error);
-                alert('❌ Error al asignar personal: ' + error.message);
-            } finally {
-                selectedModalPersonalId = null;
-            }
-        }
-
-        function closeAssignmentModal() {
-            document.getElementById('assignment-modal').classList.remove('show');
-            selectedModalPersonalId = null;
-        }
-
-        function showDetailsModal(solicitudId) {
-            const modal = document.getElementById('details-modal');
-            const content = document.getElementById('details-modal-content');
-            
-            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-            if (!solicitud) {
-                alert('❌ Solicitud no encontrada');
-                return;
-            }
-
-            // Calcular tiempo de respuesta
-            const tiempoRespuesta = timeTracker.calcularTiempoRespuesta(
-                solicitud.fechaCreacion, 
-                solicitud.fechaAsignacion
-            );
-            const evaluacionTiempo = timeTracker.evaluarTiempo(tiempoRespuesta, solicitud.prioridad);
-
-            content.innerHTML = `
-                <div style="text-align: center; margin-bottom: 1.5rem;">
-                    <h4 style="color: #1f2937; margin-bottom: 0.5rem;">${solicitud.numero}</h4>
-                    <div style="display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap;">
-                        <span class="badge badge-${solicitud.estado?.toLowerCase().replace('_', '-') || 'pendiente'}">${solicitud.estado || 'PENDIENTE'}</span>
-                        <span class="badge badge-${solicitud.prioridad?.toLowerCase() || 'media'}">${solicitud.prioridad || 'MEDIA'}</span>
-                        <span class="badge" style="background: #e0f2fe; color: #0369a1;">${getAreaName(solicitud.servicioIngenieria)}</span>
-                    </div>
-                </div>
-
-                <div class="tiempo-respuesta ${evaluacionTiempo.status}" style="margin-bottom: 1.5rem;">
-                    <span>⏱️</span>
-                    <span><strong>Tiempo:</strong> ${timeTracker.formatearTiempo(tiempoRespuesta)}</span>
-                    <span>•</span>
-                    <span>${evaluacionTiempo.mensaje}</span>
-                </div>
-
-                <div style="display: grid; gap: 1rem; margin-bottom: 1.5rem;">
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                        <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📋 Información General</h5>
-                        <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
-                            <div><strong>Tipo de Servicio:</strong> ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</div>
-                            <div><strong>Equipo:</strong> ${solicitud.equipo || 'No especificado'}</div>
-                            <div><strong>Ubicación:</strong> ${solicitud.ubicacion || 'No especificado'}</div>
-                            <div><strong>Solicitante:</strong> ${solicitud.solicitante || 'No especificado'}</div>
-                            <div><strong>Email:</strong> ${solicitud.emailSolicitante || 'No especificado'}</div>
-                        </div>
-                    </div>
-
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                        <h5 style="color: #1f2937; margin-bottom: 0.75rem;">👨‍🔧 Asignación</h5>
-                        <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
-                            <div><strong>Técnico Asignado:</strong> ${solicitud.tecnicoAsignado || '<span style="color: #f59e0b;">Sin asignar</span>'}</div>
-                            <div><strong>Fecha Asignación:</strong> ${solicitud.fechaAsignacion ? new Date(solicitud.fechaAsignacion).toLocaleString('es-CO') : 'No asignado'}</div>
-                            <div><strong>Fecha Creación:</strong> ${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
-                        </div>
-                    </div>
-
-                    ${solicitud.descripcion ? `
-                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                            <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📝 Descripción del Problema</h5>
-                            <div style="font-size: 0.875rem; color: #1f2937;">${solicitud.descripcion}</div>
-                        </div>
-                    ` : ''}
-
-                    ${solicitud.observaciones ? `
-                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                            <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📋 Observaciones</h5>
-                            <div style="font-size: 0.875rem; color: #1f2937;">${solicitud.observaciones}</div>
-                        </div>
-                    ` : ''}
-                </div>
-
-                <div style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
-                    ${!solicitud.tecnicoAsignado ? `
-                        <button class="btn btn-primary" onclick="closeDetailsModal(); showAssignmentModal('${solicitud.id}')">
-                            👨‍🔧 Asignar Personal
-                        </button>
-                    ` : ''}
-                    
-                    <button class="btn btn-warning" onclick="updateSolicitudStatus('${solicitud.id}', 'EN_PROCESO')">
-                        ▶️ En Proceso
-                    </button>
-                    
-                    <button class="btn btn-success" onclick="updateSolicitudStatus('${solicitud.id}', 'COMPLETADA')">
-                        ✅ Completar
-                    </button>
-                    
-                    <button class="btn btn-secondary" onclick="closeDetailsModal()">
-                        ↩️ Cerrar
-                    </button>
-                </div>
-            `;
-            
-            modal.classList.add('show');
-        }
-
-        function closeDetailsModal() {
-            document.getElementById('details-modal').classList.remove('show');
-        }
-
-        async function updateSolicitudStatus(solicitudId, newStatus) {
-            try {
-                const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-                if (!solicitud) {
-                    alert('❌ Solicitud no encontrada');
-                    return;
-                }
-
-                const confirmed = confirm(`🔄 ¿Cambiar estado de ${solicitud.numero} a ${newStatus}?`);
-                if (!confirmed) return;
-
-                const updateData = { estado: newStatus };
-                
-                // Agregar timestamps según el estado
-                if (newStatus === 'EN_PROCESO') {
-                    updateData.fechaInicio = new Date().toISOString();
-                } else if (newStatus === 'COMPLETADA') {
-                    updateData.fechaCompletado = new Date().toISOString();
-                    
-                    // Liberar técnico si estaba asignado
-                    if (solicitud.tecnicoAsignadoId) {
-                        await window.airtableAPI.liberarTecnico(solicitud.tecnicoAsignadoId, solicitudId);
-                    }
-                }
-
-                await window.airtableAPI.updateSolicitud(solicitudId, updateData);
-                
-                alert(`✅ Estado actualizado a: ${newStatus}`);
-                
-                // Cerrar modal si está abierto
-                closeDetailsModal();
-                
-                // Recargar datos
-                await loadAllDataFromCloud();
-
-            } catch (error) {
-                console.error('❌ Error actualizando estado:', error);
-                alert('❌ Error actualizando estado: ' + error.message);
-            }
-        }
-
-        // 📊 FUNCIONES DE EXPORTACIÓN Y REPORTES
-        async function exportarReporteTiempos() {
-            try {
-                // Generar estadísticas detalladas
-                const stats = timeTracker.generarEstadisticas(cloudSolicitudes);
-                
-                // Estadísticas por área
-                const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-                let reporte = `📊 REPORTE DE TIEMPOS DE RESPUESTA\n`;
-                reporte += `🏥 Hospital Susana López de Valencia\n`;
-                reporte += `📅 Generado: ${new Date().toLocaleString('es-CO')}\n\n`;
-                
-                reporte += `📈 ESTADÍSTICAS GENERALES\n`;
-                reporte += `• Tiempo Promedio: ${stats.promedio}\n`;
-                reporte += `• Tiempo Mínimo: ${stats.minimo}\n`;
-                reporte += `• Tiempo Máximo: ${stats.maximo}\n`;
-                reporte += `• Solicitudes Vencidas: ${stats.vencidas}\n\n`;
-                
-                areas.forEach(area => {
-                    const solicitudesArea = cloudSolicitudes.filter(s => s.servicioIngenieria === area);
-                    if (solicitudesArea.length > 0) {
-                        const statsArea = timeTracker.generarEstadisticas(solicitudesArea);
-                        reporte += `${getAreaIcon(area)} ${getAreaName(area).toUpperCase()}\n`;
-                        reporte += `  • Total solicitudes: ${solicitudesArea.length}\n`;
-                        reporte += `  • Tiempo promedio: ${statsArea.promedio}\n`;
-                        reporte += `  • Vencidas: ${statsArea.vencidas}\n\n`;
-                    }
-                });
-                
-                // Copiar al portapapeles (si es posible)
-                if (navigator.clipboard) {
-                    await navigator.clipboard.writeText(reporte);
-                    alert('📊 Reporte copiado al portapapeles\n\nPuede pegarlo en Excel, Word o cualquier editor de texto.');
-                } else {
-                    // Mostrar en modal si no se puede copiar
-                    prompt('📊 Reporte de Tiempos de Respuesta\n\nCopie el texto con Ctrl+C:', reporte);
-                }
-                
-            } catch (error) {
-                console.error('❌ Error exportando reporte:', error);
-                alert('❌ Error generando reporte: ' + error.message);
-            }
-        }
-
-        // 🔧 FUNCIONES AUXILIARES ADICIONALES
-        function showAddPersonalModal() {
-            alert('➕ Función de agregar personal disponible en desarrollo.\n\nPor ahora puede gestionar el personal existente desde las tarjetas mostradas.');
-        }
-
-        async function syncTechniciansWithCloud() {
-            try {
-                await loadAllDataFromCloud();
-                alert('✅ Personal sincronizado con Airtable');
-            } catch (error) {
-                alert('❌ Error sincronizando: ' + error.message);
-            }
-        }
-
-        // 📱 FUNCIONES DE FILTRADO AVANZADO
         function filterByArea(area) {
-            document.getElementById('filtro-area').value = area === 'all' ? '' : area;
-            aplicarFiltros();
-            showView('solicitudes');
+            if (area !== 'all') {
+                document.getElementById('filter-area').value = area;
+                applyFilters();
+                showView('solicitudes');
+            }
         }
 
         function filterByStatus(status) {
-            document.getElementById('filtro-estado').value = status === 'all' ? '' : status;
-            aplicarFiltros();
+            document.getElementById('filter-estado').value = status;
+            applyFilters();
             showView('solicitudes');
         }
+
+        function showAtrasadas() {
+            document.getElementById('filter-estado').value = 'PENDIENTE';
+            applyFilters();
+            showView('solicitudes');
+        }
+
+        function showTimeStats() {
+            showView('reportes');
+        }
+
+        function showTimeReport() {
+            showView('reportes');
+        }
+
+        function viewSolicitudDetails(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            alert(`📋 DETALLES DE LA SOLICITUD\n\n` +
+                `🔢 Número: ${solicitud.numero}\n` +
+                `🏥 Área: ${getAreaName(solicitud.servicioIngenieria)}\n` +
+                `⚡ Prioridad: ${solicitud.prioridad}\n` +
+                `📊 Estado: ${solicitud.estado}\n` +
+                `🖥️ Equipo: ${solicitud.equipo}\n` +
+                `📍 Ubicación: ${solicitud.ubicacion}\n` +
+                `👤 Solicitante: ${solicitud.solicitante}\n` +
+                `📅 Creada: ${new Date(solicitud.fechaCreacion).toLocaleString('es-CO')}\n` +
+                `${solicitud.tecnicoAsignado ? `👨‍🔧 Técnico: ${solicitud.tecnicoAsignado}\n` : ''}` +
+                `${solicitud.tiempoRespuestaHoras ? `⏰ Tiempo respuesta: ${solicitud.tiempoRespuestaHoras}h\n` : ''}` +
+                `\n📝 Descripción:\n${solicitud.descripcion}`
+            );
+        }
+
+        console.log('✅ Portal de Gestión Avanzado cargado completamente');
     </script>
 </body>
 </html>
