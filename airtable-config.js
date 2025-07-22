@@ -1,5 +1,5 @@
-// 🌐 CONFIGURACIÓN AIRTABLE CORREGIDA - Versión compatible
-// airtable-config.js - Con todos los métodos necesarios
+// 🌐 CONFIGURACIÓN COMPLETA DE AIRTABLE - VERSIÓN FINAL CORREGIDA
+// airtable-config.js - Con método getStatus y todas las funciones
 
 class AirtableAPI {
     constructor() {
@@ -18,15 +18,28 @@ class AirtableAPI {
             solicitudesAcceso: 'SolicitudesAcceso'
         };
 
-        this.log('🚀 AirtableAPI iniciado - versión corregida');
+        console.log('🚀 AirtableAPI iniciado con numeración automática y asignación inteligente');
     }
 
-    // 📝 Logging simple
+    // 📊 MÉTODO GETSTATUS - EL QUE FALTABA
+    getStatus() {
+        return {
+            isConnected: this.isConnected,
+            connectionStatus: this.connectionStatus,
+            lastError: this.lastError,
+            requestCount: this.requestCount,
+            timestamp: new Date().toISOString()
+        };
+    }
+
+    // 📝 Logging
     log(message, data = null) {
+        if (!this.debugMode) return;
+        
         const timestamp = new Date().toLocaleTimeString('es-CO');
         console.log(`[${timestamp}] AirtableAPI: ${message}`, data || '');
         
-        // Dispatchar evento para logging externo
+        // Event para logging externo
         if (typeof window !== 'undefined' && window.dispatchEvent) {
             try {
                 window.dispatchEvent(new CustomEvent('airtable-log', {
@@ -38,18 +51,7 @@ class AirtableAPI {
         }
     }
 
-    // 📊 MÉTODO GETATUS (el que faltaba)
-    getStatus() {
-        return {
-            isConnected: this.isConnected,
-            connectionStatus: this.connectionStatus,
-            lastError: this.lastError,
-            requestCount: this.requestCount,
-            timestamp: new Date().toISOString()
-        };
-    }
-
-    // 🔗 Función base para requests
+    // 🔗 Función base para hacer requests
     async makeRequest(endpoint, method = 'GET', data = null) {
         this.requestCount++;
         
@@ -66,11 +68,14 @@ class AirtableAPI {
 
             if (data && (method === 'POST' || method === 'PATCH')) {
                 options.body = JSON.stringify(data);
+                this.log('📝 Data enviada:', data);
             }
 
             const response = await fetch(url, options);
             const responseText = await response.text();
             
+            this.log('📨 Response status:', response.status);
+
             if (!response.ok) {
                 let errorData;
                 try {
@@ -83,6 +88,7 @@ class AirtableAPI {
                     status: response.status,
                     error: errorData,
                     url,
+                    method,
                     timestamp: new Date().toISOString()
                 };
                 
@@ -106,37 +112,172 @@ class AirtableAPI {
                 timestamp: new Date().toISOString()
             };
             
-            this.log(`❌ Error en request: ${error.message}`);
+            this.log(`❌ Error en makeRequest: ${error.message}`);
             throw error;
         }
     }
 
     // ✅ Test de conexión
     async testConnection() {
-        this.log('🧪 Probando conexión...');
+        this.log('🧪 Iniciando test de conexión...');
         
         try {
-            // Primero probar función básica
+            // Test funciones Netlify primero
             const helloResponse = await fetch('/.netlify/functions/hello');
             if (!helloResponse.ok) {
-                throw new Error('Funciones Netlify no disponibles');
+                throw new Error(`Funciones Netlify no disponibles: ${helloResponse.status}`);
             }
             
-            // Luego probar Airtable
+            this.log('✅ Funciones Netlify operativas');
+            
+            // Test Airtable
             const result = await this.makeRequest(this.tables.solicitudes + '?maxRecords=1');
             
             this.isConnected = true;
             this.connectionStatus = 'connected';
-            this.log('✅ Conexión exitosa');
+            this.log('✅ Test de conexión exitoso');
             
             return true;
             
         } catch (error) {
             this.isConnected = false;
             this.connectionStatus = 'error';
-            this.log(`❌ Error de conexión: ${error.message}`);
-            
+            this.log(`❌ Test de conexión falló: ${error.message}`);
             return false;
+        }
+    }
+
+    // 🔢 Generar número de solicitud por área
+    async generateSolicitudNumber(area) {
+        try {
+            this.log(`🔢 Generando número para área: ${area}`);
+            
+            const solicitudes = await this.getSolicitudes();
+            
+            const prefijos = {
+                'INGENIERIA_BIOMEDICA': 'SOLBIO',
+                'MECANICA': 'SOLMEC', 
+                'INFRAESTRUCTURA': 'SOLINFRA'
+            };
+            
+            const prefijo = prefijos[area];
+            if (!prefijo) {
+                this.log(`⚠️ Área no reconocida: ${area}, usando SOL genérico`);
+                return `SOL${Date.now()}`;
+            }
+            
+            const solicitudesArea = solicitudes.filter(s => 
+                s.numero && s.numero.startsWith(prefijo)
+            );
+            
+            let maxNumber = 0;
+            
+            solicitudesArea.forEach(solicitud => {
+                const numeroStr = solicitud.numero.replace(prefijo, '');
+                const numero = parseInt(numeroStr);
+                if (!isNaN(numero) && numero > maxNumber) {
+                    maxNumber = numero;
+                }
+            });
+            
+            const siguienteNumero = maxNumber + 1;
+            const numeroFormateado = siguienteNumero.toString().padStart(5, '0');
+            const numeroCompleto = `${prefijo}${numeroFormateado}`;
+            
+            this.log(`✅ Número generado: ${numeroCompleto}`);
+            return numeroCompleto;
+            
+        } catch (error) {
+            this.log(`❌ Error generando número: ${error.message}`);
+            const timestamp = Date.now().toString().slice(-5);
+            return `SOL${timestamp}`;
+        }
+    }
+
+    // ⏰ Calcular fecha límite según prioridad
+    calcularFechaLimite(prioridad) {
+        const ahora = new Date();
+        let horasLimite;
+        
+        switch (prioridad) {
+            case 'CRITICA':
+                horasLimite = 2;
+                break;
+            case 'ALTA':
+                horasLimite = 8;
+                break;
+            case 'MEDIA':
+                horasLimite = 24;
+                break;
+            case 'BAJA':
+                horasLimite = 72;
+                break;
+            default:
+                horasLimite = 24;
+        }
+        
+        const fechaLimite = new Date(ahora.getTime() + (horasLimite * 60 * 60 * 1000));
+        return fechaLimite.toISOString();
+    }
+
+    // 📋 Crear solicitud con numeración automática
+    async createSolicitud(solicitudData) {
+        try {
+            this.log('📋 Creando solicitud con numeración automática...');
+            
+            const numeroSolicitud = await this.generateSolicitudNumber(solicitudData.servicioIngenieria);
+            
+            const data = {
+                fields: {
+                    numero: numeroSolicitud,
+                    servicioIngenieria: solicitudData.servicioIngenieria,
+                    tipoServicio: solicitudData.tipoServicio || 'MANTENIMIENTO_PREVENTIVO',
+                    prioridad: solicitudData.prioridad || 'MEDIA',
+                    equipo: solicitudData.equipo || 'Equipo no especificado',
+                    ubicacion: solicitudData.ubicacion || 'Ubicación no especificada',
+                    descripcion: solicitudData.descripcion || 'Descripción no especificada',
+                    observaciones: solicitudData.observaciones || '',
+                    
+                    // Datos del solicitante
+                    solicitante: solicitudData.solicitante || 'Usuario sistema',
+                    servicioHospitalario: solicitudData.servicioHospitalario || 'NO_ESPECIFICADO',
+                    emailSolicitante: solicitudData.emailSolicitante || '',
+                    
+                    // Datos de gestión
+                    estado: 'PENDIENTE',
+                    fechaCreacion: new Date().toISOString(),
+                    fechaLimiteRespuesta: this.calcularFechaLimite(solicitudData.prioridad),
+                    
+                    // Campos de asignación
+                    tecnicoAsignado: '',
+                    fechaAsignacion: '',
+                    fechaInicio: '',
+                    fechaCompletado: '',
+                    
+                    // Campos de tiempo
+                    tiempoRespuestaHoras: 0,
+                    tiempoResolucionHoras: 0,
+                    estadoTiempo: 'EN_TIEMPO'
+                }
+            };
+            
+            const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
+            
+            this.log(`✅ Solicitud creada con número: ${numeroSolicitud}`);
+            
+            return {
+                success: true,
+                id: result.id,
+                numero: numeroSolicitud,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error creando solicitud: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
@@ -144,6 +285,7 @@ class AirtableAPI {
     async getSolicitudes() {
         try {
             const result = await this.makeRequest(this.tables.solicitudes);
+            
             const solicitudes = result.records.map(record => ({
                 id: record.id,
                 ...record.fields
@@ -162,6 +304,7 @@ class AirtableAPI {
     async getTecnicos() {
         try {
             const result = await this.makeRequest(this.tables.tecnicos);
+            
             const tecnicos = result.records.map(record => ({
                 id: record.id,
                 ...record.fields
@@ -176,10 +319,296 @@ class AirtableAPI {
         }
     }
 
+    // 🔄 Actualizar técnico
+    async updateTecnico(tecnicoId, updateData) {
+        try {
+            const result = await this.makeRequest(
+                `${this.tables.tecnicos}/${tecnicoId}`, 
+                'PATCH', 
+                { fields: updateData }
+            );
+            
+            return {
+                id: result.id,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error actualizando técnico: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // 🎯 Asignar técnico con gestión de tiempos
+    async asignarTecnicoConTiempos(solicitudId, tecnicoId, observacionesAsignacion = '') {
+        try {
+            this.log('🎯 Asignando técnico con gestión de tiempos...');
+            
+            // Obtener datos
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
+            }
+            
+            const tecnicos = await this.getTecnicos();
+            const tecnico = tecnicos.find(t => t.id === tecnicoId);
+            
+            if (!tecnico) {
+                throw new Error('Técnico no encontrado');
+            }
+            
+            if (tecnico.estado !== 'disponible') {
+                throw new Error(`Técnico no disponible. Estado actual: ${tecnico.estado}`);
+            }
+            
+            // Calcular tiempo de respuesta
+            const ahora = new Date();
+            const fechaCreacion = new Date(solicitud.fechaCreacion);
+            const tiempoRespuestaMs = ahora.getTime() - fechaCreacion.getTime();
+            const tiempoRespuestaHoras = Math.round((tiempoRespuestaMs / (1000 * 60 * 60)) * 100) / 100;
+            
+            // Determinar estado del tiempo
+            const fechaLimite = new Date(solicitud.fechaLimiteRespuesta);
+            const estadoTiempo = ahora <= fechaLimite ? 'EN_TIEMPO' : 'FUERA_TIEMPO';
+            
+            // Actualizar solicitud
+            const solicitudUpdate = {
+                estado: 'ASIGNADA',
+                tecnicoAsignado: tecnico.nombre,
+                tecnicoAsignadoId: tecnicoId,
+                fechaAsignacion: ahora.toISOString(),
+                tiempoRespuestaHoras: tiempoRespuestaHoras,
+                estadoTiempo: estadoTiempo,
+                observacionesAsignacion: observacionesAsignacion
+            };
+            
+            await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                fields: solicitudUpdate
+            });
+            
+            // Actualizar estado del técnico
+            await this.updateTecnico(tecnicoId, { 
+                estado: 'ocupado',
+                ultimaAsignacion: ahora.toISOString(),
+                solicitudActual: solicitudId
+            });
+            
+            this.log('✅ Asignación completada exitosamente');
+            
+            return {
+                success: true,
+                solicitud: {
+                    id: solicitudId,
+                    numero: solicitud.numero,
+                    estado: 'ASIGNADA',
+                    tecnicoAsignado: tecnico.nombre,
+                    fechaAsignacion: ahora.toISOString(),
+                    tiempoRespuestaHoras: tiempoRespuestaHoras,
+                    estadoTiempo: estadoTiempo
+                },
+                tecnico: {
+                    id: tecnicoId,
+                    nombre: tecnico.nombre,
+                    area: tecnico.area,
+                    estadoAnterior: tecnico.estado,
+                    estadoNuevo: 'ocupado'
+                },
+                tiempos: {
+                    fechaCreacion: solicitud.fechaCreacion,
+                    fechaAsignacion: ahora.toISOString(),
+                    fechaLimite: solicitud.fechaLimiteRespuesta,
+                    tiempoRespuestaHoras: tiempoRespuestaHoras,
+                    estadoTiempo: estadoTiempo
+                }
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error en asignación: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // ✅ Completar solicitud
+    async completarSolicitud(solicitudId, observacionesCompletado = '', requiereAprobacion = false) {
+        try {
+            this.log('✅ Completando solicitud...');
+            
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
+            }
+            
+            if (solicitud.estado !== 'ASIGNADA' && solicitud.estado !== 'EN_PROCESO') {
+                throw new Error(`No se puede completar solicitud en estado: ${solicitud.estado}`);
+            }
+            
+            // Calcular tiempos
+            const ahora = new Date();
+            const fechaCreacion = new Date(solicitud.fechaCreacion);
+            const fechaAsignacion = solicitud.fechaAsignacion ? new Date(solicitud.fechaAsignacion) : fechaCreacion;
+            
+            const tiempoResolucionMs = ahora.getTime() - fechaAsignacion.getTime();
+            const tiempoResolucionHoras = Math.round((tiempoResolucionMs / (1000 * 60 * 60)) * 100) / 100;
+            
+            const tiempoTotalMs = ahora.getTime() - fechaCreacion.getTime();
+            const tiempoTotalHoras = Math.round((tiempoTotalMs / (1000 * 60 * 60)) * 100) / 100;
+            
+            // Actualizar solicitud
+            const estadoFinal = requiereAprobacion ? 'PENDIENTE_APROBACION' : 'COMPLETADA';
+            
+            const solicitudUpdate = {
+                estado: estadoFinal,
+                fechaCompletado: ahora.toISOString(),
+                tiempoResolucionHoras: tiempoResolucionHoras,
+                tiempoTotalHoras: tiempoTotalHoras,
+                observacionesCompletado: observacionesCompletado,
+                requiereAprobacion: requiereAprobacion
+            };
+            
+            await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                fields: solicitudUpdate
+            });
+            
+            // Liberar técnico si está completada
+            if (!requiereAprobacion && solicitud.tecnicoAsignadoId) {
+                await this.updateTecnico(solicitud.tecnicoAsignadoId, { 
+                    estado: 'disponible',
+                    solicitudActual: '',
+                    ultimaCompletada: ahora.toISOString()
+                });
+            }
+            
+            this.log('✅ Solicitud completada exitosamente');
+            
+            return {
+                success: true,
+                solicitud: {
+                    id: solicitudId,
+                    numero: solicitud.numero,
+                    estado: estadoFinal,
+                    fechaCompletado: ahora.toISOString(),
+                    tiempoResolucionHoras: tiempoResolucionHoras,
+                    tiempoTotalHoras: tiempoTotalHoras
+                },
+                tiempos: {
+                    fechaCreacion: solicitud.fechaCreacion,
+                    fechaAsignacion: solicitud.fechaAsignacion,
+                    fechaCompletado: ahora.toISOString(),
+                    tiempoResolucionHoras: tiempoResolucionHoras,
+                    tiempoTotalHoras: tiempoTotalHoras
+                }
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error completando solicitud: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // 🤖 Auto-asignación inteligente
+    async autoAsignarSolicitudesPendientes() {
+        try {
+            this.log('🤖 Iniciando auto-asignación...');
+            
+            const solicitudes = await this.getSolicitudes();
+            const solicitudesPendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
+            
+            if (solicitudesPendientes.length === 0) {
+                return {
+                    success: true,
+                    message: 'No hay solicitudes pendientes para asignar',
+                    asignaciones: 0
+                };
+            }
+            
+            const tecnicos = await this.getTecnicos();
+            const tecnicosDisponibles = tecnicos.filter(t => t.estado === 'disponible');
+            
+            if (tecnicosDisponibles.length === 0) {
+                return {
+                    success: false,
+                    message: 'No hay técnicos disponibles para asignación',
+                    asignaciones: 0
+                };
+            }
+            
+            const resultados = [];
+            
+            // Asignar por prioridad
+            const solicitudesOrdenadas = solicitudesPendientes.sort((a, b) => {
+                const prioridades = { 'CRITICA': 4, 'ALTA': 3, 'MEDIA': 2, 'BAJA': 1 };
+                return (prioridades[b.prioridad] || 0) - (prioridades[a.prioridad] || 0);
+            });
+            
+            for (const solicitud of solicitudesOrdenadas) {
+                try {
+                    // Buscar técnico del área correspondiente
+                    let tecnicoSeleccionado = tecnicosDisponibles.find(t => 
+                        t.area === solicitud.servicioIngenieria && t.estado === 'disponible'
+                    );
+                    
+                    // Si no hay técnico del área, buscar cualquier disponible
+                    if (!tecnicoSeleccionado) {
+                        tecnicoSeleccionado = tecnicosDisponibles.find(t => t.estado === 'disponible');
+                    }
+                    
+                    if (tecnicoSeleccionado) {
+                        const resultado = await this.asignarTecnicoConTiempos(
+                            solicitud.id, 
+                            tecnicoSeleccionado.id,
+                            'Asignación automática del sistema'
+                        );
+                        
+                        if (resultado.success) {
+                            resultados.push({
+                                solicitud: solicitud.numero,
+                                tecnico: tecnicoSeleccionado.nombre,
+                                area: solicitud.servicioIngenieria,
+                                prioridad: solicitud.prioridad,
+                                compatibilidad: tecnicoSeleccionado.area === solicitud.servicioIngenieria ? 'AREA_EXACTA' : 'AREA_DIFERENTE'
+                            });
+                            
+                            // Marcar técnico como ocupado
+                            tecnicoSeleccionado.estado = 'ocupado';
+                        }
+                    }
+                    
+                } catch (error) {
+                    this.log(`❌ Error asignando solicitud ${solicitud.numero}: ${error.message}`);
+                }
+            }
+            
+            this.log(`✅ Auto-asignación completada: ${resultados.length} asignaciones`);
+            
+            return {
+                success: true,
+                message: `Se asignaron ${resultados.length} solicitudes automáticamente`,
+                asignaciones: resultados.length,
+                detalles: resultados,
+                solicitudesPendientes: solicitudesPendientes.length,
+                tecnicosDisponibles: tecnicosDisponibles.length,
+                timestamp: new Date().toISOString()
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error en auto-asignación: ${error.message}`);
+            return {
+                success: false,
+                error: error.message,
+                asignaciones: 0
+            };
+        }
+    }
+
     // 👤 Obtener usuarios
     async getUsuarios() {
         try {
             const result = await this.makeRequest(this.tables.usuarios);
+            
             const usuarios = result.records.map(record => ({
                 id: record.id,
                 ...record.fields
@@ -191,130 +620,6 @@ class AirtableAPI {
         } catch (error) {
             this.log(`❌ Error obteniendo usuarios: ${error.message}`);
             return [];
-        }
-    }
-
-    // 📝 Obtener solicitudes de acceso
-    async getSolicitudesAcceso() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudesAcceso);
-            const solicitudes = result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-            
-            this.log(`✅ ${solicitudes.length} solicitudes de acceso obtenidas`);
-            return solicitudes;
-            
-        } catch (error) {
-            this.log(`❌ Error obteniendo solicitudes de acceso: ${error.message}`);
-            return [];
-        }
-    }
-
-    // 🔢 Generar número de solicitud
-    async generateSolicitudNumber(area) {
-        try {
-            const solicitudes = await this.getSolicitudes();
-            
-            const prefijos = {
-                'INGENIERIA_BIOMEDICA': 'SOLBIO',
-                'MECANICA': 'SOLMEC', 
-                'INFRAESTRUCTURA': 'SOLINFRA'
-            };
-            
-            const prefijo = prefijos[area] || 'SOL';
-            const solicitudesArea = solicitudes.filter(s => 
-                s.numero && s.numero.startsWith(prefijo)
-            );
-            
-            let maxNumber = 0;
-            solicitudesArea.forEach(solicitud => {
-                const numeroStr = solicitud.numero.replace(prefijo, '');
-                const numero = parseInt(numeroStr);
-                if (!isNaN(numero) && numero > maxNumber) {
-                    maxNumber = numero;
-                }
-            });
-            
-            const siguienteNumero = maxNumber + 1;
-            const numeroFormateado = siguienteNumero.toString().padStart(5, '0');
-            const numeroCompleto = `${prefijo}${numeroFormateado}`;
-            
-            this.log(`✅ Número generado: ${numeroCompleto}`);
-            return numeroCompleto;
-            
-        } catch (error) {
-            this.log(`❌ Error generando número: ${error.message}`);
-            const fallback = `SOL${Date.now().toString().slice(-5)}`;
-            return fallback;
-        }
-    }
-
-    // ⏰ Calcular fecha límite
-    calcularFechaLimite(prioridad) {
-        const ahora = new Date();
-        const horasMap = {
-            'CRITICA': 2,
-            'ALTA': 8,
-            'MEDIA': 24,
-            'BAJA': 72
-        };
-        
-        const horasLimite = horasMap[prioridad] || 24;
-        const fechaLimite = new Date(ahora.getTime() + (horasLimite * 60 * 60 * 1000));
-        
-        return fechaLimite.toISOString();
-    }
-
-    // 📋 Crear solicitud
-    async createSolicitud(solicitudData) {
-        try {
-            const numeroSolicitud = await this.generateSolicitudNumber(solicitudData.servicioIngenieria);
-            
-            const data = {
-                fields: {
-                    numero: numeroSolicitud,
-                    servicioIngenieria: solicitudData.servicioIngenieria,
-                    tipoServicio: solicitudData.tipoServicio || 'MANTENIMIENTO_PREVENTIVO',
-                    prioridad: solicitudData.prioridad || 'MEDIA',
-                    equipo: solicitudData.equipo || 'Equipo no especificado',
-                    ubicacion: solicitudData.ubicacion || 'Ubicación no especificada',
-                    descripcion: solicitudData.descripcion || 'Descripción no especificada',
-                    observaciones: solicitudData.observaciones || '',
-                    solicitante: solicitudData.solicitante || 'Usuario sistema',
-                    servicioHospitalario: solicitudData.servicioHospitalario || 'NO_ESPECIFICADO',
-                    emailSolicitante: solicitudData.emailSolicitante || '',
-                    estado: 'PENDIENTE',
-                    fechaCreacion: new Date().toISOString(),
-                    fechaLimiteRespuesta: this.calcularFechaLimite(solicitudData.prioridad),
-                    tecnicoAsignado: '',
-                    fechaAsignacion: '',
-                    fechaInicio: '',
-                    fechaCompletado: '',
-                    tiempoRespuestaHoras: 0,
-                    tiempoResolucionHoras: 0,
-                    estadoTiempo: 'EN_TIEMPO'
-                }
-            };
-            
-            const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
-            
-            this.log(`✅ Solicitud creada: ${numeroSolicitud}`);
-            
-            return {
-                success: true,
-                id: result.id,
-                numero: numeroSolicitud,
-                ...result.fields
-            };
-            
-        } catch (error) {
-            this.log(`❌ Error creando solicitud: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
         }
     }
 
@@ -338,6 +643,45 @@ class AirtableAPI {
         }
     }
 
+    // 🔄 Actualizar usuario
+    async updateUsuario(userId, updateData) {
+        try {
+            const result = await this.makeRequest(
+                `${this.tables.usuarios}/${userId}`, 
+                'PATCH', 
+                { fields: updateData }
+            );
+            
+            return {
+                id: result.id,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error actualizando usuario: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // 📝 Obtener solicitudes de acceso
+    async getSolicitudesAcceso() {
+        try {
+            const result = await this.makeRequest(this.tables.solicitudesAcceso);
+            
+            const solicitudes = result.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+            
+            this.log(`✅ ${solicitudes.length} solicitudes de acceso obtenidas`);
+            return solicitudes;
+            
+        } catch (error) {
+            this.log(`❌ Error obteniendo solicitudes de acceso: ${error.message}`);
+            return [];
+        }
+    }
+
     // ➕ Crear solicitud de acceso
     async createSolicitudAcceso(solicitudData) {
         try {
@@ -358,7 +702,27 @@ class AirtableAPI {
         }
     }
 
-    // ✅ Validar credenciales
+    // 🔄 Actualizar solicitud de acceso
+    async updateSolicitudAcceso(solicitudId, updateData) {
+        try {
+            const result = await this.makeRequest(
+                `${this.tables.solicitudesAcceso}/${solicitudId}`, 
+                'PATCH', 
+                { fields: updateData }
+            );
+            
+            return {
+                id: result.id,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error actualizando solicitud de acceso: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // ✅ Validar credenciales de usuario
     async validateUserCredentials(email, codigoAcceso) {
         try {
             const usuarios = await this.getUsuarios();
@@ -402,56 +766,54 @@ class AirtableAPI {
         }
     }
 
-    // 🧪 Diagnóstico completo
-    async runDiagnostic() {
-        this.log('🧪 Ejecutando diagnóstico completo...');
-        
-        const diagnostic = {
-            timestamp: new Date().toISOString(),
-            connectionStatus: this.connectionStatus,
-            isConnected: this.isConnected,
-            lastError: this.lastError,
-            requestCount: this.requestCount,
-            tests: {}
-        };
-        
+    // 📊 Obtener estadísticas de tiempos
+    async getEstadisticasTiempos() {
         try {
-            // Test conexión
-            diagnostic.tests.connection = await this.testConnection();
+            this.log('📊 Calculando estadísticas de tiempos...');
             
-            // Test datos básicos
-            try {
-                const solicitudes = await this.getSolicitudes();
-                const tecnicos = await this.getTecnicos();
-                const usuarios = await this.getUsuarios();
-                
-                diagnostic.tests.dataAccess = {
-                    success: true,
-                    solicitudes: solicitudes.length,
-                    tecnicos: tecnicos.length,
-                    usuarios: usuarios.length
-                };
-            } catch (error) {
-                diagnostic.tests.dataAccess = {
-                    success: false,
-                    error: error.message
-                };
+            const solicitudes = await this.getSolicitudes();
+            const ahora = new Date();
+            
+            const stats = {
+                total: solicitudes.length,
+                pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
+                asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA').length,
+                completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length,
+                tiemposRespuesta: {
+                    promedio: 0,
+                    enTiempo: 0,
+                    fueraTiempo: 0,
+                    porcentajeEnTiempo: 0
+                },
+                timestamp: ahora.toISOString()
+            };
+            
+            // Calcular estadísticas de tiempo
+            const solicitudesConTiempo = solicitudes.filter(s => s.tiempoRespuestaHoras);
+            
+            if (solicitudesConTiempo.length > 0) {
+                const tiemposRespuesta = solicitudesConTiempo.map(s => s.tiempoRespuestaHoras);
+                stats.tiemposRespuesta.promedio = tiemposRespuesta.reduce((a, b) => a + b, 0) / tiemposRespuesta.length;
+                stats.tiemposRespuesta.enTiempo = solicitudes.filter(s => s.estadoTiempo === 'EN_TIEMPO').length;
+                stats.tiemposRespuesta.fueraTiempo = solicitudes.filter(s => s.estadoTiempo === 'FUERA_TIEMPO').length;
+                stats.tiemposRespuesta.porcentajeEnTiempo = Math.round((stats.tiemposRespuesta.enTiempo / solicitudesConTiempo.length) * 100);
             }
             
-            diagnostic.success = diagnostic.tests.connection && diagnostic.tests.dataAccess.success;
+            this.log('✅ Estadísticas calculadas');
+            return stats;
             
         } catch (error) {
-            diagnostic.success = false;
-            diagnostic.error = error.message;
+            this.log(`❌ Error calculando estadísticas: ${error.message}`);
+            return {
+                error: error.message,
+                timestamp: new Date().toISOString()
+            };
         }
-        
-        this.log('📊 Diagnóstico completado', diagnostic);
-        return diagnostic;
     }
 
-    // 📊 Estadísticas del sistema
+    // 📊 Estadísticas del sistema (alias para compatibilidad)
     getSystemStats() {
-        return this.getStatus(); // Usar el mismo método
+        return this.getStatus();
     }
 }
 
@@ -471,6 +833,6 @@ if (typeof window !== 'undefined') {
     });
 }
 
-console.log('✅ AirtableAPI corregido iniciado');
-console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(AirtableAPI.prototype));
+console.log('✅ AirtableAPI COMPLETO iniciado con numeración automática y asignación inteligente');
+console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(AirtableAPI.prototype).filter(name => name !== 'constructor'));
 console.log('📊 Estado inicial:', window.airtableAPI.getStatus());
