@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f1f8f5;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2563eb 0%, #059669 100%);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            color: white;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: auto;
+            min-height: 5rem;
+            padding: 1rem;
+            position: relative;
+            gap: 0.5rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .hospital-info h1 {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: white;
+            line-height: 1.2;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            margin: 0;
+            word-wrap: break-word;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .hospital-info p {
+            font-size: 0.85rem;
+            color: #e0f2fe;
+            font-weight: 500;
+            margin-top: 0.25rem;
+            margin-bottom: 0;
+            word-wrap: break-word;
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .developer-credit {
+            font-size: 0.75rem;
+            color: #bfdbfe;
+            font-weight: 400;
+            margin-top: 0.25rem;
+            margin-bottom: 0;
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* Indicador de conexión Airtable */
+        .connection-status {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .connection-status.connected {
+            background: rgba(34, 197, 94, 0.3);
+            color: #dcfce7;
+        }
+
+        .connection-status.disconnected {
+            background: rgba(239, 68, 68, 0.3);
+            color: #fee2e2;
+        }
+
+        .connection-status.fallback {
+            background: rgba(245, 158, 11, 0.3);
+            color: #fef3c7;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.25rem;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: #059669;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .user-info {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            cursor: pointer;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            transition: background 0.2s;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .notification-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0.25rem;
+            right: 0.25rem;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 1rem;
+            height: 1rem;
+            font-size: 0.625rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        /* Main Layout */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            padding: 1.5rem 1rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            overflow: hidden;
+            border: 1px solid #e5e7eb;
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%);
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
+        /* Metrics Grid */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            border-top: 4px solid;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .metric-card.total { 
+            border-top-color: #2563eb; 
+            background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
+        }
+        .metric-card.biomedica { 
+            border-top-color: #059669; 
+            background: linear-gradient(135deg, #ffffff 0%, #dcfce7 100%);
+        }
+        .metric-card.mecanica { 
+            border-top-color: #f59e0b; 
+            background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+        }
+        .metric-card.infraestructura { 
+            border-top-color: #8b5cf6; 
+            background: linear-gradient(135deg, #ffffff 0%, #ede9fe 100%);
+        }
+        .metric-card.pendientes { 
+            border-top-color: #ef4444; 
+            background: linear-gradient(135deg, #ffffff 0%, #fee2e2 100%);
+        }
+
+        .metric-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        /* Views */
+        .view {
+            display: block;
+        }
+
+        .view.hidden {
+            display: none;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid;
+            margin-bottom: 1.5rem;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border-color: #3b82f6;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border-color: #22c55e;
+            color: #15803d;
+        }
+
+        .alert-warning {
+            background: #fffbeb;
+            border-color: #f59e0b;
+            color: #d97706;
+        }
+
+        .alert-danger {
+            background: #fef2f2;
+            border-color: #ef4444;
+            color: #dc2626;
+        }
+
+        /* Botones */
+        .btn {
+            padding: 0.625rem 1.25rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.75rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Solicitudes de Acceso */
+        .access-request-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .access-request-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .access-request-card.pending {
+            border-left: 4px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+        }
+
+        .access-request-card.approved {
+            border-left: 4px solid #059669;
+            background: linear-gradient(135deg, #ecfdf5 0%, #dcfce7 100%);
+        }
+
+        .access-request-card.rejected {
+            border-left: 4px solid #ef4444;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .request-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.125rem;
+        }
+
+        .request-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .request-detail {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+
+        .request-detail-label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .request-detail-value {
+            color: #1f2937;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .status-pendiente {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-aprobada {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-rechazada {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.25rem;
+        }
+
+        .modal-close:hover {
+            color: #1f2937;
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .connection-status {
+                position: static;
+                margin-bottom: 1rem;
+            }
+            
+            .user-info {
+                position: static;
+                justify-content: center;
+                margin-top: 1rem;
+            }
+
+            .request-actions {
+                flex-direction: column;
+            }
+
+            .request-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content container">
+            <!-- Indicador de conexión Airtable -->
+            <div id="connection-status" class="connection-status disconnected">
+                <span id="connection-icon">🔄</span>
+                <span id="connection-text">Conectando...</span>
+            </div>
+            
+            <div class="logo">
+                <div class="hospital-info">
+                    <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
+                    <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
+                    <p>Portal de Gestión Cloud - Sistema con Airtable</p>
+                </div>
+            </div>
+
+            <nav class="nav-tabs">
+                <button class="nav-tab active" onclick="showView('dashboard')" data-view="dashboard">
+                    📊 Dashboard
+                </button>
+                <button class="nav-tab" onclick="showView('solicitudes')" data-view="solicitudes">
+                    📋 Solicitudes (<span id="total-count">-</span>)
+                </button>
+                <button class="nav-tab" onclick="showView('personal')" data-view="personal">
+                    👥 Personal de Soporte (<span id="total-technicians-nav">-</span>)
+                </button>
+                <button class="nav-tab" onclick="showView('accesos')" data-view="accesos">
+                    🔐 Accesos (<span id="pending-access-count">-</span>)
+                </button>
+            </nav>
+
+            <div class="user-info">
+                <button class="notification-btn" onclick="showNotifications()">
+                    🔔
+                    <span class="notification-badge" id="notification-count">-</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-layout container">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="view">
+            <!-- Alert de conexión -->
+            <div id="connection-alert" class="alert alert-info">
+                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud Conectado</h3>
+                <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube.</p>
+                <ul style="margin: 0.5rem 0 0 1rem;">
+                    <li><strong>✅ Acceso Multi-dispositivo:</strong> Datos disponibles desde cualquier computador</li>
+                    <li><strong>🔄 Sincronización Automática:</strong> Cambios reflejados en tiempo real</li>
+                    <li><strong>💾 Respaldo en la Nube:</strong> Datos seguros en Airtable</li>
+                    <li><strong>🌍 Acceso desde Internet:</strong> Funciona desde cualquier ubicación</li>
+                </ul>
+                <div style="margin-top: 1rem;">
+                    <button class="btn btn-primary btn-sm" onclick="testCloudConnection()">
+                        🧪 Probar Conexión
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="showAirtableStatus()">
+                        📊 Estado de Airtable
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metrics por Área de Ingeniería -->
+            <div class="metrics-grid">
+                <div class="metric-card total" onclick="filterByArea('all')">
+                    <div class="metric-icon">📋</div>
+                    <div class="metric-number" id="metric-total">-</div>
+                    <div class="metric-label">Total Solicitudes</div>
+                </div>
+                <div class="metric-card biomedica" onclick="filterByArea('INGENIERIA_BIOMEDICA')">
+                    <div class="metric-icon">🏥</div>
+                    <div class="metric-number" id="metric-biomedica">-</div>
+                    <div class="metric-label">Ingeniería Biomédica</div>
+                </div>
+                <div class="metric-card mecanica" onclick="filterByArea('MECANICA')">
+                    <div class="metric-icon">⚙️</div>
+                    <div class="metric-number" id="metric-mecanica">-</div>
+                    <div class="metric-label">Mecánica</div>
+                </div>
+                <div class="metric-card infraestructura" onclick="filterByArea('INFRAESTRUCTURA')">
+                    <div class="metric-icon">🏗️</div>
+                    <div class="metric-number" id="metric-infraestructura">-</div>
+                    <div class="metric-label">Infraestructura</div>
+                </div>
+                <div class="metric-card pendientes" onclick="filterByStatus('PENDIENTE')">
+                    <div class="metric-icon">⏳</div>
+                    <div class="metric-number" id="metric-pendientes">-</div>
+                    <div class="metric-label">Pendientes</div>
+                </div>
+            </div>
+
+            <!-- Resumen de Personal por Área -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏥 Personal Biomédica</h2>
+                        <span class="status-disponible" id="biomedica-personnel-count">- registrados</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="biomedica-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">⚙️ Personal Mecánica</h2>
+                        <span class="status-disponible" id="mecanica-personnel-count">- registrados</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="mecanica-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">🏗️ Personal Infraestructura</h2>
+                        <span class="status-disponible" id="infraestructura-personnel-count">- registrados</span>
+                    </div>
+                    <div class="card-content">
+                        <div id="infraestructura-personnel-summary">
+                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solicitudes View -->
+        <div id="solicitudes-view" class="view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">📋 Gestión de Solicitudes (Cloud)</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
+                            🔄 Actualizar desde Airtable
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
+                            🤖 Auto-asignar
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="solicitudes-list">
+                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes desde Airtable...</h3>
+                            <p>Conectando con la base de datos en la nube</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal de Soporte View -->
+        <div id="personal-view" class="view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">👥 Gestión de Personal de Soporte (Cloud)</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="showAddPersonalModal()">
+                            ➕ Agregar Personal
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
+                            🔄 Sincronizar con Airtable
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="showPersonalStatistics()">
+                            📊 Estadísticas
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="debugPersonalConnection()">
+                            🔧 Debug Conexión
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <!-- Filtros de Personal -->
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
+                        <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Personal</h4>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Área:</label>
+                                <select id="filter-area" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todas las áreas</option>
+                                    <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                                    <option value="MECANICA">Mecánica</option>
+                                    <option value="INFRAESTRUCTURA">Infraestructura</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Estado:</label>
+                                <select id="filter-estado" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todos los estados</option>
+                                    <option value="disponible">Disponible</option>
+                                    <option value="ocupado">Ocupado</option>
+                                    <option value="inactivo">Inactivo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Tipo:</label>
+                                <select id="filter-tipo" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                    <option value="">Todos los tipos</option>
+                                    <option value="ingeniero">Ingeniero</option>
+                                    <option value="tecnico">Técnico</option>
+                                    <option value="auxiliar">Auxiliar</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; align-items: end;">
+                                <button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="width: 100%;">
+                                    🗑️ Limpiar Filtros
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="technicians-container">
+                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal de soporte desde Airtable...</h3>
+                            <p>Conectando con la base de datos en la nube</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista de Gestión de Accesos -->
+        <div id="accesos-view" class="view hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">🔐 Gestión de Accesos al Portal</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-success btn-sm" onclick="refreshAccessFromCloud()">
+                            🔄 Actualizar desde Airtable
+                        </button>
+                        <button class="btn btn-warning btn-sm" onclick="approveAllPending()">
+                            ✅ Aprobar Todas Pendientes
+                        </button>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="alert alert-info">
+                        <h4 style="margin-bottom: 0.5rem;">🔐 Gestión de Accesos al Portal</h4>
+                        <p>Desde aquí puedes aprobar solicitudes de acceso al Portal de Solicitudes. Al aprobar una solicitud:</p>
+                        <ul style="margin: 0.5rem 0 0 1rem;">
+                            <li>✅ Se genera automáticamente un <strong>código de 4 dígitos único</strong></li>
+                            <li>👤 Se crea el usuario en la tabla de usuarios</li>
+                            <li>📧 El usuario podrá ingresar con su <strong>email + código</strong> al Portal de Solicitudes</li>
+                            <li>🌐 Todo se sincroniza automáticamente con Airtable</li>
+                        </ul>
+                    </div>
+
+                    <div id="access-requests-container">
+                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes de acceso desde Airtable...</h3>
+                            <p>Conectando con la base de datos en la nube</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de Confirmación de Aprobación -->
+    <div id="approval-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">✅ Confirmar Aprobación</h3>
+                <button class="modal-close" onclick="closeApprovalModal()">&times;</button>
+            </div>
+            <div id="approval-modal-content">
+                <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Resultado -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="result-modal-title">Resultado</h3>
+                <button class="modal-close" onclick="closeResultModal()">&times;</button>
+            </div>
+            <div id="result-modal-content">
+                <!-- Contenido dinámico del modal -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar Personal -->
+    <div id="add-personal-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">➕ Agregar Personal de Soporte</h3>
+                <button class="modal-close" onclick="closeAddPersonalModal()">&times;</button>
+            </div>
+            <div id="add-personal-content">
+                <form id="add-personal-form">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👤 Nombre Completo *</label>
+                            <input type="text" id="personal-nombre" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="Nombres y apellidos">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📧 Email *</label>
+                            <input type="email" id="personal-email" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="correo@hospital.com">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">🏥 Área de Trabajo *</label>
+                            <select id="personal-area" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="">Seleccione área</option>
+                                <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                                <option value="MECANICA">Mecánica</option>
+                                <option value="INFRAESTRUCTURA">Infraestructura</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👨‍💼 Tipo de Personal *</label>
+                            <select id="personal-tipo" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="">Seleccione tipo</option>
+                                <option value="ingeniero">🎓 Ingeniero</option>
+                                <option value="tecnico">🔧 Técnico</option>
+                                <option value="auxiliar">🛠️ Auxiliar</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">⚙️ Especialidad</label>
+                            <input type="text" id="personal-especialidad" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;" placeholder="Especialidad o certificaciones">
+                        </div>
+                        <div>
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📊 Estado Inicial</label>
+                            <select id="personal-estado" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                                <option value="disponible">🟢 Disponible</option>
+                                <option value="ocupado">🟡 Ocupado</option>
+                                <option value="inactivo">🔴 Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid #3b82f6;">
+                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Información Importante</h5>
+                        <ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                            <li>El personal registrado podrá ser asignado a solicitudes de mantenimiento</li>
+                            <li>Los datos se guardan automáticamente en Airtable</li>
+                            <li>El estado puede cambiarse posteriormente</li>
+                            <li>La especialidad ayuda en la asignación adecuada de tareas</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 150px;">
+                            💾 Guardar Personal
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeAddPersonalModal()" style="min-width: 120px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Editar Personal -->
+    <div id="edit-personal-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
+                <button class="modal-close" onclick="closeEditPersonalModal()">&times;</button>
+            </div>
+            <div id="edit-personal-content">
+                <!-- Contenido dinámico del modal de edición -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Incluir el archivo de configuración de Airtable -->
+    <script src="airtable-config.js"></script>
+
+    <script>
+        // Variables globales para datos de la nube
+        let cloudSolicitudes = [];
+        let cloudTecnicos = [];
+        let cloudUsuarios = [];
+        let cloudSolicitudesAcceso = [];
+        let isConnectedToAirtable = false;
+
+        // 🔗 Funciones de conexión y estado
+        function updateConnectionStatus(status, message) {
+            const statusDiv = document.getElementById('connection-status');
+            const iconSpan = document.getElementById('connection-icon');
+            const textSpan = document.getElementById('connection-text');
+            
+            statusDiv.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    iconSpan.textContent = '🟢';
+                    textSpan.textContent = 'Airtable Conectado';
+                    isConnectedToAirtable = true;
+                    break;
+                case 'disconnected':
+                    iconSpan.textContent = '🔴';
+                    textSpan.textContent = 'Sin conexión';
+                    isConnectedToAirtable = false;
+                    break;
+                case 'fallback':
+                    iconSpan.textContent = '🟡';
+                    textSpan.textContent = 'Modo Local';
+                    isConnectedToAirtable = false;
+                    break;
+                default:
+                    iconSpan.textContent = '🔄';
+                    textSpan.textContent = message || 'Conectando...';
+            }
+        }
+
+        async function testCloudConnection() {
+            updateConnectionStatus('connecting', 'Probando conexión...');
+            
+            try {
+                const isConnected = await window.airtableAPI.testConnection();
+                
+                if (isConnected) {
+                    updateConnectionStatus('connected');
+                    alert('✅ Conexión exitosa con Airtable\n\n🌐 El sistema está funcionando en la nube correctamente.');
+                } else {
+                    updateConnectionStatus('fallback');
+                    alert('⚠️ No se pudo conectar con Airtable\n\nEl sistema está usando modo local como respaldo.');
+                }
+            } catch (error) {
+                updateConnectionStatus('disconnected');
+                alert('❌ Error de conexión\n\n' + error.message);
+            }
+        }
+
+        function showAirtableStatus() {
+            const baseId = window.airtableAPI.baseId;
+            const hasApiKey = window.airtableAPI.apiKey && window.airtableAPI.apiKey !== 'pat1234567890abcdef';
+            
+            alert(`📊 ESTADO DE AIRTABLE\n\n🔧 Configuración:\n• Base ID: ${baseId}\n• API Key: ${hasApiKey ? '✅ Configurado' : '❌ Pendiente'}\n• Estado: ${isConnectedToAirtable ? '🟢 Conectado' : '🔴 Desconectado'}\n\n${!hasApiKey ? '⚠️ Configure las credenciales en airtable-config.js' : '✅ Sistema listo para usar'}`);
+        }
+
+        // 🔄 Funciones de carga de datos desde Airtable
+        async function loadAllDataFromCloud() {
+            console.log('🌐 Cargando todos los datos desde Airtable...');
+            
+            try {
+                // Mostrar indicadores de carga
+                updateConnectionStatus('connecting', 'Sincronizando...');
+                
+                // Cargar datos en paralelo
+                const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+                    window.airtableAPI.getSolicitudes(),
+                    window.airtableAPI.getTecnicos(),
+                    window.airtableAPI.getUsuarios(),
+                    window.airtableAPI.getSolicitudesAcceso()
+                ]);
+                
+                // Actualizar variables globales
+                cloudSolicitudes = solicitudes;
+                cloudTecnicos = tecnicos;
+                cloudUsuarios = usuarios;
+                cloudSolicitudesAcceso = solicitudesAcceso;
+                
+                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
+                
+                // Actualizar interfaz
+                updateAllCounters();
+                updateAllDisplays();
+                updateConnectionStatus('connected');
+                
+            } catch (error) {
+                console.error('❌ Error cargando datos desde Airtable:', error);
+                updateConnectionStatus('fallback');
+                
+                // Intentar cargar desde localStorage como fallback
+                loadDataFromLocalStorage();
+            }
+        }
+
+        function loadDataFromLocalStorage() {
+            console.log('📱 Cargando datos desde localStorage (modo fallback)...');
+            
+            try {
+                // Cargar desde localStorage con la estructura anterior
+                const localSolicitudes = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+                const localTechnicians = JSON.parse(localStorage.getItem('hospital_technicians') || '{}');
+                const localUsers = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
+                const localAccessRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
+                
+                // Convertir personal del formato anterior
+                cloudTecnicos = [];
+                Object.entries(localTechnicians).forEach(([area, tecnicosArea]) => {
+                    tecnicosArea.forEach(tecnico => {
+                        cloudTecnicos.push({
+                            ...tecnico,
+                            area: area
+                        });
+                    });
+                });
+                
+                cloudSolicitudes = localSolicitudes;
+                cloudUsuarios = localUsers;
+                cloudSolicitudesAcceso = localAccessRequests;
+                
+                updateAllCounters();
+                updateAllDisplays();
+                
+                console.log('✅ Datos cargados desde localStorage');
+                
+            } catch (error) {
+                console.error('❌ Error cargando desde localStorage:', error);
+            }
+        }
+
+        // 📊 Actualizar contadores y displays
+        function updateAllCounters() {
+            // Contadores de solicitudes
+            const total = cloudSolicitudes.length;
+            const biomedica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length;
+            const mecanica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'MECANICA').length;
+            const infraestructura = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INFRAESTRUCTURA').length;
+            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || !r.tecnicoAsignado).length;
+
+            document.getElementById('metric-total').textContent = total;
+            document.getElementById('metric-biomedica').textContent = biomedica;
+            document.getElementById('metric-mecanica').textContent = mecanica;
+            document.getElementById('metric-infraestructura').textContent = infraestructura;
+            document.getElementById('metric-pendientes').textContent = pendientes;
+            document.getElementById('total-count').textContent = total;
+
+            // Contadores de personal de soporte
+            const totalTechnicians = cloudTecnicos.length;
+            const biomedicaTecnicos = cloudTecnicos.filter(t => t.area === 'INGENIERIA_BIOMEDICA').length;
+            const mecanicaTecnicos = cloudTecnicos.filter(t => t.area === 'MECANICA').length;
+            const infraestructuraTecnicos = cloudTecnicos.filter(t => t.area === 'INFRAESTRUCTURA').length;
+
+            document.getElementById('total-technicians-nav').textContent = totalTechnicians;
+            document.getElementById('biomedica-personnel-count').textContent = `${biomedicaTecnicos} registrados`;
+            document.getElementById('mecanica-personnel-count').textContent = `${mecanicaTecnicos} registrados`;
+            document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
+
+            // Contadores de accesos
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
+            document.getElementById('pending-access-count').textContent = pendingAccess;
+            document.getElementById('notification-count').textContent = pendingAccess + pendientes;
+
+            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} personal, ${pendingAccess} accesos pendientes`);
+        }
+
+        function updateAllDisplays() {
+            // Actualizar resúmenes de personal
+            updatePersonnelSummaries();
+            
+            // Actualizar listas si están visibles
+            updateSolicitudesList();
+            updateTechniciansList();
+            updateAccessRequestsList();
+        }
+
+        function updatePersonnelSummaries() {
+            const areas = [
+                { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
+                { key: 'MECANICA', name: 'mecanica' },
+                { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
+            ];
+
+            areas.forEach(area => {
+                const personnel = cloudTecnicos.filter(t => t.area === area.key);
+                const summaryContainer = document.getElementById(`${area.name}-personnel-summary`);
+                
+                if (personnel.length === 0) {
+                    summaryContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No hay personal registrado</p>';
+                } else {
+                    const available = personnel.filter(p => p.estado === 'disponible').length;
+                    const busy = personnel.filter(p => p.estado === 'ocupado').length;
+                    const inactive = personnel.filter(p => p.estado === 'inactivo').length;
+                    
+                    summaryContainer.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
+                            <div>
+                                <div style="font-weight: bold; color: #059669;">${available}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Disponibles</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #f59e0b;">${busy}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Ocupados</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #ef4444;">${inactive}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Inactivos</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        // 🔄 Funciones de sincronización específicas
+        async function refreshFromCloud() {
+            console.log('🔄 Actualizando solicitudes desde Airtable...');
+            
+            try {
+                cloudSolicitudes = await window.airtableAPI.getSolicitudes();
+                updateSolicitudesList();
+                updateAllCounters();
+                
+                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                
+            } catch (error) {
+                console.error('❌ Error actualizando solicitudes:', error);
+                alert('❌ Error al actualizar desde Airtable. Verificar conexión.');
+            }
+        }
+
+        async function syncTechniciansWithCloud() {
+            console.log('🔄 Sincronizando personal de soporte con Airtable...');
+            
+            try {
+                cloudTecnicos = await window.airtableAPI.getTecnicos();
+                updateTechniciansList();
+                updateAllCounters();
+                
+                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                
+            } catch (error) {
+                console.error('❌ Error sincronizando personal:', error);
+                alert('❌ Error al sincronizar con Airtable. Verificar conexión.');
+            }
+        }
+
+        async function refreshAccessFromCloud() {
+            console.log('🔄 Actualizando accesos desde Airtable...');
+            
+            try {
+                cloudSolicitudesAcceso = await window.airtableAPI.getSolicitudesAcceso();
+                cloudUsuarios = await window.airtableAPI.getUsuarios();
+                updateAccessRequestsList();
+                updateAllCounters();
+                
+                alert(`✅ Accesos actualizados desde Airtable\n\n📊 Solicitudes: ${cloudSolicitudesAcceso.length}\n📊 Usuarios: ${cloudUsuarios.length}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                
+            } catch (error) {
+                console.error('❌ Error actualizando accesos:', error);
+                alert('❌ Error al actualizar desde Airtable. Verificar conexión.');
+            }
+        }
+
+        // 📋 Funciones de actualización de listas
+        function updateSolicitudesList() {
+            const container = document.getElementById('solicitudes-list');
+            
+            if (cloudSolicitudes.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
+                        <p>Las solicitudes aparecerán aquí cuando se creen desde el Portal de Solicitudes</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudes.length} Solicitudes Cargadas desde Airtable</h4>
+                        <p style="color: #047857; font-size: 0.875rem;">Datos sincronizados desde la nube. Última actualización: ${new Date().toLocaleTimeString('es-CO')}</p>
+                    </div>
+                    ${cloudSolicitudes.map(solicitud => `
+                        <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                <strong>${solicitud.numero}</strong>
+                                <span style="background: #dbeafe; color: #1e40af; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">${solicitud.estado || 'PENDIENTE'}</span>
+                            </div>
+                            <p><strong>Área:</strong> ${solicitud.servicioIngenieria || 'No especificada'}</p>
+                            <p><strong>Equipo:</strong> ${solicitud.equipo || 'No especificado'}</p>
+                            <p><strong>Ubicación:</strong> ${solicitud.ubicacion || 'No especificada'}</p>
+                            <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
+                        </div>
+                    `).join('')}
+                `;
+            }
+        }
+
+        function updateTechniciansList() {
+            const container = document.getElementById('technicians-container');
+            
+            if (cloudTecnicos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay personal de soporte registrado</h3>
+                        <p>El personal de soporte aparecerá aquí cuando se agregue</p>
+                        <button class="btn btn-success" onclick="showAddPersonalModal()" style="margin-top: 1rem;">
+                            ➕ Agregar Primer Personal
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Aplicar filtros si existen
+                let filteredPersonal = [...cloudTecnicos];
+                
+                const filterArea = document.getElementById('filter-area')?.value;
+                const filterEstado = document.getElementById('filter-estado')?.value;
+                const filterTipo = document.getElementById('filter-tipo')?.value;
+                
+                if (filterArea) {
+                    filteredPersonal = filteredPersonal.filter(p => p.area === filterArea);
+                }
+                if (filterEstado) {
+                    filteredPersonal = filteredPersonal.filter(p => p.estado === filterEstado);
+                }
+                if (filterTipo) {
+                    filteredPersonal = filteredPersonal.filter(p => p.tipo === filterTipo);
+                }
+
+                container.innerHTML = `
+                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Total (${filteredPersonal.length} mostrados)</h4>
+                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube</p>
+                    </div>
+                    
+                    ${filteredPersonal.length === 0 ? `
+                        <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                            <h4 style="color: #1f2937;">No se encontró personal con los filtros aplicados</h4>
+                            <button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="margin-top: 1rem;">
+                                🗑️ Limpiar Filtros
+                            </button>
+                        </div>
+                    ` : ''}
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1rem;">
+                        ${filteredPersonal.map(personal => createPersonalCard(personal)).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function createPersonalCard(personal) {
+            const getStatusColor = (estado) => {
+                const colors = {
+                    'disponible': { bg: '#dcfce7', color: '#166534', icon: '🟢' },
+                    'ocupado': { bg: '#fef3c7', color: '#d97706', icon: '🟡' },
+                    'inactivo': { bg: '#fee2e2', color: '#dc2626', icon: '🔴' }
+                };
+                return colors[estado] || colors['disponible'];
+            };
+
+            const getAreaInfo = (area) => {
+                const areas = {
+                    'INGENIERIA_BIOMEDICA': { name: 'Ing. Biomédica', icon: '🏥', color: '#059669' },
+                    'MECANICA': { name: 'Mecánica', icon: '⚙️', color: '#f59e0b' },
+                    'INFRAESTRUCTURA': { name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' }
+                };
+                return areas[area] || { name: area, icon: '🔧', color: '#6b7280' };
+            };
+
+            const getTipoInfo = (tipo) => {
+                const tipos = {
+                    'ingeniero': { name: 'Ingeniero', icon: '🎓' },
+                    'tecnico': { name: 'Técnico', icon: '🔧' },
+                    'auxiliar': { name: 'Auxiliar', icon: '🛠️' }
+                };
+                return tipos[tipo] || { name: tipo, icon: '👤' };
+            };
+
+            const statusColor = getStatusColor(personal.estado);
+            const areaInfo = getAreaInfo(personal.area);
+            const tipoInfo = getTipoInfo(personal.tipo);
+
+            return `
+                <div style="background: white; border: 1px solid #e5e7eb; border-radius: 1rem; padding: 1.5rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; position: relative; border-left: 4px solid ${areaInfo.color};">
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1rem;">
+                        <div style="flex: 1;">
+                            <h4 style="color: #1f2937; margin-bottom: 0.5rem; font-size: 1.125rem; font-weight: 600;">
+                                ${tipoInfo.icon} ${personal.nombre}
+                            </h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">
+                                ${areaInfo.icon} ${areaInfo.name}
+                            </p>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="background: ${statusColor.bg}; color: ${statusColor.color}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                                ${statusColor.icon} ${personal.estado}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: #6b7280; font-weight: 600;">👨‍💼 Tipo:</span>
+                            <span style="color: #1f2937;">${tipoInfo.name}</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="color: #6b7280; font-weight: 600;">📧 Email:</span>
+                            <span style="color: #1f2937;">${personal.email}</span>
+                        </div>
+                        
+                        ${personal.especialidad ? `
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span style="color: #6b7280; font-weight: 600;">⚙️ Especialidad:</span>
+                                <span style="color: #1f2937;">${personal.especialidad}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary btn-sm" onclick="editPersonal('${personal.id}')">
+                            ✏️ Editar
+                        </button>
+                        <button class="btn btn-${personal.estado === 'disponible' ? 'warning' : 'success'} btn-sm" onclick="togglePersonalStatus('${personal.id}')">
+                            ${personal.estado === 'disponible' ? '⏸️ Ocupar' : '▶️ Liberar'}
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="viewPersonalDetails('${personal.id}')">
+                            👁️ Ver
+                        </button>
+                    </div>
+
+                    <div style="position: absolute; top: 0.5rem; right: 0.5rem; background: ${areaInfo.color}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.65rem; font-weight: 600;">
+                        ${areaInfo.icon} ID: ${personal.id ? personal.id.substring(personal.id.length - 4) : 'N/A'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 🔄 Funciones del módulo de Personal de Soporte
+
+        function showAddPersonalModal() {
+            const modal = document.getElementById('add-personal-modal');
+            modal.classList.add('show');
+            
+            // Limpiar formulario
+            document.getElementById('add-personal-form').reset();
+        }
+
+        function closeAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.remove('show');
+        }
+
+        async function handleAddPersonalForm(event) {
+            event.preventDefault();
+            
+            const formData = {
+                nombre: document.getElementById('personal-nombre').value.trim(),
+                email: document.getElementById('personal-email').value.trim(),
+                area: document.getElementById('personal-area').value,
+                tipo: document.getElementById('personal-tipo').value,
+                especialidad: document.getElementById('personal-especialidad').value.trim(),
+                estado: document.getElementById('personal-estado').value
+            };
+
+            console.log('📝 Datos del formulario:', formData);
+
+            // Validaciones
+            if (!formData.nombre || !formData.email || !formData.area || !formData.tipo) {
+                alert('❌ Por favor complete todos los campos obligatorios (*)');
+                return;
+            }
+
+            // Verificar email único
+            const existingPersonal = cloudTecnicos.find(p => p.email === formData.email);
+            if (existingPersonal) {
+                alert('❌ Ya existe personal registrado con este email');
+                return;
+            }
+
+            try {
+                // Mostrar loading
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Guardando en Airtable...';
+
+                console.log('🚀 Iniciando creación en Airtable...');
+                console.log('🔗 Estado de conexión antes:', isConnectedToAirtable);
+
+                // Verificar conexión antes de proceder
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
+                }
+
+                // Test rápido de conexión
+                const connectionTest = await window.airtableAPI.testConnection();
+                console.log('🧪 Test de conexión previo:', connectionTest);
+
+                if (!connectionTest) {
+                    console.warn('⚠️ Test de conexión falló, pero intentando crear...');
+                }
+
+                // Crear en Airtable
+                console.log('📤 Enviando datos a Airtable...');
+                const result = await window.airtableAPI.createTecnico(formData);
+                console.log('✅ Resultado de Airtable:', result);
+                
+                if (!result || !result.id) {
+                    throw new Error('Respuesta inválida de Airtable - no se recibió ID');
+                }
+
+                // Agregar a lista local SOLO después de confirmación exitosa
+                const newPersonal = {
+                    id: result.id,
+                    ...result.fields,
+                    // Asegurar que tenemos todos los campos
+                    nombre: formData.nombre,
+                    email: formData.email,
+                    area: formData.area,
+                    tipo: formData.tipo,
+                    especialidad: formData.especialidad,
+                    estado: formData.estado
+                };
+
+                console.log('➕ Agregando a lista local:', newPersonal);
+                cloudTecnicos.push(newPersonal);
+
+                // Actualizar displays después de confirmación exitosa
+                console.log('🔄 Actualizando displays...');
+                updateTechniciansList();
+                updateAllCounters();
+                updatePersonnelSummaries();
+                
+                // Verificar estado de conexión después de la operación
+                console.log('🔗 Estado de conexión después:', window.airtableAPI.connectionStatus);
+                
+                // Forzar actualización del estado de conexión si es necesario
+                if (window.airtableAPI.connectionStatus === 'connected' && !isConnectedToAirtable) {
+                    console.log('🔄 Forzando actualización de estado de conexión...');
+                    updateConnectionStatus('connected', 'Conectado a Airtable');
+                }
+                
+                // Cerrar modal y mostrar éxito
+                closeAddPersonalModal();
+                
+                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${formData.area}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente`);
+
+            } catch (error) {
+                console.error('❌ Error completo agregando personal:', error);
+                console.error('🔍 Stack trace:', error.stack);
+                
+                // Diagnóstico detallado
+                console.log('🔍 Diagnóstico del error:');
+                console.log('  - API disponible:', !!window.airtableAPI);
+                console.log('  - Estado conexión:', window.airtableAPI?.connectionStatus);
+                console.log('  - Hostname:', window.location.hostname);
+                console.log('  - useProxy:', window.airtableAPI?.useProxy);
+                
+                alert(`❌ Error al agregar personal: ${error.message}\n\n🔍 Detalles técnicos:\n• API disponible: ${!!window.airtableAPI}\n• Estado: ${window.airtableAPI?.connectionStatus}\n• Método: ${window.airtableAPI?.useProxy ? 'Proxy' : 'Directo'}\n\n💡 Intente:\n1. Verificar conexión a internet\n2. Refrescar la página\n3. Revisar configuración de Airtable`);
+                
+            } finally {
+                // Restaurar botón
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '💾 Guardar Personal';
+                }
+            }
+        }
+
+        function editPersonal(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const modal = document.getElementById('edit-personal-modal');
+            const content = document.getElementById('edit-personal-content');
+            
+            content.innerHTML = `
+                <form id="edit-personal-form" onsubmit="handleEditPersonalForm(event, '${personalId}')">
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">👤 Nombre Completo</label>
+                        <input type="text" id="edit-personal-nombre" value="${personal.nombre}" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📧 Email</label>
+                        <input type="email" id="edit-personal-email" value="${personal.email}" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">⚙️ Especialidad</label>
+                        <input type="text" id="edit-personal-especialidad" value="${personal.especialidad || ''}" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">📊 Estado</label>
+                        <select id="edit-personal-estado" required style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="disponible" ${personal.estado === 'disponible' ? 'selected' : ''}>🟢 Disponible</option>
+                            <option value="ocupado" ${personal.estado === 'ocupado' ? 'selected' : ''}>🟡 Ocupado</option>
+                            <option value="inactivo" ${personal.estado === 'inactivo' ? 'selected' : ''}>🔴 Inactivo</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">📋 Información Actual</h5>
+                        <p style="color: #1e3a8a; font-size: 0.875rem; margin: 0;">
+                            <strong>Área:</strong> ${personal.area}<br>
+                            <strong>Tipo:</strong> ${personal.tipo}<br>
+                            <strong>ID:</strong> ${personal.id}
+                        </p>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 120px;">
+                            💾 Actualizar
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditPersonalModal()" style="min-width: 100px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeEditPersonalModal() {
+            document.getElementById('edit-personal-modal').classList.remove('show');
+        }
+
+        async function handleEditPersonalForm(event, personalId) {
+            event.preventDefault();
+            
+            const updateData = {
+                nombre: document.getElementById('edit-personal-nombre').value.trim(),
+                email: document.getElementById('edit-personal-email').value.trim(),
+                especialidad: document.getElementById('edit-personal-especialidad').value.trim(),
+                estado: document.getElementById('edit-personal-estado').value
+            };
+
+            try {
+                // Mostrar loading
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Actualizando...';
+
+                // Actualizar en Airtable
+                await window.airtableAPI.updateTecnico(personalId, updateData);
+                
+                // Actualizar en lista local
+                const personalIndex = cloudTecnicos.findIndex(p => p.id === personalId);
+                if (personalIndex !== -1) {
+                    cloudTecnicos[personalIndex] = { ...cloudTecnicos[personalIndex], ...updateData };
+                }
+
+                // Actualizar displays
+                updateTechniciansList();
+                updateAllCounters();
+                
+                // Cerrar modal y mostrar éxito
+                closeEditPersonalModal();
+                
+                alert(`✅ Personal actualizado exitosamente\n\n👤 ${updateData.nombre}\n📊 Estado: ${updateData.estado}\n\n🌐 Sincronizado con Airtable`);
+
+            } catch (error) {
+                console.error('❌ Error actualizando personal:', error);
+                alert('❌ Error al actualizar personal: ' + error.message);
+            } finally {
+                // Restaurar botón
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+
+        async function togglePersonalStatus(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const newStatus = personal.estado === 'disponible' ? 'ocupado' : 'disponible';
+            const action = newStatus === 'ocupado' ? 'ocupar' : 'liberar';
+            
+            const confirmed = confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} a ${personal.nombre}?\n\nCambiará de "${personal.estado}" a "${newStatus}"`);
+            if (!confirmed) return;
+
+            try {
+                // Actualizar en Airtable
+                await window.airtableAPI.updateTecnico(personalId, { estado: newStatus });
+                
+                // Actualizar localmente
+                personal.estado = newStatus;
+                
+                // Actualizar displays
+                updateTechniciansList();
+                updateAllCounters();
+                
+                alert(`✅ Estado actualizado\n\n👤 ${personal.nombre}\n📊 Nuevo estado: ${newStatus}`);
+
+            } catch (error) {
+                console.error('❌ Error cambiando estado:', error);
+                alert('❌ Error al cambiar estado: ' + error.message);
+            }
+        }
+
+        function viewPersonalDetails(personalId) {
+            const personal = cloudTecnicos.find(p => p.id === personalId);
+            if (!personal) {
+                alert('❌ Personal no encontrado');
+                return;
+            }
+
+            const areas = {
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'MECANICA': 'Mecánica',
+                'INFRAESTRUCTURA': 'Infraestructura'
+            };
+
+            const tipos = {
+                'ingeniero': 'Ingeniero',
+                'tecnico': 'Técnico', 
+                'auxiliar': 'Auxiliar'
+            };
+
+            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areas[personal.area] || personal.area}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}`);
+        }
+
+        function filterPersonal() {
+            updateTechniciansList();
+        }
+
+        function clearPersonalFilters() {
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-tipo').value = '';
+            updateTechniciansList();
+        }
+
+        function showPersonalStatistics() {
+            const total = cloudTecnicos.length;
+            const disponibles = cloudTecnicos.filter(p => p.estado === 'disponible').length;
+            const ocupados = cloudTecnicos.filter(p => p.estado === 'ocupado').length;
+            const inactivos = cloudTecnicos.filter(p => p.estado === 'inactivo').length;
+
+            const biomedica = cloudTecnicos.filter(p => p.area === 'INGENIERIA_BIOMEDICA').length;
+            const mecanica = cloudTecnicos.filter(p => p.area === 'MECANICA').length;
+            const infraestructura = cloudTecnicos.filter(p => p.area === 'INFRAESTRUCTURA').length;
+
+            const ingenieros = cloudTecnicos.filter(p => p.tipo === 'ingeniero').length;
+            const tecnicos = cloudTecnicos.filter(p => p.tipo === 'tecnico').length;
+            const auxiliares = cloudTecnicos.filter(p => p.tipo === 'auxiliar').length;
+
+            alert(`📊 ESTADÍSTICAS DE PERSONAL DE SOPORTE\n\n📋 TOTALES:\n• Total registrado: ${total}\n\n📊 POR ESTADO:\n• 🟢 Disponibles: ${disponibles}\n• 🟡 Ocupados: ${ocupados}\n• 🔴 Inactivos: ${inactivos}\n\n🏥 POR ÁREA:\n• Biomédica: ${biomedica}\n• Mecánica: ${mecanica}\n• Infraestructura: ${infraestructura}\n\n👨‍💼 POR TIPO:\n• 🎓 Ingenieros: ${ingenieros}\n• 🔧 Técnicos: ${tecnicos}\n• 🛠️ Auxiliares: ${auxiliares}\n\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+        }
+
+        async function debugPersonalConnection() {
+            console.log('🔧 INICIANDO DEBUG DE PERSONAL DE SOPORTE');
+            
+            try {
+                const results = {
+                    general: {},
+                    tecnicosTable: {},
+                    currentData: {}
+                };
+
+                // Test general de conexión
+                console.log('1. 🧪 Test general de conexión...');
+                results.general.connected = await window.airtableAPI.testConnection();
+                results.general.status = window.airtableAPI.connectionStatus;
+                results.general.useProxy = window.airtableAPI.useProxy;
+                results.general.hostname = window.location.hostname;
+
+                // Test específico de tabla Tecnicos
+                console.log('2. 🧪 Test específico de tabla Tecnicos...');
+                results.tecnicosTable = await window.airtableAPI.testTecnicosTable();
+
+                // Información de datos actuales
+                console.log('3. 📊 Revisando datos actuales...');
+                results.currentData.localCount = cloudTecnicos.length;
+                results.currentData.isConnectedVar = isConnectedToAirtable;
+                results.currentData.lastSync = new Date().toISOString();
+
+                // Intentar cargar técnicos desde Airtable
+                console.log('4. 📋 Intentando cargar técnicos...');
+                try {
+                    const remoteTecnicos = await window.airtableAPI.getTecnicos();
+                    results.currentData.remoteCount = remoteTecnicos.length;
+                    results.currentData.loadSuccess = true;
+                } catch (loadError) {
+                    results.currentData.loadError = loadError.message;
+                    results.currentData.loadSuccess = false;
+                }
+
+                console.log('📋 RESULTADOS DEL DEBUG:', results);
+
+                // Mostrar resultados
+                let message = `🔧 DEBUG DE PERSONAL DE SOPORTE\n\n`;
+                message += `🌐 CONEXIÓN GENERAL:\n`;
+                message += `• Estado: ${results.general.connected ? '✅ Conectado' : '❌ Desconectado'}\n`;
+                message += `• Status API: ${results.general.status}\n`;
+                message += `• Método: ${results.general.useProxy ? 'Proxy Netlify' : 'Directo'}\n`;
+                message += `• Hostname: ${results.general.hostname}\n\n`;
+
+                message += `🔧 TABLA TECNICOS:\n`;
+                if (results.tecnicosTable.success) {
+                    message += `• Test: ✅ Exitoso\n`;
+                    message += `• Records: ${results.tecnicosTable.records} encontrados\n`;
+                } else {
+                    message += `• Test: ❌ Falló\n`;
+                    message += `• Error: ${results.tecnicosTable.error}\n`;
+                    if (results.tecnicosTable.status) {
+                        message += `• Status HTTP: ${results.tecnicosTable.status}\n`;
+                    }
+                }
+
+                message += `\n📊 DATOS ACTUALES:\n`;
+                message += `• Local: ${results.currentData.localCount} registros\n`;
+                message += `• Variable conexión: ${results.currentData.isConnectedVar ? '✅' : '❌'}\n`;
+                if (results.currentData.loadSuccess) {
+                    message += `• Remoto: ${results.currentData.remoteCount} registros\n`;
+                    message += `• Carga: ✅ Exitosa\n`;
+                } else {
+                    message += `• Carga: ❌ Falló\n`;
+                    message += `• Error: ${results.currentData.loadError}\n`;
+                }
+
+                message += `\n🕐 ${new Date().toLocaleTimeString('es-CO')}`;
+
+                alert(message);
+
+                // Si hay problemas, intentar soluciones
+                if (!results.tecnicosTable.success) {
+                    const retry = confirm(`❌ Se detectaron problemas con la tabla Tecnicos.\n\n¿Desea intentar:\n1. Refrescar conexión\n2. Recargar datos\n3. Verificar configuración?`);
+                    
+                    if (retry) {
+                        await attemptPersonalFix();
+                    }
+                }
+
+            } catch (error) {
+                console.error('❌ Error en debug:', error);
+                alert(`❌ Error durante debug: ${error.message}\n\nRevise la consola para más detalles.`);
+            }
+        }
+
+        async function attemptPersonalFix() {
+            try {
+                console.log('🔧 Intentando corregir problemas de personal...');
+                
+                // 1. Reconectar
+                updateConnectionStatus('connecting', 'Intentando reconectar...');
+                
+                // 2. Test de tabla específica
+                const tableTest = await window.airtableAPI.testTecnicosTable();
+                
+                if (tableTest.success) {
+                    // 3. Recargar datos
+                    await syncTechniciansWithCloud();
+                    updateConnectionStatus('connected', 'Reconectado exitosamente');
+                    alert('✅ Problemas corregidos\n\nConexión restablecida y datos sincronizados.');
+                } else {
+                    updateConnectionStatus('disconnected', 'Error persistente');
+                    alert(`❌ No se pudo corregir automáticamente\n\nError: ${tableTest.error}\n\n💡 Posibles soluciones:\n1. Verificar que existe la tabla "Tecnicos" en Airtable\n2. Revisar permisos de API\n3. Verificar configuración de campos`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en intento de corrección:', error);
+                alert(`❌ Error durante corrección: ${error.message}`);
+            }
+        }
+
+        function updateAccessRequestsList() {
+            const container = document.getElementById('access-requests-container');
+            
+            if (cloudSolicitudesAcceso.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🔐</div>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes de acceso</h3>
+                        <p>Las solicitudes aparecerán aquí cuando los usuarios las envíen desde el Portal de Solicitudes</p>
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: #f0f9ff; border-radius: 0.5rem; border: 1px solid #0ea5e9;">
+                            <h4 style="color: #0369a1; margin-bottom: 0.5rem;">💡 ¿Cómo funciona?</h4>
+                            <p style="color: #0c4a6e; font-size: 0.875rem;">
+                                1. Los usuarios llenan el formulario de solicitud de acceso en el Portal de Solicitudes<br>
+                                2. Las solicitudes aparecen aquí automáticamente<br>
+                                3. Al aprobar, se genera un código de 4 dígitos único<br>
+                                4. El usuario puede ingresar con email + código al Portal de Solicitudes
+                            </p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Agrupar por estado
+                const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
+                const aprobadas = cloudSolicitudesAcceso.filter(s => s.estado === 'APROBADA');
+                const rechazadas = cloudSolicitudesAcceso.filter(s => s.estado === 'RECHAZADA');
+
+                let html = `
+                    <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudesAcceso.length} Solicitudes de Acceso desde Airtable</h4>
+                        <p style="color: #047857; font-size: 0.875rem;">
+                            📊 Pendientes: ${pendientes.length} | Aprobadas: ${aprobadas.length} | Rechazadas: ${rechazadas.length}
+                        </p>
+                    </div>
+                `;
+
+                // Mostrar pendientes primero
+                if (pendientes.length > 0) {
+                    html += '<h3 style="color: #f59e0b; margin: 1.5rem 0 1rem 0;">⏳ Solicitudes Pendientes</h3>';
+                    pendientes.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'pending');
+                    });
+                }
+
+                // Mostrar aprobadas
+                if (aprobadas.length > 0) {
+                    html += '<h3 style="color: #059669; margin: 1.5rem 0 1rem 0;">✅ Solicitudes Aprobadas</h3>';
+                    aprobadas.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'approved');
+                    });
+                }
+
+                // Mostrar rechazadas
+                if (rechazadas.length > 0) {
+                    html += '<h3 style="color: #ef4444; margin: 1.5rem 0 1rem 0;">❌ Solicitudes Rechazadas</h3>';
+                    rechazadas.forEach(solicitud => {
+                        html += createAccessRequestCard(solicitud, 'rejected');
+                    });
+                }
+
+                container.innerHTML = html;
+            }
+        }
+
+        function createAccessRequestCard(solicitud, status) {
+            const statusMap = {
+                'pending': { class: 'pending', label: 'PENDIENTE', style: 'status-pendiente' },
+                'approved': { class: 'approved', label: 'APROBADA', style: 'status-aprobada' },
+                'rejected': { class: 'rejected', label: 'RECHAZADA', style: 'status-rechazada' }
+            };
+
+            const statusInfo = statusMap[status] || statusMap['pending'];
+            
+            // Buscar usuario creado si está aprobada
+            let userInfo = '';
+            if (status === 'approved') {
+                const user = cloudUsuarios.find(u => u.solicitudOrigenId === solicitud.id);
+                if (user) {
+                    userInfo = `
+                        <div style="background: #dcfce7; padding: 0.75rem; border-radius: 0.5rem; margin-top: 1rem;">
+                            <h5 style="color: #166534; margin-bottom: 0.5rem;">👤 Usuario Creado</h5>
+                            <p style="color: #047857; font-size: 0.875rem; margin: 0;">
+                                <strong>Código de Acceso:</strong> ${user.codigoAcceso || 'No disponible'}<br>
+                                <strong>Estado:</strong> ${user.estado || 'ACTIVO'}<br>
+                                <strong>Fecha:</strong> ${user.fechaCreacion ? new Date(user.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}
+                            </p>
+                        </div>
+                    `;
+                }
+            }
+
+            return `
+                <div class="access-request-card ${statusInfo.class}">
+                    <div class="request-header">
+                        <span class="request-name">${solicitud.nombreCompleto || 'Sin nombre'}</span>
+                        <span class="${statusInfo.style}">${statusInfo.label}</span>
+                    </div>
+                    
+                    <div class="request-details">
+                        <div class="request-detail">
+                            <div class="request-detail-label">📧 Email</div>
+                            <div class="request-detail-value">${solicitud.email || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🏥 Servicio</div>
+                            <div class="request-detail-value">${getServiceName(solicitud.servicioHospitalario)}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">💼 Cargo</div>
+                            <div class="request-detail-value">${getPositionName(solicitud.cargo)}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📱 Teléfono</div>
+                            <div class="request-detail-value">${solicitud.telefono || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📅 Fecha Solicitud</div>
+                            <div class="request-detail-value">${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🆔 ID Solicitud</div>
+                            <div class="request-detail-value">${solicitud.id || 'No disponible'}</div>
+                        </div>
+                    </div>
+
+                    ${solicitud.justificacion ? `
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                            <div class="request-detail-label">📝 Justificación</div>
+                            <div style="margin-top: 0.5rem; color: #1f2937;">${solicitud.justificacion}</div>
+                        </div>
+                    ` : ''}
+
+                    ${userInfo}
+
+                    ${status === 'pending' ? `
+                        <div class="request-actions">
+                            <button class="btn btn-success" onclick="approveAccessRequest('${solicitud.id}')">
+                                ✅ Aprobar y Generar Código
+                            </button>
+                            <button class="btn btn-danger" onclick="rejectAccessRequest('${solicitud.id}')">
+                                ❌ Rechazar
+                            </button>
+                            <button class="btn btn-warning" onclick="viewRequestDetails('${solicitud.id}')">
+                                👁️ Ver Detalles
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function getServiceName(service) {
+            const services = {
+                'URGENCIAS_ADULTO': 'Urgencias Adulto',
+                'URGENCIAS_PEDIATRICAS': 'Urgencias Pediátricas',
+                'UCI_ADULTO': 'UCI Adulto',
+                'UCI_NEONATAL': 'UCI Neonatal',
+                'HOSPITALIZACION_ADULTO': 'Hospitalización Adulto',
+                'CIRUGIA_ADULTO': 'Cirugía Adulto',
+                'CONSULTA_EXTERNA': 'Consulta Externa',
+                'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+                'RADIOLOGIA': 'Radiología',
+                'FARMACIA_CENTRAL': 'Farmacia Central',
+                'FISIOTERAPIA': 'Fisioterapia',
+                'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+                'INFRAESTRUCTURA': 'Infraestructura',
+                'MECANICOS': 'Mecánicos'
+            };
+            return services[service] || service || 'No especificado';
+        }
+
+        function getPositionName(position) {
+            const positions = {
+                'JEFE_SERVICIO': 'Jefe de Servicio',
+                'COORDINADOR': 'Coordinador',
+                'ENFERMERA_JEFE': 'Enfermera Jefe',
+                'MEDICO_ESPECIALISTA': 'Médico Especialista',
+                'AUXILIAR_ENFERMERIA': 'Auxiliar de Enfermería',
+                'ADMINISTRATIVO': 'Personal Administrativo'
+            };
+            return positions[position] || position || 'No especificado';
+        }
+
+        // 🎯 Funciones de gestión de accesos
+        async function approveAccessRequest(requestId) {
+            console.log('✅ Iniciando aprobación de solicitud:', requestId);
+            
+            try {
+                // Buscar la solicitud
+                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+                if (!solicitud) {
+                    alert('❌ Error: Solicitud no encontrada');
+                    return;
+                }
+
+                // Mostrar modal de confirmación
+                showApprovalModal(solicitud);
+
+            } catch (error) {
+                console.error('❌ Error iniciando aprobación:', error);
+                alert('❌ Error al procesar la solicitud: ' + error.message);
+            }
+        }
+
+        function showApprovalModal(solicitud) {
+            const modal = document.getElementById('approval-modal');
+            const content = document.getElementById('approval-modal-content');
+            
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h4 style="color: #1f2937; margin-bottom: 0.5rem;">Aprobar Solicitud de Acceso</h4>
+                    <p style="color: #6b7280;">Se generará automáticamente un código de 4 dígitos para el usuario</p>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1f2937; margin-bottom: 0.75rem;">📋 Datos del Solicitante</h5>
+                    <p><strong>Nombre:</strong> ${solicitud.nombreCompleto}</p>
+                    <p><strong>Email:</strong> ${solicitud.email}</p>
+                    <p><strong>Servicio:</strong> ${getServiceName(solicitud.servicioHospitalario)}</p>
+                    <p><strong>Cargo:</strong> ${getPositionName(solicitud.cargo)}</p>
+                </div>
+
+                <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #166534; margin-bottom: 0.75rem;">🔐 Al aprobar esta solicitud:</h5>
+                    <ul style="color: #047857; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>✅ Se generará un código de acceso único de 4 dígitos</li>
+                        <li>👤 Se creará el usuario en la base de datos</li>
+                        <li>📧 El usuario podrá ingresar con email + código</li>
+                        <li>🌐 Todo se sincronizará automáticamente con Airtable</li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button class="btn btn-success" onclick="confirmApproveRequest('${solicitud.id}')" style="min-width: 150px;">
+                        ✅ Confirmar Aprobación
+                    </button>
+                    <button class="btn btn-warning" onclick="closeApprovalModal()" style="min-width: 120px;">
+                        ↩️ Cancelar
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        async function confirmApproveRequest(requestId) {
+            console.log('🚀 Confirmando aprobación de solicitud:', requestId);
+            
+            try {
+                // Cerrar modal de confirmación
+                closeApprovalModal();
+                
+                // Mostrar indicador de carga
+                showLoadingResult('⏳ Procesando aprobación...', 'Generando código de acceso y creando usuario...');
+                
+                // Llamar al método de aprobación
+                const result = await window.airtableAPI.approveAccessRequestAndCreateUser(requestId);
+                
+                if (result.success) {
+                    // Actualizar datos locales
+                    await refreshAccessFromCloud();
+                    
+                    // Mostrar resultado exitoso
+                    showSuccessResult(result, requestId);
+                } else {
+                    throw new Error('La aprobación no fue exitosa');
+                }
+
+            } catch (error) {
+                console.error('❌ Error en confirmación de aprobación:', error);
+                showErrorResult(error.message);
+            }
+        }
+
+        function showLoadingResult(title, message) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = title;
+            content.innerHTML = `
+                <div style="text-align: center; padding: 2rem;">
+                    <div class="loading-spinner" style="width: 3rem; height: 3rem; border-width: 4px; margin: 0 auto 1rem;"></div>
+                    <p style="color: #6b7280; font-size: 1rem;">${message}</p>
+                    <p style="color: #9ca3af; font-size: 0.875rem; margin-top: 0.5rem;">Por favor espere...</p>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function showSuccessResult(result, requestId) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = '🎉 ¡Aprobación Exitosa!';
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">🎉</div>
+                    <h4 style="color: #059669; margin-bottom: 0.5rem;">Usuario creado exitosamente</h4>
+                </div>
+                
+                <div style="background: #dcfce7; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #166534; margin-bottom: 1rem;">👤 Datos del Usuario Creado</h5>
+                    <div style="display: grid; gap: 0.5rem; font-size: 0.875rem;">
+                        <p><strong>Nombre:</strong> ${result.user.nombreCompleto}</p>
+                        <p><strong>Email:</strong> ${result.user.email}</p>
+                        <p><strong>Servicio:</strong> ${getServiceName(result.user.servicioHospitalario)}</p>
+                        <p><strong>Estado:</strong> ${result.user.estado}</p>
+                    </div>
+                </div>
+
+                <div style="background: #fef3c7; padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 1.5rem; text-align: center;">
+                    <h5 style="color: #d97706; margin-bottom: 1rem;">🔐 Código de Acceso Generado</h5>
+                    <div style="font-size: 2rem; font-weight: bold; color: #b45309; letter-spacing: 0.5rem; background: white; padding: 1rem; border-radius: 0.5rem; border: 2px solid #f59e0b;">
+                        ${result.accessCode}
+                    </div>
+                    <p style="color: #92400e; font-size: 0.875rem; margin-top: 0.75rem;">
+                        El usuario podrá ingresar al Portal de Solicitudes con su email y este código
+                    </p>
+                </div>
+
+                <div style="background: #eff6ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1e40af; margin-bottom: 0.75rem;">📱 Instrucciones para el Usuario</h5>
+                    <ol style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>Ir al Portal de Solicitudes</li>
+                        <li>Hacer clic en "Iniciar Sesión"</li>
+                        <li>Ingresar email: <strong>${result.user.email}</strong></li>
+                        <li>Ingresar código: <strong>${result.accessCode}</strong></li>
+                        <li>¡Ya puede usar el sistema!</li>
+                    </ol>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-success" onclick="closeResultModal()" style="min-width: 150px;">
+                        ✅ Entendido
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function showErrorResult(errorMessage) {
+            const modal = document.getElementById('result-modal');
+            const titleEl = document.getElementById('result-modal-title');
+            const content = document.getElementById('result-modal-content');
+            
+            titleEl.textContent = '❌ Error en Aprobación';
+            content.innerHTML = `
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="font-size: 4rem; margin-bottom: 1rem;">❌</div>
+                    <h4 style="color: #ef4444; margin-bottom: 0.5rem;">No se pudo completar la aprobación</h4>
+                </div>
+                
+                <div style="background: #fee2e2; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #dc2626; margin-bottom: 0.5rem;">📋 Detalles del Error</h5>
+                    <p style="color: #b91c1c; font-size: 0.875rem;">${errorMessage}</p>
+                </div>
+
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #1e40af; margin-bottom: 0.75rem;">🔧 Posibles Soluciones</h5>
+                    <ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>Verificar conexión a internet</li>
+                        <li>Refrescar la página y volver a intentar</li>
+                        <li>Verificar que la solicitud aún esté pendiente</li>
+                        <li>Contactar al administrador del sistema</li>
+                    </ul>
+                </div>
+
+                <div style="text-align: center;">
+                    <button class="btn btn-danger" onclick="closeResultModal()" style="min-width: 120px;">
+                        ↩️ Cerrar
+                    </button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        async function rejectAccessRequest(requestId) {
+            const confirmed = confirm('❌ ¿Está seguro que desea rechazar esta solicitud?\n\nEsta acción no se puede deshacer.');
+            if (!confirmed) return;
+
+            try {
+                await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                    estado: 'RECHAZADA',
+                    fechaRechazo: new Date().toISOString()
+                });
+
+                await refreshAccessFromCloud();
+                alert('❌ Solicitud rechazada correctamente');
+
+            } catch (error) {
+                console.error('❌ Error rechazando solicitud:', error);
+                alert('❌ Error al rechazar la solicitud: ' + error.message);
+            }
+        }
+
+        function viewRequestDetails(requestId) {
+            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+            if (!solicitud) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            alert(`📋 DETALLES DE LA SOLICITUD\n\n👤 Nombre: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n🏥 Servicio: ${getServiceName(solicitud.servicioHospitalario)}\n💼 Cargo: ${getPositionName(solicitud.cargo)}\n📱 Teléfono: ${solicitud.telefono || 'No especificado'}\n📅 Fecha: ${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}\n📝 Justificación: ${solicitud.justificacion || 'No especificada'}\n🆔 ID: ${solicitud.id}`);
+        }
+
+        async function approveAllPending() {
+            const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
+            
+            if (pendientes.length === 0) {
+                alert('ℹ️ No hay solicitudes pendientes para aprobar');
+                return;
+            }
+
+            const confirmed = confirm(`✅ ¿Aprobar todas las ${pendientes.length} solicitudes pendientes?\n\nSe generarán códigos automáticamente para todos los usuarios.`);
+            if (!confirmed) return;
+
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const solicitud of pendientes) {
+                    try {
+                        await window.airtableAPI.approveAccessRequestAndCreateUser(solicitud.id);
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Error aprobando ${solicitud.id}:`, error);
+                        errorCount++;
+                    }
+                }
+
+                await refreshAccessFromCloud();
+                alert(`📊 RESULTADO DE APROBACIÓN MASIVA\n\n✅ Exitosas: ${successCount}\n❌ Errores: ${errorCount}\n📋 Total procesadas: ${pendientes.length}`);
+
+            } catch (error) {
+                console.error('❌ Error en aprobación masiva:', error);
+                alert('❌ Error en aprobación masiva: ' + error.message);
+            }
+        }
+
+        // Funciones de modal
+        function closeApprovalModal() {
+            document.getElementById('approval-modal').classList.remove('show');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.remove('show');
+        }
+
+        // 🎯 Otras funciones existentes
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewName + '-view').classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            
+            // Cargar datos específicos de la vista
+            switch(viewName) {
+                case 'solicitudes':
+                    updateSolicitudesList();
+                    break;
+                case 'personal':
+                    updateTechniciansList();
+                    break;
+                case 'accesos':
+                    updateAccessRequestsList();
+                    break;
+            }
+        }
+
+        function showNotifications() {
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
+            const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
+            
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
+        }
+
+        // Funciones placeholder para mantener compatibilidad
+        function filterByArea(area) {
+            console.log('Filtrar por área:', area);
+        }
+
+        function filterByStatus(status) {
+            console.log('Filtrar por estado:', status);
+        }
+
+        function autoAssignPending() {
+            alert('🤖 Función de auto-asignación en desarrollo');
+        }
+
+        function showAddTechnicianModal() {
+            showAddPersonalModal();
+        }
+
+        // 🚀 Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia');
+            
+            // Cerrar modales al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+            
+            // Event listener para formulario de agregar personal
+            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
+            
+            // Esperar a que airtable-config.js se cargue
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                    loadDataFromLocalStorage();
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
