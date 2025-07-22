@@ -2858,37 +2858,58 @@
             try {
                 console.log('✅ Aprobando solicitud:', requestId);
                 
-                // Usar la función user-management de Netlify
-                const response = await fetch('/.netlify/functions/user-management?operation=approve-request&requestId=' + requestId, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        approvedBy: 'Portal de Gestión',
-                        approvedAt: new Date().toISOString()
-                    })
+                // Encontrar la solicitud
+                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+                if (!solicitud) {
+                    throw new Error('Solicitud no encontrada');
+                }
+
+                // Generar código de acceso de 4 dígitos
+                const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                // Actualizar solicitud a APROBADA
+                await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                    estado: 'APROBADA',
+                    fechaAprobacion: new Date().toISOString(),
+                    aprobadoPor: 'Portal de Gestión'
                 });
 
-                const result = await response.json();
+                // Crear usuario en la tabla de Usuarios
+                const nuevoUsuario = {
+                    nombreCompleto: solicitud.nombreCompleto,
+                    email: solicitud.email,
+                    telefono: solicitud.telefono,
+                    servicioHospitalario: solicitud.servicioHospitalario,
+                    cargo: solicitud.cargo,
+                    codigoAcceso: codigoAcceso,
+                    estado: 'ACTIVO',
+                    fechaCreacion: new Date().toISOString(),
+                    creadoDesdeSolicitud: requestId
+                };
 
-                if (result.success) {
-                    // Mostrar resultado exitoso
-                    showSuccessResult(
-                        '✅ Solicitud Aprobada Exitosamente',
-                        `🎉 Usuario creado correctamente\n\n` +
-                        `👤 Nombre: ${result.user.nombreCompleto}\n` +
-                        `📧 Email: ${result.user.email}\n` +
-                        `🔢 Código generado: ${result.accessCode}\n` +
-                        `🏥 Servicio: ${getServiceName(result.user.servicioHospitalario)}\n\n` +
-                        `✅ El usuario ya puede acceder al Portal de Solicitudes con su email y código.`
-                    );
-
-                    // Recargar datos
-                    await loadAllDataFromCloud();
-                } else {
-                    throw new Error(result.error || 'Error desconocido');
+                const usuarioCreado = await window.airtableAPI.createUsuario(nuevoUsuario);
+                
+                // Actualizar solicitud con referencia al usuario creado
+                if (usuarioCreado && usuarioCreado.id) {
+                    await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                        usuarioCreado: usuarioCreado.id
+                    });
                 }
+
+                // Mostrar resultado exitoso
+                showSuccessResult(
+                    '✅ Solicitud Aprobada Exitosamente',
+                    `🎉 Usuario creado correctamente\n\n` +
+                    `👤 Nombre: ${solicitud.nombreCompleto}\n` +
+                    `📧 Email: ${solicitud.email}\n` +
+                    `🔢 Código generado: ${codigoAcceso}\n` +
+                    `🏥 Servicio: ${getServiceName(solicitud.servicioHospitalario)}\n` +
+                    `💼 Cargo: ${solicitud.cargo || 'No especificado'}\n\n` +
+                    `✅ El usuario ya puede acceder al Portal de Solicitudes con su email y código.`
+                );
+
+                // Recargar datos
+                await loadAllDataFromCloud();
 
             } catch (error) {
                 console.error('❌ Error aprobando solicitud:', error);
@@ -2918,6 +2939,417 @@
             } catch (error) {
                 console.error('❌ Error rechazando solicitud:', error);
                 alert('❌ Error al rechazar solicitud: ' + error.message);
+            }
+        }
+
+        // 🔄 FUNCIONES DE APROBACIÓN MASIVA
+        async function approveAllPending() {
+            const pendingRequests = accessRequests.filter(r => r.estado === 'PENDIENTE');
+            if (pendingRequests.length === 0) {
+                alert('No hay solicitudes pendientes para aprobar.');
+                return;
+            }
+            
+            if (!confirm(`¿Aprobar todas las ${pendingRequests.length} solicitudes pendientes?\n\nSe generarán códigos automáticamente para todos los usuarios.\n\n⚠️ Esta operación no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                const btn = event.target;
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = '⏳ Procesando...';
+                }
+
+                let exitosas = 0;
+                let errores = 0;
+                const resultados = [];
+
+                // Procesar cada solicitud pendiente
+                for (const solicitud of pendingRequests) {
+                    try {
+                        // Generar código único
+                        const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
+                        
+                        // Actualizar solicitud a APROBADA
+                        await window.airtableAPI.updateSolicitudAcceso(solicitud.id, {
+                            estado: 'APROBADA',
+                            fechaAprobacion: new Date().toISOString(),
+                            aprobadoPor: 'Portal de Gestión - Aprobación Masiva'
+                        });
+
+                        // Crear usuario
+                        const nuevoUsuario = {
+                            nombreCompleto: solicitud.nombreCompleto,
+                            email: solicitud.email,
+                            telefono: solicitud.telefono,
+                            servicioHospitalario: solicitud.servicioHospitalario,
+                            cargo: solicitud.cargo,
+                            codigoAcceso: codigoAcceso,
+                            estado: 'ACTIVO',
+                            fechaCreacion: new Date().toISOString(),
+                            creadoDesdeSolicitud: solicitud.id
+                        };
+
+                        const usuarioCreado = await window.airtableAPI.createUsuario(nuevoUsuario);
+                        
+                        if (usuarioCreado && usuarioCreado.id) {
+                            await window.airtableAPI.updateSolicitudAcceso(solicitud.id, {
+                                usuarioCreado: usuarioCreado.id
+                            });
+                        }
+
+                        resultados.push({
+                            nombre: solicitud.nombreCompleto,
+                            email: solicitud.email,
+                            codigo: codigoAcceso,
+                            exito: true
+                        });
+                        exitosas++;
+
+                    } catch (error) {
+                        console.error(`Error procesando ${solicitud.nombreCompleto}:`, error);
+                        resultados.push({
+                            nombre: solicitud.nombreCompleto,
+                            email: solicitud.email,
+                            error: error.message,
+                            exito: false
+                        });
+                        errores++;
+                    }
+
+                    // Pequeña pausa para no sobrecargar la API
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+
+                // Recargar datos
+                await loadAllDataFromCloud();
+
+                // Mostrar resultados
+                let mensaje = `🎉 APROBACIÓN MASIVA COMPLETADA\n\n`;
+                mensaje += `📊 Resumen:\n`;
+                mensaje += `✅ Exitosas: ${exitosas}\n`;
+                mensaje += `❌ Errores: ${errores}\n\n`;
+
+                if (exitosas > 0) {
+                    mensaje += `✅ USUARIOS APROBADOS:\n`;
+                    resultados.filter(r => r.exito).forEach(r => {
+                        mensaje += `• ${r.nombre} (${r.email}) - Código: ${r.codigo}\n`;
+                    });
+                }
+
+                if (errores > 0) {
+                    mensaje += `\n❌ ERRORES:\n`;
+                    resultados.filter(r => !r.exito).forEach(r => {
+                        mensaje += `• ${r.nombre} (${r.email}) - Error: ${r.error}\n`;
+                    });
+                }
+
+                showSuccessResult('🎉 Aprobación Masiva Completada', mensaje);
+
+            } catch (error) {
+                console.error('❌ Error en aprobación masiva:', error);
+                alert('❌ Error en aprobación masiva: ' + error.message);
+            } finally {
+                const btn = event.target;
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '✅ Aprobar Todas';
+                }
+            }
+        }
+
+        // 🎲 GENERAR CÓDIGO DE ACCESO MANUAL
+        async function generateNewAccessCode() {
+            const modalHtml = `
+                <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🎲 Generar Código de Acceso Manual</h4>
+                    <p style="color: #1e40af; font-size: 0.875rem;">
+                        Complete los datos para crear un usuario con código de acceso directo
+                    </p>
+                </div>
+
+                <form id="manual-code-form" onsubmit="createManualUser(event)">
+                    <div class="form-group">
+                        <label class="form-label">👤 Nombre Completo *</label>
+                        <input type="text" id="manual-nombre" class="form-input" required 
+                            placeholder="Nombre completo del usuario">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📧 Email *</label>
+                        <input type="email" id="manual-email" class="form-input" required 
+                            placeholder="email@hospital.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📱 Teléfono</label>
+                        <input type="tel" id="manual-telefono" class="form-input" 
+                            placeholder="Número de teléfono">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🏥 Servicio Hospitalario *</label>
+                        <select id="manual-servicio" class="form-select" required>
+                            <option value="">Seleccione servicio</option>
+                            <option value="URGENCIAS_ADULTO">Urgencias Adulto</option>
+                            <option value="URGENCIAS_PEDIATRICAS">Urgencias Pediátricas</option>
+                            <option value="UCI_ADULTO">UCI Adulto</option>
+                            <option value="UCI_NEONATAL">UCI Neonatal</option>
+                            <option value="HOSPITALIZACION_ADULTO">Hospitalización Adulto</option>
+                            <option value="CIRUGIA_ADULTO">Cirugía Adulto</option>
+                            <option value="CONSULTA_EXTERNA">Consulta Externa</option>
+                            <option value="LABORATORIO_CLINICO">Laboratorio Clínico</option>
+                            <option value="RADIOLOGIA">Radiología</option>
+                            <option value="FARMACIA_CENTRAL">Farmacia Central</option>
+                            <option value="FISIOTERAPIA">Fisioterapia</option>
+                            <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+                            <option value="INFRAESTRUCTURA">Infraestructura</option>
+                            <option value="MECANICOS">Mecánicos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">💼 Cargo</label>
+                        <input type="text" id="manual-cargo" class="form-input" 
+                            placeholder="Cargo o función">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🔢 Código de Acceso</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <input type="text" id="manual-codigo" class="form-input" 
+                                placeholder="4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                            <button type="button" class="btn btn-secondary" onclick="generateRandomCode()">
+                                🎲 Generar
+                            </button>
+                        </div>
+                        <small style="color: #6b7280; margin-top: 0.25rem; display: block;">
+                            Deje vacío para generar automáticamente
+                        </small>
+                    </div>
+
+                    <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                        <h5 style="color: #166534; margin-bottom: 0.5rem;">ℹ️ Información:</h5>
+                        <ul style="color: #047857; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                            <li>Se creará un usuario activo inmediatamente</li>
+                            <li>No se registrará como solicitud de acceso</li>
+                            <li>El código debe ser único en el sistema</li>
+                            <li>El usuario podrá acceder inmediatamente</li>
+                        </ul>
+                    </div>
+
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success" style="min-width: 150px;">
+                            🎲 Crear Usuario
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="closeManualCodeModal()" style="min-width: 120px;">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            const modal = document.getElementById('user-management-modal');
+            const content = document.getElementById('user-management-modal-content');
+            
+            content.innerHTML = modalHtml;
+            modal.classList.add('show');
+        }
+
+        function generateRandomCode() {
+            const codigo = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('manual-codigo').value = codigo;
+        }
+
+        async function createManualUser(event) {
+            event.preventDefault();
+            
+            const nombre = document.getElementById('manual-nombre').value.trim();
+            const email = document.getElementById('manual-email').value.trim();
+            const telefono = document.getElementById('manual-telefono').value.trim();
+            const servicio = document.getElementById('manual-servicio').value;
+            const cargo = document.getElementById('manual-cargo').value.trim();
+            let codigo = document.getElementById('manual-codigo').value.trim();
+            
+            if (!nombre || !email || !servicio) {
+                alert('❌ Por favor complete todos los campos obligatorios');
+                return;
+            }
+
+            // Generar código si no se especificó
+            if (!codigo) {
+                codigo = Math.floor(1000 + Math.random() * 9000).toString();
+            }
+
+            // Validar código
+            if (!/^\d{4}$/.test(codigo)) {
+                alert('❌ El código debe tener exactamente 4 dígitos');
+                return;
+            }
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Creando...';
+
+                // Verificar que el email no exista
+                const usuarioExistente = cloudUsuarios.find(u => u.email.toLowerCase() === email.toLowerCase());
+                if (usuarioExistente) {
+                    throw new Error('Ya existe un usuario con este email');
+                }
+
+                // Verificar que el código no exista
+                const codigoExistente = cloudUsuarios.find(u => u.codigoAcceso === codigo);
+                if (codigoExistente) {
+                    throw new Error('Ya existe un usuario con este código de acceso');
+                }
+
+                // Crear usuario
+                const nuevoUsuario = {
+                    nombreCompleto: nombre,
+                    email: email,
+                    telefono: telefono || '',
+                    servicioHospitalario: servicio,
+                    cargo: cargo || '',
+                    codigoAcceso: codigo,
+                    estado: 'ACTIVO',
+                    fechaCreacion: new Date().toISOString(),
+                    creadoManualmente: true,
+                    creadoPor: 'Portal de Gestión'
+                };
+
+                const usuarioCreado = await window.airtableAPI.createUsuario(nuevoUsuario);
+
+                if (usuarioCreado) {
+                    closeManualCodeModal();
+                    
+                    // Recargar datos
+                    await loadAllDataFromCloud();
+                    
+                    // Mostrar resultado
+                    showSuccessResult(
+                        '🎉 Usuario Creado Exitosamente',
+                        `✅ Usuario manual creado correctamente\n\n` +
+                        `👤 Nombre: ${nombre}\n` +
+                        `📧 Email: ${email}\n` +
+                        `🔢 Código: ${codigo}\n` +
+                        `🏥 Servicio: ${getServiceName(servicio)}\n` +
+                        `💼 Cargo: ${cargo || 'No especificado'}\n\n` +
+                        `✅ El usuario ya puede acceder al Portal de Solicitudes.`
+                    );
+                } else {
+                    throw new Error('No se pudo crear el usuario');
+                }
+
+            } catch (error) {
+                console.error('❌ Error creando usuario manual:', error);
+                alert('❌ Error al crear usuario: ' + error.message);
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🎲 Crear Usuario';
+                }
+            }
+        }
+
+        function closeManualCodeModal() {
+            document.getElementById('user-management-modal').classList.remove('show');
+        }
+
+        // 🔄 REGENERAR CÓDIGO DE USUARIO
+        async function regenerateUserCode(userId) {
+            const usuario = cloudUsuarios.find(u => u.id === userId);
+            if (!usuario) {
+                alert('❌ Usuario no encontrado');
+                return;
+            }
+
+            if (!confirm(`¿Regenerar código de acceso para ${usuario.nombreCompleto}?\n\nEl código actual (${usuario.codigoAcceso}) quedará inválido.\n\n⚠️ Esta operación no se puede deshacer.`)) {
+                return;
+            }
+
+            try {
+                // Generar nuevo código único
+                let nuevoCodigo;
+                let intentos = 0;
+                do {
+                    nuevoCodigo = Math.floor(1000 + Math.random() * 9000).toString();
+                    intentos++;
+                    
+                    // Evitar bucle infinito
+                    if (intentos > 100) {
+                        throw new Error('No se pudo generar un código único');
+                    }
+                } while (cloudUsuarios.find(u => u.codigoAcceso === nuevoCodigo && u.id !== userId));
+
+                // Actualizar usuario
+                await window.airtableAPI.updateUsuario(userId, {
+                    codigoAcceso: nuevoCodigo,
+                    fechaActualizacionCodigo: new Date().toISOString(),
+                    codigoAnterior: usuario.codigoAcceso
+                });
+
+                // Recargar datos
+                await loadAllDataFromCloud();
+
+                // Mostrar resultado
+                showSuccessResult(
+                    '🔄 Código Regenerado Exitosamente',
+                    `✅ Nuevo código generado para ${usuario.nombreCompleto}\n\n` +
+                    `📧 Email: ${usuario.email}\n` +
+                    `🔢 Código anterior: ${usuario.codigoAcceso}\n` +
+                    `🔢 Código nuevo: ${nuevoCodigo}\n` +
+                    `📅 Actualizado: ${new Date().toLocaleString('es-CO')}\n\n` +
+                    `✅ El usuario debe usar el nuevo código para acceder.`
+                );
+
+            } catch (error) {
+                console.error('❌ Error regenerando código:', error);
+                alert('❌ Error al regenerar código: ' + error.message);
+            }
+        }
+
+        // 🚫 DESACTIVAR USUARIO
+        async function deactivateUser(userId) {
+            const usuario = cloudUsuarios.find(u => u.id === userId);
+            if (!usuario) {
+                alert('❌ Usuario no encontrado');
+                return;
+            }
+
+            const motivo = prompt(`¿Por qué desactivar a ${usuario.nombreCompleto}?\n\nIngrese el motivo (opcional):`);
+            if (motivo === null) return; // Usuario canceló
+
+            if (!confirm(`¿Confirmar desactivación de ${usuario.nombreCompleto}?\n\n📧 Email: ${usuario.email}\n🔢 Código: ${usuario.codigoAcceso}\n\n⚠️ No podrá acceder al sistema hasta ser reactivado.`)) {
+                return;
+            }
+
+            try {
+                // Actualizar usuario a INACTIVO
+                await window.airtableAPI.updateUsuario(userId, {
+                    estado: 'INACTIVO',
+                    fechaDesactivacion: new Date().toISOString(),
+                    motivoDesactivacion: motivo || 'Desactivado desde Portal de Gestión',
+                    desactivadoPor: 'Portal de Gestión'
+                });
+
+                // Recargar datos
+                await loadAllDataFromCloud();
+
+                // Mostrar resultado
+                alert(`✅ Usuario desactivado exitosamente\n\n` +
+                    `👤 Usuario: ${usuario.nombreCompleto}\n` +
+                    `📧 Email: ${usuario.email}\n` +
+                    `📅 Desactivado: ${new Date().toLocaleString('es-CO')}\n` +
+                    `📝 Motivo: ${motivo || 'No especificado'}\n\n` +
+                    `⚠️ El usuario no podrá acceder al sistema.`
+                );
+
+            } catch (error) {
+                console.error('❌ Error desactivando usuario:', error);
+                alert('❌ Error al desactivar usuario: ' + error.message);
             }
         }
 
@@ -2992,19 +3424,6 @@
             }
         }
 
-        function approveAllPending() {
-            const pendingCount = accessRequests.filter(r => r.estado === 'PENDIENTE').length;
-            if (pendingCount === 0) {
-                alert('No hay solicitudes pendientes para aprobar.');
-                return;
-            }
-            
-            if (confirm(`¿Aprobar todas las ${pendingCount} solicitudes pendientes?\n\nSe generarán códigos automáticamente para todos los usuarios.`)) {
-                // TODO: Implementar aprobación masiva
-                alert('Función en desarrollo: Aprobación masiva de solicitudes');
-            }
-        }
-
         function bulkApprovalModal() {
             alert('Función en desarrollo: Modal de aprobación por lotes con criterios específicos');
         }
@@ -3028,31 +3447,10 @@
             loadAllDataFromCloud();
         }
 
-        function generateNewAccessCode() {
-            if (confirm('¿Generar un código de acceso manual?\n\nEsto creará un código único de 4 dígitos.')) {
-                // TODO: Implementar generación manual de código
-                alert('Función en desarrollo: Generación manual de códigos de acceso');
-            }
-        }
-
         function exportUsersData() {
             if (confirm('¿Exportar datos de usuarios?\n\nSe generará un archivo con la información de todos los usuarios activos.')) {
                 // TODO: Implementar exportación de datos
                 alert('Función en desarrollo: Exportación de datos de usuarios');
-            }
-        }
-
-        function regenerateUserCode(userId) {
-            if (confirm('¿Regenerar código de acceso para este usuario?\n\nEl código actual quedará inválido.')) {
-                // TODO: Implementar regeneración de código
-                alert('Función en desarrollo: Regeneración de código de usuario');
-            }
-        }
-
-        function deactivateUser(userId) {
-            if (confirm('¿Desactivar este usuario?\n\nNo podrá acceder al sistema hasta ser reactivado.')) {
-                // TODO: Implementar desactivación de usuario
-                alert('Función en desarrollo: Desactivación de usuario');
             }
         }
 
@@ -3154,6 +3552,3 @@
         }
 
         console.log('✅ Portal de Gestión Completo con Accesos cargado correctamente');
-    </script>
-</body>
-</html>
