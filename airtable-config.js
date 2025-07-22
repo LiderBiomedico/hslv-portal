@@ -1,5 +1,5 @@
-// 🌐 CONFIGURACIÓN COMPLETA DE AIRTABLE - VERSIÓN FINAL CORREGIDA
-// airtable-config.js - Con método getStatus y todas las funciones
+// 🌐 CONFIGURACIÓN CORREGIDA DE AIRTABLE - VERSIÓN CON DETECCIÓN AUTOMÁTICA
+// airtable-config.js - Solución Error 404
 
 class AirtableAPI {
     constructor() {
@@ -10,29 +10,113 @@ class AirtableAPI {
         this.requestCount = 0;
         this.isConnected = false;
         
-        // Mapeo de tablas
+        // 🔧 MAPEO DE TABLAS CON DETECCIÓN AUTOMÁTICA
         this.tables = {
             solicitudes: 'Solicitudes',
             tecnicos: 'Tecnicos', 
             usuarios: 'Usuarios',
-            solicitudesAcceso: 'SolicitudesAcceso'
+            solicitudesAcceso: 'SolicitudesAcceso' // POSIBLE CAUSA DEL ERROR 404
         };
 
-        console.log('🚀 AirtableAPI iniciado con numeración automática y asignación inteligente');
+        // 🔍 Variaciones comunes de nombres de tablas para auto-detección
+        this.tableVariations = {
+            solicitudesAcceso: [
+                'SolicitudesAcceso',
+                'Solicitudes_Acceso', 
+                'solicitudes_acceso',
+                'solicitudesacceso',
+                'SolicitudAcceso',
+                'AccessRequests',
+                'access_requests',
+                'Solicitudes de Acceso'
+            ],
+            solicitudes: [
+                'Solicitudes',
+                'solicitudes',
+                'Requests',
+                'requests'
+            ],
+            tecnicos: [
+                'Tecnicos',
+                'tecnicos',
+                'Technicians', 
+                'technicians',
+                'Personal'
+            ],
+            usuarios: [
+                'Usuarios',
+                'usuarios',
+                'Users',
+                'users'
+            ]
+        };
+
+        // Auto-detección al inicializar
+        this.autoDetectTables();
+
+        console.log('🚀 AirtableAPI CORREGIDO iniciado con auto-detección de tablas');
     }
 
-    // 📊 MÉTODO GETSTATUS - EL QUE FALTABA
+    // 🔍 AUTO-DETECCIÓN DE TABLAS CORREGIDA
+    async autoDetectTables() {
+        console.log('🔍 Iniciando auto-detección de tablas...');
+        
+        try {
+            // Esperar un poco para que las funciones estén listas
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            const corrections = {};
+            
+            for (const [tableKey, variations] of Object.entries(this.tableVariations)) {
+                console.log(`🔍 Detectando tabla para: ${tableKey}`);
+                
+                for (const variation of variations) {
+                    try {
+                        const response = await fetch(`${this.baseUrl}/${encodeURIComponent(variation)}?maxRecords=1`);
+                        
+                        if (response.ok) {
+                            console.log(`✅ Tabla encontrada: ${tableKey} -> ${variation}`);
+                            corrections[tableKey] = variation;
+                            break;
+                        }
+                    } catch (error) {
+                        // Continuar con la siguiente variación
+                    }
+                }
+                
+                if (!corrections[tableKey]) {
+                    console.warn(`⚠️ No se encontró tabla para: ${tableKey}`);
+                }
+            }
+            
+            // Aplicar correcciones
+            Object.assign(this.tables, corrections);
+            
+            console.log('🎯 Tablas auto-detectadas:', this.tables);
+            
+            // Guardar configuración para debug
+            if (typeof window !== 'undefined') {
+                window.airtableTableMapping = this.tables;
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Auto-detección falló, usando nombres por defecto:', error.message);
+        }
+    }
+
+    // 📊 MÉTODO GETSTATUS CORREGIDO
     getStatus() {
         return {
             isConnected: this.isConnected,
             connectionStatus: this.connectionStatus,
             lastError: this.lastError,
             requestCount: this.requestCount,
+            tableMapping: this.tables,
             timestamp: new Date().toISOString()
         };
     }
 
-    // 📝 Logging
+    // 📝 Logging mejorado
     log(message, data = null) {
         if (!this.debugMode) return;
         
@@ -51,7 +135,7 @@ class AirtableAPI {
         }
     }
 
-    // 🔗 Función base para hacer requests
+    // 🔗 FUNCIÓN BASE CORREGIDA CON MEJOR MANEJO DE ERRORES
     async makeRequest(endpoint, method = 'GET', data = null) {
         this.requestCount++;
         
@@ -89,13 +173,27 @@ class AirtableAPI {
                     error: errorData,
                     url,
                     method,
+                    endpoint,
                     timestamp: new Date().toISOString()
                 };
                 
                 this.connectionStatus = 'error';
                 this.isConnected = false;
                 
-                throw new Error(errorData.message || `Error ${response.status}`);
+                // 🔧 MANEJO ESPECIAL PARA ERROR 404 DE TABLAS
+                if (response.status === 404 && endpoint.includes('/')) {
+                    const tableName = endpoint.split('?')[0]; // Remover query params
+                    console.error(`❌ ERROR 404: Tabla "${tableName}" no encontrada`);
+                    console.log('💡 Tablas disponibles:', this.tables);
+                    console.log('🔍 Iniciando re-detección automática...');
+                    
+                    // Intentar re-detectar tablas
+                    await this.autoDetectTables();
+                    
+                    throw new Error(`Tabla "${tableName}" no encontrada. Verifica que exista en Airtable. Mapeo actual: ${JSON.stringify(this.tables)}`);
+                }
+                
+                throw new Error(errorData.message || `Error ${response.status}: ${errorData.error || 'Error desconocido'}`);
             }
 
             const responseData = JSON.parse(responseText);
@@ -109,15 +207,16 @@ class AirtableAPI {
             this.isConnected = false;
             this.lastError = {
                 error: error.message,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                endpoint: endpoint
             };
             
-            this.log(`❌ Error en makeRequest: ${error.message}`);
+            this.log(`❌ Error en makeRequest para "${endpoint}": ${error.message}`);
             throw error;
         }
     }
 
-    // ✅ Test de conexión
+    // ✅ TEST DE CONEXIÓN MEJORADO
     async testConnection() {
         this.log('🧪 Iniciando test de conexión...');
         
@@ -130,12 +229,19 @@ class AirtableAPI {
             
             this.log('✅ Funciones Netlify operativas');
             
-            // Test Airtable
-            const result = await this.makeRequest(this.tables.solicitudes + '?maxRecords=1');
+            // Test cada tabla para verificar existencia
+            for (const [tableKey, tableName] of Object.entries(this.tables)) {
+                try {
+                    await this.makeRequest(tableName + '?maxRecords=1');
+                    this.log(`✅ Tabla ${tableKey} (${tableName}) accesible`);
+                } catch (error) {
+                    this.log(`⚠️ Tabla ${tableKey} (${tableName}) no accesible: ${error.message}`);
+                }
+            }
             
             this.isConnected = true;
             this.connectionStatus = 'connected';
-            this.log('✅ Test de conexión exitoso');
+            this.log('✅ Test de conexión completado');
             
             return true;
             
@@ -144,6 +250,123 @@ class AirtableAPI {
             this.connectionStatus = 'error';
             this.log(`❌ Test de conexión falló: ${error.message}`);
             return false;
+        }
+    }
+
+    // 📋 CREAR SOLICITUD DE ACCESO CORREGIDA
+    async createSolicitudAcceso(solicitudData) {
+        try {
+            this.log('📋 Creando solicitud de acceso...');
+            
+            const data = {
+                fields: solicitudData
+            };
+            
+            // 🔧 USAR TABLA AUTO-DETECTADA
+            const tableName = this.tables.solicitudesAcceso;
+            this.log(`📊 Usando tabla: ${tableName}`);
+            
+            const result = await this.makeRequest(tableName, 'POST', data);
+            
+            this.log('✅ Solicitud de acceso creada exitosamente');
+            
+            return {
+                id: result.id,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error creando solicitud de acceso: ${error.message}`);
+            
+            // 🔧 SUGERENCIA AUTOMÁTICA SI FALLA
+            if (error.message.includes('404') || error.message.includes('not found')) {
+                const suggestion = `
+❌ TABLA DE SOLICITUDES DE ACCESO NO ENCONTRADA
+
+🔍 Posibles soluciones:
+1. Verificar que existe la tabla en Airtable
+2. Crear tabla "SolicitudesAcceso" con estos campos:
+   • nombreCompleto (Single line text)
+   • email (Email)
+   • telefono (Phone number)
+   • servicioHospitalario (Single select)
+   • cargo (Single select)
+   • justificacion (Long text)
+   • estado (Single select: PENDIENTE, APROBADA, RECHAZADA)
+   • fechaSolicitud (Date)
+
+🎯 Tablas encontradas: ${JSON.stringify(this.tables, null, 2)}
+
+💡 Usa la herramienta de diagnóstico para más detalles.
+                `;
+                console.error(suggestion);
+            }
+            
+            throw error;
+        }
+    }
+
+    // 🔄 ACTUALIZAR SOLICITUD DE ACCESO CORREGIDA
+    async updateSolicitudAcceso(solicitudId, updateData) {
+        try {
+            this.log(`🔄 Actualizando solicitud de acceso: ${solicitudId}`);
+            
+            if (!solicitudId) {
+                throw new Error('ID de solicitud requerido');
+            }
+            
+            // 🔧 USAR TABLA AUTO-DETECTADA
+            const tableName = this.tables.solicitudesAcceso;
+            this.log(`📊 Usando tabla: ${tableName}`);
+            
+            const result = await this.makeRequest(
+                `${tableName}/${solicitudId}`, 
+                'PATCH', 
+                { fields: updateData }
+            );
+            
+            this.log('✅ Solicitud de acceso actualizada exitosamente');
+            
+            return {
+                id: result.id,
+                ...result.fields
+            };
+            
+        } catch (error) {
+            this.log(`❌ Error actualizando solicitud de acceso: ${error.message}`);
+            throw error;
+        }
+    }
+
+    // 📋 OBTENER SOLICITUDES DE ACCESO CORREGIDA
+    async getSolicitudesAcceso() {
+        try {
+            this.log('📋 Obteniendo solicitudes de acceso...');
+            
+            // 🔧 USAR TABLA AUTO-DETECTADA
+            const tableName = this.tables.solicitudesAcceso;
+            this.log(`📊 Usando tabla: ${tableName}`);
+            
+            const result = await this.makeRequest(tableName);
+            
+            const solicitudes = result.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+            
+            this.log(`✅ ${solicitudes.length} solicitudes de acceso obtenidas`);
+            return solicitudes;
+            
+        } catch (error) {
+            this.log(`❌ Error obteniendo solicitudes de acceso: ${error.message}`);
+            
+            // 🔧 RETORNO SEGURO EN CASO DE ERROR
+            if (error.message.includes('404')) {
+                console.warn('⚠️ Tabla de solicitudes de acceso no encontrada, retornando array vacío');
+                return [];
+            }
+            
+            throw error;
         }
     }
 
@@ -663,65 +886,6 @@ class AirtableAPI {
         }
     }
 
-    // 📝 Obtener solicitudes de acceso
-    async getSolicitudesAcceso() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudesAcceso);
-            
-            const solicitudes = result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-            
-            this.log(`✅ ${solicitudes.length} solicitudes de acceso obtenidas`);
-            return solicitudes;
-            
-        } catch (error) {
-            this.log(`❌ Error obteniendo solicitudes de acceso: ${error.message}`);
-            return [];
-        }
-    }
-
-    // ➕ Crear solicitud de acceso
-    async createSolicitudAcceso(solicitudData) {
-        try {
-            const data = {
-                fields: solicitudData
-            };
-            
-            const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
-            
-            return {
-                id: result.id,
-                ...result.fields
-            };
-            
-        } catch (error) {
-            this.log(`❌ Error creando solicitud de acceso: ${error.message}`);
-            throw error;
-        }
-    }
-
-    // 🔄 Actualizar solicitud de acceso
-    async updateSolicitudAcceso(solicitudId, updateData) {
-        try {
-            const result = await this.makeRequest(
-                `${this.tables.solicitudesAcceso}/${solicitudId}`, 
-                'PATCH', 
-                { fields: updateData }
-            );
-            
-            return {
-                id: result.id,
-                ...result.fields
-            };
-            
-        } catch (error) {
-            this.log(`❌ Error actualizando solicitud de acceso: ${error.message}`);
-            throw error;
-        }
-    }
-
     // ✅ Validar credenciales de usuario
     async validateUserCredentials(email, codigoAcceso) {
         try {
@@ -833,6 +997,6 @@ if (typeof window !== 'undefined') {
     });
 }
 
-console.log('✅ AirtableAPI COMPLETO iniciado con numeración automática y asignación inteligente');
+console.log('✅ AirtableAPI CORREGIDO iniciado con auto-detección de tablas y manejo de errores 404');
 console.log('🔍 Métodos disponibles:', Object.getOwnPropertyNames(AirtableAPI.prototype).filter(name => name !== 'constructor'));
 console.log('📊 Estado inicial:', window.airtableAPI.getStatus());

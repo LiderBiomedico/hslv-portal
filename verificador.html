@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Configuración - Error 404</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            margin: 0;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .emergency-header {
+            background: white;
+            border: 3px solid #ef4444;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(239, 68, 68, 0.3);
+        }
+
+        .emergency-header h1 {
+            color: #ef4444;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            margin: 0.5rem;
+            transition: all 0.3s;
+            display: inline-block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border: 2px solid transparent;
+        }
+
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: linear-gradient(135deg, #047857, #065f46);
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+        }
+
+        .error-box {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .success-box {
+            background: #f0fdf4;
+            border: 2px solid #059669;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border: 2px solid #2563eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .result-container {
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-left: 4px solid #2563eb;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .table-mapping {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+        }
+
+        .step {
+            background: #fafafa;
+            border-left: 5px solid #2563eb;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            border-radius: 0 0.75rem 0.75rem 0;
+        }
+
+        .step h3 {
+            color: #2563eb;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 3rem;
+            height: 3rem;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ef4444;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .urgent-notice {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: white;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin: 1rem 0;
+            text-align: center;
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        code {
+            background: #e5e7eb;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .copy-btn {
+            background: #6b7280;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            margin-left: 0.5rem;
+        }
+
+        .copy-btn:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="emergency-header">
+            <h1>🚨 SOLUCIONADOR ERROR 404</h1>
+            <p style="font-size: 1.25rem; color: #ef4444; font-weight: 600;">
+                Portal de Gestión - Hospital Susana López de Valencia
+            </p>
+            <div class="urgent-notice">
+                ⚠️ Error en tabla "SolicitudesAcceso" - Solución inmediata disponible
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="color: #ef4444; margin-bottom: 1rem;">🔍 Diagnóstico Automático</h2>
+            <p>Vamos a detectar exactamente qué tablas tienes en Airtable y generar la configuración correcta.</p>
+            
+            <div style="text-align: center; margin: 2rem 0;">
+                <button class="btn btn-danger" onclick="startEmergencyDiagnosis()">
+                    🚨 INICIAR DIAGNÓSTICO DE EMERGENCIA
+                </button>
+            </div>
+
+            <div id="diagnosis-results"></div>
+        </div>
+
+        <div class="card">
+            <h2 style="color: #2563eb;">🛠️ Soluciones Paso a Paso</h2>
+            
+            <div class="step">
+                <h3>Paso 1: Verificar Tablas en Airtable</h3>
+                <p>Ve a tu base de datos Airtable y verifica que existan estas tablas:</p>
+                <ul>
+                    <li><strong>SolicitudesAcceso</strong> - Para gestión de accesos de usuarios</li>
+                    <li><strong>Usuarios</strong> - Para usuarios del sistema</li>
+                    <li><strong>Solicitudes</strong> - Para solicitudes de mantenimiento</li>
+                    <li><strong>Tecnicos</strong> - Para personal técnico</li>
+                </ul>
+            </div>
+
+            <div class="step">
+                <h3>Paso 2: Crear Tabla Faltante</h3>
+                <p>Si la tabla "SolicitudesAcceso" no existe, créala con estos campos:</p>
+                <div class="info-box">
+                    <strong>Campos requeridos para SolicitudesAcceso:</strong><br>
+                    • <code>nombreCompleto</code> - Single line text<br>
+                    • <code>email</code> - Email<br>
+                    • <code>telefono</code> - Phone number<br>
+                    • <code>servicioHospitalario</code> - Single select<br>
+                    • <code>cargo</code> - Single select<br>
+                    • <code>justificacion</code> - Long text<br>
+                    • <code>estado</code> - Single select (PENDIENTE, APROBADA, RECHAZADA)<br>
+                    • <code>fechaSolicitud</code> - Date<br>
+                    • <code>fechaAprobacion</code> - Date<br>
+                    • <code>usuarioCreado</code> - Link to Usuarios table
+                </div>
+            </div>
+
+            <div class="step">
+                <h3>Paso 3: Actualizar Configuración</h3>
+                <p>Una vez creada la tabla, el sistema la detectará automáticamente. Si usas nombres diferentes:</p>
+                <button class="btn btn-success" onclick="generateCustomMapping()">
+                    📝 Generar Configuración Personalizada
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2 style="color: #059669;">⚡ Solución Inmediata</h2>
+            <p>Si necesitas una solución temporal mientras configuras las tablas:</p>
+            
+            <div class="error-box">
+                <h4 style="color: #ef4444;">🔧 Modo de Emergencia</h4>
+                <p>Descarga y reemplaza tu archivo <code>airtable-config.js</code> con la versión corregida que maneja errores 404 automáticamente.</p>
+                <button class="btn btn-warning" onclick="downloadFixedConfig()">
+                    💾 Descargar airtable-config.js Corregido
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="custom-config" style="display: none;">
+            <h2 style="color: #8b5cf6;">⚙️ Configuración Personalizada</h2>
+            <p>Basada en las tablas encontradas en tu Airtable:</p>
+            <div id="custom-mapping"></div>
+        </div>
+    </div>
+
+    <script>
+        let diagnosisData = null;
+
+        async function startEmergencyDiagnosis() {
+            const resultsDiv = document.getElementById('diagnosis-results');
+            
+            showLoading(resultsDiv, 'Conectando con tu base de datos Airtable...');
+
+            try {
+                // Test 1: Verificar funciones Netlify
+                console.log('🧪 Test 1: Verificando funciones Netlify...');
+                const helloTest = await fetch('/.netlify/functions/hello');
+                
+                if (!helloTest.ok) {
+                    throw new Error('Funciones Netlify no disponibles');
+                }
+
+                // Test 2: Descubrir tablas
+                console.log('🧪 Test 2: Descubriendo tablas...');
+                const discoveryResponse = await fetch('/.netlify/functions/simple-debug');
+                const discoveryData = await discoveryResponse.json();
+
+                if (!discoveryData.success) {
+                    throw new Error('No se pudo conectar con Airtable');
+                }
+
+                diagnosisData = discoveryData;
+
+                // Mostrar resultados
+                showDiagnosisResults(resultsDiv, discoveryData);
+
+            } catch (error) {
+                showError(resultsDiv, error.message);
+            }
+        }
+
+        function showDiagnosisResults(container, data) {
+            const workingTables = data.workingTables || [];
+            const failedTables = data.failedTables || [];
+
+            let hasAllRequired = false;
+            const requiredTables = ['SolicitudesAcceso', 'Usuarios', 'Solicitudes', 'Tecnicos'];
+            const foundTables = workingTables.map(t => t.tableName);
+
+            let html = `
+                <div class="success-box">
+                    <h3 style="color: #059669;">✅ Diagnóstico Completado</h3>
+                    <p><strong>Tablas encontradas:</strong> ${workingTables.length}</p>
+                    <p><strong>Tablas no accesibles:</strong> ${failedTables.length}</p>
+                </div>
+            `;
+
+            if (workingTables.length > 0) {
+                html += '<h4 style="color: #059669;">✅ Tablas Disponibles:</h4>';
+                html += '<div class="result-container">';
+                
+                workingTables.forEach(table => {
+                    const isRequired = requiredTables.some(req => 
+                        table.tableName.toLowerCase().includes(req.toLowerCase()) ||
+                        req.toLowerCase().includes(table.tableName.toLowerCase())
+                    );
+                    
+                    html += `
+                        <div style="padding: 0.5rem; margin: 0.5rem 0; background: ${isRequired ? '#dcfce7' : '#f3f4f6'}; border-radius: 0.5rem;">
+                            <strong>${table.tableName}</strong> 
+                            <span style="color: #059669;">(${table.recordCount} registros)</span>
+                            ${isRequired ? '<span style="background: #059669; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">REQUERIDA</span>' : ''}
+                            ${table.hasData ? '<span style="background: #2563eb; color: white; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">CON DATOS</span>' : ''}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+
+                // Verificar si SolicitudesAcceso específicamente está presente
+                const solicitudesAccesoTable = workingTables.find(t => 
+                    t.tableName.toLowerCase().includes('solicitudesacceso') ||
+                    t.tableName.toLowerCase().includes('solicitudes') && t.tableName.toLowerCase().includes('acceso')
+                );
+
+                if (solicitudesAccesoTable) {
+                    html += `
+                        <div class="success-box">
+                            <h4 style="color: #059669;">🎉 ¡Tabla de Solicitudes de Acceso Encontrada!</h4>
+                            <p>Se encontró: <strong>${solicitudesAccesoTable.tableName}</strong></p>
+                            <button class="btn btn-success" onclick="generateAutoFix('${solicitudesAccesoTable.tableName}')">
+                                🔧 Generar Configuración Automática
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="error-box">
+                            <h4 style="color: #ef4444;">❌ Tabla "SolicitudesAcceso" No Encontrada</h4>
+                            <p>Esta es la causa del error 404. Necesitas:</p>
+                            <ol>
+                                <li>Crear la tabla "SolicitudesAcceso" en Airtable</li>
+                                <li>O usar una tabla existente y ajustar la configuración</li>
+                            </ol>
+                            <button class="btn btn-warning" onclick="showCreateTableInstructions()">
+                                📋 Ver Instrucciones para Crear Tabla
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+
+            if (failedTables.length > 0) {
+                html += `
+                    <h4 style="color: #ef4444; margin-top: 2rem;">❌ Tablas No Encontradas:</h4>
+                    <div class="result-container">
+                `;
+                
+                failedTables.slice(0, 5).forEach(table => {
+                    html += `
+                        <div style="padding: 0.5rem; margin: 0.5rem 0; background: #fee2e2; border-radius: 0.5rem;">
+                            <strong>${table.tableName}</strong> 
+                            <span style="color: #ef4444;">${table.status}</span>
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function generateAutoFix(tableName) {
+            const mapping = `
+// Configuración automática detectada:
+this.tables = {
+    solicitudes: 'Solicitudes',
+    tecnicos: 'Tecnicos', 
+    usuarios: 'Usuarios',
+    solicitudesAcceso: '${tableName}'  // ✅ CORREGIDO
+};
+            `;
+
+            const customConfigDiv = document.getElementById('custom-config');
+            const mappingDiv = document.getElementById('custom-mapping');
+            
+            mappingDiv.innerHTML = `
+                <div class="success-box">
+                    <h4 style="color: #059669;">🎯 Configuración Generada Automáticamente</h4>
+                    <p>Reemplaza las líneas 14-19 en tu archivo <code>airtable-config.js</code>:</p>
+                </div>
+                <div class="table-mapping">${mapping}<button class="copy-btn" onclick="copyToClipboard('${mapping.replace(/'/g, "\\'")}')">📋 Copiar</button></div>
+                <div class="info-box">
+                    <h5>📝 Pasos para aplicar:</h5>
+                    <ol>
+                        <li>Copia la configuración de arriba</li>
+                        <li>Abre tu archivo <code>airtable-config.js</code></li>
+                        <li>Encuentra las líneas 14-19 (this.tables = {...})</li>
+                        <li>Reemplaza con la configuración generada</li>
+                        <li>Guarda y recarga el portal</li>
+                    </ol>
+                </div>
+            `;
+            
+            customConfigDiv.style.display = 'block';
+            customConfigDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateCustomMapping() {
+            if (!diagnosisData) {
+                alert('⚠️ Primero ejecuta el diagnóstico automático');
+                return;
+            }
+
+            const workingTables = diagnosisData.workingTables || [];
+            
+            let html = `
+                <div class="info-box">
+                    <h4>🎯 Personalizar Mapeo de Tablas</h4>
+                    <p>Selecciona cuál tabla de tu Airtable corresponde a cada función:</p>
+                </div>
+            `;
+
+            const mappings = [
+                { key: 'solicitudesAcceso', name: 'Solicitudes de Acceso', desc: 'Para gestión de usuarios' },
+                { key: 'usuarios', name: 'Usuarios', desc: 'Usuarios del sistema' },
+                { key: 'solicitudes', name: 'Solicitudes', desc: 'Solicitudes de mantenimiento' },
+                { key: 'tecnicos', name: 'Técnicos', desc: 'Personal técnico' }
+            ];
+
+            mappings.forEach(mapping => {
+                html += `
+                    <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem;">
+                        <label style="font-weight: 600; color: #1f2937;">${mapping.name} (${mapping.desc}):</label>
+                        <select id="mapping-${mapping.key}" style="width: 100%; padding: 0.5rem; margin-top: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="">Seleccionar tabla...</option>
+                            ${workingTables.map(table => 
+                                `<option value="${table.tableName}">${table.tableName} (${table.recordCount} registros)</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                `;
+            });
+
+            html += `
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-success" onclick="generateMappingCode()">
+                        🔧 Generar Código de Configuración
+                    </button>
+                </div>
+            `;
+
+            const customConfigDiv = document.getElementById('custom-config');
+            document.getElementById('custom-mapping').innerHTML = html;
+            customConfigDiv.style.display = 'block';
+            customConfigDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function generateMappingCode() {
+            const mappings = ['solicitudesAcceso', 'usuarios', 'solicitudes', 'tecnicos'];
+            const config = {};
+
+            mappings.forEach(key => {
+                const select = document.getElementById(`mapping-${key}`);
+                config[key] = select.value || 'TABLA_NO_SELECCIONADA';
+            });
+
+            const configCode = `
+// Configuración personalizada:
+this.tables = {
+    solicitudes: '${config.solicitudes}',
+    tecnicos: '${config.tecnicos}', 
+    usuarios: '${config.usuarios}',
+    solicitudesAcceso: '${config.solicitudesAcceso}'
+};
+            `;
+
+            const mappingDiv = document.getElementById('custom-mapping');
+            mappingDiv.innerHTML += `
+                <div class="success-box" style="margin-top: 2rem;">
+                    <h4 style="color: #059669;">✅ Configuración Generada</h4>
+                </div>
+                <div class="table-mapping">${configCode}<button class="copy-btn" onclick="copyToClipboard('${configCode.replace(/'/g, "\\'")}')">📋 Copiar</button></div>
+            `;
+        }
+
+        function showCreateTableInstructions() {
+            alert(`📋 CREAR TABLA "SolicitudesAcceso" EN AIRTABLE
+
+🔧 Pasos:
+1. Ve a tu base de datos Airtable
+2. Haz clic en "Add a table" 
+3. Nombra la tabla: "SolicitudesAcceso"
+4. Agrega estos campos:
+
+📋 Campos Requeridos:
+• nombreCompleto (Single line text)
+• email (Email)  
+• telefono (Phone number)
+• servicioHospitalario (Single select)
+• cargo (Single select)
+• justificacion (Long text)
+• estado (Single select: PENDIENTE, APROBADA, RECHAZADA)
+• fechaSolicitud (Date)
+• fechaAprobacion (Date)
+• usuarioCreado (Link to Usuarios table)
+
+✅ Una vez creada, ejecuta el diagnóstico nuevamente para detectarla automáticamente.`);
+        }
+
+        function downloadFixedConfig() {
+            // Crear contenido del archivo airtable-config.js corregido
+            const configContent = `// Archivo airtable-config.js CORREGIDO - Descargado desde Verificador
+// Fecha: ${new Date().toLocaleString('es-CO')}
+// Versión: Manejo de Error 404 + Auto-detección
+
+${document.querySelector('#airtable-config-fixed code').textContent}`;
+
+            // Crear y descargar archivo
+            const blob = new Blob([configContent], { type: 'text/javascript' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'airtable-config-CORREGIDO.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            alert('✅ Archivo descargado: airtable-config-CORREGIDO.js\n\n📝 Pasos:\n1. Reemplaza tu archivo airtable-config.js actual\n2. Recarga el portal\n3. El sistema detectará automáticamente tus tablas');
+        }
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text.replace(/\\'/g, "'")).then(() => {
+                alert('✅ Copiado al portapapeles');
+            }).catch(() => {
+                alert('⚠️ No se pudo copiar. Selecciona y copia manualmente.');
+            });
+        }
+
+        function showLoading(container, message) {
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showError(container, errorMessage) {
+            container.innerHTML = `
+                <div class="error-box">
+                    <h3 style="color: #ef4444;">❌ Error de Diagnóstico</h3>
+                    <p><strong>Error:</strong> ${errorMessage}</p>
+                    <div style="margin-top: 1rem;">
+                        <h4>🔧 Posibles Causas:</h4>
+                        <ul>
+                            <li>Variables de entorno no configuradas en Netlify</li>
+                            <li>Funciones de Netlify no desplegadas</li>
+                            <li>Base ID o API Key de Airtable incorrectos</li>
+                        </ul>
+                        <button class="btn btn-warning" onclick="window.open('/.netlify/functions/hello', '_blank')">
+                            🧪 Test Funciones Netlify
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Auto-ejecutar diagnóstico al cargar
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const notice = document.createElement('div');
+                notice.innerHTML = `
+                    <div class="urgent-notice" style="position: fixed; bottom: 20px; right: 20px; max-width: 300px; z-index: 1000;">
+                        ⚡ ¿Error 404 urgente? Haz clic en "INICIAR DIAGNÓSTICO" arriba
+                    </div>
+                `;
+                document.body.appendChild(notice);
+                
+                setTimeout(() => notice.remove(), 10000);
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
