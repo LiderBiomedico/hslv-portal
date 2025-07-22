@@ -543,7 +543,7 @@
             color: #fee2e2;
         }
 
-        /* Request Cards */
+        /* Request Cards mejorados */
         .request-card {
             background: #f8fafc;
             border: 1px solid #e5e7eb;
@@ -551,6 +551,7 @@
             padding: 1.5rem;
             margin-bottom: 1rem;
             transition: all 0.2s;
+            position: relative;
         }
 
         .request-card:hover {
@@ -564,8 +565,13 @@
         }
 
         .request-card.assigned {
-            border-left: 4px solid #2563eb;
-            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #0ea5e9;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        }
+
+        .request-card.in-progress {
+            border-left: 4px solid #8b5cf6;
+            background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
         }
 
         .request-card.completed {
@@ -586,6 +592,32 @@
             font-weight: 600;
             color: #1f2937;
             font-size: 1.125rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .area-badge {
+            font-size: 0.65rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .area-biomedica {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .area-mecanica {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .area-infraestructura {
+            background: #ede9fe;
+            color: #7c3aed;
         }
 
         .request-details {
@@ -621,8 +653,8 @@
         }
 
         .status-asignada {
-            background: #dbeafe;
-            color: #1e40af;
+            background: #e0f2fe;
+            color: #0369a1;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
@@ -630,8 +662,8 @@
         }
 
         .status-proceso {
-            background: #fed7aa;
-            color: #ea580c;
+            background: #f3e8ff;
+            color: #7c3aed;
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
             font-size: 0.75rem;
@@ -645,6 +677,42 @@
             border-radius: 9999px;
             font-size: 0.75rem;
             font-weight: 600;
+        }
+
+        .priority-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .priority-critica {
+            background: #fee2e2;
+            color: #dc2626;
+            animation: pulse-priority 2s infinite;
+        }
+
+        .priority-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .priority-media {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .priority-baja {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        @keyframes pulse-priority {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         /* Responsive */
@@ -697,7 +765,7 @@
             <span id="cloud-status-text" class="cloud-status disconnected">🔄 Conectando...</span>
         </div>
         <div class="center">
-            💻 Desarrollado por <span>Ing. Paul Eduardo Muñoz R.</span> - Portal Cloud con Airtable
+            💻 Desarrollado por <span>Ing. Paul Eduardo Muñoz R.</span> - Portal Cloud con Numeración Específica
         </div>
         <div class="right">
             <button onclick="testAirtableConnection()" style="background: none; border: none; color: #60a5fa; cursor: pointer; font-size: 0.75rem;">
@@ -764,7 +832,7 @@
 
                 <div class="alert alert-info">
                     <strong>📝 Solicitar Acceso al Portal</strong><br>
-                    Su solicitud será enviada al Portal de Gestión para aprobación. Una vez aprobada, recibirá un código de 4 dígitos para acceder.
+                    Su solicitud será enviada al Portal de Gestión para aprobación. Una vez aprobada, recibirá un código de 4 dígitos único.
                 </div>
 
                 <div class="form-group">
@@ -843,7 +911,7 @@
                     </svg>
                     <div class="hospital-info">
                         <h1>Hospital Susana López de Valencia S.A.S.</h1>
-                        <p>Portal de Solicitudes Cloud - Sincronizado con Airtable</p>
+                        <p>Portal Cloud con Numeración Específica por Área</p>
                     </div>
                 </div>
 
@@ -864,7 +932,7 @@
             <!-- Welcome Section -->
             <div class="welcome-section">
                 <h1>Portal Cloud de Servicios</h1>
-                <p>Sistema conectado a Airtable - Acceso autorizado con código único</p>
+                <p>Sistema con numeración específica: SOLBIO, SOLMEC, SOLINFRA y control de asignación</p>
             </div>
 
             <!-- Cloud Status -->
@@ -878,19 +946,19 @@
                 <div class="nav-card active" onclick="showSection('nueva-solicitud')">
                     <span class="nav-card-icon">🛠️</span>
                     <h3>Nueva Solicitud</h3>
-                    <p>Crear solicitud de mantenimiento que se guarda automáticamente en Airtable</p>
+                    <p>Crear solicitud con numeración específica según el área técnica</p>
                 </div>
                 
                 <div class="nav-card" onclick="showSection('mis-solicitudes')">
                     <span class="nav-card-icon">📋</span>
                     <h3>Mis Solicitudes</h3>
-                    <p>Ver historial sincronizado desde la nube en tiempo real</p>
+                    <p>Ver historial con seguimiento de asignación y tiempos de respuesta</p>
                 </div>
                 
                 <div class="nav-card" onclick="showSection('servicios')">
                     <span class="nav-card-icon">🏥</span>
                     <h3>Áreas de Ingeniería</h3>
-                    <p>Información sobre las áreas técnicas disponibles</p>
+                    <p>Información sobre áreas técnicas y sistema de numeración</p>
                 </div>
             </div>
 
@@ -899,7 +967,7 @@
                 <div class="form-section">
                     <div class="form-header">
                         <h2>🛠️ Nueva Solicitud de Mantenimiento</h2>
-                        <p>Solicitud guardada automáticamente en Airtable con sincronización en tiempo real</p>
+                        <p>Sistema con numeración específica y asignación automática de personal</p>
                     </div>
                     
                     <div class="alert alert-success">
@@ -915,12 +983,23 @@
 
                         <div class="form-group">
                             <label class="form-label">🔧 Área de Ingeniería *</label>
-                            <select id="area-ingenieria" class="form-select" required>
+                            <select id="area-ingenieria" class="form-select" required onchange="updateNumberingPreview()">
                                 <option value="">Seleccione el área técnica</option>
-                                <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
-                                <option value="MECANICA">⚙️ Mecánica</option>
-                                <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
+                                <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica (SOLBIO)</option>
+                                <option value="MECANICA">⚙️ Mecánica (SOLMEC)</option>
+                                <option value="INFRAESTRUCTURA">🏗️ Infraestructura (SOLINFRA)</option>
                             </select>
+                            <small style="color: #6b7280; font-size: 0.75rem; margin-top: 0.5rem; display: block;">
+                                💡 Cada área tiene su propia numeración específica para mejor organización
+                            </small>
+                        </div>
+
+                        <!-- Vista previa de numeración -->
+                        <div id="numbering-preview" style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 3px solid #3b82f6; display: none;">
+                            <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🔢 Vista Previa de Numeración</h4>
+                            <p style="color: #1e3a8a; margin: 0; font-weight: 600;">
+                                Su solicitud tendrá el formato: <span id="preview-number">SOLXXX00001</span>
+                            </p>
                         </div>
 
                         <div class="form-group">
@@ -940,13 +1019,21 @@
 
                         <div class="form-group">
                             <label class="form-label">⚡ Prioridad *</label>
-                            <select id="prioridad" class="form-select" required>
+                            <select id="prioridad" class="form-select" required onchange="updateTimePreview()">
                                 <option value="">Seleccione la prioridad</option>
-                                <option value="CRITICA">🚨 Crítica (Equipos vitales, falla total)</option>
-                                <option value="ALTA">🔴 Alta (Equipos importantes, funcionamiento limitado)</option>
-                                <option value="MEDIA">🟡 Media (Equipos secundarios, funcionamiento normal)</option>
-                                <option value="BAJA">🟢 Baja (Mantenimiento rutinario)</option>
+                                <option value="CRITICA">🚨 Crítica (Equipos vitales, falla total) - 2 horas</option>
+                                <option value="ALTA">🔴 Alta (Equipos importantes, funcionamiento limitado) - 8 horas</option>
+                                <option value="MEDIA">🟡 Media (Equipos secundarios, funcionamiento normal) - 24 horas</option>
+                                <option value="BAJA">🟢 Baja (Mantenimiento rutinario) - 72 horas</option>
                             </select>
+                        </div>
+
+                        <!-- Vista previa de tiempo de respuesta -->
+                        <div id="time-preview" style="background: #fffbeb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 3px solid #f59e0b; display: none;">
+                            <h4 style="color: #d97706; margin-bottom: 0.5rem;">⏱️ Tiempo Máximo de Respuesta</h4>
+                            <p style="color: #b45309; margin: 0; font-weight: 600;">
+                                <span id="preview-time">-</span>
+                            </p>
                         </div>
 
                         <div class="form-group">
@@ -970,19 +1057,19 @@
                         </div>
 
                         <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin: 1.5rem 0; border-left: 3px solid #2563eb;">
-                            <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🌐 Sistema Cloud Conectado</h4>
+                            <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🌐 Sistema Cloud Avanzado</h4>
                             <ul style="color: #1e40af; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
-                                <li>✅ Su solicitud se guarda automáticamente en Airtable</li>
-                                <li>👁️ Visible inmediatamente en el Portal de Gestión</li>
-                                <li>🔄 Sincronización en tiempo real entre todos los dispositivos</li>
-                                <li>🌍 Acceso desde cualquier computador con internet</li>
-                                <li>💾 Respaldo automático y seguro en la nube</li>
-                                <li>📧 Su usuario está verificado con código único</li>
+                                <li>🔢 <strong>Numeración Específica:</strong> SOLBIO, SOLMEC, SOLINFRA según área</li>
+                                <li>🎯 <strong>Asignación Automática:</strong> Personal técnico asignado por área</li>
+                                <li>⏱️ <strong>Control de Tiempos:</strong> Seguimiento automático de respuesta</li>
+                                <li>✅ <strong>Guardado Automático:</strong> Sincronización inmediata con Airtable</li>
+                                <li>👁️ <strong>Visible al Instante:</strong> En Portal de Gestión para asignación</li>
+                                <li>📧 <strong>Usuario Verificado:</strong> Con código único de acceso</li>
                             </ul>
                         </div>
 
                         <button type="submit" class="btn btn-primary" id="submit-request-btn">
-                            📤 Enviar Solicitud a Airtable
+                            📤 Crear Solicitud con Numeración Específica
                         </button>
                     </form>
                 </div>
@@ -991,11 +1078,11 @@
             <div id="mis-solicitudes" class="content-card hidden">
                 <div class="form-header">
                     <h2>📋 Mis Solicitudes</h2>
-                    <p>Historial sincronizado desde Airtable en tiempo real</p>
+                    <p>Historial con seguimiento de asignación y estados en tiempo real</p>
                 </div>
                 
                 <div class="alert alert-info">
-                    <strong>🌐 Datos Sincronizados:</strong> Todas sus solicitudes se cargan directamente desde Airtable. Los cambios se reflejan automáticamente.
+                    <strong>🌐 Datos Sincronizados:</strong> Todas sus solicitudes se cargan directamente desde Airtable con información de asignación de personal y tiempos de respuesta.
                 </div>
 
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
@@ -1007,6 +1094,9 @@
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="filterMyRequests('PENDIENTE')">
                         ⏳ Pendientes
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="filterMyRequests('ASIGNADA')">
+                        🎯 Asignadas
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="filterMyRequests('COMPLETADA')">
                         ✅ Completadas
@@ -1024,15 +1114,18 @@
 
             <div id="servicios" class="content-card hidden">
                 <div class="form-header">
-                    <h2>🏥 Áreas de Ingeniería</h2>
-                    <p>Sistema integrado con base de datos Airtable en tiempo real</p>
+                    <h2>🏥 Áreas de Ingeniería con Numeración Específica</h2>
+                    <p>Sistema integrado con base de datos Airtable y asignación automática de personal</p>
                 </div>
                 
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
                     <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #059669;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">🏥</div>
                         <h3 style="color: #065f46; margin-bottom: 1rem;">Ingeniería Biomédica</h3>
-                        <p style="color: #047857; margin-bottom: 1rem;">Equipos médicos con registros en Airtable</p>
+                        <div style="background: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="color: #059669; margin-bottom: 0.5rem;">🔢 Numeración: SOLBIO00001</h4>
+                            <p style="color: #047857; font-size: 0.875rem;">Equipos médicos críticos para el cuidado del paciente</p>
+                        </div>
                         <ul style="color: #047857; font-size: 0.875rem; line-height: 1.6;">
                             <li>Equipos de UCI y monitoreo</li>
                             <li>Ventiladores mecánicos</li>
@@ -1046,7 +1139,10 @@
                     <div style="background: linear-gradient(135deg, #fefbeb 0%, #fef3c7 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #f59e0b;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">⚙️</div>
                         <h3 style="color: #d97706; margin-bottom: 1rem;">Mecánica</h3>
-                        <p style="color: #b45309; margin-bottom: 1rem;">Sistemas mecánicos con gestión cloud</p>
+                        <div style="background: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="color: #f59e0b; margin-bottom: 0.5rem;">🔢 Numeración: SOLMEC00001</h4>
+                            <p style="color: #b45309; font-size: 0.875rem;">Sistemas mecánicos y equipos de soporte hospitalario</p>
+                        </div>
                         <ul style="color: #b45309; font-size: 0.875rem; line-height: 1.6;">
                             <li>Sistemas de climatización</li>
                             <li>Calderas y sistemas de vapor</li>
@@ -1060,7 +1156,10 @@
                     <div style="background: linear-gradient(135deg, #f3f4f6 0%, #ede9fe 100%); padding: 2rem; border-radius: 1rem; border: 2px solid #8b5cf6;">
                         <div style="font-size: 3rem; margin-bottom: 1rem;">🏗️</div>
                         <h3 style="color: #7c3aed; margin-bottom: 1rem;">Infraestructura</h3>
-                        <p style="color: #6d28d9; margin-bottom: 1rem;">Instalaciones con registro en Airtable</p>
+                        <div style="background: white; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="color: #8b5cf6; margin-bottom: 0.5rem;">🔢 Numeración: SOLINFRA00001</h4>
+                            <p style="color: #6d28d9; font-size: 0.875rem;">Instalaciones físicas y servicios generales</p>
+                        </div>
                         <ul style="color: #6d28d9; font-size: 0.875rem; line-height: 1.6;">
                             <li>Sistemas eléctricos</li>
                             <li>Redes hidráulicas y sanitarias</li>
@@ -1073,11 +1172,11 @@
                 </div>
 
                 <div style="margin-top: 2rem; padding: 1.5rem; background: #f8fafc; border-radius: 1rem; border-left: 4px solid #2563eb;">
-                    <h4 style="color: #1f2937; margin-bottom: 1rem;">🔄 Flujo de Trabajo Cloud</h4>
+                    <h4 style="color: #1f2937; margin-bottom: 1rem;">🔄 Flujo de Trabajo con Asignación Automática</h4>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
                         <div>
                             <h5 style="color: #2563eb; margin-bottom: 0.5rem;">1. 📝 Solicitud</h5>
-                            <p style="color: #6b7280; font-size: 0.875rem;">Usted crea la solicitud con su código único</p>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Usted crea la solicitud con numeración específica</p>
                         </div>
                         <div>
                             <h5 style="color: #2563eb; margin-bottom: 0.5rem;">2. ☁️ Airtable</h5>
@@ -1088,8 +1187,34 @@
                             <p style="color: #6b7280; font-size: 0.875rem;">Visible inmediatamente en Portal de Gestión</p>
                         </div>
                         <div>
-                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">4. 👨‍🔧 Técnico</h5>
-                            <p style="color: #6b7280; font-size: 0.875rem;">Asignación y seguimiento en tiempo real</p>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">4. 🎯 Asignación</h5>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Personal técnico asignado automáticamente</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">5. 👨‍🔧 Ejecución</h5>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Seguimiento en tiempo real del trabajo</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #2563eb; margin-bottom: 0.5rem;">6. ✅ Finalización</h5>
+                            <p style="color: #6b7280; font-size: 0.875rem;">Liberación automática del personal</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem; padding: 1.5rem; background: #dcfce7; border-radius: 1rem; border-left: 4px solid #059669;">
+                    <h4 style="color: #166534; margin-bottom: 1rem;">📊 Ventajas del Sistema de Numeración Específica</h4>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+                        <div>
+                            <h5 style="color: #059669; margin-bottom: 0.5rem;">🎯 Organización Mejorada</h5>
+                            <p style="color: #047857; font-size: 0.875rem;">Cada área tiene su propia secuencia numérica para mejor identificación y control</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #059669; margin-bottom: 0.5rem;">🔍 Búsqueda Rápida</h5>
+                            <p style="color: #047857; font-size: 0.875rem;">Identifique inmediatamente el área técnica solo viendo el número de solicitud</p>
+                        </div>
+                        <div>
+                            <h5 style="color: #059669; margin-bottom: 0.5rem;">📈 Estadísticas Precisas</h5>
+                            <p style="color: #047857; font-size: 0.875rem;">Análisis separado por área para mejor toma de decisiones</p>
                         </div>
                     </div>
                 </div>
@@ -1125,6 +1250,21 @@
             'INFRAESTRUCTURA': 'Infraestructura'
         };
 
+        // Mapeo de prefijos para numeración específica
+        const areaPrefixes = {
+            'INGENIERIA_BIOMEDICA': 'SOLBIO',
+            'MECANICA': 'SOLMEC', 
+            'INFRAESTRUCTURA': 'SOLINFRA'
+        };
+
+        // Mapeo de tiempos de respuesta por prioridad
+        const tiemposRespuesta = {
+            'CRITICA': '2 horas',
+            'ALTA': '8 horas',
+            'MEDIA': '24 horas',
+            'BAJA': '72 horas'
+        };
+
         let currentUser = null;
         let sessionTimeout = null;
         let myRequests = [];
@@ -1134,7 +1274,6 @@
         function updateCloudStatus(connected, message = '') {
             isCloudConnected = connected;
             
-            // Actualizar indicadores
             const indicators = [
                 { id: 'cloud-status-text', iconId: null },
                 { id: 'login-cloud-text', iconId: 'login-cloud-icon' },
@@ -1159,13 +1298,11 @@
                 }
             });
             
-            // Actualizar indicador del login
             const loginIndicator = document.getElementById('login-cloud-indicator');
             if (loginIndicator) {
                 loginIndicator.className = `cloud-indicator ${connected ? 'connected' : 'disconnected'}`;
             }
             
-            // Actualizar indicador principal
             const mainIndicator = document.getElementById('main-cloud-indicator');
             if (mainIndicator) {
                 mainIndicator.className = `cloud-indicator ${connected ? 'connected' : 'disconnected'}`;
@@ -1181,7 +1318,7 @@
                     updateCloudStatus(isConnected, isConnected ? 'Airtable Conectado' : 'Error de conexión');
                     
                     alert(isConnected ? 
-                        '✅ Conexión exitosa con Airtable\n\n🌐 El portal está funcionando correctamente en la nube.' :
+                        '✅ Conexión exitosa con Airtable\n\n🌐 El portal está funcionando correctamente en la nube.\n🔢 Sistema de numeración específica activo.' :
                         '❌ Error de conexión con Airtable\n\nEl portal funcionará en modo local como respaldo.'
                     );
                 } else {
@@ -1194,11 +1331,40 @@
             }
         }
 
+        // 🔢 Funciones de vista previa de numeración
+        function updateNumberingPreview() {
+            const areaSelect = document.getElementById('area-ingenieria');
+            const previewDiv = document.getElementById('numbering-preview');
+            const previewNumber = document.getElementById('preview-number');
+            
+            if (areaSelect.value) {
+                const prefix = areaPrefixes[areaSelect.value];
+                previewNumber.textContent = `${prefix}00001`;
+                previewDiv.style.display = 'block';
+            } else {
+                previewDiv.style.display = 'none';
+            }
+        }
+
+        function updateTimePreview() {
+            const prioridadSelect = document.getElementById('prioridad');
+            const timePreviewDiv = document.getElementById('time-preview');
+            const previewTime = document.getElementById('preview-time');
+            
+            if (prioridadSelect.value) {
+                const tiempo = tiemposRespuesta[prioridadSelect.value];
+                previewTime.textContent = `Se asignará personal y debe responder en máximo ${tiempo}`;
+                timePreviewDiv.style.display = 'block';
+            } else {
+                timePreviewDiv.style.display = 'none';
+            }
+        }
+
         // Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
+            console.log('🔢 Sistema de numeración específica: SOLBIO, SOLMEC, SOLINFRA');
             
-            // Esperar a que se cargue airtable-config.js
             setTimeout(async () => {
                 if (window.airtableAPI) {
                     console.log('🔗 Probando conexión con Airtable...');
@@ -1216,31 +1382,22 @@
                 }
             }, 1000);
             
-            // Cargar usuarios aprobados desde la nube
             loadApprovedUsersFromCloud();
             checkExistingSession();
             initializeEventListeners();
             
-            console.log('✅ Sistema Cloud iniciado');
+            console.log('✅ Sistema Cloud iniciado con numeración específica');
         });
 
         function initializeEventListeners() {
-            // Login form
             document.getElementById('login-form').addEventListener('submit', handleLoginCloud);
-            
-            // Request access form
             document.getElementById('request-form').addEventListener('submit', handleAccessRequestCloud);
-            
-            // New request form
             document.getElementById('new-request-form').addEventListener('submit', handleNewRequestCloud);
 
-            // Mejorar experiencia de código de acceso
             const accessCodeInput = document.getElementById('access-code');
             accessCodeInput.addEventListener('input', function(e) {
-                // Solo permitir números
                 e.target.value = e.target.value.replace(/[^0-9]/g, '');
                 
-                // Auto-submit cuando se completan 4 dígitos
                 if (e.target.value.length === 4) {
                     setTimeout(() => {
                         document.getElementById('login-btn').focus();
@@ -1264,7 +1421,6 @@
                     console.log(`✅ ${usuarios.length} usuarios aprobados cargados desde Airtable`);
                     return usuarios;
                 } else {
-                    // Fallback a localStorage
                     const localUsers = localStorage.getItem('hospital_approved_users');
                     const usuarios = localUsers ? JSON.parse(localUsers) : [];
                     console.log(`📱 ${usuarios.length} usuarios cargados desde localStorage (fallback)`);
@@ -1277,11 +1433,9 @@
         }
 
         function showAuthTab(tab) {
-            // Update tabs
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             event.target.classList.add('active');
             
-            // Show/hide forms
             document.querySelectorAll('.auth-form').forEach(f => f.classList.add('hidden'));
             
             if (tab === 'login') {
@@ -1290,7 +1444,6 @@
                 document.getElementById('request-form').classList.remove('hidden');
             }
             
-            // Clear alerts
             document.getElementById('login-alert').innerHTML = '';
             document.getElementById('request-alert').innerHTML = '';
         }
@@ -1306,7 +1459,6 @@
             
             console.log('🔍 Intentando login cloud con:', { email, accessCode });
             
-            // Validaciones básicas
             if (!email || !accessCode) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos');
                 return;
@@ -1321,7 +1473,6 @@
             loginBtn.innerHTML = '⏳ Verificando con Airtable...';
             
             try {
-                // Usar método de validación optimizado
                 const validation = await window.airtableAPI.validateUserCredentials(email, accessCode);
                 
                 if (validation.valid) {
@@ -1361,7 +1512,6 @@
             const alertDiv = document.getElementById('request-alert');
             const requestBtn = document.getElementById('request-btn');
             
-            // Validaciones
             if (!formData.nombreCompleto || !formData.email || !formData.servicioHospitalario || !formData.cargo) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
                 return;
@@ -1372,7 +1522,6 @@
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
-                    // Enviar a Airtable
                     await window.airtableAPI.createSolicitudAcceso(formData);
                     
                     showAlert(alertDiv, 'success', 
@@ -1390,7 +1539,6 @@
                         `⏰ Tiempo estimado: 24-48 horas laborales`
                     );
                 } else {
-                    // Fallback a localStorage
                     const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
@@ -1398,10 +1546,8 @@
                     showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
-                // Limpiar formulario
                 document.getElementById('request-form').reset();
                 
-                // Cambiar a pestaña de login después de 3 segundos
                 setTimeout(() => {
                     showAuthTab('login');
                 }, 3000);
@@ -1423,10 +1569,9 @@
                 return;
             }
             
-            console.log('🔍 Creando solicitud de mantenimiento en Airtable...');
+            console.log('🔍 Creando solicitud con numeración específica...');
             
             const formData = {
-                numero: `SOL${Date.now()}${Math.random().toString(36).substring(2, 3).toUpperCase()}`,
                 servicioIngenieria: document.getElementById('area-ingenieria').value,
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 prioridad: document.getElementById('prioridad').value,
@@ -1448,7 +1593,6 @@
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-request-btn');
             
-            // Validaciones
             if (!formData.servicioIngenieria || !formData.tipoServicio || !formData.prioridad || 
                 !formData.equipo || !formData.ubicacion || !formData.descripcion) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
@@ -1456,46 +1600,57 @@
             }
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ Guardando en Airtable...';
+            submitBtn.innerHTML = '⏳ Creando con numeración específica...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
-                    // Guardar en Airtable
-                    await window.airtableAPI.createSolicitud(formData);
+                    // Solicitud se crea con numeración específica automáticamente
+                    const result = await window.airtableAPI.createSolicitud(formData);
+                    
+                    // Obtener el número generado desde el resultado
+                    const numeroGenerado = result.fields?.numero || 'Generado automáticamente';
+                    const prefijo = areaPrefixes[formData.servicioIngenieria];
                     
                     showAlert(alertDiv, 'success', 
-                        `✅ Solicitud guardada en Airtable exitosamente\n\n` +
+                        `✅ Solicitud creada exitosamente con numeración específica\n\n` +
                         `📋 DETALLES:\n` +
-                        `• Número: ${formData.numero}\n` +
-                        `• Área: ${areasIngenieria[formData.servicioIngenieria]}\n` +
+                        `• Número: ${numeroGenerado}\n` +
+                        `• Área: ${areasIngenieria[formData.servicioIngenieria]} (${prefijo})\n` +
                         `• Prioridad: ${formData.prioridad}\n` +
                         `• Equipo: ${formData.equipo}\n\n` +
                         `🌐 ESTADO CLOUD:\n` +
+                        `• Guardado automáticamente en Airtable\n` +
                         `• Visible inmediatamente en Portal de Gestión\n` +
-                        `• Sincronizada en tiempo real\n` +
-                        `• Respaldada automáticamente\n` +
-                        `• Accesible desde cualquier dispositivo\n\n` +
-                        `👨‍🔧 El técnico será asignado desde el Portal de Gestión`
+                        `• Listo para asignación automática de personal\n` +
+                        `• Numeración específica por área aplicada\n` +
+                        `• Control de tiempos de respuesta activado\n\n` +
+                        `🎯 El personal técnico será asignado automáticamente desde el Portal de Gestión`
                     );
                 } else {
-                    // Fallback a localStorage
+                    // Generar número local con formato específico
+                    const prefix = areaPrefixes[formData.servicioIngenieria] || 'SOL';
+                    const timestamp = Date.now().toString().slice(-5);
+                    const numeroLocal = `${prefix}${timestamp}`;
+                    
+                    formData.numero = numeroLocal;
+                    
                     const existingRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará con Airtable cuando se restablezca la conexión.');
+                    showAlert(alertDiv, 'success', `✅ Solicitud guardada localmente con número ${numeroLocal}. Se sincronizará con Airtable cuando se restablezca la conexión.`);
                 }
                 
-                // Agregar a lista local
                 myRequests.push(formData);
                 
-                // Limpiar formulario
                 document.getElementById('new-request-form').reset();
                 
-                // Actualizar lista de solicitudes
+                // Limpiar vistas previas
+                document.getElementById('numbering-preview').style.display = 'none';
+                document.getElementById('time-preview').style.display = 'none';
+                
                 updateMyRequestsDisplay();
                 
-                // Auto-navegar a "Mis Solicitudes"
                 setTimeout(() => {
                     showSection('mis-solicitudes');
                 }, 3000);
@@ -1505,7 +1660,7 @@
                 showAlert(alertDiv, 'error', '❌ Error al guardar en Airtable: ' + error.message);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '📤 Enviar Solicitud a Airtable';
+                submitBtn.innerHTML = '📤 Crear Solicitud con Numeración Específica';
             }
         }
 
@@ -1521,13 +1676,10 @@
                 sessionDuration: 4 * 60 * 60 * 1000 // 4 horas
             };
             
-            // Guardar sesión
             sessionStorage.setItem('hospitalSessionCloud', JSON.stringify(currentUser));
             
-            // Cargar solicitudes del usuario desde la nube
             loadMyRequestsFromCloud();
             
-            // Mostrar portal principal
             showMainPortalCloud();
             
             console.log('✅ Usuario autenticado en sistema cloud:', currentUser.name);
@@ -1537,24 +1689,19 @@
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-portal').classList.add('active');
             
-            // Actualizar información del usuario
             updateUserInterfaceCloud();
             
-            // Iniciar temporizador de sesión
             startSessionTimer();
             
-            // Mensaje de bienvenida
             setTimeout(() => {
-                alert(`✅ ¡Bienvenido al Portal Cloud, ${currentUser.name}!\n\n👤 Usuario: ${currentUser.name}\n📧 Email: ${currentUser.email}\n🏥 Servicio: ${currentUser.serviceName}\n🔢 Código: ${currentUser.accessCode}\n🌐 Estado: Conectado a Airtable\n⏰ Sesión: 4 horas\n\n🛠️ Sus solicitudes se guardan automáticamente en la nube y son visibles inmediatamente en el Portal de Gestión.`);
+                alert(`✅ ¡Bienvenido al Portal Cloud, ${currentUser.name}!\n\n👤 Usuario: ${currentUser.name}\n📧 Email: ${currentUser.email}\n🏥 Servicio: ${currentUser.serviceName}\n🔢 Código: ${currentUser.accessCode}\n🌐 Estado: Conectado a Airtable\n⏰ Sesión: 4 horas\n\n🔢 NUMERACIÓN ESPECÍFICA:\n• Biomédica: SOLBIO00001\n• Mecánica: SOLMEC00001\n• Infraestructura: SOLINFRA00001\n\n🛠️ Sus solicitudes se crean con numeración específica por área y son visibles inmediatamente en el Portal de Gestión para asignación automática de personal.`);
             }, 500);
         }
 
         function updateUserInterfaceCloud() {
-            // Actualizar header
             document.getElementById('user-name').textContent = currentUser.name;
             document.getElementById('user-service').textContent = currentUser.serviceName;
             
-            // Crear iniciales para avatar
             const initials = currentUser.name.split(' ')
                 .filter(word => word.length > 0)
                 .map(word => word[0])
@@ -1564,7 +1711,6 @@
             
             document.getElementById('user-avatar').textContent = initials;
             
-            // Actualizar información de autenticación en formulario
             document.getElementById('auth-user-display').textContent = currentUser.name;
             document.getElementById('auth-service-display').textContent = currentUser.serviceName;
             document.getElementById('auth-code-display').textContent = currentUser.accessCode;
@@ -1578,10 +1724,8 @@
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
-                    // Cargar desde Airtable
                     const allRequests = await window.airtableAPI.getSolicitudes();
                     
-                    // Filtrar solicitudes del usuario
                     myRequests = allRequests.filter(request => 
                         request.emailSolicitante === currentUser.email || 
                         request.servicioHospitalario === currentUser.service
@@ -1589,7 +1733,6 @@
                     
                     console.log(`✅ ${myRequests.length} solicitudes cargadas desde Airtable`);
                 } else {
-                    // Fallback a localStorage
                     const localRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
                     myRequests = localRequests.filter(request => 
                         request.emailSolicitante === currentUser.email || 
@@ -1615,7 +1758,7 @@
             await loadMyRequestsFromCloud();
             const newCount = myRequests.length;
             
-            alert(`🔄 Solicitudes actualizadas desde Airtable\n\n📊 Solicitudes encontradas: ${newCount}\n📈 Cambio: ${newCount - originalCount}\n🕘 ${new Date().toLocaleTimeString('es-CO')}\n\n${isCloudConnected ? '🌐 Datos sincronizados desde la nube' : '📱 Datos cargados localmente'}`);
+            alert(`🔄 Solicitudes actualizadas desde Airtable\n\n📊 Solicitudes encontradas: ${newCount}\n📈 Cambio: ${newCount - originalCount}\n🕘 ${new Date().toLocaleTimeString('es-CO')}\n\n${isCloudConnected ? '🌐 Datos sincronizados desde la nube' : '📱 Datos cargados localmente'}\n🔢 Sistema de numeración específica activo`);
         }
 
         function updateMyRequestsDisplay() {
@@ -1626,7 +1769,15 @@
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
                         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes registradas</h3>
-                        <p style="margin-bottom: 1.5rem;">Sus solicitudes aparecerán aquí cuando las envíe al sistema cloud</p>
+                        <p style="margin-bottom: 1.5rem;">Sus solicitudes aparecerán aquí con numeración específica por área</p>
+                        <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h4 style="color: #1e40af; margin-bottom: 0.5rem;">🔢 Sistema de Numeración</h4>
+                            <p style="color: #1e3a8a; font-size: 0.875rem;">
+                                • Biomédica: SOLBIO00001<br>
+                                • Mecánica: SOLMEC00001<br>
+                                • Infraestructura: SOLINFRA00001
+                            </p>
+                        </div>
                         <button class="btn btn-primary" onclick="showSection('nueva-solicitud')">
                             🛠️ Crear Primera Solicitud
                         </button>
@@ -1640,10 +1791,11 @@
                 
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 3px solid #059669;">
-                        <h4 style="color: #059669; margin-bottom: 0.5rem;">🌐 ${myRequests.length} Solicitudes Sincronizadas</h4>
+                        <h4 style="color: #059669; margin-bottom: 0.5rem;">🌐 ${myRequests.length} Solicitudes con Numeración Específica</h4>
                         <p style="color: #047857; font-size: 0.875rem;">
                             ${isCloudConnected ? 'Datos cargados desde Airtable' : 'Datos disponibles localmente'} - 
-                            Última actualización: ${new Date().toLocaleTimeString('es-CO')}
+                            Última actualización: ${new Date().toLocaleTimeString('es-CO')}<br>
+                            🔢 Sistema de numeración por área activo
                         </p>
                     </div>
                     ${requestsHTML}
@@ -1654,50 +1806,70 @@
         function createMyRequestCardCloud(request) {
             const getStatusClass = (status) => {
                 const statusMap = {
-                    'PENDIENTE': 'pendiente',
-                    'ASIGNADA': 'asignada', 
-                    'EN_PROCESO': 'proceso',
-                    'COMPLETADA': 'completada'
-                };
-                return statusMap[status] || 'pendiente';
-            };
-
-            const getRequestCardClass = (status) => {
-                const classMap = {
                     'PENDIENTE': 'pending',
-                    'ASIGNADA': 'assigned',
-                    'EN_PROCESO': 'assigned', 
+                    'ASIGNADA': 'assigned', 
+                    'EN_PROCESO': 'in-progress',
                     'COMPLETADA': 'completed'
                 };
-                return classMap[status] || 'pending';
+                return statusMap[status] || 'pending';
             };
 
-            const getPriorityColor = (priority) => {
-                const colorMap = {
-                    'CRITICA': '#ef4444',
-                    'ALTA': '#f59e0b',
-                    'MEDIA': '#3b82f6',
-                    'BAJA': '#059669'
+            const getStatusBadge = (status) => {
+                const badges = {
+                    'PENDIENTE': 'status-pendiente',
+                    'ASIGNADA': 'status-asignada',
+                    'EN_PROCESO': 'status-proceso',
+                    'COMPLETADA': 'status-completada'
                 };
-                return colorMap[priority] || '#6b7280';
+                return badges[status] || 'status-pendiente';
+            };
+
+            const getPriorityBadge = (priority) => {
+                const badges = {
+                    'CRITICA': 'priority-critica',
+                    'ALTA': 'priority-alta',
+                    'MEDIA': 'priority-media',
+                    'BAJA': 'priority-baja'
+                };
+                return badges[priority] || 'priority-media';
+            };
+
+            const getAreaBadge = (area) => {
+                const badges = {
+                    'INGENIERIA_BIOMEDICA': 'area-biomedica',
+                    'MECANICA': 'area-mecanica',
+                    'INFRAESTRUCTURA': 'area-infraestructura'
+                };
+                return badges[area] || 'area-biomedica';
+            };
+
+            const getAreaName = (area) => {
+                return areasIngenieria[area] || area;
             };
 
             const estado = request.estado || 'PENDIENTE';
             const areaInfo = request.servicioIngenieria ? areasIngenieria[request.servicioIngenieria] : 'Sin especificar';
             
+            // Detectar tipo de numeración por el prefijo
+            let numerationType = 'Estándar';
+            if (request.numero) {
+                if (request.numero.startsWith('SOLBIO')) numerationType = '🏥 Biomédica';
+                else if (request.numero.startsWith('SOLMEC')) numerationType = '⚙️ Mecánica';
+                else if (request.numero.startsWith('SOLINFRA')) numerationType = '🏗️ Infraestructura';
+            }
+            
             return `
-                <div class="request-card ${getRequestCardClass(estado)}">
+                <div class="request-card ${getStatusClass(estado)}">
+                    ${request.prioridad ? `<div class="priority-badge ${getPriorityBadge(request.prioridad)}">${request.prioridad}</div>` : ''}
+                    
                     <div class="request-header">
-                        <div class="request-number">📋 ${request.numero}</div>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <span class="status-${getStatusClass(estado)}">${estado.replace('_', ' ')}</span>
-                            <span style="background: ${getPriorityColor(request.prioridad)}; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;">
-                                ${request.prioridad}
-                            </span>
-                            <span style="background: #2563eb; color: white; padding: 0.25rem 0.5rem; border-radius: 0.375rem; font-size: 0.65rem; font-weight: 600;">
-                                CLOUD
+                        <div class="request-number">
+                            📋 ${request.numero || 'SIN-NÚMERO'}
+                            <span class="area-badge ${getAreaBadge(request.servicioIngenieria)}">
+                                ${numerationType}
                             </span>
                         </div>
+                        <span class="${getStatusBadge(estado)}">${estado.replace('_', ' ')}</span>
                     </div>
                     
                     <div class="request-details">
@@ -1722,8 +1894,13 @@
                             <div class="request-detail-value">${new Date(request.fechaCreacion).toLocaleString('es-CO')}</div>
                         </div>
                         <div class="request-detail">
-                            <div class="request-detail-label">👨‍🔧 Técnico Asignado</div>
-                            <div class="request-detail-value">${request.tecnicoAsignado || '<span style="color: #f59e0b;">Pendiente de asignación en Portal de Gestión</span>'}</div>
+                            <div class="request-detail-label">👨‍🔧 Personal Asignado</div>
+                            <div class="request-detail-value">
+                                ${request.tecnicoAsignado ? 
+                                    `<span style="color: #059669; font-weight: 600;">${request.tecnicoAsignado}</span>` : 
+                                    '<span style="color: #f59e0b;">Pendiente de asignación automática</span>'
+                                }
+                            </div>
                         </div>
                     </div>
 
@@ -1731,11 +1908,22 @@
                         <div class="request-detail-label">📝 Descripción del Problema</div>
                         <div style="margin-top: 0.5rem; color: #1f2937;">${request.descripcion || 'No especificada'}</div>
                         ${request.observaciones ? `<div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;"><strong>Observaciones:</strong> ${request.observaciones}</div>` : ''}
+                        ${request.observacionesAsignacion ? `<div style="margin-top: 0.5rem; color: #059669;"><strong>Obs. Asignación:</strong> ${request.observacionesAsignacion}</div>` : ''}
                     </div>
+
+                    ${request.fechaAsignacion ? `
+                        <div style="background: #dcfce7; padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                            <h5 style="color: #166534; margin-bottom: 0.5rem;">🎯 Información de Asignación</h5>
+                            <p style="color: #047857; font-size: 0.875rem; margin: 0;">
+                                <strong>Fecha de Asignación:</strong> ${new Date(request.fechaAsignacion).toLocaleString('es-CO')}<br>
+                                ${request.tiempoEstimadoRespuesta ? `<strong>Tiempo Estimado:</strong> ${new Date(request.tiempoEstimadoRespuesta).toLocaleString('es-CO')}` : ''}
+                            </p>
+                        </div>
+                    ` : ''}
 
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
-                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Visible en Portal de Gestión</span>
+                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Numeración específica ${numerationType}</span>
                     </div>
                 </div>
             `;
@@ -1743,8 +1931,6 @@
 
         function filterMyRequests(filter) {
             console.log('🔍 Filtrando solicitudes:', filter);
-            // La funcionalidad actual ya muestra todas las solicitudes ordenadas por fecha
-            // Se puede expandir aquí si se necesita filtrado específico
         }
 
         function showAlert(container, type, message) {
@@ -1756,21 +1942,17 @@
         }
 
         function showSection(sectionName) {
-            // Ocultar todas las secciones
             document.querySelectorAll('.content-card').forEach(card => {
                 card.classList.add('hidden');
             });
 
-            // Mostrar sección seleccionada
             document.getElementById(sectionName).classList.remove('hidden');
 
-            // Actualizar navegación
             document.querySelectorAll('.nav-card').forEach(card => {
                 card.classList.remove('active');
             });
             event.currentTarget.classList.add('active');
 
-            // Si se cambia a "mis-solicitudes", cargar desde la nube
             if (sectionName === 'mis-solicitudes') {
                 loadMyRequestsFromCloud();
             }
@@ -1818,7 +2000,7 @@
         }
 
         function logout(message = null) {
-            const confirmation = message ? true : confirm('¿Está seguro que desea cerrar sesión?\n\nSus datos están seguros en Airtable.');
+            const confirmation = message ? true : confirm('¿Está seguro que desea cerrar sesión?\n\nSus datos están seguros en Airtable con numeración específica.');
             if (!confirmation && !message) return;
 
             if (sessionTimeout) {
@@ -1832,7 +2014,6 @@
             document.getElementById('main-portal').classList.remove('active');
             document.getElementById('login-screen').style.display = 'flex';
             
-            // Limpiar formularios
             document.getElementById('login-form').reset();
             document.getElementById('login-alert').innerHTML = '';
             
@@ -1845,12 +2026,12 @@
             console.log('🚪 Sesión cloud cerrada');
         }
 
-        // Log de inicialización
-        console.log('🌐 Portal de Solicitudes Cloud con Airtable Iniciado');
+        console.log('🌐 Portal de Solicitudes Cloud con Numeración Específica Iniciado');
         console.log('🔐 Sistema de autenticación: Email + Código de 4 dígitos generado en Portal de Gestión');
-        console.log('🛠️ Funcionalidades: Solicitar acceso, crear solicitudes cloud, ver historial sincronizado');
+        console.log('🔢 Numeración específica: SOLBIO (Biomédica), SOLMEC (Mecánica), SOLINFRA (Infraestructura)');
+        console.log('🛠️ Funcionalidades: Solicitar acceso, crear solicitudes con numeración específica, ver historial con asignación');
         console.log('💾 Sincronización: Airtable como base de datos principal con fallback a localStorage');
-        console.log('🎯 Integración: Compatible con códigos generados en Portal de Gestión');
+        console.log('🎯 Integración: Compatible con códigos generados en Portal de Gestión y asignación automática');
     </script>
     <script src="airtable-config.js"></script>
 </body>

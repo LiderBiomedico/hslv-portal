@@ -1,7 +1,7 @@
-// 🛡️ Configuración CORREGIDA de Airtable API - PERSONAL DE SOPORTE FIXED
-// airtable-config.js - Versión corregida con mapeo de valores
+// 🛡️ Configuración ACTUALIZADA de Airtable API - Con Asignación de Personal y Numeración Específica
+// airtable-config.js - Versión con gestión completa de solicitudes
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA PARA PERSONAL)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN CON ASIGNACIÓN DE PERSONAL)...');
 
 class AirtableAPI {
     constructor() {
@@ -36,26 +36,37 @@ class AirtableAPI {
             solicitudesAcceso: 'SolicitudesAcceso'
         };
 
-        // 🗺️ MAPEO DE VALORES PARA AIRTABLE - ESTO SOLUCIONA EL ERROR 422
+        // 🗺️ MAPEO DE VALORES PARA AIRTABLE
         this.fieldMappings = {
-            // Mapeo para campos de área
             area: {
                 'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'INGENIERIA_BIOMEDICA', 'Biomedica', 'Biomédica'],
                 'MECANICA': ['Mecánica', 'MECANICA', 'Mecanica'],
                 'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA', 'Infraestructura']
             },
-            // Mapeo para campos de tipo
             tipo: {
                 'ingeniero': ['Ingeniero', 'ingeniero', 'INGENIERO'],
                 'tecnico': ['Técnico', 'tecnico', 'TECNICO', 'Tecnico'],
                 'auxiliar': ['Auxiliar', 'auxiliar', 'AUXILIAR']
             },
-            // Mapeo para campos de estado
             estado: {
                 'disponible': ['Disponible', 'disponible', 'DISPONIBLE', 'Activo', 'activo'],
                 'ocupado': ['Ocupado', 'ocupado', 'OCUPADO', 'Busy', 'busy'],
                 'inactivo': ['Inactivo', 'inactivo', 'INACTIVO', 'Inactive', 'inactive']
             }
+        };
+
+        // 🔢 CONTADORES PARA NUMERACIÓN ESPECÍFICA
+        this.areaCounters = {
+            'INGENIERIA_BIOMEDICA': 0,
+            'MECANICA': 0,
+            'INFRAESTRUCTURA': 0
+        };
+
+        // 🎯 PREFIJOS POR ÁREA
+        this.areaPrefixes = {
+            'INGENIERIA_BIOMEDICA': 'SOLBIO',
+            'MECANICA': 'SOLMEC',
+            'INFRAESTRUCTURA': 'SOLINFRA'
         };
         
         this.connectionStatus = 'connecting';
@@ -63,7 +74,8 @@ class AirtableAPI {
         console.log('📡 URL base:', this.baseUrl);
         console.log('🛡️ Usando proxy:', this.useProxy);
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
-        console.log('🗺️ Mapeo de campos configurado para prevenir errores 422');
+        console.log('🔢 Sistema de numeración por área configurado');
+        console.log('👨‍🔧 Sistema de asignación de personal configurado');
         
         this.initializeConnectionAsync();
     }
@@ -72,54 +84,64 @@ class AirtableAPI {
     mapFieldValue(fieldType, value) {
         if (!value) return value;
         
-        // Si no hay mapeo para este tipo de campo, devolver valor original
         if (!this.fieldMappings[fieldType]) {
             return value;
         }
 
-        // Buscar la clave que corresponde al valor
         const mapping = this.fieldMappings[fieldType];
         
         for (const [key, possibleValues] of Object.entries(mapping)) {
             if (possibleValues.includes(value)) {
-                // Devolver el primer valor (que debería ser el correcto para Airtable)
                 console.log(`🗺️ Mapeando ${fieldType}: "${value}" → "${possibleValues[0]}"`);
                 return possibleValues[0];
             }
         }
         
-        // Si no se encuentra mapeo, devolver valor original
         console.warn(`⚠️ No se encontró mapeo para ${fieldType}: "${value}"`);
         return value;
     }
 
-    // 🔍 FUNCIÓN PARA DETECTAR VALORES VÁLIDOS EN AIRTABLE
-    async detectValidFieldValues(tableName, fieldName) {
-        console.log(`🔍 Detectando valores válidos para ${tableName}.${fieldName}...`);
+    // 🔢 GENERAR NÚMERO ESPECÍFICO POR ÁREA
+    async generateAreaSpecificNumber(area) {
+        console.log('🔢 Generando número específico para área:', area);
         
         try {
-            // Obtener algunos records para ver qué valores están usando
-            const result = await this.makeRequest(`${tableName}?maxRecords=10`);
+            // Obtener todas las solicitudes para calcular el siguiente número
+            const solicitudes = await this.getSolicitudes();
             
-            if (result.records && result.records.length > 0) {
-                const values = new Set();
-                
-                result.records.forEach(record => {
-                    if (record.fields[fieldName]) {
-                        values.add(record.fields[fieldName]);
-                    }
-                });
-                
-                const validValues = Array.from(values);
-                console.log(`✅ Valores válidos encontrados para ${fieldName}:`, validValues);
-                
-                return validValues;
+            // Filtrar por área y encontrar el número más alto
+            const prefix = this.areaPrefixes[area];
+            if (!prefix) {
+                console.warn('⚠️ Área no reconocida, usando formato estándar');
+                return `SOL${Date.now()}${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
             }
-            
-            return [];
+
+            const areaRequests = solicitudes.filter(s => 
+                s.numero && s.numero.startsWith(prefix)
+            );
+
+            let maxNumber = 0;
+            areaRequests.forEach(solicitud => {
+                const numberPart = solicitud.numero.replace(prefix, '');
+                const num = parseInt(numberPart);
+                if (!isNaN(num) && num > maxNumber) {
+                    maxNumber = num;
+                }
+            });
+
+            const nextNumber = maxNumber + 1;
+            const formattedNumber = nextNumber.toString().padStart(5, '0');
+            const newRequestNumber = `${prefix}${formattedNumber}`;
+
+            console.log(`✅ Número generado: ${newRequestNumber} (siguiente: ${nextNumber})`);
+            return newRequestNumber;
+
         } catch (error) {
-            console.error(`❌ Error detectando valores para ${fieldName}:`, error);
-            return [];
+            console.error('❌ Error generando número específico:', error);
+            // Fallback al formato anterior
+            const prefix = this.areaPrefixes[area] || 'SOL';
+            const randomPart = Date.now().toString().slice(-5);
+            return `${prefix}${randomPart}`;
         }
     }
 
@@ -153,12 +175,10 @@ class AirtableAPI {
         console.log('🔍 Auto-detectando valores válidos en Airtable...');
         
         try {
-            // Detectar valores para campos críticos
             const areaValues = await this.detectValidFieldValues('Tecnicos', 'area');
             const tipoValues = await this.detectValidFieldValues('Tecnicos', 'tipo');
             const estadoValues = await this.detectValidFieldValues('Tecnicos', 'estado');
             
-            // Actualizar mapeos si se encontraron valores
             if (areaValues.length > 0) {
                 console.log('🔄 Actualizando mapeo de área con valores detectados');
                 this.updateFieldMapping('area', areaValues);
@@ -179,21 +199,46 @@ class AirtableAPI {
         }
     }
 
-    // 🔄 ACTUALIZAR MAPEO CON VALORES DETECTADOS
+    async detectValidFieldValues(tableName, fieldName) {
+        console.log(`🔍 Detectando valores válidos para ${tableName}.${fieldName}...`);
+        
+        try {
+            const result = await this.makeRequest(`${tableName}?maxRecords=10`);
+            
+            if (result.records && result.records.length > 0) {
+                const values = new Set();
+                
+                result.records.forEach(record => {
+                    if (record.fields[fieldName]) {
+                        values.add(record.fields[fieldName]);
+                    }
+                });
+                
+                const validValues = Array.from(values);
+                console.log(`✅ Valores válidos encontrados para ${fieldName}:`, validValues);
+                
+                return validValues;
+            }
+            
+            return [];
+        } catch (error) {
+            console.error(`❌ Error detectando valores para ${fieldName}:`, error);
+            return [];
+        }
+    }
+
     updateFieldMapping(fieldType, detectedValues) {
         if (!this.fieldMappings[fieldType]) {
             this.fieldMappings[fieldType] = {};
         }
         
-        // Para cada valor detectado, crear un mapeo
         detectedValues.forEach(value => {
-            // Usar el valor detectado como clave principal
             const normalizedKey = value.toLowerCase().replace(/[áéíóú]/g, match => {
                 const map = {'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u'};
                 return map[match];
             });
             
-            this.fieldMappings[fieldType][normalizedKey] = [value]; // El valor exacto de Airtable
+            this.fieldMappings[fieldType][normalizedKey] = [value];
         });
         
         console.log(`🗺️ Mapeo actualizado para ${fieldType}:`, this.fieldMappings[fieldType]);
@@ -217,7 +262,6 @@ class AirtableAPI {
 
     async makeRequest(endpoint, method = 'GET', data = null) {
         console.log('📡 Request:', method, endpoint);
-        console.log('🔗 Estado de conexión antes del request:', this.connectionStatus);
         
         try {
             let url, options;
@@ -232,9 +276,6 @@ class AirtableAPI {
                     mode: 'cors',
                     credentials: 'same-origin'
                 };
-                
-                console.log('📡 PROXY Request');
-                
             } else {
                 url = `${this.baseUrl}/${endpoint}`;
                 options = {
@@ -245,8 +286,6 @@ class AirtableAPI {
                     },
                     mode: 'cors'
                 };
-                
-                console.log('📡 DIRECT Request');
             }
             
             if (data && (method === 'POST' || method === 'PATCH')) {
@@ -260,19 +299,16 @@ class AirtableAPI {
             const response = await fetch(url, options);
             
             console.log('📨 Status:', response.status);
-            console.log('📨 StatusText:', response.statusText);
             
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('❌ Error response:', errorText);
                 
-                // Manejar específicamente error 422 para dar mejor información
                 if (response.status === 422) {
                     console.error('🚨 ERROR 422 - Valores de campo inválidos');
                     console.error('🔍 Datos enviados:', data);
                     console.error('🔍 Endpoint:', endpoint);
                     
-                    // Intentar auto-detectar valores válidos si es error de personal
                     if (endpoint.includes('Tecnicos')) {
                         console.log('🔧 Intentando auto-detectar valores válidos...');
                         await this.autoDetectFieldValues();
@@ -285,7 +321,6 @@ class AirtableAPI {
             const result = await response.json();
             console.log('✅ Request exitoso - Records:', result.records?.length || result.id || 'N/A');
             
-            // MANTENER estado de conexión como conectado después de éxito
             if (this.connectionStatus !== 'connected') {
                 console.log('🔄 Actualizando estado a conectado después de request exitoso');
                 this.connectionStatus = 'connected';
@@ -297,7 +332,6 @@ class AirtableAPI {
         } catch (error) {
             console.error('❌ Request falló:', error);
             
-            // Solo cambiar estado de conexión en errores de red reales
             if (error.name === 'TypeError' || error.message.includes('fetch')) {
                 console.log('🌐 Error de red detectado - cambiando estado a desconectado');
                 if (this.connectionStatus !== 'disconnected') {
@@ -305,7 +339,6 @@ class AirtableAPI {
                     this.notifyConnectionStatus(false);
                 }
                 
-                // Fallback solo para operaciones de lectura
                 if (method === 'GET') {
                     console.warn('⚠️ Usando localStorage fallback para lectura');
                     return this.localStorageFallback(endpoint, method, data);
@@ -381,7 +414,6 @@ class AirtableAPI {
         }
     }
 
-    // 🧪 Test específico para tabla de técnicos
     async testTecnicosTable() {
         console.log('🧪 Test específico de tabla Tecnicos...');
         
@@ -428,7 +460,6 @@ class AirtableAPI {
             console.log('✅ Test tabla Tecnicos exitoso');
             console.log('📋 Estructura:', result);
             
-            // Auto-detectar campos válidos si hay records
             if (result.records && result.records.length > 0) {
                 console.log('🔍 Auto-detectando valores válidos...');
                 this.autoDetectFieldValues();
@@ -449,7 +480,7 @@ class AirtableAPI {
         }
     }
 
-    // 📋 MÉTODOS PRINCIPALES - SOLICITUDES
+    // 📋 MÉTODOS PRINCIPALES - SOLICITUDES CON NUMERACIÓN ESPECÍFICA
     async getSolicitudes() {
         try {
             const result = await this.makeRequest(this.tables.solicitudes);
@@ -464,27 +495,339 @@ class AirtableAPI {
     }
 
     async createSolicitud(solicitudData) {
-        // Usar versión simplificada que funciona
-        const data = {
-            fields: {
-                numero: solicitudData.numero || `SOL${Date.now()}`,
-                descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
-                estado: solicitudData.estado || 'PENDIENTE',
-                // Solo agregar campos opcionales si tienen valor
-                ...(solicitudData.equipo && { equipo: solicitudData.equipo }),
-                ...(solicitudData.ubicacion && { ubicacion: solicitudData.ubicacion }),
-                ...(solicitudData.solicitante && { solicitante: solicitudData.solicitante }),
-                ...(solicitudData.emailSolicitante && { emailSolicitante: solicitudData.emailSolicitante }),
-                ...(solicitudData.fechaCreacion && { fechaCreacion: solicitudData.fechaCreacion }),
-                ...(solicitudData.observaciones && { observaciones: solicitudData.observaciones })
-            }
-        };
+        console.log('📝 Creando solicitud con numeración específica...');
         
-        console.log('📝 Creando solicitud con datos seguros:', data);
-        return await this.makeRequest(this.tables.solicitudes, 'POST', data);
+        try {
+            // Generar número específico según el área
+            const numero = await this.generateAreaSpecificNumber(solicitudData.servicioIngenieria);
+            
+            const data = {
+                fields: {
+                    numero: numero,
+                    descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
+                    estado: 'PENDIENTE',
+                    fechaCreacion: new Date().toISOString(),
+                    tiempoRespuestaMaximo: this.calculateMaxResponseTime(solicitudData.prioridad),
+                    // Datos específicos de la solicitud
+                    ...(solicitudData.servicioIngenieria && { servicioIngenieria: solicitudData.servicioIngenieria }),
+                    ...(solicitudData.tipoServicio && { tipoServicio: solicitudData.tipoServicio }),
+                    ...(solicitudData.prioridad && { prioridad: solicitudData.prioridad }),
+                    ...(solicitudData.equipo && { equipo: solicitudData.equipo }),
+                    ...(solicitudData.ubicacion && { ubicacion: solicitudData.ubicacion }),
+                    ...(solicitudData.observaciones && { observaciones: solicitudData.observaciones }),
+                    // Datos del solicitante
+                    ...(solicitudData.solicitante && { solicitante: solicitudData.solicitante }),
+                    ...(solicitudData.servicioHospitalario && { servicioHospitalario: solicitudData.servicioHospitalario }),
+                    ...(solicitudData.emailSolicitante && { emailSolicitante: solicitudData.emailSolicitante })
+                }
+            };
+            
+            console.log('📝 Creando solicitud con datos:', data);
+            const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
+            
+            console.log(`✅ Solicitud creada: ${numero}`);
+            return result;
+            
+        } catch (error) {
+            console.error('❌ Error creando solicitud:', error);
+            throw error;
+        }
     }
 
-    // 👥 MÉTODOS DE TÉCNICOS/PERSONAL DE SOPORTE - CORREGIDOS
+    // ⏱️ CALCULAR TIEMPO MÁXIMO DE RESPUESTA SEGÚN PRIORIDAD
+    calculateMaxResponseTime(prioridad) {
+        const tiemposRespuesta = {
+            'CRITICA': 2, // 2 horas
+            'ALTA': 8,    // 8 horas
+            'MEDIA': 24,  // 24 horas
+            'BAJA': 72    // 72 horas
+        };
+        
+        const horas = tiemposRespuesta[prioridad] || 24;
+        const fechaMaxima = new Date();
+        fechaMaxima.setHours(fechaMaxima.getHours() + horas);
+        
+        return fechaMaxima.toISOString();
+    }
+
+    // 🎯 MÉTODOS DE ASIGNACIÓN DE PERSONAL
+    async assignTechnicianToRequest(solicitudId, tecnicoId, observacionesAsignacion = '') {
+        console.log('🎯 Asignando técnico a solicitud:', { solicitudId, tecnicoId });
+        
+        try {
+            // 1. Obtener datos del técnico
+            const tecnicos = await this.getTecnicos();
+            const tecnico = tecnicos.find(t => t.id === tecnicoId);
+            
+            if (!tecnico) {
+                throw new Error('Técnico no encontrado');
+            }
+
+            if (tecnico.estado !== 'disponible') {
+                throw new Error(`Técnico no disponible. Estado actual: ${tecnico.estado}`);
+            }
+
+            // 2. Obtener datos de la solicitud
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
+            }
+
+            // 3. Actualizar solicitud con asignación
+            const updateSolicitudData = {
+                fields: {
+                    estado: 'ASIGNADA',
+                    tecnicoAsignado: tecnico.nombre,
+                    tecnicoAsignadoId: tecnicoId,
+                    fechaAsignacion: new Date().toISOString(),
+                    observacionesAsignacion: observacionesAsignacion,
+                    // Calcular tiempo estimado de respuesta
+                    tiempoEstimadoRespuesta: this.calculateEstimatedResponseTime(solicitud.prioridad, tecnico.area)
+                }
+            };
+
+            const solicitudResult = await this.makeRequest(
+                `${this.tables.solicitudes}/${solicitudId}`, 
+                'PATCH', 
+                updateSolicitudData
+            );
+
+            // 4. Actualizar estado del técnico a ocupado
+            await this.updateTecnico(tecnicoId, { 
+                estado: 'ocupado',
+                solicitudAsignada: solicitud.numero,
+                fechaUltimaAsignacion: new Date().toISOString()
+            });
+
+            console.log('✅ Asignación completada exitosamente');
+
+            return {
+                success: true,
+                solicitud: {
+                    id: solicitudId,
+                    numero: solicitud.numero,
+                    estado: 'ASIGNADA',
+                    tecnicoAsignado: tecnico.nombre
+                },
+                tecnico: {
+                    id: tecnicoId,
+                    nombre: tecnico.nombre,
+                    area: tecnico.area,
+                    estado: 'ocupado'
+                },
+                fechaAsignacion: new Date().toISOString(),
+                tiempoEstimadoRespuesta: updateSolicitudData.fields.tiempoEstimadoRespuesta
+            };
+
+        } catch (error) {
+            console.error('❌ Error en asignación:', error);
+            throw error;
+        }
+    }
+
+    // ⏱️ CALCULAR TIEMPO ESTIMADO DE RESPUESTA
+    calculateEstimatedResponseTime(prioridad, areaPersonal) {
+        const tiemposBase = {
+            'CRITICA': 1,
+            'ALTA': 4,
+            'MEDIA': 12,
+            'BAJA': 48
+        };
+
+        // Factores de ajuste por área
+        const factoresArea = {
+            'INGENIERIA_BIOMEDICA': 1.0, // Tiempo estándar
+            'MECANICA': 1.2,             // 20% más tiempo
+            'INFRAESTRUCTURA': 1.5       // 50% más tiempo
+        };
+
+        const horasBase = tiemposBase[prioridad] || 12;
+        const factor = factoresArea[areaPersonal] || 1.0;
+        const horasEstimadas = Math.ceil(horasBase * factor);
+
+        const fechaEstimada = new Date();
+        fechaEstimada.setHours(fechaEstimada.getHours() + horasEstimadas);
+
+        return fechaEstimada.toISOString();
+    }
+
+    // 🔄 CAMBIAR ESTADO DE SOLICITUD
+    async updateRequestStatus(solicitudId, nuevoEstado, observaciones = '') {
+        console.log('🔄 Actualizando estado de solicitud:', { solicitudId, nuevoEstado });
+        
+        try {
+            const updateData = {
+                fields: {
+                    estado: nuevoEstado,
+                    observacionesEstado: observaciones
+                }
+            };
+
+            // Agregar timestamp específico según el nuevo estado
+            switch (nuevoEstado) {
+                case 'EN_PROCESO':
+                    updateData.fields.fechaInicioTrabajo = new Date().toISOString();
+                    break;
+                case 'COMPLETADA':
+                    updateData.fields.fechaCompletado = new Date().toISOString();
+                    updateData.fields.tiempoTotalRespuesta = this.calculateTotalResponseTime(solicitudId);
+                    break;
+                case 'CANCELADA':
+                    updateData.fields.fechaCancelacion = new Date().toISOString();
+                    break;
+            }
+
+            const result = await this.makeRequest(
+                `${this.tables.solicitudes}/${solicitudId}`, 
+                'PATCH', 
+                updateData
+            );
+
+            // Si se completa la solicitud, liberar el técnico
+            if (nuevoEstado === 'COMPLETADA') {
+                await this.liberarTecnicoAsignado(solicitudId);
+            }
+
+            console.log(`✅ Estado actualizado a: ${nuevoEstado}`);
+            return result;
+
+        } catch (error) {
+            console.error('❌ Error actualizando estado:', error);
+            throw error;
+        }
+    }
+
+    // 🔓 LIBERAR TÉCNICO ASIGNADO
+    async liberarTecnicoAsignado(solicitudId) {
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (solicitud && solicitud.tecnicoAsignadoId) {
+                await this.updateTecnico(solicitud.tecnicoAsignadoId, { 
+                    estado: 'disponible',
+                    solicitudAsignada: null,
+                    fechaLiberacion: new Date().toISOString()
+                });
+                
+                console.log('✅ Técnico liberado exitosamente');
+            }
+        } catch (error) {
+            console.warn('⚠️ No se pudo liberar técnico:', error);
+        }
+    }
+
+    // ⏱️ CALCULAR TIEMPO TOTAL DE RESPUESTA
+    async calculateTotalResponseTime(solicitudId) {
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (solicitud && solicitud.fechaCreacion) {
+                const fechaCreacion = new Date(solicitud.fechaCreacion);
+                const fechaActual = new Date();
+                const tiempoTranscurrido = fechaActual - fechaCreacion;
+                
+                // Convertir a horas
+                const horas = Math.floor(tiempoTranscurrido / (1000 * 60 * 60));
+                const minutos = Math.floor((tiempoTranscurrido % (1000 * 60 * 60)) / (1000 * 60));
+                
+                return `${horas}h ${minutos}m`;
+            }
+            
+            return 'No calculado';
+        } catch (error) {
+            console.error('❌ Error calculando tiempo total:', error);
+            return 'Error en cálculo';
+        }
+    }
+
+    // 📊 OBTENER SOLICITUDES PENDIENTES POR ÁREA
+    async getPendingRequestsByArea(area) {
+        try {
+            const solicitudes = await this.getSolicitudes();
+            return solicitudes.filter(s => 
+                s.servicioIngenieria === area && 
+                (s.estado === 'PENDIENTE' || !s.tecnicoAsignado)
+            );
+        } catch (error) {
+            console.error('❌ Error obteniendo solicitudes pendientes:', error);
+            return [];
+        }
+    }
+
+    // 🤖 AUTO-ASIGNAR SOLICITUDES PENDIENTES
+    async autoAssignPendingRequests(area = null) {
+        console.log('🤖 Iniciando auto-asignación de solicitudes...');
+        
+        try {
+            // Obtener solicitudes pendientes
+            let solicitudesPendientes;
+            if (area) {
+                solicitudesPendientes = await this.getPendingRequestsByArea(area);
+            } else {
+                const todasSolicitudes = await this.getSolicitudes();
+                solicitudesPendientes = todasSolicitudes.filter(s => 
+                    s.estado === 'PENDIENTE' || !s.tecnicoAsignado
+                );
+            }
+
+            // Obtener técnicos disponibles
+            const tecnicosDisponibles = await this.getTecnicosDisponibles();
+
+            const resultados = {
+                asignadas: 0,
+                fallidas: 0,
+                sinTecnicos: 0,
+                detalles: []
+            };
+
+            for (const solicitud of solicitudesPendientes) {
+                try {
+                    // Buscar técnico disponible del área correspondiente
+                    const tecnicoAdecuado = tecnicosDisponibles.find(t => 
+                        t.area === solicitud.servicioIngenieria && t.estado === 'disponible'
+                    );
+
+                    if (tecnicoAdecuado) {
+                        await this.assignTechnicianToRequest(
+                            solicitud.id, 
+                            tecnicoAdecuado.id, 
+                            'Asignación automática del sistema'
+                        );
+                        
+                        resultados.asignadas++;
+                        resultados.detalles.push({
+                            solicitud: solicitud.numero,
+                            tecnico: tecnicoAdecuado.nombre,
+                            area: solicitud.servicioIngenieria
+                        });
+
+                        // Marcar técnico como ocupado localmente para próximas iteraciones
+                        tecnicoAdecuado.estado = 'ocupado';
+                    } else {
+                        resultados.sinTecnicos++;
+                        console.warn(`⚠️ No hay técnicos disponibles para ${solicitud.numero} (${solicitud.servicioIngenieria})`);
+                    }
+
+                } catch (error) {
+                    resultados.fallidas++;
+                    console.error(`❌ Error asignando ${solicitud.numero}:`, error);
+                }
+            }
+
+            console.log('✅ Auto-asignación completada:', resultados);
+            return resultados;
+
+        } catch (error) {
+            console.error('❌ Error en auto-asignación:', error);
+            throw error;
+        }
+    }
+
+    // 👥 MÉTODOS DE TÉCNICOS/PERSONAL DE SOPORTE (mantenidos)
     async getTecnicos() {
         try {
             const result = await this.makeRequest(this.tables.tecnicos);
@@ -498,12 +841,9 @@ class AirtableAPI {
         }
     }
 
-    // 📝 Crear técnico/personal de soporte - CORREGIDO PARA EVITAR ERROR 422
     async createTecnico(tecnicoData) {
         console.log('➕ Creando personal de soporte:', tecnicoData.nombre);
-        console.log('🔍 Datos originales:', tecnicoData);
         
-        // 🗺️ MAPEAR VALORES ANTES DE ENVIAR A AIRTABLE
         const mappedData = {
             nombre: tecnicoData.nombre,
             email: tecnicoData.email,
@@ -514,29 +854,17 @@ class AirtableAPI {
             fechaCreacion: new Date().toISOString()
         };
         
-        console.log('🗺️ Datos mapeados para Airtable:', mappedData);
-        
         const data = {
             fields: mappedData
         };
         
-        console.log('📤 Payload final para Airtable:', JSON.stringify(data, null, 2));
-        
         try {
             const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
             console.log('✅ Personal de soporte creado exitosamente:', result.id);
-            
-            // Verificar que el resultado tenga la estructura esperada
-            if (!result || !result.id) {
-                console.warn('⚠️ Resultado inesperado de Airtable:', result);
-                throw new Error('Respuesta inválida de Airtable - sin ID');
-            }
-            
             return result;
         } catch (error) {
             console.error('❌ Error creando personal de soporte:', error);
             
-            // Si es error 422, intentar con valores alternativos
             if (error.message.includes('422')) {
                 console.log('🔧 Error 422 detectado, intentando con valores alternativos...');
                 return await this.retryCreateTecnicoWithAlternatives(tecnicoData);
@@ -546,11 +874,9 @@ class AirtableAPI {
         }
     }
 
-    // 🔄 MÉTODO DE REINTENTAR CON VALORES ALTERNATIVOS
     async retryCreateTecnicoWithAlternatives(originalData) {
         console.log('🔄 Reintentando creación con valores alternativos...');
         
-        // Definir valores alternativos conocidos
         const alternatives = {
             area: {
                 'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'Biomedica', 'Biomédica', 'INGENIERIA_BIOMEDICA'],
@@ -569,7 +895,6 @@ class AirtableAPI {
             }
         };
         
-        // Intentar con diferentes combinaciones
         for (const areaAlt of alternatives.area[originalData.area] || [originalData.area]) {
             for (const tipoAlt of alternatives.tipo[originalData.tipo] || [originalData.tipo]) {
                 for (const estadoAlt of alternatives.estado[originalData.estado || 'disponible'] || [originalData.estado || 'disponible']) {
@@ -593,7 +918,6 @@ class AirtableAPI {
                         
                         console.log(`✅ Éxito con valores: area="${areaAlt}", tipo="${tipoAlt}", estado="${estadoAlt}"`);
                         
-                        // Actualizar mapeos para futuros usos
                         this.fieldMappings.area[originalData.area] = [areaAlt];
                         this.fieldMappings.tipo[originalData.tipo] = [tipoAlt];
                         this.fieldMappings.estado[originalData.estado || 'disponible'] = [estadoAlt];
@@ -602,22 +926,17 @@ class AirtableAPI {
                         
                     } catch (retryError) {
                         console.log(`❌ Falló con: area="${areaAlt}", tipo="${tipoAlt}", estado="${estadoAlt}"`);
-                        // Continuar con siguiente combinación
                     }
                 }
             }
         }
         
-        // Si todos los intentos fallaron
         throw new Error('No se pudo crear el personal con ninguna combinación de valores válidos. Verificar configuración de campos en Airtable.');
     }
 
-    // 🔄 Actualizar técnico/personal de soporte  
     async updateTecnico(tecnicoId, updateData) {
         console.log('🔄 Actualizando personal de soporte:', tecnicoId);
-        console.log('📝 Datos a actualizar:', updateData);
         
-        // Mapear valores si están presentes
         const mappedData = {};
         Object.keys(updateData).forEach(key => {
             if (key === 'area') {
@@ -664,7 +983,6 @@ class AirtableAPI {
         }
     }
 
-    // Resto de métodos sin cambios...
     async findTecnicoByEmail(email) {
         try {
             const tecnicos = await this.getTecnicos();
@@ -695,82 +1013,7 @@ class AirtableAPI {
         }
     }
 
-    async asignarTecnicoASolicitud(solicitudId, tecnicoId) {
-        try {
-            console.log('🎯 Asignando técnico a solicitud:', { solicitudId, tecnicoId });
-            
-            const tecnicos = await this.getTecnicos();
-            const tecnico = tecnicos.find(t => t.id === tecnicoId);
-            
-            if (!tecnico) {
-                throw new Error('Técnico no encontrado');
-            }
-            
-            const solicitudResult = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-                fields: {
-                    tecnicoAsignado: tecnico.nombre,
-                    estado: 'ASIGNADA',
-                    fechaAsignacion: new Date().toISOString()
-                }
-            });
-            
-            await this.updateTecnico(tecnicoId, { estado: 'ocupado' });
-            
-            console.log('✅ Asignación completada exitosamente');
-            
-            return {
-                success: true,
-                solicitud: solicitudResult,
-                tecnico: tecnico,
-                fechaAsignacion: new Date().toISOString()
-            };
-            
-        } catch (error) {
-            console.error('❌ Error asignando técnico:', error);
-            throw error;
-        }
-    }
-
-    async getTecnicosStatistics() {
-        try {
-            const tecnicos = await this.getTecnicos();
-            
-            const stats = {
-                total: tecnicos.length,
-                porEstado: {
-                    disponible: tecnicos.filter(t => t.estado === 'disponible').length,
-                    ocupado: tecnicos.filter(t => t.estado === 'ocupado').length,
-                    inactivo: tecnicos.filter(t => t.estado === 'inactivo').length
-                },
-                porArea: {
-                    INGENIERIA_BIOMEDICA: tecnicos.filter(t => t.area === 'INGENIERIA_BIOMEDICA').length,
-                    MECANICA: tecnicos.filter(t => t.area === 'MECANICA').length,
-                    INFRAESTRUCTURA: tecnicos.filter(t => t.area === 'INFRAESTRUCTURA').length
-                },
-                porTipo: {
-                    ingeniero: tecnicos.filter(t => t.tipo === 'ingeniero').length,
-                    tecnico: tecnicos.filter(t => t.tipo === 'tecnico').length,
-                    auxiliar: tecnicos.filter(t => t.tipo === 'auxiliar').length
-                },
-                timestamp: new Date().toISOString()
-            };
-            
-            return stats;
-            
-        } catch (error) {
-            console.error('❌ Error obteniendo estadísticas de técnicos:', error);
-            return {
-                total: 0,
-                porEstado: { disponible: 0, ocupado: 0, inactivo: 0 },
-                porArea: { INGENIERIA_BIOMEDICA: 0, MECANICA: 0, INFRAESTRUCTURA: 0 },
-                porTipo: { ingeniero: 0, tecnico: 0, auxiliar: 0 },
-                error: error.message,
-                timestamp: new Date().toISOString()
-            };
-        }
-    }
-
-    // 👤 MÉTODOS DE USUARIOS (sin cambios)
+    // Resto de métodos sin cambios importantes...
     async getUsuarios() {
         try {
             const result = await this.makeRequest(this.tables.usuarios);
@@ -836,7 +1079,6 @@ class AirtableAPI {
         }
     }
 
-    // 🔐 MÉTODOS DE SOLICITUDES DE ACCESO (sin cambios)
     async getSolicitudesAcceso() {
         try {
             const result = await this.makeRequest(this.tables.solicitudesAcceso);
@@ -981,7 +1223,7 @@ class AirtableAPI {
 
     async approveAccessRequestAndCreateUser(requestId) {
         try {
-            console.log('🚀 Iniciando aprobación corregida para:', requestId);
+            console.log('🚀 Iniciando aprobación para:', requestId);
 
             let request;
             try {
@@ -1062,9 +1304,10 @@ class AirtableAPI {
         }
     }
 
-    async getAccessStatistics() {
+    // 📊 ESTADÍSTICAS MEJORADAS CON ASIGNACIONES
+    async getAdvancedStatistics() {
         try {
-            console.log('📊 Obteniendo estadísticas de acceso...');
+            console.log('📊 Obteniendo estadísticas avanzadas...');
             
             const [usuarios, solicitudesAcceso, solicitudes, tecnicos] = await Promise.all([
                 this.getUsuarios(),
@@ -1089,45 +1332,125 @@ class AirtableAPI {
                 solicitudes: {
                     total: solicitudes.length,
                     pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
-                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length
+                    asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA').length,
+                    enProceso: solicitudes.filter(s => s.estado === 'EN_PROCESO').length,
+                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length,
+                    canceladas: solicitudes.filter(s => s.estado === 'CANCELADA').length,
+                    // Estadísticas por área
+                    porArea: {
+                        INGENIERIA_BIOMEDICA: solicitudes.filter(s => s.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length,
+                        MECANICA: solicitudes.filter(s => s.servicioIngenieria === 'MECANICA').length,
+                        INFRAESTRUCTURA: solicitudes.filter(s => s.servicioIngenieria === 'INFRAESTRUCTURA').length
+                    },
+                    // Estadísticas por prioridad
+                    porPrioridad: {
+                        CRITICA: solicitudes.filter(s => s.prioridad === 'CRITICA').length,
+                        ALTA: solicitudes.filter(s => s.prioridad === 'ALTA').length,
+                        MEDIA: solicitudes.filter(s => s.prioridad === 'MEDIA').length,
+                        BAJA: solicitudes.filter(s => s.prioridad === 'BAJA').length
+                    }
                 },
                 tecnicos: {
                     total: tecnicos.length,
                     disponibles: tecnicos.filter(t => t.estado === 'disponible').length,
-                    ocupados: tecnicos.filter(t => t.estado === 'ocupado').length
+                    ocupados: tecnicos.filter(t => t.estado === 'ocupado').length,
+                    inactivos: tecnicos.filter(t => t.estado === 'inactivo').length,
+                    // Por área
+                    porArea: {
+                        INGENIERIA_BIOMEDICA: tecnicos.filter(t => t.area === 'INGENIERIA_BIOMEDICA').length,
+                        MECANICA: tecnicos.filter(t => t.area === 'MECANICA').length,
+                        INFRAESTRUCTURA: tecnicos.filter(t => t.area === 'INFRAESTRUCTURA').length
+                    },
+                    // Por tipo
+                    porTipo: {
+                        ingeniero: tecnicos.filter(t => t.tipo === 'ingeniero').length,
+                        tecnico: tecnicos.filter(t => t.tipo === 'tecnico').length,
+                        auxiliar: tecnicos.filter(t => t.tipo === 'auxiliar').length
+                    }
                 },
-                porServicio: {},
-                porCargo: {},
+                tiemposRespuesta: {
+                    // Calcular promedios de tiempo de respuesta
+                    promedioRespuesta: await this.calculateAverageResponseTime(solicitudes),
+                    solicitudesVencidas: this.countOverdueRequests(solicitudes)
+                },
                 timestamp: new Date().toISOString()
             };
-
-            usuarios.forEach(user => {
-                if (user.servicioHospitalario) {
-                    stats.porServicio[user.servicioHospitalario] = (stats.porServicio[user.servicioHospitalario] || 0) + 1;
-                }
-            });
-
-            usuarios.forEach(user => {
-                if (user.cargo) {
-                    stats.porCargo[user.cargo] = (stats.porCargo[user.cargo] || 0) + 1;
-                }
-            });
 
             return stats;
 
         } catch (error) {
-            console.error('❌ Error obteniendo estadísticas:', error);
+            console.error('❌ Error obteniendo estadísticas avanzadas:', error);
             
             return {
                 usuarios: { total: 0, activos: 0, inactivos: 0, conCodigo: 0 },
                 solicitudesAcceso: { total: 0, pendientes: 0, aprobadas: 0, rechazadas: 0 },
-                solicitudes: { total: 0, pendientes: 0, completadas: 0 },
-                tecnicos: { total: 0, disponibles: 0, ocupados: 0 },
-                porServicio: {},
-                porCargo: {},
+                solicitudes: { 
+                    total: 0, pendientes: 0, asignadas: 0, enProceso: 0, completadas: 0, canceladas: 0,
+                    porArea: { INGENIERIA_BIOMEDICA: 0, MECANICA: 0, INFRAESTRUCTURA: 0 },
+                    porPrioridad: { CRITICA: 0, ALTA: 0, MEDIA: 0, BAJA: 0 }
+                },
+                tecnicos: { 
+                    total: 0, disponibles: 0, ocupados: 0, inactivos: 0,
+                    porArea: { INGENIERIA_BIOMEDICA: 0, MECANICA: 0, INFRAESTRUCTURA: 0 },
+                    porTipo: { ingeniero: 0, tecnico: 0, auxiliar: 0 }
+                },
+                tiemposRespuesta: { promedioRespuesta: 'Error', solicitudesVencidas: 0 },
                 error: error.message,
                 timestamp: new Date().toISOString()
             };
+        }
+    }
+
+    // ⏱️ CALCULAR TIEMPO PROMEDIO DE RESPUESTA
+    async calculateAverageResponseTime(solicitudes) {
+        try {
+            const solicitudesCompletadas = solicitudes.filter(s => 
+                s.estado === 'COMPLETADA' && s.fechaCreacion && s.fechaCompletado
+            );
+
+            if (solicitudesCompletadas.length === 0) {
+                return 'Sin datos';
+            }
+
+            let totalTime = 0;
+            solicitudesCompletadas.forEach(solicitud => {
+                const inicio = new Date(solicitud.fechaCreacion);
+                const fin = new Date(solicitud.fechaCompletado);
+                const tiempo = fin - inicio;
+                totalTime += tiempo;
+            });
+
+            const promedioMs = totalTime / solicitudesCompletadas.length;
+            const promedioHoras = Math.floor(promedioMs / (1000 * 60 * 60));
+            const promedioMinutos = Math.floor((promedioMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            return `${promedioHoras}h ${promedioMinutos}m`;
+
+        } catch (error) {
+            console.error('❌ Error calculando tiempo promedio:', error);
+            return 'Error';
+        }
+    }
+
+    // 📅 CONTAR SOLICITUDES VENCIDAS
+    countOverdueRequests(solicitudes) {
+        try {
+            const now = new Date();
+            return solicitudes.filter(solicitud => {
+                if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'CANCELADA') {
+                    return false;
+                }
+                
+                if (solicitud.tiempoRespuestaMaximo) {
+                    const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
+                    return now > fechaMaxima;
+                }
+                
+                return false;
+            }).length;
+        } catch (error) {
+            console.error('❌ Error contando solicitudes vencidas:', error);
+            return 0;
         }
     }
 
@@ -1140,25 +1463,29 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '3.1-fixed-422-error',
-            fixes: [
-                'CORREGIDO: Error 422 en creación de personal',
-                'Mapeo automático de valores de campos',
-                'Auto-detección de valores válidos en Airtable',
-                'Reintentos con valores alternativos',
-                'Mejor manejo de errores de validación',
+            version: '4.0-assignment-system',
+            features: [
+                'NUEVO: Numeración específica por área (SOLBIO, SOLMEC, SOLINFRA)',
+                'NUEVO: Sistema completo de asignación de personal',
+                'NUEVO: Cálculo automático de tiempos de respuesta',
+                'NUEVO: Auto-asignación inteligente de solicitudes',
+                'NUEVO: Estadísticas avanzadas con tiempos',
+                'Gestión completa del estado de solicitudes',
+                'Liberación automática de técnicos',
+                'Prevención de errores 422 en personal',
                 'Fallbacks robustos para operaciones'
             ],
-            fieldMappings: this.fieldMappings
+            fieldMappings: this.fieldMappings,
+            areaPrefixes: this.areaPrefixes
         };
     }
 }
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global corregida...');
+    console.log('🔧 Creando instancia global con asignación...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión corregida para personal)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con asignación)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -1171,8 +1498,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (versión corregida)' 
-                : 'Modo Local (versión corregida)';
+                ? '✅ Conectado (sistema de asignación)' 
+                : 'Modo Local (sistema de asignación)';
             
             updateConnectionStatus(status, message);
         }
@@ -1181,7 +1508,7 @@ try {
     console.warn('⚠️ No se pudo configurar event listener:', error);
 }
 
-// 🛠️ Función de diagnóstico mejorada
+// 🛠️ Función de diagnóstico
 try {
     window.debugAirtableConnection = function() {
         if (!window.airtableAPI) {
@@ -1191,42 +1518,49 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO VERSIÓN CORREGIDA PERSONAL');
-        console.log('==========================================');
+        console.log('🔍 DIAGNÓSTICO SISTEMA DE ASIGNACIÓN');
+        console.log('=====================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
         console.log('📡 URL base:', status.baseUrl);
         console.log('🔍 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
         console.log('📋 Versión:', status.version);
-        console.log('🔧 Correcciones aplicadas:');
-        status.fixes.forEach(fix => console.log(`  • ${fix}`));
-        console.log('🗺️ Mapeos de campos:');
-        console.log(status.fieldMappings);
+        console.log('🔧 Funcionalidades:');
+        status.features.forEach(feature => console.log(`  • ${feature}`));
+        console.log('🔢 Prefijos por área:', status.areaPrefixes);
         
         return status;
     };
     
-    console.log('✅ debugAirtableConnection (corregido) creado exitosamente');
+    console.log('✅ debugAirtableConnection (con asignación) creado exitosamente');
 } catch (error) {
     console.error('❌ Error creando debugAirtableConnection:', error);
 }
 
-console.log('✅ airtable-config.js (VERSIÓN CORREGIDA PARA ERROR 422) cargado completamente');
-console.log('🔧 Error 422 solucionado con mapeo automático de valores');
-console.log('🗺️ Detección automática de valores válidos en Airtable');
-console.log('🔄 Reintentos automáticos con valores alternativos');
+console.log('✅ airtable-config.js (VERSIÓN CON ASIGNACIÓN COMPLETA) cargado');
+console.log('🔢 Numeración específica: SOLBIO, SOLMEC, SOLINFRA');
+console.log('🎯 Sistema de asignación de personal implementado');
+console.log('⏱️ Cálculo automático de tiempos de respuesta');
+console.log('🤖 Auto-asignación inteligente disponible');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
 // Auto-verificación
 setTimeout(async () => {
     if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
-        console.log('🔄 Sistema corregido cargado correctamente');
-        console.log('✅ Error 422 solucionado para personal de soporte');
-        console.log('🗺️ Mapeo de valores activo para prevenir errores futuros');
+        console.log('🔄 Sistema de asignación cargado correctamente');
+        console.log('✅ Numeración específica por área configurada');
+        console.log('🎯 Métodos de asignación implementados');
         
-        // Verificar que los nuevos métodos existen
-        const criticalMethods = ['createTecnico', 'mapFieldValue', 'retryCreateTecnicoWithAlternatives'];
+        // Verificar métodos críticos
+        const criticalMethods = [
+            'generateAreaSpecificNumber',
+            'assignTechnicianToRequest', 
+            'updateRequestStatus',
+            'autoAssignPendingRequests',
+            'calculateMaxResponseTime'
+        ];
+        
         criticalMethods.forEach(method => {
             if (typeof window.airtableAPI[method] === 'function') {
                 console.log(`✅ ${method} correctamente implementado`);
@@ -1235,6 +1569,6 @@ setTimeout(async () => {
             }
         });
     } else {
-        console.warn('⚠️ Algunos componentes no se cargaron correctamente');
+        console.warn('⚠️ Algunos componentes del sistema de asignación no se cargaron');
     }
 }, 3000);
