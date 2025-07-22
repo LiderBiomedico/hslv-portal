@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Completo - Sistema Portal Hospital</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #1f2937;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 1.125rem;
+        }
+
+        .test-section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .test-section h2 {
+            color: #1f2937;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .test-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.2s;
+        }
+
+        .test-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .test-card h3 {
+            color: #1f2937;
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .test-card p {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .btn-success:hover {
+            box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .btn-warning:hover {
+            box-shadow: 0 4px 8px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-danger:hover {
+            box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .result-area {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            min-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 1rem;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+        }
+
+        .status-connected {
+            background: #059669;
+        }
+
+        .status-disconnected {
+            background: #ef4444;
+        }
+
+        .status-loading {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stats-card {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #0369a1;
+        }
+
+        .stats-label {
+            font-size: 0.875rem;
+            color: #0c4a6e;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.25rem 0;
+            border-bottom: 1px solid #374151;
+        }
+
+        .log-success {
+            color: #34d399;
+        }
+
+        .log-error {
+            color: #f87171;
+        }
+
+        .log-warning {
+            color: #fbbf24;
+        }
+
+        .log-info {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🧪 Test Completo del Sistema</h1>
+            <p>Portal de Solicitudes Hospital Susana López de Valencia</p>
+            <div style="margin-top: 1rem;">
+                <span class="status-indicator" id="connection-indicator"></span>
+                <span id="connection-status">Inicializando...</span>
+            </div>
+        </div>
+
+        <!-- Tests de Conexión -->
+        <div class="test-section">
+            <h2>🔗 Tests de Conexión</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Test Básico</h3>
+                    <p>Verificar conexión básica con Airtable</p>
+                    <button class="btn" onclick="testBasicConnection()">🧪 Probar Conexión</button>
+                    <button class="btn btn-success" onclick="testAllTables()">📋 Test Todas las Tablas</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Funciones Netlify</h3>
+                    <p>Verificar que las funciones Netlify respondan</p>
+                    <button class="btn" onclick="testNetlifyFunctions()">⚡ Test Funciones</button>
+                    <button class="btn btn-success" onclick="testUserManagementFunction()">👤 Test Gestión Usuarios</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Diagnóstico Completo</h3>
+                    <p>Ejecutar diagnóstico completo del sistema</p>
+                    <button class="btn btn-warning" onclick="runFullDiagnostic()">🔍 Diagnóstico Completo</button>
+                    <button class="btn btn-warning" onclick="testConfiguration()">⚙️ Test Configuración</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests de Datos -->
+        <div class="test-section">
+            <h2>📊 Tests de Datos</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Solicitudes</h3>
+                    <p>Probar creación y lectura de solicitudes</p>
+                    <button class="btn" onclick="testSolicitudes()">📋 Test Solicitudes</button>
+                    <button class="btn btn-success" onclick="createTestSolicitud()">➕ Crear Test</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Usuarios</h3>
+                    <p>Probar gestión completa de usuarios</p>
+                    <button class="btn" onclick="testUsuarios()">👤 Test Usuarios</button>
+                    <button class="btn btn-success" onclick="createTestUser()">➕ Crear Usuario Test</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Solicitudes de Acceso</h3>
+                    <p>Probar flujo completo de accesos</p>
+                    <button class="btn" onclick="testSolicitudesAcceso()">🔐 Test Accesos</button>
+                    <button class="btn btn-success" onclick="createTestAccessRequest()">📝 Crear Solicitud Test</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tests del Flujo Completo -->
+        <div class="test-section">
+            <h2>🔄 Tests de Flujo Completo</h2>
+            <div class="test-grid">
+                <div class="test-card">
+                    <h3>Flujo de Aprobación</h3>
+                    <p>Simular flujo completo: solicitud → aprobación → usuario</p>
+                    <button class="btn btn-warning" onclick="testApprovalFlow()">🚀 Test Flujo Completo</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Validación de Acceso</h3>
+                    <p>Probar login con códigos generados</p>
+                    <button class="btn btn-warning" onclick="testAccessValidation()">✅ Test Validación</button>
+                </div>
+
+                <div class="test-card">
+                    <h3>Generación de Códigos</h3>
+                    <p>Probar generación de códigos únicos</p>
+                    <button class="btn btn-warning" onclick="testCodeGeneration()">🎲 Test Códigos</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas del Sistema -->
+        <div class="test-section">
+            <h2>📈 Estadísticas del Sistema</h2>
+            <div class="stats-grid" id="stats-container">
+                <div class="stats-card">
+                    <div class="stats-number" id="stats-solicitudes">-</div>
+                    <div class="stats-label">Solicitudes</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-number" id="stats-usuarios">-</div>
+                    <div class="stats-label">Usuarios</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-number" id="stats-accesos">-</div>
+                    <div class="stats-label">Solicitudes Acceso</div>
+                </div>
+                <div class="stats-card">
+                    <div class="stats-number" id="stats-tecnicos">-</div>
+                    <div class="stats-label">Técnicos</div>
+                </div>
+            </div>
+            <button class="btn" onclick="updateStatistics()">🔄 Actualizar Estadísticas</button>
+        </div>
+
+        <!-- Área de Resultados -->
+        <div class="test-section">
+            <h2>📝 Resultados de Tests</h2>
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                <button class="btn btn-success" onclick="clearLog()">🧹 Limpiar Log</button>
+                <button class="btn" onclick="exportLog()">💾 Exportar Log</button>
+                <button class="btn btn-warning" onclick="runAllTests()">🚀 Ejecutar Todos los Tests</button>
+            </div>
+            <div class="result-area" id="test-results">Esperando tests...\n</div>
+        </div>
+    </div>
+
+    <!-- Incluir configuración de Airtable -->
+    <script src="airtable-config.js"></script>
+
+    <script>
+        // Variables globales para el test
+        let testResults = [];
+        let connectionStatus = 'loading';
+
+        // Funciones de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('es-CO');
+            const entry = `[${timestamp}] ${message}`;
+            
+            testResults.push({ timestamp, message, type });
+            
+            const resultArea = document.getElementById('test-results');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry log-${type}`;
+            logEntry.textContent = entry;
+            
+            resultArea.appendChild(logEntry);
+            resultArea.scrollTop = resultArea.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('test-results').innerHTML = 'Log limpiado...\n';
+            testResults = [];
+        }
+
+        function exportLog() {
+            const logContent = testResults.map(r => `[${r.timestamp}] ${r.type.toUpperCase()}: ${r.message}`).join('\n');
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `test-results-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+        }
+
+        // Función para actualizar el indicador de conexión
+        function updateConnectionIndicator(status) {
+            const indicator = document.getElementById('connection-indicator');
+            const statusText = document.getElementById('connection-status');
+            
+            indicator.className = `status-indicator status-${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusText.textContent = 'Conectado a Airtable';
+                    connectionStatus = 'connected';
+                    break;
+                case 'disconnected':
+                    statusText.textContent = 'Sin conexión (modo local)';
+                    connectionStatus = 'disconnected';
+                    break;
+                default:
+                    statusText.textContent = 'Conectando...';
+                    connectionStatus = 'loading';
+            }
+        }
+
+        // Tests básicos de conexión
+        async function testBasicConnection() {
+            log('🧪 Iniciando test básico de conexión...', 'info');
+            
+            try {
+                if (!window.airtableAPI) {
+                    throw new Error('airtableAPI no está disponible');
+                }
+
+                const isConnected = await window.airtableAPI.testConnection();
+                
+                if (isConnected) {
+                    log('✅ Conexión básica exitosa', 'success');
+                    updateConnectionIndicator('connected');
+                } else {
+                    log('⚠️ Conexión falló, modo local activo', 'warning');
+                    updateConnectionIndicator('disconnected');
+                }
+
+                const status = window.airtableAPI.getStatus();
+                log(`📊 Estado del sistema: ${JSON.stringify(status, null, 2)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error en test básico: ${error.message}`, 'error');
+                updateConnectionIndicator('disconnected');
+            }
+        }
+
+        async function testAllTables() {
+            log('📋 Testando todas las tablas...', 'info');
+            
+            try {
+                const tables = ['Solicitudes', 'Usuarios', 'SolicitudesAcceso', 'Tecnicos'];
+                
+                for (const table of tables) {
+                    try {
+                        log(`🔍 Testando tabla: ${table}`, 'info');
+                        const result = await window.airtableAPI.makeRequest(`${table}?maxRecords=1`);
+                        log(`✅ ${table}: ${result.records?.length || 0} records encontrados`, 'success');
+                    } catch (error) {
+                        log(`❌ ${table}: Error - ${error.message}`, 'error');
+                    }
+                }
+
+                log('📋 Test de tablas completado', 'info');
+
+            } catch (error) {
+                log(`❌ Error general en test de tablas: ${error.message}`, 'error');
+            }
+        }
+
+        // Tests de funciones Netlify
+        async function testNetlifyFunctions() {
+            log('⚡ Testando funciones Netlify...', 'info');
+            
+            const functions = [
+                { name: 'hello', path: '/.netlify/functions/hello' },
+                { name: 'test-config', path: '/.netlify/functions/test-config' },
+                { name: 'simple-debug', path: '/.netlify/functions/simple-debug' }
+            ];
+
+            for (const func of functions) {
+                try {
+                    log(`🔍 Testando función: ${func.name}`, 'info');
+                    const response = await fetch(func.path);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`✅ ${func.name}: Funcionando correctamente`, 'success');
+                    } else {
+                        log(`⚠️ ${func.name}: Status ${response.status}`, 'warning');
+                    }
+                } catch (error) {
+                    log(`❌ ${func.name}: Error - ${error.message}`, 'error');
+                }
+            }
+        }
+
+        async function testUserManagementFunction() {
+            log('👤 Testando función de gestión de usuarios...', 'info');
+            
+            try {
+                // Test básico de la función
+                const response = await fetch('/.netlify/functions/user-management?operation=list');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log(`✅ Gestión de usuarios: ${data.count || 0} usuarios encontrados`, 'success');
+                    log(`📊 Datos: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    const errorData = await response.text();
+                    log(`⚠️ Gestión de usuarios: Error ${response.status} - ${errorData}`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Error en gestión de usuarios: ${error.message}`, 'error');
+            }
+        }
+
+        // Tests de datos
+        async function testSolicitudes() {
+            log('📋 Testando solicitudes de mantenimiento...', 'info');
+            
+            try {
+                const solicitudes = await window.airtableAPI.getSolicitudes();
+                log(`✅ ${solicitudes.length} solicitudes obtenidas`, 'success');
+                
+                if (solicitudes.length > 0) {
+                    log(`📄 Ejemplo: ${JSON.stringify(solicitudes[0], null, 2)}`, 'info');
+                }
+
+            } catch (error) {
+                log(`❌ Error obteniendo solicitudes: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUsuarios() {
+            log('👤 Testando gestión de usuarios...', 'info');
+            
+            try {
+                const usuarios = await window.airtableAPI.getUsuarios();
+                log(`✅ ${usuarios.length} usuarios obtenidos`, 'success');
+                
+                if (usuarios.length > 0) {
+                    log(`👤 Ejemplo: ${JSON.stringify(usuarios[0], null, 2)}`, 'info');
+                }
+
+                // Test de estadísticas
+                const stats = await window.airtableAPI.getAccessStatistics();
+                log(`📊 Estadísticas: ${JSON.stringify(stats, null, 2)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error en gestión de usuarios: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSolicitudesAcceso() {
+            log('🔐 Testando solicitudes de acceso...', 'info');
+            
+            try {
+                const solicitudes = await window.airtableAPI.getSolicitudesAcceso();
+                log(`✅ ${solicitudes.length} solicitudes de acceso obtenidas`, 'success');
+                
+                if (solicitudes.length > 0) {
+                    log(`🔐 Ejemplo: ${JSON.stringify(solicitudes[0], null, 2)}`, 'info');
+                }
+
+            } catch (error) {
+                log(`❌ Error obteniendo solicitudes de acceso: ${error.message}`, 'error');
+            }
+        }
+
+        // Tests de creación
+        async function createTestSolicitud() {
+            log('➕ Creando solicitud de prueba...', 'info');
+            
+            try {
+                const testData = {
+                    numero: `TEST${Date.now()}`,
+                    servicioIngenieria: 'INGENIERIA_BIOMEDICA',
+                    tipoServicio: 'MANTENIMIENTO_PREVENTIVO',
+                    prioridad: 'MEDIA',
+                    equipo: 'Equipo de Prueba',
+                    ubicacion: 'Sala de Tests',
+                    descripcion: 'Solicitud creada desde el sistema de pruebas',
+                    observaciones: 'Esta es una solicitud de prueba',
+                    solicitante: 'Sistema de Tests',
+                    servicioHospitalario: 'INGENIERIA_BIOMEDICA',
+                    emailSolicitante: 'test@hospital.com',
+                    fechaCreacion: new Date().toISOString(),
+                    estado: 'PENDIENTE'
+                };
+
+                const result = await window.airtableAPI.createSolicitud(testData);
+                log(`✅ Solicitud test creada: ${result.id}`, 'success');
+                log(`📄 Datos: ${JSON.stringify(result, null, 2)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error creando solicitud test: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestUser() {
+            log('➕ Creando usuario de prueba...', 'info');
+            
+            try {
+                const accessCode = await window.airtableAPI.generateUniqueAccessCode();
+                
+                const testData = {
+                    nombreCompleto: `Usuario Test ${Date.now()}`,
+                    email: `test${Date.now()}@hospital.com`,
+                    telefono: '+57 300 123 4567',
+                    servicioHospitalario: 'INGENIERIA_BIOMEDICA',
+                    cargo: 'ADMINISTRATIVO',
+                    codigoAcceso: accessCode,
+                    estado: 'ACTIVO',
+                    fechaCreacion: new Date().toISOString()
+                };
+
+                const result = await window.airtableAPI.createUsuario(testData);
+                log(`✅ Usuario test creado: ${result.id}`, 'success');
+                log(`🎲 Código generado: ${accessCode}`, 'success');
+                log(`👤 Datos: ${JSON.stringify(result, null, 2)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error creando usuario test: ${error.message}`, 'error');
+            }
+        }
+
+        async function createTestAccessRequest() {
+            log('📝 Creando solicitud de acceso de prueba...', 'info');
+            
+            try {
+                const testData = {
+                    id: `ACC${Date.now()}`,
+                    nombreCompleto: `Solicitante Test ${Date.now()}`,
+                    email: `solicitud${Date.now()}@hospital.com`,
+                    telefono: '+57 300 987 6543',
+                    servicioHospitalario: 'UCI_ADULTO',
+                    cargo: 'ENFERMERA_JEFE',
+                    justificacion: 'Solicitud creada desde el sistema de pruebas',
+                    fechaSolicitud: new Date().toISOString(),
+                    estado: 'PENDIENTE',
+                    esUrgente: false
+                };
+
+                const result = await window.airtableAPI.createSolicitudAcceso(testData);
+                log(`✅ Solicitud de acceso test creada: ${result.id}`, 'success');
+                log(`📝 Datos: ${JSON.stringify(result, null, 2)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Error creando solicitud de acceso test: ${error.message}`, 'error');
+            }
+        }
+
+        // Tests de flujo completo
+        async function testApprovalFlow() {
+            log('🚀 Iniciando test de flujo completo de aprobación...', 'info');
+            
+            try {
+                // 1. Crear solicitud de acceso
+                log('📝 Paso 1: Creando solicitud de acceso...', 'info');
+                const requestData = {
+                    id: `FLOW${Date.now()}`,
+                    nombreCompleto: `Usuario Flujo ${Date.now()}`,
+                    email: `flujo${Date.now()}@hospital.com`,
+                    servicioHospitalario: 'FARMACIA_CENTRAL',
+                    cargo: 'COORDINADOR',
+                    justificacion: 'Test de flujo completo',
+                    fechaSolicitud: new Date().toISOString(),
+                    estado: 'PENDIENTE'
+                };
+
+                const requestResult = await window.airtableAPI.createSolicitudAcceso(requestData);
+                log(`✅ Solicitud creada: ${requestResult.id}`, 'success');
+
+                // 2. Aprobar solicitud y crear usuario
+                log('✅ Paso 2: Aprobando solicitud y creando usuario...', 'info');
+                const approvalResult = await window.airtableAPI.approveAccessRequestAndCreateUser(requestResult.id);
+                log(`✅ Usuario creado con código: ${approvalResult.accessCode}`, 'success');
+
+                // 3. Validar acceso
+                log('🔐 Paso 3: Validando credenciales...', 'info');
+                const validation = await window.airtableAPI.validateUserCredentials(
+                    requestData.email, 
+                    approvalResult.accessCode
+                );
+                
+                if (validation.valid) {
+                    log(`✅ FLUJO COMPLETO EXITOSO - Usuario validado`, 'success');
+                    log(`👤 Usuario final: ${JSON.stringify(validation.user, null, 2)}`, 'info');
+                } else {
+                    log(`❌ Error en validación: ${validation.error}`, 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Error en flujo completo: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAccessValidation() {
+            log('✅ Testando validación de acceso...', 'info');
+            
+            try {
+                // Obtener usuarios existentes para test
+                const usuarios = await window.airtableAPI.getUsuarios();
+                const activeUsers = usuarios.filter(u => u.estado === 'ACTIVO' && u.codigoAcceso);
+                
+                if (activeUsers.length === 0) {
+                    log('⚠️ No hay usuarios activos con código para probar', 'warning');
+                    return;
+                }
+
+                const testUser = activeUsers[0];
+                log(`🔍 Probando con usuario: ${testUser.email}`, 'info');
+
+                // Test con credenciales correctas
+                const validTest = await window.airtableAPI.validateUserCredentials(
+                    testUser.email, 
+                    testUser.codigoAcceso
+                );
+                
+                if (validTest.valid) {
+                    log(`✅ Validación correcta exitosa`, 'success');
+                } else {
+                    log(`❌ Error en validación correcta: ${validTest.error}`, 'error');
+                }
+
+                // Test con código incorrecto
+                const invalidTest = await window.airtableAPI.validateUserCredentials(
+                    testUser.email, 
+                    '9999'
+                );
+                
+                if (!invalidTest.valid) {
+                    log(`✅ Validación incorrecta rechazada correctamente`, 'success');
+                } else {
+                    log(`⚠️ Validación incorrecta no fue rechazada`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Error en test de validación: ${error.message}`, 'error');
+            }
+        }
+
+        async function testCodeGeneration() {
+            log('🎲 Testando generación de códigos únicos...', 'info');
+            
+            try {
+                const codes = [];
+                
+                // Generar múltiples códigos
+                for (let i = 0; i < 5; i++) {
+                    const code = await window.airtableAPI.generateUniqueAccessCode();
+                    codes.push(code);
+                    log(`🎲 Código ${i + 1}: ${code}`, 'info');
+                }
+
+                // Verificar que son únicos
+                const uniqueCodes = [...new Set(codes)];
+                if (uniqueCodes.length === codes.length) {
+                    log(`✅ Todos los códigos son únicos`, 'success');
+                } else {
+                    log(`⚠️ Se encontraron códigos duplicados`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Error en generación de códigos: ${error.message}`, 'error');
+            }
+        }
+
+        // Funciones de diagnóstico
+        async function runFullDiagnostic() {
+            log('🔍 Ejecutando diagnóstico completo...', 'info');
+            
+            try {
+                if (typeof window.debugAirtableConnection === 'function') {
+                    const diagnostic = window.debugAirtableConnection();
+                    log(`📊 Diagnóstico: ${JSON.stringify(diagnostic, null, 2)}`, 'info');
+                } else {
+                    log('⚠️ Función de diagnóstico no disponible', 'warning');
+                }
+
+                if (typeof window.testUserManagement === 'function') {
+                    const userTest = await window.testUserManagement();
+                    log(`👤 Test usuarios: ${JSON.stringify(userTest, null, 2)}`, 'info');
+                } else {
+                    log('⚠️ Función de test de usuarios no disponible', 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Error en diagnóstico completo: ${error.message}`, 'error');
+            }
+        }
+
+        async function testConfiguration() {
+            log('⚙️ Testando configuración del sistema...', 'info');
+            
+            try {
+                // Test de configuración local
+                if (window.airtableAPI) {
+                    const status = window.airtableAPI.getStatus();
+                    log(`⚙️ Configuración local: ${JSON.stringify(status, null, 2)}`, 'info');
+                }
+
+                // Test de variables de entorno vía Netlify
+                try {
+                    const response = await fetch('/.netlify/functions/test-config');
+                    if (response.ok) {
+                        const data = await response.json();
+                        log(`⚙️ Configuración Netlify: ${JSON.stringify(data, null, 2)}`, 'info');
+                    }
+                } catch (netlifyError) {
+                    log(`⚠️ No se pudo obtener configuración Netlify: ${netlifyError.message}`, 'warning');
+                }
+
+            } catch (error) {
+                log(`❌ Error en test de configuración: ${error.message}`, 'error');
+            }
+        }
+
+        // Estadísticas
+        async function updateStatistics() {
+            log('📈 Actualizando estadísticas...', 'info');
+            
+            try {
+                const [solicitudes, usuarios, solicitudesAcceso, tecnicos] = await Promise.all([
+                    window.airtableAPI.getSolicitudes(),
+                    window.airtableAPI.getUsuarios(),
+                    window.airtableAPI.getSolicitudesAcceso(),
+                    window.airtableAPI.getTecnicos()
+                ]);
+
+                document.getElementById('stats-solicitudes').textContent = solicitudes.length;
+                document.getElementById('stats-usuarios').textContent = usuarios.length;
+                document.getElementById('stats-accesos').textContent = solicitudesAcceso.length;
+                document.getElementById('stats-tecnicos').textContent = tecnicos.length;
+
+                log(`📊 Estadísticas actualizadas: ${solicitudes.length} solicitudes, ${usuarios.length} usuarios, ${solicitudesAcceso.length} accesos, ${tecnicos.length} técnicos`, 'success');
+
+            } catch (error) {
+                log(`❌ Error actualizando estadísticas: ${error.message}`, 'error');
+            }
+        }
+
+        // Ejecutar todos los tests
+        async function runAllTests() {
+            log('🚀 ===============================', 'info');
+            log('🚀 EJECUTANDO TODOS LOS TESTS', 'info');
+            log('🚀 ===============================', 'info');
+            
+            clearLog();
+            
+            // Tests de conexión
+            await testBasicConnection();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAllTables();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testNetlifyFunctions();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Tests de datos
+            await testSolicitudes();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testUsuarios();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testSolicitudesAcceso();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Tests de funcionalidad
+            await testCodeGeneration();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            await testAccessValidation();
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Actualizar estadísticas
+            await updateStatistics();
+
+            log('🎉 ===============================', 'success');
+            log('🎉 TODOS LOS TESTS COMPLETADOS', 'success');
+            log('🎉 ===============================', 'success');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Sistema de tests iniciado', 'info');
+            updateConnectionIndicator('loading');
+            
+            // Esperar a que se cargue airtable-config.js
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    log('✅ airtableAPI cargado correctamente', 'success');
+                    await testBasicConnection();
+                    await updateStatistics();
+                } else {
+                    log('❌ airtableAPI no se pudo cargar', 'error');
+                    updateConnectionIndicator('disconnected');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
