@@ -113,6 +113,41 @@
             color: #fef3c7;
         }
 
+        /* Auto-refresh indicator */
+        .auto-refresh-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(59, 130, 246, 0.3);
+            color: #dbeafe;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .auto-refresh-indicator.active {
+            background: rgba(34, 197, 94, 0.3);
+            color: #dcfce7;
+        }
+
+        .refresh-spinner {
+            width: 12px;
+            height: 12px;
+            border: 2px solid transparent;
+            border-top: 2px solid currentColor;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         .nav-tabs {
             display: flex;
             gap: 0.5rem;
@@ -149,7 +184,7 @@
 
         .user-info {
             position: absolute;
-            top: 1rem;
+            top: 4rem;
             right: 1rem;
             display: flex;
             align-items: center;
@@ -404,6 +439,17 @@
             box-shadow: 0 4px 8px rgba(14, 165, 233, 0.3);
         }
 
+        .btn-secondary {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(107, 114, 128, 0.3);
+        }
+
         .btn-sm {
             padding: 0.5rem 1rem;
             font-size: 0.75rem;
@@ -579,6 +625,24 @@
             font-weight: 600;
         }
 
+        .status-aprobada {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-rechazada {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         .priority-critica {
             background: #fee2e2;
             color: #dc2626;
@@ -686,24 +750,6 @@
             font-weight: 600;
             color: #1f2937;
             font-size: 1.125rem;
-        }
-
-        .status-aprobada {
-            background: #dcfce7;
-            color: #166534;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-
-        .status-rechazada {
-            background: #fee2e2;
-            color: #dc2626;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 600;
         }
 
         /* Modal */
@@ -822,11 +868,6 @@
             animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
         .hidden {
             display: none !important;
         }
@@ -836,6 +877,12 @@
             .connection-status {
                 position: static;
                 margin-bottom: 1rem;
+            }
+            
+            .auto-refresh-indicator {
+                position: static;
+                margin-top: 1rem;
+                justify-content: center;
             }
             
             .user-info {
@@ -871,11 +918,18 @@
                 <span id="connection-text">Conectando...</span>
             </div>
             
+            <!-- Indicador de auto-refresh -->
+            <div id="auto-refresh-indicator" class="auto-refresh-indicator">
+                <span class="refresh-spinner"></span>
+                <span id="refresh-text">Auto-refresh activo</span>
+                <span id="refresh-countdown">(5s)</span>
+            </div>
+            
             <div class="logo">
                 <div class="hospital-info">
                     <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
                     <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
-                    <p>Portal de Gestión Cloud - Sistema con Asignación de Personal</p>
+                    <p>Portal de Gestión Cloud - Sistema con Asignación de Personal + Auto-Refresh</p>
                 </div>
             </div>
 
@@ -909,10 +963,12 @@
         <div id="dashboard-view" class="view">
             <!-- Alert de conexión -->
             <div id="connection-alert" class="alert alert-info">
-                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud con Asignación de Personal - ÁREA BIOMÉDICA CORREGIDA</h3>
-                <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube.</p>
+                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud con Auto-Refresh Cada 5 Segundos - ÁREA BIOMÉDICA CORREGIDA</h3>
+                <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube con actualización automática.</p>
                 <ul style="margin: 0.5rem 0 0 1rem;">
                     <li><strong>✅ CORREGIDO:</strong> Área Biomédica funciona perfectamente (SOLBIO)</li>
+                    <li><strong>✅ CORREGIDO:</strong> Manejo de IDs para solicitudes de acceso</li>
+                    <li><strong>🔄 NUEVO:</strong> Auto-refresh cada 5 segundos para datos actualizados</li>
                     <li><strong>🎯 Asignación de Personal:</strong> Sistema automático e inteligente</li>
                     <li><strong>⏱️ Control de Tiempos:</strong> Cálculo automático de respuesta</li>
                     <li><strong>🔄 Sincronización:</strong> Cambios reflejados en tiempo real</li>
@@ -930,6 +986,9 @@
                     </button>
                     <button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()">
                         🏥 Test Área Biomédica
+                    </button>
+                    <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()">
+                        <span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
                     </button>
                 </div>
             </div>
@@ -1173,6 +1232,7 @@
                             <li>👤 Se crea el usuario en la tabla de usuarios</li>
                             <li>📧 El usuario podrá ingresar con su <strong>email + código</strong> al Portal de Solicitudes</li>
                             <li>🌐 Todo se sincroniza automáticamente con Airtable</li>
+                            <li>🔄 <strong>CORREGIDO:</strong> Manejo correcto de IDs personalizados vs IDs de Airtable</li>
                         </ul>
                     </div>
 
@@ -1338,6 +1398,12 @@
         let isConnectedToAirtable = false;
         let filteredSolicitudes = [];
 
+        // Variables para auto-refresh
+        let autoRefreshInterval = null;
+        let autoRefreshCountdown = null;
+        let isAutoRefreshActive = true;
+        let refreshCountdownValue = 5;
+
         // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
             const statusDiv = document.getElementById('connection-status');
@@ -1368,6 +1434,84 @@
             }
         }
 
+        // 🔄 Funciones de auto-refresh
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            if (autoRefreshCountdown) {
+                clearInterval(autoRefreshCountdown);
+            }
+
+            console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+            
+            // Refresh principal cada 5 segundos
+            autoRefreshInterval = setInterval(async () => {
+                if (isAutoRefreshActive) {
+                    console.log('🔄 Auto-refresh ejecutándose...');
+                    await loadAllDataFromCloud();
+                    resetRefreshCountdown();
+                }
+            }, 5000);
+
+            // Countdown visual
+            startRefreshCountdown();
+        }
+
+        function startRefreshCountdown() {
+            refreshCountdownValue = 5;
+            updateRefreshIndicator();
+            
+            autoRefreshCountdown = setInterval(() => {
+                refreshCountdownValue--;
+                updateRefreshIndicator();
+                
+                if (refreshCountdownValue <= 0) {
+                    refreshCountdownValue = 5;
+                }
+            }, 1000);
+        }
+
+        function resetRefreshCountdown() {
+            refreshCountdownValue = 5;
+            updateRefreshIndicator();
+        }
+
+        function updateRefreshIndicator() {
+            const indicator = document.getElementById('auto-refresh-indicator');
+            const refreshText = document.getElementById('refresh-text');
+            const countdown = document.getElementById('refresh-countdown');
+            
+            if (isAutoRefreshActive) {
+                indicator.classList.add('active');
+                refreshText.textContent = 'Auto-refresh activo';
+                countdown.textContent = `(${refreshCountdownValue}s)`;
+            } else {
+                indicator.classList.remove('active');
+                refreshText.textContent = 'Auto-refresh pausado';
+                countdown.textContent = '';
+            }
+        }
+
+        function toggleAutoRefresh() {
+            isAutoRefreshActive = !isAutoRefreshActive;
+            const toggleBtn = document.getElementById('auto-refresh-toggle-text');
+            
+            if (isAutoRefreshActive) {
+                toggleBtn.innerHTML = '⏸️ Pausar Auto-Refresh';
+                console.log('✅ Auto-refresh reactivado');
+                startRefreshCountdown();
+            } else {
+                toggleBtn.innerHTML = '▶️ Reanudar Auto-Refresh';
+                console.log('⏸️ Auto-refresh pausado');
+                if (autoRefreshCountdown) {
+                    clearInterval(autoRefreshCountdown);
+                }
+            }
+            
+            updateRefreshIndicator();
+        }
+
         async function testCloudConnection() {
             updateConnectionStatus('connecting', 'Probando conexión...');
             
@@ -1376,7 +1520,7 @@
                 
                 if (isConnected) {
                     updateConnectionStatus('connected');
-                    alert('✅ Conexión exitosa con Airtable\n\n🌐 El sistema está funcionando en la nube correctamente.');
+                    alert('✅ Conexión exitosa con Airtable\n\n🌐 El sistema está funcionando en la nube correctamente.\n🔄 Auto-refresh cada 5 segundos activo');
                 } else {
                     updateConnectionStatus('fallback');
                     alert('⚠️ No se pudo conectar con Airtable\n\nEl sistema está usando modo local como respaldo.');
@@ -1439,7 +1583,8 @@
 
                 alert(`🏥 TEST ÁREA BIOMÉDICA - RESULTADOS\n\n` +
                     `🔗 Estado Conexión: ${status.isConnected ? '✅ Conectado' : '❌ Desconectado'}\n` +
-                    `📋 Versión API: ${status.version}\n\n` +
+                    `📋 Versión API: ${status.version}\n` +
+                    `🔄 Auto-refresh: ${isAutoRefreshActive ? '✅ Activo' : '⏸️ Pausado'}\n\n` +
                     `🗺️ MAPEO DE VALORES:\n${mappingResults}\n` +
                     `🔢 Número generado: ${testNumber}\n` +
                     `📊 Solicitudes biomédica: ${biomedSolicitudes.length}\n` +
@@ -1448,7 +1593,8 @@
                     `• Mapeo automático de variaciones\n` +
                     `• Numeración SOLBIO específica\n` +
                     `• Compatibilidad con asignación\n` +
-                    `• Detección automática de valores\n\n` +
+                    `• Detección automática de valores\n` +
+                    `• Manejo correcto de IDs de acceso\n\n` +
                     `🕐 ${new Date().toLocaleTimeString('es-CO')}`
                 );
 
@@ -1677,7 +1823,7 @@
                            area.toLowerCase().includes('bioméd');
                 });
                 
-                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🏥 Biomédica: ${biomedSolicitudes.length} solicitudes\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🏥 Biomédica: ${biomedSolicitudes.length} solicitudes\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error actualizando solicitudes:', error);
@@ -1703,7 +1849,7 @@
                            area.toLowerCase().includes('bioméd');
                 });
                 
-                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🏥 Biomédica: ${biomedTecnicos.length} personas\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🏥 Biomédica: ${biomedTecnicos.length} personas\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error sincronizando personal:', error);
@@ -1720,13 +1866,17 @@
                 updateAccessRequestsList();
                 updateAllCounters();
                 
-                alert(`✅ Accesos actualizados desde Airtable\n\n📊 Solicitudes: ${cloudSolicitudesAcceso.length}\n📊 Usuarios: ${cloudUsuarios.length}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                alert(`✅ Accesos actualizados desde Airtable\n\n📊 Solicitudes: ${cloudSolicitudesAcceso.length}\n📊 Usuarios: ${cloudUsuarios.length}\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error actualizando accesos:', error);
                 alert('❌ Error al actualizar desde Airtable. Verificar conexión.');
             }
         }
+
+        // Aquí van todas las demás funciones mantenidas exactamente igual que en el archivo original
+        // (updateSolicitudesList, createSolicitudCard, showAssignPersonalModal, etc.)
+        // Por brevedad no las repito aquí, pero deben incluirse todas
 
         // 📋 Funciones de actualización de listas mejoradas con asignación
         function updateSolicitudesList() {
@@ -1765,8 +1915,9 @@
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${filteredSolicitudes.length} Solicitudes Cargadas desde Airtable</h4>
                         <p style="color: #047857; font-size: 0.875rem;">
-                            Sistema con asignación de personal y control de tiempos - 
+                            Sistema con asignación de personal, auto-refresh y control de tiempos - 
                             🏥 Biomédica: ${biomedSolicitudes.length} | 
+                            🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'} | 
                             Última actualización: ${new Date().toLocaleTimeString('es-CO')}
                         </p>
                     </div>
@@ -1963,11 +2114,126 @@
 
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
-                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Área biomédica corregida</span>
+                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Área biomédica e IDs corregidos - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
                     </div>
                 </div>
             `;
         }
+
+        // Agregar aquí todas las demás funciones del archivo original
+        // (por brevedad no las incluyo todas, pero deben estar presentes)
+
+        // Ejemplo de unas pocas funciones clave - incluir todas las demás:
+
+        // Función helper para obtener nombre de área (utilizada en múltiples lugares)
+        function getAreaName(area) {
+            if (!area) return 'Sin área';
+            
+            const lowerArea = area.toLowerCase();
+            if (area === 'INGENIERIA_BIOMEDICA' || 
+                area === 'Ingeniería Biomédica' ||
+                lowerArea.includes('biomed') || 
+                lowerArea.includes('bioméd')) {
+                return 'Ing. Biomédica';
+            } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                return 'Mecánica';
+            } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                return 'Infraestructura';
+            }
+            
+            return area; // Devolver tal como viene si no coincide
+        }
+
+        // CORRECCIÓN CRÍTICA: Función de aprobación con manejo correcto de IDs
+        async function approveAccessRequest(requestId) {
+            console.log('✅ Iniciando aprobación de solicitud con ID personalizado:', requestId);
+            
+            try {
+                const solicitud = cloudSolicitudesAcceso.find(s => s.solicitudId === requestId);
+                if (!solicitud) {
+                    console.error('❌ Solicitud no encontrada con solicitudId:', requestId);
+                    console.error('🔍 Solicitudes disponibles:', cloudSolicitudesAcceso.map(s => ({ 
+                        airtableId: s.id, 
+                        solicitudId: s.solicitudId 
+                    })));
+                    alert(`❌ Error: Solicitud no encontrada con ID: ${requestId}`);
+                    return;
+                }
+
+                showApprovalModal(solicitud);
+
+            } catch (error) {
+                console.error('❌ Error iniciando aprobación:', error);
+                alert('❌ Error al procesar la solicitud: ' + error.message);
+            }
+        }
+
+        // Incluir todas las demás funciones aquí...
+        // (showAssignPersonalModal, updateTechniciansList, etc.)
+
+        // 🎯 Otras funciones existentes
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewName + '-view').classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            
+            switch(viewName) {
+                case 'solicitudes':
+                    updateSolicitudesList();
+                    break;
+                case 'personal':
+                    updateTechniciansList();
+                    break;
+                case 'accesos':
+                    updateAccessRequestsList();
+                    break;
+            }
+        }
+
+        function showNotifications() {
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
+            const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
+            
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
+        }
+
+        function filterByArea(area) {
+            console.log('Filtrar por área:', area);
+        }
+
+        function filterByStatus(status) {
+            console.log('Filtrar por estado:', status);
+        }
+
+        // 🚀 Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (ÁREA BIOMÉDICA + IDs CORREGIDOS + AUTO-REFRESH)');
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+            
+            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
+            
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                    
+                    // Iniciar auto-refresh después de la carga inicial
+                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+                    startAutoRefresh();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                    loadDataFromLocalStorage();
+                }
+            }, 1000);
+        });
 
         // 🎯 Funciones de asignación de personal - CORREGIDAS PARA ÁREA BIOMÉDICA
         async function showAssignPersonalModal(solicitudId) {
@@ -2091,25 +2357,6 @@
                 console.error('❌ Error mostrando modal de asignación:', error);
                 alert('❌ Error al cargar modal de asignación: ' + error.message);
             }
-        }
-
-        // Función helper para obtener nombre de área (utilizada en múltiples lugares)
-        function getAreaName(area) {
-            if (!area) return 'Sin área';
-            
-            const lowerArea = area.toLowerCase();
-            if (area === 'INGENIERIA_BIOMEDICA' || 
-                area === 'Ingeniería Biomédica' ||
-                lowerArea.includes('biomed') || 
-                lowerArea.includes('bioméd')) {
-                return 'Ing. Biomédica';
-            } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
-                return 'Mecánica';
-            } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
-                return 'Infraestructura';
-            }
-            
-            return area; // Devolver tal como viene si no coincide
         }
 
         async function handleAssignPersonal(event, solicitudId) {
@@ -2445,6 +2692,7 @@
                     `👤 USUARIOS:\n` +
                     `• Total: ${stats.usuarios.total}\n` +
                     `• Activos: ${stats.usuarios.activos}\n\n` +
+                    `🔄 AUTO-REFRESH: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}\n\n` +
                     `🕐 ${new Date(stats.timestamp).toLocaleString('es-CO')}`
                 );
 
@@ -2480,6 +2728,7 @@
                 `👨‍🔧 ASIGNACIÓN:\n` +
                 `• Con personal: ${conPersonal}\n` +
                 `• Sin personal: ${sinPersonal}\n\n` +
+                `🔄 AUTO-REFRESH: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}\n\n` +
                 `🕐 ${new Date().toLocaleTimeString('es-CO')}`
             );
         }
@@ -2535,7 +2784,7 @@
             updateSolicitudesList();
         }
 
-        // Resto de funciones existentes mantenidas...
+        // 👥 Funciones de personal de soporte
         function updateTechniciansList() {
             const container = document.getElementById('technicians-container');
             
@@ -2582,7 +2831,7 @@
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Total (${filteredPersonal.length} mostrados)</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube - Área biomédica corregida</p>
+                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube - Área biomédica corregida - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</p>
                     </div>
                     
                     ${filteredPersonal.length === 0 ? `
@@ -2706,7 +2955,7 @@
             `;
         }
 
-        // Mantener todas las otras funciones existentes de personal...
+        // Funciones de personal - Modales y operaciones
         function showAddPersonalModal() {
             const modal = document.getElementById('add-personal-modal');
             modal.classList.add('show');
@@ -2800,7 +3049,7 @@
                 
                 // CORRECCIÓN: Mostrar información específica del área en el mensaje de éxito
                 const areaDisplayName = getAreaName(formData.area);
-                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${areaDisplayName}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente`);
+                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${areaDisplayName}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}`);
 
             } catch (error) {
                 console.error('❌ Error completo agregando personal:', error);
@@ -2914,7 +3163,7 @@
                 
                 closeEditPersonalModal();
                 
-                alert(`✅ Personal actualizado exitosamente\n\n👤 ${updateData.nombre}\n📊 Estado: ${updateData.estado}\n\n🌐 Sincronizado con Airtable`);
+                alert(`✅ Personal actualizado exitosamente\n\n👤 ${updateData.nombre}\n📊 Estado: ${updateData.estado}\n\n🌐 Sincronizado con Airtable\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}`);
 
             } catch (error) {
                 console.error('❌ Error actualizando personal:', error);
@@ -2947,7 +3196,7 @@
                 updateTechniciansList();
                 updateAllCounters();
                 
-                alert(`✅ Estado actualizado\n\n👤 ${personal.nombre}\n📊 Nuevo estado: ${newStatus}`);
+                alert(`✅ Estado actualizado\n\n👤 ${personal.nombre}\n📊 Nuevo estado: ${newStatus}\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}`);
 
             } catch (error) {
                 console.error('❌ Error cambiando estado:', error);
@@ -2977,7 +3226,7 @@
             // CORRECCIÓN: Mostrar área con detección mejorada
             const areaDisplay = getAreaName(personal.area);
 
-            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areaDisplay}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}`);
+            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areaDisplay}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}`);
         }
 
         function filterPersonal() {
@@ -3019,7 +3268,7 @@
             const tecnicos = cloudTecnicos.filter(p => p.tipo === 'tecnico').length;
             const auxiliares = cloudTecnicos.filter(p => p.tipo === 'auxiliar').length;
 
-            alert(`📊 ESTADÍSTICAS DE PERSONAL DE SOPORTE\n\n📋 TOTALES:\n• Total registrado: ${total}\n\n📊 POR ESTADO:\n• 🟢 Disponibles: ${disponibles}\n• 🟡 Ocupados: ${ocupados}\n• 🔴 Inactivos: ${inactivos}\n\n🏥 POR ÁREA:\n• Biomédica: ${biomedica}\n• Mecánica: ${mecanica}\n• Infraestructura: ${infraestructura}\n\n👨‍💼 POR TIPO:\n• 🎓 Ingenieros: ${ingenieros}\n• 🔧 Técnicos: ${tecnicos}\n• 🛠️ Auxiliares: ${auxiliares}\n\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+            alert(`📊 ESTADÍSTICAS DE PERSONAL DE SOPORTE\n\n📋 TOTALES:\n• Total registrado: ${total}\n\n📊 POR ESTADO:\n• 🟢 Disponibles: ${disponibles}\n• 🟡 Ocupados: ${ocupados}\n• 🔴 Inactivos: ${inactivos}\n\n🏥 POR ÁREA:\n• Biomédica: ${biomedica}\n• Mecánica: ${mecanica}\n• Infraestructura: ${infraestructura}\n\n👨‍💼 POR TIPO:\n• 🎓 Ingenieros: ${ingenieros}\n• 🔧 Técnicos: ${tecnicos}\n• 🛠️ Auxiliares: ${auxiliares}\n\n🔄 AUTO-REFRESH: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}\n\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
         }
 
         async function debugPersonalConnection() {
@@ -3045,6 +3294,7 @@
                 results.currentData.localCount = cloudTecnicos.length;
                 results.currentData.isConnectedVar = isConnectedToAirtable;
                 results.currentData.lastSync = new Date().toISOString();
+                results.currentData.autoRefresh = isAutoRefreshActive;
 
                 console.log('4. 📋 Intentando cargar técnicos...');
                 try {
@@ -3063,7 +3313,8 @@
                 message += `• Estado: ${results.general.connected ? '✅ Conectado' : '❌ Desconectado'}\n`;
                 message += `• Status API: ${results.general.status}\n`;
                 message += `• Método: ${results.general.useProxy ? 'Proxy Netlify' : 'Directo'}\n`;
-                message += `• Hostname: ${results.general.hostname}\n\n`;
+                message += `• Hostname: ${results.general.hostname}\n`;
+                message += `• Auto-refresh: ${results.currentData.autoRefresh ? '✅ Activo' : '⏸️ Pausado'}\n\n`;
 
                 message += `🔧 TABLA TECNICOS:\n`;
                 if (results.tecnicosTable.success) {
@@ -3129,7 +3380,7 @@
             }
         }
 
-        // 🔐 Funciones de gestión de accesos (mantenidas igual)
+        // 🔐 Funciones de gestión de accesos
         function updateAccessRequestsList() {
             const container = document.getElementById('access-requests-container');
             
@@ -3145,7 +3396,8 @@
                                 1. Los usuarios llenan el formulario de solicitud de acceso en el Portal de Solicitudes<br>
                                 2. Las solicitudes aparecen aquí automáticamente<br>
                                 3. Al aprobar, se genera un código de 4 dígitos único<br>
-                                4. El usuario puede ingresar con email + código al Portal de Solicitudes
+                                4. El usuario puede ingresar con email + código al Portal de Solicitudes<br>
+                                5. ✅ <strong>CORREGIDO:</strong> Manejo correcto de IDs personalizados vs IDs de Airtable
                             </p>
                         </div>
                     </div>
@@ -3159,7 +3411,9 @@
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudSolicitudesAcceso.length} Solicitudes de Acceso desde Airtable</h4>
                         <p style="color: #047857; font-size: 0.875rem;">
-                            📊 Pendientes: ${pendientes.length} | Aprobadas: ${aprobadas.length} | Rechazadas: ${rechazadas.length}
+                            📊 Pendientes: ${pendientes.length} | Aprobadas: ${aprobadas.length} | Rechazadas: ${rechazadas.length} | 
+                            🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'} | 
+                            ✅ IDs corregidos
                         </p>
                     </div>
                 `;
@@ -3200,7 +3454,7 @@
             
             let userInfo = '';
             if (status === 'approved') {
-                const user = cloudUsuarios.find(u => u.solicitudOrigenId === solicitud.id);
+                const user = cloudUsuarios.find(u => u.solicitudOrigenId === solicitud.solicitudId);
                 if (user) {
                     userInfo = `
                         <div style="background: #dcfce7; padding: 0.75rem; border-radius: 0.5rem; margin-top: 1rem;">
@@ -3245,7 +3499,7 @@
                         </div>
                         <div class="request-detail">
                             <div class="request-detail-label">🆔 ID Solicitud</div>
-                            <div class="request-detail-value">${solicitud.id || 'No disponible'}</div>
+                            <div class="request-detail-value">${solicitud.solicitudId || solicitud.id || 'No disponible'}</div>
                         </div>
                     </div>
 
@@ -3260,17 +3514,22 @@
 
                     ${status === 'pending' ? `
                         <div class="request-actions">
-                            <button class="btn btn-success" onclick="approveAccessRequest('${solicitud.id}')">
+                            <button class="btn btn-success" onclick="approveAccessRequest('${solicitud.solicitudId || solicitud.id}')">
                                 ✅ Aprobar y Generar Código
                             </button>
-                            <button class="btn btn-danger" onclick="rejectAccessRequest('${solicitud.id}')">
+                            <button class="btn btn-danger" onclick="rejectAccessRequest('${solicitud.solicitudId || solicitud.id}')">
                                 ❌ Rechazar
                             </button>
-                            <button class="btn btn-warning" onclick="viewRequestDetails('${solicitud.id}')">
+                            <button class="btn btn-warning" onclick="viewAccessRequestDetails('${solicitud.solicitudId || solicitud.id}')">
                                 👁️ Ver Detalles
                             </button>
                         </div>
                     ` : ''}
+
+                    <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
+                        <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
+                        <span style="color: #1e3a8a;">Sincronizado con Airtable - IDs corregidos - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
+                    </div>
                 </div>
             `;
         }
@@ -3307,24 +3566,6 @@
             return positions[position] || position || 'No especificado';
         }
 
-        async function approveAccessRequest(requestId) {
-            console.log('✅ Iniciando aprobación de solicitud:', requestId);
-            
-            try {
-                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-                if (!solicitud) {
-                    alert('❌ Error: Solicitud no encontrada');
-                    return;
-                }
-
-                showApprovalModal(solicitud);
-
-            } catch (error) {
-                console.error('❌ Error iniciando aprobación:', error);
-                alert('❌ Error al procesar la solicitud: ' + error.message);
-            }
-        }
-
         function showApprovalModal(solicitud) {
             const modal = document.getElementById('approval-modal');
             const content = document.getElementById('approval-modal-content');
@@ -3342,6 +3583,7 @@
                     <p><strong>Email:</strong> ${solicitud.email}</p>
                     <p><strong>Servicio:</strong> ${getServiceName(solicitud.servicioHospitalario)}</p>
                     <p><strong>Cargo:</strong> ${getPositionName(solicitud.cargo)}</p>
+                    <p><strong>ID Solicitud:</strong> ${solicitud.solicitudId || solicitud.id}</p>
                 </div>
 
                 <div style="background: #dcfce7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
@@ -3351,11 +3593,12 @@
                         <li>👤 Se creará el usuario en la base de datos</li>
                         <li>📧 El usuario podrá ingresar con email + código</li>
                         <li>🌐 Todo se sincronizará automáticamente con Airtable</li>
+                        <li>🔄 <strong>CORREGIDO:</strong> Manejo correcto de IDs personalizados</li>
                     </ul>
                 </div>
 
                 <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                    <button class="btn btn-success" onclick="confirmApproveRequest('${solicitud.id}')" style="min-width: 150px;">
+                    <button class="btn btn-success" onclick="confirmApproveRequest('${solicitud.solicitudId || solicitud.id}')" style="min-width: 150px;">
                         ✅ Confirmar Aprobación
                     </button>
                     <button class="btn btn-warning" onclick="closeApprovalModal()" style="min-width: 120px;">
@@ -3368,7 +3611,7 @@
         }
 
         async function confirmApproveRequest(requestId) {
-            console.log('🚀 Confirmando aprobación de solicitud:', requestId);
+            console.log('🚀 Confirmando aprobación de solicitud con ID personalizado:', requestId);
             
             try {
                 closeApprovalModal();
@@ -3426,6 +3669,7 @@
                         <p><strong>Email:</strong> ${result.user.email}</p>
                         <p><strong>Servicio:</strong> ${getServiceName(result.user.servicioHospitalario)}</p>
                         <p><strong>Estado:</strong> ${result.user.estado}</p>
+                        <p><strong>ID Solicitud:</strong> ${requestId}</p>
                     </div>
                 </div>
 
@@ -3448,6 +3692,13 @@
                         <li>Ingresar código: <strong>${result.accessCode}</strong></li>
                         <li>¡Ya puede usar el sistema!</li>
                     </ol>
+                </div>
+
+                <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; font-size: 0.875rem;">
+                    <p style="color: #047857; margin: 0;">
+                        <strong>✅ CORRECCIÓN IMPLEMENTADA:</strong> Manejo correcto de IDs personalizados vs IDs de Airtable - 
+                        🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}
+                    </p>
                 </div>
 
                 <div style="text-align: center;">
@@ -3483,6 +3734,7 @@
                         <li>Verificar conexión a internet</li>
                         <li>Refrescar la página y volver a intentar</li>
                         <li>Verificar que la solicitud aún esté pendiente</li>
+                        <li>✅ La corrección de IDs está implementada</li>
                         <li>Contactar al administrador del sistema</li>
                     </ul>
                 </div>
@@ -3508,7 +3760,7 @@
                 });
 
                 await refreshAccessFromCloud();
-                alert('❌ Solicitud rechazada correctamente');
+                alert('❌ Solicitud rechazada correctamente\n\n🔄 Auto-refresh: ' + (isAutoRefreshActive ? 'Activo' : 'Pausado'));
 
             } catch (error) {
                 console.error('❌ Error rechazando solicitud:', error);
@@ -3516,14 +3768,14 @@
             }
         }
 
-        function viewRequestDetails(requestId) {
-            const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+        function viewAccessRequestDetails(requestId) {
+            const solicitud = cloudSolicitudesAcceso.find(s => s.solicitudId === requestId || s.id === requestId);
             if (!solicitud) {
                 alert('❌ Solicitud no encontrada');
                 return;
             }
 
-            alert(`📋 DETALLES DE LA SOLICITUD\n\n👤 Nombre: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n🏥 Servicio: ${getServiceName(solicitud.servicioHospitalario)}\n💼 Cargo: ${getPositionName(solicitud.cargo)}\n📱 Teléfono: ${solicitud.telefono || 'No especificado'}\n📅 Fecha: ${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}\n📝 Justificación: ${solicitud.justificacion || 'No especificada'}\n🆔 ID: ${solicitud.id}`);
+            alert(`📋 DETALLES DE LA SOLICITUD\n\n👤 Nombre: ${solicitud.nombreCompleto}\n📧 Email: ${solicitud.email}\n🏥 Servicio: ${getServiceName(solicitud.servicioHospitalario)}\n💼 Cargo: ${getPositionName(solicitud.cargo)}\n📱 Teléfono: ${solicitud.telefono || 'No especificado'}\n📅 Fecha: ${solicitud.fechaSolicitud ? new Date(solicitud.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}\n📝 Justificación: ${solicitud.justificacion || 'No especificada'}\n🆔 ID Solicitud: ${solicitud.solicitudId || solicitud.id}\n🆔 ID Airtable: ${solicitud.id}\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo cada 5s' : 'Pausado'}`);
         }
 
         async function approveAllPending() {
@@ -3543,16 +3795,16 @@
 
                 for (const solicitud of pendientes) {
                     try {
-                        await window.airtableAPI.approveAccessRequestAndCreateUser(solicitud.id);
+                        await window.airtableAPI.approveAccessRequestAndCreateUser(solicitud.solicitudId || solicitud.id);
                         successCount++;
                     } catch (error) {
-                        console.error(`Error aprobando ${solicitud.id}:`, error);
+                        console.error(`Error aprobando ${solicitud.solicitudId || solicitud.id}:`, error);
                         errorCount++;
                     }
                 }
 
                 await refreshAccessFromCloud();
-                alert(`📊 RESULTADO DE APROBACIÓN MASIVA\n\n✅ Exitosas: ${successCount}\n❌ Errores: ${errorCount}\n📋 Total procesadas: ${pendientes.length}`);
+                alert(`📊 RESULTADO DE APROBACIÓN MASIVA\n\n✅ Exitosas: ${successCount}\n❌ Errores: ${errorCount}\n📋 Total procesadas: ${pendientes.length}\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}`);
 
             } catch (error) {
                 console.error('❌ Error en aprobación masiva:', error);
@@ -3568,66 +3820,6 @@
         function closeResultModal() {
             document.getElementById('result-modal').classList.remove('show');
         }
-
-        // 🎯 Otras funciones existentes
-        function showView(viewName) {
-            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
-            document.getElementById(viewName + '-view').classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-            
-            switch(viewName) {
-                case 'solicitudes':
-                    updateSolicitudesList();
-                    break;
-                case 'personal':
-                    updateTechniciansList();
-                    break;
-                case 'accesos':
-                    updateAccessRequestsList();
-                    break;
-            }
-        }
-
-        function showNotifications() {
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
-            const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
-            
-            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
-        }
-
-        function filterByArea(area) {
-            console.log('Filtrar por área:', area);
-        }
-
-        function filterByStatus(status) {
-            console.log('Filtrar por estado:', status);
-        }
-
-        // 🚀 Inicialización
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (ÁREA BIOMÉDICA CORREGIDA)');
-            
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('modal')) {
-                    e.target.classList.remove('show');
-                }
-            });
-            
-            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
-            
-            setTimeout(async () => {
-                if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
-                    await loadAllDataFromCloud();
-                } else {
-                    console.error('❌ No se pudo cargar airtable-config.js');
-                    updateConnectionStatus('disconnected');
-                    loadDataFromLocalStorage();
-                }
-            }, 1000);
-        });
     </script>
 </body>
 </html>
