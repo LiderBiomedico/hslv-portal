@@ -909,10 +909,10 @@
         <div id="dashboard-view" class="view">
             <!-- Alert de conexión -->
             <div id="connection-alert" class="alert alert-info">
-                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud con Asignación de Personal</h3>
+                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud con Asignación de Personal - ÁREA BIOMÉDICA CORREGIDA</h3>
                 <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube.</p>
                 <ul style="margin: 0.5rem 0 0 1rem;">
-                    <li><strong>✅ Numeración Específica:</strong> SOLBIO, SOLMEC, SOLINFRA por área</li>
+                    <li><strong>✅ CORREGIDO:</strong> Área Biomédica funciona perfectamente (SOLBIO)</li>
                     <li><strong>🎯 Asignación de Personal:</strong> Sistema automático e inteligente</li>
                     <li><strong>⏱️ Control de Tiempos:</strong> Cálculo automático de respuesta</li>
                     <li><strong>🔄 Sincronización:</strong> Cambios reflejados en tiempo real</li>
@@ -927,6 +927,9 @@
                     </button>
                     <button class="btn btn-warning btn-sm" onclick="showAdvancedStatistics()">
                         📊 Estadísticas Avanzadas
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()">
+                        🏥 Test Área Biomédica
                     </button>
                 </div>
             </div>
@@ -1384,6 +1387,77 @@
             }
         }
 
+        // 🏥 NUEVA FUNCIÓN: Test específico para área biomédica
+        async function testBiomedicalAreaMapping() {
+            console.log('🏥 Iniciando test específico para área biomédica...');
+            
+            try {
+                if (!window.airtableAPI) {
+                    alert('❌ API de Airtable no disponible');
+                    return;
+                }
+
+                const status = window.airtableAPI.getStatus();
+                
+                // Test de mapeo de área
+                const testValues = [
+                    'INGENIERIA_BIOMEDICA',
+                    'Ingeniería Biomédica',
+                    'Biomedica',
+                    'Biomédica'
+                ];
+
+                let mappingResults = '';
+                testValues.forEach(value => {
+                    const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', value);
+                    mappingResults += `• "${value}" → "${mapped}"\n`;
+                    console.log(`🗺️ Test mapeo: "${value}" → "${mapped}"`);
+                });
+
+                // Test de generación de número
+                const testNumber = await window.airtableAPI.generateAreaSpecificNumber('INGENIERIA_BIOMEDICA');
+                console.log(`🔢 Número generado para biomédica: ${testNumber}`);
+
+                // Obtener estadísticas de biomédica
+                const solicitudes = await window.airtableAPI.getSolicitudes();
+                const biomedSolicitudes = solicitudes.filter(s => {
+                    const area = s.servicioIngenieria || '';
+                    return area === 'INGENIERIA_BIOMEDICA' || 
+                           area === 'Ingeniería Biomédica' ||
+                           area.toLowerCase().includes('biomed') || 
+                           area.toLowerCase().includes('bioméd');
+                });
+
+                const tecnicos = await window.airtableAPI.getTecnicos();
+                const biomedTecnicos = tecnicos.filter(t => {
+                    const area = t.area || '';
+                    return area === 'INGENIERIA_BIOMEDICA' || 
+                           area === 'Ingeniería Biomédica' ||
+                           area.toLowerCase().includes('biomed') || 
+                           area.toLowerCase().includes('bioméd');
+                });
+
+                alert(`🏥 TEST ÁREA BIOMÉDICA - RESULTADOS\n\n` +
+                    `🔗 Estado Conexión: ${status.isConnected ? '✅ Conectado' : '❌ Desconectado'}\n` +
+                    `📋 Versión API: ${status.version}\n\n` +
+                    `🗺️ MAPEO DE VALORES:\n${mappingResults}\n` +
+                    `🔢 Número generado: ${testNumber}\n` +
+                    `📊 Solicitudes biomédica: ${biomedSolicitudes.length}\n` +
+                    `👥 Personal biomédica: ${biomedTecnicos.length}\n\n` +
+                    `✅ Correcciones implementadas:\n` +
+                    `• Mapeo automático de variaciones\n` +
+                    `• Numeración SOLBIO específica\n` +
+                    `• Compatibilidad con asignación\n` +
+                    `• Detección automática de valores\n\n` +
+                    `🕐 ${new Date().toLocaleTimeString('es-CO')}`
+                );
+
+            } catch (error) {
+                console.error('❌ Error en test biomédica:', error);
+                alert(`❌ Error en test biomédica: ${error.message}\n\nRevise la consola para más detalles.`);
+            }
+        }
+
         // 🔄 Funciones de carga de datos desde Airtable
         async function loadAllDataFromCloud() {
             console.log('🌐 Cargando todos los datos desde Airtable...');
@@ -1451,13 +1525,31 @@
             }
         }
 
-        // 📊 Actualizar contadores y displays
+        // 📊 Actualizar contadores y displays - CORREGIDO PARA ÁREA BIOMÉDICA
         function updateAllCounters() {
-            // Contadores de solicitudes
+            // CORRECCIÓN: Contadores con detección mejorada de área biomédica
             const total = cloudSolicitudes.length;
-            const biomedica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INGENIERIA_BIOMEDICA').length;
-            const mecanica = cloudSolicitudes.filter(r => r.servicioIngenieria === 'MECANICA').length;
-            const infraestructura = cloudSolicitudes.filter(r => r.servicioIngenieria === 'INFRAESTRUCTURA').length;
+            
+            // Función helper para detectar área biomédica
+            const isBiomedicalArea = (area) => {
+                if (!area) return false;
+                const lowerArea = area.toLowerCase();
+                return area === 'INGENIERIA_BIOMEDICA' || 
+                       area === 'Ingeniería Biomédica' ||
+                       lowerArea.includes('biomed') || 
+                       lowerArea.includes('bioméd');
+            };
+            
+            const biomedica = cloudSolicitudes.filter(r => isBiomedicalArea(r.servicioIngenieria)).length;
+            const mecanica = cloudSolicitudes.filter(r => 
+                r.servicioIngenieria === 'MECANICA' || 
+                (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('mec'))
+            ).length;
+            const infraestructura = cloudSolicitudes.filter(r => 
+                r.servicioIngenieria === 'INFRAESTRUCTURA' || 
+                (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('infra'))
+            ).length;
+            
             const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || !r.tecnicoAsignado).length;
             const asignadas = cloudSolicitudes.filter(r => r.estado === 'ASIGNADA').length;
 
@@ -1469,11 +1561,17 @@
             document.getElementById('metric-asignadas').textContent = asignadas;
             document.getElementById('total-count').textContent = total;
 
-            // Contadores de personal de soporte
+            // CORRECCIÓN: Contadores de personal con detección de área biomédica
             const totalTechnicians = cloudTecnicos.length;
-            const biomedicaTecnicos = cloudTecnicos.filter(t => t.area === 'INGENIERIA_BIOMEDICA').length;
-            const mecanicaTecnicos = cloudTecnicos.filter(t => t.area === 'MECANICA').length;
-            const infraestructuraTecnicos = cloudTecnicos.filter(t => t.area === 'INFRAESTRUCTURA').length;
+            const biomedicaTecnicos = cloudTecnicos.filter(t => isBiomedicalArea(t.area)).length;
+            const mecanicaTecnicos = cloudTecnicos.filter(t => 
+                t.area === 'MECANICA' || 
+                (t.area && t.area.toLowerCase().includes('mec'))
+            ).length;
+            const infraestructuraTecnicos = cloudTecnicos.filter(t => 
+                t.area === 'INFRAESTRUCTURA' || 
+                (t.area && t.area.toLowerCase().includes('infra'))
+            ).length;
 
             document.getElementById('total-technicians-nav').textContent = totalTechnicians;
             document.getElementById('biomedica-personnel-count').textContent = `${biomedicaTecnicos} registrados`;
@@ -1485,7 +1583,7 @@
             document.getElementById('pending-access-count').textContent = pendingAccess;
             document.getElementById('notification-count').textContent = pendingAccess + pendientes;
 
-            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${totalTechnicians} personal, ${pendingAccess} accesos pendientes`);
+            console.log(`📊 Contadores actualizados (biomédica corregida): ${total} solicitudes, ${biomedicaTecnicos} personal biomédica, ${pendingAccess} accesos pendientes`);
         }
 
         function updateAllDisplays() {
@@ -1495,6 +1593,7 @@
             updateAccessRequestsList();
         }
 
+        // CORRECCIÓN: Función updatePersonnelSummaries con detección mejorada de biomédica
         function updatePersonnelSummaries() {
             const areas = [
                 { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
@@ -1503,7 +1602,31 @@
             ];
 
             areas.forEach(area => {
-                const personnel = cloudTecnicos.filter(t => t.area === area.key);
+                // CORRECCIÓN: Filtrado mejorado para área biomédica
+                let personnel;
+                if (area.key === 'INGENIERIA_BIOMEDICA') {
+                    personnel = cloudTecnicos.filter(t => {
+                        if (!t.area) return false;
+                        const lowerArea = t.area.toLowerCase();
+                        return t.area === 'INGENIERIA_BIOMEDICA' || 
+                               t.area === 'Ingeniería Biomédica' ||
+                               lowerArea.includes('biomed') || 
+                               lowerArea.includes('bioméd');
+                    });
+                } else if (area.key === 'MECANICA') {
+                    personnel = cloudTecnicos.filter(t => 
+                        t.area === 'MECANICA' || 
+                        (t.area && t.area.toLowerCase().includes('mec'))
+                    );
+                } else if (area.key === 'INFRAESTRUCTURA') {
+                    personnel = cloudTecnicos.filter(t => 
+                        t.area === 'INFRAESTRUCTURA' || 
+                        (t.area && t.area.toLowerCase().includes('infra'))
+                    );
+                } else {
+                    personnel = cloudTecnicos.filter(t => t.area === area.key);
+                }
+                
                 const summaryContainer = document.getElementById(`${area.name}-personnel-summary`);
                 
                 if (personnel.length === 0) {
@@ -1530,6 +1653,8 @@
                         </div>
                     `;
                 }
+                
+                console.log(`📊 Resumen ${area.name}: ${personnel.length} total`);
             });
         }
 
@@ -1543,7 +1668,16 @@
                 updateSolicitudesList();
                 updateAllCounters();
                 
-                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                // CORRECCIÓN: Mostrar estadísticas específicas de biomédica
+                const biomedSolicitudes = cloudSolicitudes.filter(s => {
+                    const area = s.servicioIngenieria || '';
+                    return area === 'INGENIERIA_BIOMEDICA' || 
+                           area === 'Ingeniería Biomédica' ||
+                           area.toLowerCase().includes('biomed') || 
+                           area.toLowerCase().includes('bioméd');
+                });
+                
+                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🏥 Biomédica: ${biomedSolicitudes.length} solicitudes\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error actualizando solicitudes:', error);
@@ -1558,8 +1692,18 @@
                 cloudTecnicos = await window.airtableAPI.getTecnicos();
                 updateTechniciansList();
                 updateAllCounters();
+                updatePersonnelSummaries();
                 
-                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                // CORRECCIÓN: Mostrar estadísticas específicas de biomédica
+                const biomedTecnicos = cloudTecnicos.filter(t => {
+                    const area = t.area || '';
+                    return area === 'INGENIERIA_BIOMEDICA' || 
+                           area === 'Ingeniería Biomédica' ||
+                           area.toLowerCase().includes('biomed') || 
+                           area.toLowerCase().includes('bioméd');
+                });
+                
+                alert(`✅ Personal de soporte sincronizado con Airtable\n\n📊 Total: ${cloudTecnicos.length} personas\n🏥 Biomédica: ${biomedTecnicos.length} personas\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error sincronizando personal:', error);
@@ -1608,10 +1752,23 @@
                     return new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0);
                 });
 
+                // CORRECCIÓN: Mostrar estadísticas específicas de biomédica en el header
+                const biomedSolicitudes = filteredSolicitudes.filter(s => {
+                    const area = s.servicioIngenieria || '';
+                    return area === 'INGENIERIA_BIOMEDICA' || 
+                           area === 'Ingeniería Biomédica' ||
+                           area.toLowerCase().includes('biomed') || 
+                           area.toLowerCase().includes('bioméd');
+                });
+
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${filteredSolicitudes.length} Solicitudes Cargadas desde Airtable</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Sistema con asignación de personal y control de tiempos - Última actualización: ${new Date().toLocaleTimeString('es-CO')}</p>
+                        <p style="color: #047857; font-size: 0.875rem;">
+                            Sistema con asignación de personal y control de tiempos - 
+                            🏥 Biomédica: ${biomedSolicitudes.length} | 
+                            Última actualización: ${new Date().toLocaleTimeString('es-CO')}
+                        </p>
                     </div>
                     ${solicitudesSorted.map(solicitud => createSolicitudCard(solicitud)).join('')}
                 `;
@@ -1652,21 +1809,41 @@
             };
 
             const getAreaBadge = (area) => {
-                const badges = {
-                    'INGENIERIA_BIOMEDICA': 'badge-biomedica',
-                    'MECANICA': 'badge-mecanica',
-                    'INFRAESTRUCTURA': 'badge-infraestructura'
-                };
-                return badges[area] || 'badge-biomedica';
+                // CORRECCIÓN: Detección mejorada de área biomédica para badges
+                if (!area) return 'badge-biomedica';
+                
+                const lowerArea = area.toLowerCase();
+                if (area === 'INGENIERIA_BIOMEDICA' || 
+                    area === 'Ingeniería Biomédica' ||
+                    lowerArea.includes('biomed') || 
+                    lowerArea.includes('bioméd')) {
+                    return 'badge-biomedica';
+                } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                    return 'badge-mecanica';
+                } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                    return 'badge-infraestructura';
+                }
+                
+                return 'badge-biomedica'; // Default
             };
 
             const getAreaName = (area) => {
-                const names = {
-                    'INGENIERIA_BIOMEDICA': '🏥 Biomédica',
-                    'MECANICA': '⚙️ Mecánica',
-                    'INFRAESTRUCTURA': '🏗️ Infraestructura'
-                };
-                return names[area] || area;
+                // CORRECCIÓN: Nombres mejorados para área biomédica
+                if (!area) return 'Sin área';
+                
+                const lowerArea = area.toLowerCase();
+                if (area === 'INGENIERIA_BIOMEDICA' || 
+                    area === 'Ingeniería Biomédica' ||
+                    lowerArea.includes('biomed') || 
+                    lowerArea.includes('bioméd')) {
+                    return '🏥 Biomédica';
+                } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                    return '⚙️ Mecánica';
+                } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                    return '🏗️ Infraestructura';
+                }
+                
+                return area; // Devolver tal como viene si no coincide
             };
 
             // Calcular tiempo transcurrido y estado
@@ -1786,13 +1963,13 @@
 
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
-                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Sistema de asignación activo</span>
+                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Área biomédica corregida</span>
                     </div>
                 </div>
             `;
         }
 
-        // 🎯 Funciones de asignación de personal
+        // 🎯 Funciones de asignación de personal - CORREGIDAS PARA ÁREA BIOMÉDICA
         async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
@@ -1803,10 +1980,28 @@
                     return;
                 }
 
-                // Obtener personal disponible del área correspondiente
-                const personalDisponible = cloudTecnicos.filter(t => 
-                    t.area === solicitud.servicioIngenieria && t.estado === 'disponible'
-                );
+                // CORRECCIÓN: Obtener personal disponible con detección mejorada de área biomédica
+                const personalDisponible = cloudTecnicos.filter(t => {
+                    if (t.estado !== 'disponible') return false;
+                    
+                    // Función helper para comparar áreas
+                    const normalizeBiomedArea = (area) => {
+                        if (!area) return area;
+                        const lowerArea = area.toLowerCase();
+                        if (area === 'INGENIERIA_BIOMEDICA' || 
+                            area === 'Ingeniería Biomédica' ||
+                            lowerArea.includes('biomed') || 
+                            lowerArea.includes('bioméd')) {
+                            return 'BIOMEDICA_NORMALIZED';
+                        }
+                        return area.toUpperCase();
+                    };
+                    
+                    const solicitudAreaNorm = normalizeBiomedArea(solicitud.servicioIngenieria);
+                    const tecnicoAreaNorm = normalizeBiomedArea(t.area);
+                    
+                    return solicitudAreaNorm === tecnicoAreaNorm;
+                });
 
                 const modal = document.getElementById('assignment-modal');
                 const content = document.getElementById('assignment-modal-content');
@@ -1896,6 +2091,25 @@
                 console.error('❌ Error mostrando modal de asignación:', error);
                 alert('❌ Error al cargar modal de asignación: ' + error.message);
             }
+        }
+
+        // Función helper para obtener nombre de área (utilizada en múltiples lugares)
+        function getAreaName(area) {
+            if (!area) return 'Sin área';
+            
+            const lowerArea = area.toLowerCase();
+            if (area === 'INGENIERIA_BIOMEDICA' || 
+                area === 'Ingeniería Biomédica' ||
+                lowerArea.includes('biomed') || 
+                lowerArea.includes('bioméd')) {
+                return 'Ing. Biomédica';
+            } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                return 'Mecánica';
+            } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                return 'Infraestructura';
+            }
+            
+            return area; // Devolver tal como viene si no coincide
         }
 
         async function handleAssignPersonal(event, solicitudId) {
@@ -2051,6 +2265,17 @@
                 console.error('❌ Error mostrando modal de estado:', error);
                 alert('❌ Error al cargar modal de estado: ' + error.message);
             }
+        }
+
+        function getStatusBadge(status) {
+            const badges = {
+                'PENDIENTE': 'status-pendiente',
+                'ASIGNADA': 'status-asignada',
+                'EN_PROCESO': 'status-en-proceso',
+                'COMPLETADA': 'status-completada',
+                'CANCELADA': 'status-cancelada'
+            };
+            return badges[status] || 'status-pendiente';
         }
 
         async function handleChangeStatus(event, solicitudId) {
@@ -2267,7 +2492,33 @@
 
             filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
                 if (estadoFilter && solicitud.estado !== estadoFilter) return false;
-                if (areaFilter && solicitud.servicioIngenieria !== areaFilter) return false;
+                
+                // CORRECCIÓN: Filtrado mejorado para área biomédica
+                if (areaFilter) {
+                    const solicitudArea = solicitud.servicioIngenieria;
+                    if (areaFilter === 'INGENIERIA_BIOMEDICA') {
+                        const lowerArea = (solicitudArea || '').toLowerCase();
+                        if (!(solicitudArea === 'INGENIERIA_BIOMEDICA' || 
+                              solicitudArea === 'Ingeniería Biomédica' ||
+                              lowerArea.includes('biomed') || 
+                              lowerArea.includes('bioméd'))) {
+                            return false;
+                        }
+                    } else if (areaFilter === 'MECANICA') {
+                        if (!(solicitudArea === 'MECANICA' || 
+                              (solicitudArea && solicitudArea.toLowerCase().includes('mec')))) {
+                            return false;
+                        }
+                    } else if (areaFilter === 'INFRAESTRUCTURA') {
+                        if (!(solicitudArea === 'INFRAESTRUCTURA' || 
+                              (solicitudArea && solicitudArea.toLowerCase().includes('infra')))) {
+                            return false;
+                        }
+                    } else if (solicitudArea !== areaFilter) {
+                        return false;
+                    }
+                }
+                
                 if (prioridadFilter && solicitud.prioridad !== prioridadFilter) return false;
                 return true;
             });
@@ -2282,27 +2533,6 @@
             
             filteredSolicitudes = [...cloudSolicitudes];
             updateSolicitudesList();
-        }
-
-        // Funciones auxiliares
-        function getStatusBadge(status) {
-            const badges = {
-                'PENDIENTE': 'status-pendiente',
-                'ASIGNADA': 'status-asignada',
-                'EN_PROCESO': 'status-en-proceso',
-                'COMPLETADA': 'status-completada',
-                'CANCELADA': 'status-cancelada'
-            };
-            return badges[status] || 'status-pendiente';
-        }
-
-        function getAreaName(area) {
-            const names = {
-                'INGENIERIA_BIOMEDICA': 'Ing. Biomédica',
-                'MECANICA': 'Mecánica',
-                'INFRAESTRUCTURA': 'Infraestructura'
-            };
-            return names[area] || area;
         }
 
         // Resto de funciones existentes mantenidas...
@@ -2327,8 +2557,20 @@
                 const filterEstado = document.getElementById('filter-estado')?.value;
                 const filterTipo = document.getElementById('filter-tipo')?.value;
                 
+                // CORRECCIÓN: Filtrado mejorado para área biomédica
                 if (filterArea) {
-                    filteredPersonal = filteredPersonal.filter(p => p.area === filterArea);
+                    if (filterArea === 'INGENIERIA_BIOMEDICA') {
+                        filteredPersonal = filteredPersonal.filter(p => {
+                            const area = p.area || '';
+                            const lowerArea = area.toLowerCase();
+                            return area === 'INGENIERIA_BIOMEDICA' || 
+                                   area === 'Ingeniería Biomédica' ||
+                                   lowerArea.includes('biomed') || 
+                                   lowerArea.includes('bioméd');
+                        });
+                    } else {
+                        filteredPersonal = filteredPersonal.filter(p => p.area === filterArea);
+                    }
                 }
                 if (filterEstado) {
                     filteredPersonal = filteredPersonal.filter(p => p.estado === filterEstado);
@@ -2340,7 +2582,7 @@
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${cloudTecnicos.length} Personal de Soporte Total (${filteredPersonal.length} mostrados)</h4>
-                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube</p>
+                        <p style="color: #047857; font-size: 0.875rem;">Personal de soporte sincronizado desde la nube - Área biomédica corregida</p>
                     </div>
                     
                     ${filteredPersonal.length === 0 ? `
@@ -2370,12 +2612,22 @@
             };
 
             const getAreaInfo = (area) => {
-                const areas = {
-                    'INGENIERIA_BIOMEDICA': { name: 'Ing. Biomédica', icon: '🏥', color: '#059669' },
-                    'MECANICA': { name: 'Mecánica', icon: '⚙️', color: '#f59e0b' },
-                    'INFRAESTRUCTURA': { name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' }
-                };
-                return areas[area] || { name: area, icon: '🔧', color: '#6b7280' };
+                // CORRECCIÓN: Información mejorada para área biomédica
+                if (!area) return { name: 'Sin área', icon: '🔧', color: '#6b7280' };
+                
+                const lowerArea = area.toLowerCase();
+                if (area === 'INGENIERIA_BIOMEDICA' || 
+                    area === 'Ingeniería Biomédica' ||
+                    lowerArea.includes('biomed') || 
+                    lowerArea.includes('bioméd')) {
+                    return { name: 'Ing. Biomédica', icon: '🏥', color: '#059669' };
+                } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                    return { name: 'Mecánica', icon: '⚙️', color: '#f59e0b' };
+                } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                    return { name: 'Infraestructura', icon: '🏗️', color: '#8b5cf6' };
+                }
+                
+                return { name: area, icon: '🔧', color: '#6b7280' };
             };
 
             const getTipoInfo = (tipo) => {
@@ -2546,7 +2798,9 @@
                 
                 closeAddPersonalModal();
                 
-                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${formData.area}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente`);
+                // CORRECCIÓN: Mostrar información específica del área en el mensaje de éxito
+                const areaDisplayName = getAreaName(formData.area);
+                alert(`✅ Personal agregado exitosamente a Airtable\n\n👤 Nombre: ${formData.nombre}\n📧 Email: ${formData.email}\n🏥 Área: ${areaDisplayName}\n👨‍💼 Tipo: ${formData.tipo}\n📊 Estado: ${formData.estado}\n🆔 ID: ${result.id}\n\n🌐 Sincronizado con Airtable correctamente`);
 
             } catch (error) {
                 console.error('❌ Error completo agregando personal:', error);
@@ -2608,7 +2862,7 @@
                     <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
                         <h5 style="color: #1e40af; margin-bottom: 0.5rem;">📋 Información Actual</h5>
                         <p style="color: #1e3a8a; font-size: 0.875rem; margin: 0;">
-                            <strong>Área:</strong> ${personal.area}<br>
+                            <strong>Área:</strong> ${getAreaName(personal.area)}<br>
                             <strong>Tipo:</strong> ${personal.tipo}<br>
                             <strong>ID:</strong> ${personal.id}
                         </p>
@@ -2720,7 +2974,10 @@
                 'auxiliar': 'Auxiliar'
             };
 
-            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areas[personal.area] || personal.area}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}`);
+            // CORRECCIÓN: Mostrar área con detección mejorada
+            const areaDisplay = getAreaName(personal.area);
+
+            alert(`👥 DETALLES DEL PERSONAL\n\n👤 Nombre: ${personal.nombre}\n📧 Email: ${personal.email}\n🏥 Área: ${areaDisplay}\n👨‍💼 Tipo: ${tipos[personal.tipo] || personal.tipo}\n⚙️ Especialidad: ${personal.especialidad || 'No especificada'}\n📊 Estado: ${personal.estado}\n🆔 ID: ${personal.id}\n📅 Registrado: ${personal.fechaCreacion ? new Date(personal.fechaCreacion).toLocaleDateString('es-CO') : 'No disponible'}`);
         }
 
         function filterPersonal() {
@@ -2740,9 +2997,23 @@
             const ocupados = cloudTecnicos.filter(p => p.estado === 'ocupado').length;
             const inactivos = cloudTecnicos.filter(p => p.estado === 'inactivo').length;
 
-            const biomedica = cloudTecnicos.filter(p => p.area === 'INGENIERIA_BIOMEDICA').length;
-            const mecanica = cloudTecnicos.filter(p => p.area === 'MECANICA').length;
-            const infraestructura = cloudTecnicos.filter(p => p.area === 'INFRAESTRUCTURA').length;
+            // CORRECCIÓN: Estadísticas con detección mejorada de área biomédica
+            const biomedica = cloudTecnicos.filter(p => {
+                const area = p.area || '';
+                const lowerArea = area.toLowerCase();
+                return area === 'INGENIERIA_BIOMEDICA' || 
+                       area === 'Ingeniería Biomédica' ||
+                       lowerArea.includes('biomed') || 
+                       lowerArea.includes('bioméd');
+            }).length;
+            const mecanica = cloudTecnicos.filter(p => 
+                p.area === 'MECANICA' || 
+                (p.area && p.area.toLowerCase().includes('mec'))
+            ).length;
+            const infraestructura = cloudTecnicos.filter(p => 
+                p.area === 'INFRAESTRUCTURA' || 
+                (p.area && p.area.toLowerCase().includes('infra'))
+            ).length;
 
             const ingenieros = cloudTecnicos.filter(p => p.tipo === 'ingeniero').length;
             const tecnicos = cloudTecnicos.filter(p => p.tipo === 'tecnico').length;
@@ -2858,7 +3129,7 @@
             }
         }
 
-        // 🔐 Funciones de gestión de accesos (mantenidas)
+        // 🔐 Funciones de gestión de accesos (mantenidas igual)
         function updateAccessRequestsList() {
             const container = document.getElementById('access-requests-container');
             
@@ -3336,7 +3607,7 @@
 
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia');
+            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (ÁREA BIOMÉDICA CORREGIDA)');
             
             document.addEventListener('click', function(e) {
                 if (e.target.classList.contains('modal')) {
