@@ -1627,9 +1627,10 @@
                 
                 console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
                 
-                updateAllCounters();
-                updateAllDisplays();
-                updateConnectionStatus('connected');
+                updateAccessRequestsList();
+        	updateAllCounters();
+        	updateAllDisplays();
+        	updateConnectionStatus('connected');
                 
             } catch (error) {
                 console.error('❌ Error cargando datos desde Airtable:', error);
