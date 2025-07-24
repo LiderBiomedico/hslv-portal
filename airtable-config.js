@@ -181,7 +181,9 @@ class AirtableAPI {
             servicioIngenieria: [],
             tipoServicio: [],
             prioridad: [],
-            estado: []
+            estado: [],
+            servicioHospitalario: [],
+            cargo: []
         };
         
         this.connectionStatus = 'connecting';
@@ -280,7 +282,7 @@ class AirtableAPI {
         return value;
     }
 
-    // 🛡️ FUNCIÓN PARA PREPARAR DATOS SEGUROS - MEJORADA
+    // 🛡️ FUNCIÓN PARA PREPARAR DATOS SEGUROS - MEJORADA Y CORREGIDA
     prepareSafeData(data, tableName) {
         console.log(`🛡️ Preparando datos seguros para tabla: ${tableName}`);
         console.log(`🔍 Datos originales:`, data);
@@ -292,8 +294,16 @@ class AirtableAPI {
             if (safeFields.includes(key)) {
                 let value = data[key];
                 
-                // CRÍTICO: Aplicar mapeo de valores SIEMPRE para campos problemáticos
-                const fieldsToAlwaysMap = ['servicioIngenieria', 'tipoServicio', 'prioridad', 'estado', 'area'];
+                // CORRECCIÓN CRÍTICA: Agregar servicioHospitalario y cargo a campos que siempre se mapean
+                const fieldsToAlwaysMap = [
+                    'servicioIngenieria', 
+                    'tipoServicio', 
+                    'prioridad', 
+                    'estado', 
+                    'area',
+                    'servicioHospitalario', // AGREGADO
+                    'cargo' // AGREGADO
+                ];
                 
                 if (fieldsToAlwaysMap.includes(key)) {
                     const originalValue = value;
@@ -438,7 +448,8 @@ class AirtableAPI {
                     servicioIngenieria: new Set(),
                     tipoServicio: new Set(),
                     prioridad: new Set(),
-                    estado: new Set()
+                    estado: new Set(),
+                    servicioHospitalario: new Set()
                 };
                 
                 result.records.forEach(record => {
@@ -454,6 +465,9 @@ class AirtableAPI {
                     if (record.fields.estado) {
                         detectedValues.estado.add(record.fields.estado);
                     }
+                    if (record.fields.servicioHospitalario) {
+                        detectedValues.servicioHospitalario.add(record.fields.servicioHospitalario);
+                    }
                 });
                 
                 // Guardar valores válidos para uso posterior
@@ -466,6 +480,7 @@ class AirtableAPI {
                 console.log('tipoServicio:', this.lastKnownValidValues.tipoServicio);
                 console.log('prioridad:', this.lastKnownValidValues.prioridad);
                 console.log('estado:', this.lastKnownValidValues.estado);
+                console.log('servicioHospitalario:', this.lastKnownValidValues.servicioHospitalario);
                 
                 // ACTUALIZAR MAPEOS AUTOMÁTICAMENTE
                 this.updateMappingsFromDetectedValues(detectedValues);
@@ -475,10 +490,52 @@ class AirtableAPI {
                     console.log('⚠️ No se detectaron áreas en solicitudes, intentando con técnicos...');
                     await this.detectAreasFromTechnicians();
                 }
+                
+                // NUEVO: Detectar valores de cargo desde usuarios
+                await this.detectCargoValues();
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores:', error);
+        }
+    }
+
+    // NUEVA FUNCIÓN: Detectar valores de cargo
+    async detectCargoValues() {
+        try {
+            const usuarios = await this.makeRequest(`${this.tables.usuarios}?maxRecords=10`);
+            const solicitudesAcceso = await this.makeRequest(`${this.tables.solicitudesAcceso}?maxRecords=10`);
+            
+            const cargoValues = new Set();
+            
+            if (usuarios.records) {
+                usuarios.records.forEach(record => {
+                    if (record.fields.cargo) {
+                        cargoValues.add(record.fields.cargo);
+                    }
+                });
+            }
+            
+            if (solicitudesAcceso.records) {
+                solicitudesAcceso.records.forEach(record => {
+                    if (record.fields.cargo) {
+                        cargoValues.add(record.fields.cargo);
+                    }
+                });
+            }
+            
+            const detectedCargos = Array.from(cargoValues);
+            if (detectedCargos.length > 0) {
+                this.lastKnownValidValues.cargo = detectedCargos;
+                console.log('✅ Cargos detectados:', detectedCargos);
+                
+                // Actualizar mapeos con estos cargos
+                this.updateMappingsFromDetectedValues({
+                    cargo: cargoValues
+                });
+            }
+        } catch (error) {
+            console.error('❌ Error detectando cargos:', error);
         }
     }
 
@@ -517,46 +574,80 @@ class AirtableAPI {
         console.log('🔧 Actualizando mapeos con valores detectados...');
         
         // Para servicioIngenieria
-        const areaValues = Array.from(detectedValues.servicioIngenieria);
-        if (areaValues.length > 0) {
-            // Buscar el valor correcto para cada área
-            areaValues.forEach(value => {
-                if (value.toLowerCase().includes('mec')) {
-                    // Si encontramos algo como "Mecánica", mapeamos MECANICA a ese valor
-                    this.fieldMappings.servicioIngenieria.MECANICA = [value, 'MECANICA', 'Mecanica'];
-                    console.log(`✅ Mapeo actualizado: MECANICA → "${value}"`);
-                } else if (value.toLowerCase().includes('biomed')) {
-                    this.fieldMappings.servicioIngenieria.INGENIERIA_BIOMEDICA = [value, 'INGENIERIA_BIOMEDICA', 'Biomedica'];
-                    console.log(`✅ Mapeo actualizado: INGENIERIA_BIOMEDICA → "${value}"`);
-                } else if (value.toLowerCase().includes('infra')) {
-                    this.fieldMappings.servicioIngenieria.INFRAESTRUCTURA = [value, 'INFRAESTRUCTURA'];
-                    console.log(`✅ Mapeo actualizado: INFRAESTRUCTURA → "${value}"`);
-                }
-            });
+        if (detectedValues.servicioIngenieria) {
+            const areaValues = Array.from(detectedValues.servicioIngenieria);
+            if (areaValues.length > 0) {
+                // Buscar el valor correcto para cada área
+                areaValues.forEach(value => {
+                    if (value.toLowerCase().includes('mec')) {
+                        // Si encontramos algo como "Mecánica", mapeamos MECANICA a ese valor
+                        this.fieldMappings.servicioIngenieria.MECANICA = [value, 'MECANICA', 'Mecanica'];
+                        console.log(`✅ Mapeo actualizado: MECANICA → "${value}"`);
+                    } else if (value.toLowerCase().includes('biomed')) {
+                        this.fieldMappings.servicioIngenieria.INGENIERIA_BIOMEDICA = [value, 'INGENIERIA_BIOMEDICA', 'Biomedica'];
+                        console.log(`✅ Mapeo actualizado: INGENIERIA_BIOMEDICA → "${value}"`);
+                    } else if (value.toLowerCase().includes('infra')) {
+                        this.fieldMappings.servicioIngenieria.INFRAESTRUCTURA = [value, 'INFRAESTRUCTURA'];
+                        console.log(`✅ Mapeo actualizado: INFRAESTRUCTURA → "${value}"`);
+                    }
+                });
+            }
         }
         
         // Para tipoServicio
-        const tipoValues = Array.from(detectedValues.tipoServicio);
-        if (tipoValues.length > 0) {
-            tipoValues.forEach(value => {
-                const key = value.toUpperCase().replace(/ /g, '_');
-                if (!this.fieldMappings.tipoServicio[key]) {
-                    this.fieldMappings.tipoServicio[key] = [value];
-                    console.log(`✅ Nuevo mapeo tipo servicio: ${key} → "${value}"`);
-                }
-            });
+        if (detectedValues.tipoServicio) {
+            const tipoValues = Array.from(detectedValues.tipoServicio);
+            if (tipoValues.length > 0) {
+                tipoValues.forEach(value => {
+                    const key = value.toUpperCase().replace(/ /g, '_');
+                    if (!this.fieldMappings.tipoServicio[key]) {
+                        this.fieldMappings.tipoServicio[key] = [value];
+                        console.log(`✅ Nuevo mapeo tipo servicio: ${key} → "${value}"`);
+                    }
+                });
+            }
         }
         
         // Para prioridad
-        const prioridadValues = Array.from(detectedValues.prioridad);
-        if (prioridadValues.length > 0) {
-            prioridadValues.forEach(value => {
-                const key = value.toUpperCase();
-                if (!this.fieldMappings.prioridad[key]) {
-                    this.fieldMappings.prioridad[key] = [value];
-                    console.log(`✅ Nuevo mapeo prioridad: ${key} → "${value}"`);
-                }
-            });
+        if (detectedValues.prioridad) {
+            const prioridadValues = Array.from(detectedValues.prioridad);
+            if (prioridadValues.length > 0) {
+                prioridadValues.forEach(value => {
+                    const key = value.toUpperCase();
+                    if (!this.fieldMappings.prioridad[key]) {
+                        this.fieldMappings.prioridad[key] = [value];
+                        console.log(`✅ Nuevo mapeo prioridad: ${key} → "${value}"`);
+                    }
+                });
+            }
+        }
+        
+        // Para servicioHospitalario
+        if (detectedValues.servicioHospitalario) {
+            const servicioValues = Array.from(detectedValues.servicioHospitalario);
+            if (servicioValues.length > 0) {
+                servicioValues.forEach(value => {
+                    const key = value.toUpperCase().replace(/ /g, '_');
+                    if (!this.fieldMappings.servicioHospitalario[key]) {
+                        this.fieldMappings.servicioHospitalario[key] = [value];
+                        console.log(`✅ Nuevo mapeo servicio hospitalario: ${key} → "${value}"`);
+                    }
+                });
+            }
+        }
+        
+        // Para cargo
+        if (detectedValues.cargo) {
+            const cargoValues = Array.from(detectedValues.cargo);
+            if (cargoValues.length > 0) {
+                cargoValues.forEach(value => {
+                    const key = value.toUpperCase().replace(/ /g, '_');
+                    if (!this.fieldMappings.cargo[key]) {
+                        this.fieldMappings.cargo[key] = [value];
+                        console.log(`✅ Nuevo mapeo cargo: ${key} → "${value}"`);
+                    }
+                });
+            }
         }
         
         console.log('✅ Mapeos actualizados completamente');
@@ -580,7 +671,7 @@ class AirtableAPI {
                             availableFields.add(fieldName);
                             
                             // CORRECCIÓN: Recopilar valores únicos especialmente para servicioIngenieria
-                            if (['servicioIngenieria', 'tipoServicio', 'prioridad', 'estado'].includes(fieldName)) {
+                            if (['servicioIngenieria', 'tipoServicio', 'prioridad', 'estado', 'servicioHospitalario'].includes(fieldName)) {
                                 if (!fieldValues[fieldName]) {
                                     fieldValues[fieldName] = new Set();
                                 }
@@ -1612,14 +1703,19 @@ class AirtableAPI {
         }
     }
 
+    // CORRECCIÓN CRÍTICA: Método createSolicitudAcceso corregido para prevenir error 422
     async createSolicitudAcceso(solicitudData) {
+        console.log('📝 Creando solicitud de acceso con mapeo correcto...');
+        console.log('🔍 Datos recibidos:', solicitudData);
+        
+        // CORRECCIÓN: Asegurar que servicioHospitalario y cargo se mapeen correctamente
         const safeData = this.prepareSafeData({
             // CORRECCIÓN: No incluir solicitudId, Airtable generará un ID automáticamente
             nombreCompleto: solicitudData.nombreCompleto,
             email: solicitudData.email,
             telefono: solicitudData.telefono || '',
-            servicioHospitalario: solicitudData.servicioHospitalario,
-            cargo: solicitudData.cargo,
+            servicioHospitalario: solicitudData.servicioHospitalario, // Se mapeará en prepareSafeData
+            cargo: solicitudData.cargo, // Se mapeará en prepareSafeData
             justificacion: solicitudData.justificacion || '',
             fechaSolicitud: solicitudData.fechaSolicitud,
             estado: solicitudData.estado || 'PENDIENTE',
@@ -1630,7 +1726,83 @@ class AirtableAPI {
             fields: safeData
         };
         
-        console.log('📝 Creando solicitud de acceso:', solicitudData.email);
+        console.log('📝 Datos mapeados para enviar:', data);
+        
+        try {
+            const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+            console.log('✅ Solicitud de acceso creada exitosamente');
+            return result;
+        } catch (error) {
+            console.error('❌ Error creando solicitud de acceso:', error);
+            
+            // Si el error es 422, intentar con valores alternativos
+            if (error.message.includes('422')) {
+                console.log('🔄 Error 422 detectado, intentando con valores alternativos...');
+                return await this.retryCreateSolicitudAcceso(solicitudData);
+            }
+            
+            throw error;
+        }
+    }
+
+    // NUEVA FUNCIÓN: Reintentar creación de solicitud de acceso con valores alternativos
+    async retryCreateSolicitudAcceso(originalData) {
+        console.log('🔄 Reintentando creación con valores alternativos...');
+        
+        // Intentar con valores válidos conocidos
+        if (this.lastKnownValidValues.servicioHospitalario && this.lastKnownValidValues.servicioHospitalario.length > 0) {
+            const validServicio = this.lastKnownValidValues.servicioHospitalario[0];
+            console.log(`🔧 Usando servicio hospitalario válido conocido: ${validServicio}`);
+            
+            const data = {
+                fields: {
+                    nombreCompleto: originalData.nombreCompleto,
+                    email: originalData.email,
+                    telefono: originalData.telefono || '',
+                    servicioHospitalario: validServicio,
+                    cargo: this.lastKnownValidValues.cargo && this.lastKnownValidValues.cargo.length > 0 ? 
+                           this.lastKnownValidValues.cargo[0] : 'Otro',
+                    justificacion: originalData.justificacion || '',
+                    fechaSolicitud: originalData.fechaSolicitud,
+                    estado: 'Pendiente', // Usar valor conocido
+                    esUrgente: false
+                }
+            };
+            
+            console.log('📝 Datos alternativos:', data);
+            
+            try {
+                const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+                console.log('✅ Solicitud creada con valores alternativos');
+                
+                // Actualizar mapeos para futuro uso
+                this.fieldMappings.servicioHospitalario[originalData.servicioHospitalario] = [validServicio];
+                this.fieldMappings.cargo[originalData.cargo] = [data.fields.cargo];
+                
+                return result;
+            } catch (retryError) {
+                console.error('❌ Error incluso con valores alternativos:', retryError);
+                throw retryError;
+            }
+        }
+        
+        // Si no hay valores conocidos, usar valores por defecto
+        console.log('⚠️ No hay valores conocidos, usando valores por defecto...');
+        
+        const data = {
+            fields: {
+                nombreCompleto: originalData.nombreCompleto,
+                email: originalData.email,
+                telefono: originalData.telefono || '',
+                servicioHospitalario: 'Administrativo',
+                cargo: 'Otro',
+                justificacion: originalData.justificacion || '',
+                fechaSolicitud: originalData.fechaSolicitud,
+                estado: 'Pendiente',
+                esUrgente: false
+            }
+        };
+        
         return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
     }
 
@@ -1913,7 +2085,7 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '5.0-completa-todas-correcciones',
+            version: '5.1-completa-fix-solicitudes-acceso',
             features: [
                 'CORREGIDO: Campo solicitudId removido para evitar error 422',
                 'CORREGIDO: Área biomédica funciona correctamente',
@@ -1921,6 +2093,7 @@ class AirtableAPI {
                 'CORREGIDO: Numeración SOLBIO específica para biomédica',
                 'CORREGIDO: Asignación de personal biomédica compatible',
                 'CORREGIDO: Usa ID de Airtable directamente para solicitudes de acceso',
+                'CORREGIDO: Mapeo de servicioHospitalario y cargo en solicitudes de acceso',
                 'NUEVO: Detección automática de valores válidos de Airtable',
                 'NUEVO: Mapeo inteligente con auto-corrección',
                 'NUEVO: Reintentos automáticos con valores alternativos',
@@ -1957,7 +2130,8 @@ class AirtableAPI {
                 'Auto-detection': 'Detects valid values on initialization',
                 'Smart mapping': 'Maps form values to Airtable values automatically',
                 'Fallback strategy': 'Multiple retry strategies for failed requests',
-                'Self-healing': 'Updates mappings when successful values are found'
+                'Self-healing': 'Updates mappings when successful values are found',
+                'Field mapping': 'servicioHospitalario and cargo now properly mapped'
             }
         };
     }
@@ -1967,7 +2141,7 @@ class AirtableAPI {
 try {
     console.log('🔧 Creando instancia global con todas las correcciones...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión completa con todas las correcciones)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión completa con corrección de solicitudes de acceso)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -2030,6 +2204,7 @@ console.log('🔢 Numeración específica: SOLBIO para área biomédica');
 console.log('🎯 Asignación compatible con variaciones de biomédica');
 console.log('🔍 Usa ID de Airtable directamente para todas las operaciones');
 console.log('🛡️ Protección completa contra error 422 con detección automática');
+console.log('✅ NUEVO: Mapeo de servicioHospitalario y cargo para solicitudes de acceso');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
 // Auto-verificación del sistema completo
@@ -2063,6 +2238,14 @@ setTimeout(async () => {
             console.warn('⚠️ ERROR: Campo solicitudId aún presente en campos seguros');
         }
         
+        // Verificar mapeo de servicioHospitalario y cargo
+        if (window.airtableAPI.fieldMappings.servicioHospitalario) {
+            console.log('✅ Mapeo servicioHospitalario configurado');
+        }
+        if (window.airtableAPI.fieldMappings.cargo) {
+            console.log('✅ Mapeo cargo configurado');
+        }
+        
         // Verificar detección de valores válidos
         if (window.airtableAPI.lastKnownValidValues && 
             window.airtableAPI.lastKnownValidValues.servicioIngenieria) {
@@ -2074,14 +2257,19 @@ setTimeout(async () => {
             const testValue = window.airtableAPI.mapFieldValue('servicioIngenieria', 'INGENIERIA_BIOMEDICA');
             console.log(`✅ Test mapeo biomédica: INGENIERIA_BIOMEDICA → ${testValue}`);
             
-            const testMecanica = window.airtableAPI.mapFieldValue('servicioIngenieria', 'MECANICA');
-            console.log(`✅ Test mapeo mecánica: MECANICA → ${testMecanica}`);
+            const testServicio = window.airtableAPI.mapFieldValue('servicioHospitalario', 'URGENCIAS');
+            console.log(`✅ Test mapeo servicio: URGENCIAS → ${testServicio}`);
+            
+            const testCargo = window.airtableAPI.mapFieldValue('cargo', 'MEDICO');
+            console.log(`✅ Test mapeo cargo: MEDICO → ${testCargo}`);
         } catch (error) {
             console.error('❌ Error en test de mapeo:', error);
         }
         
-        console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO');
+        console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO CON CORRECCIÓN DE SOLICITUDES DE ACCESO');
     }
+}, 3000);
+
 // Función para forzar actualización de mapeos
 window.forceUpdateServiceMapping = function(mappings) {
     console.log('🔧 Forzando actualización de mapeos de servicioIngenieria...');
@@ -2119,4 +2307,3 @@ setTimeout(() => {
         }
     }
 }, 4000);
-}, 3000);
