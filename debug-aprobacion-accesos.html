@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Aprobación de Accesos - Airtable</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            text-align: center;
+        }
+
+        .section {
+            background: white;
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .section h2 {
+            color: #1f2937;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .result-area {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            min-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 1rem;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .table th,
+        .table td {
+            border: 1px solid #e5e7eb;
+            padding: 0.75rem;
+            text-align: left;
+        }
+
+        .table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        .table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .success {
+            background: #dcfce7;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .info {
+            background: #dbeafe;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .request-card {
+            background: #f8fafc;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .request-card.pending {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .request-id {
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .status {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-pendiente {
+            background: #fef3c7;
+            color: #d97706;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🔍 Debug Aprobación de Accesos</h1>
+            <p>Diagnosticar y solucionar errores 404 en la aprobación</p>
+        </div>
+
+        <!-- Verificación de Tablas -->
+        <div class="section">
+            <h2>📋 Verificación de Tablas</h2>
+            <p>Primero verificamos que las tablas existan y estén accesibles:</p>
+            
+            <button class="btn" onclick="checkTables()">🔍 Verificar Tablas</button>
+            <button class="btn btn-success" onclick="inspectSolicitudesAcceso()">📝 Inspeccionar SolicitudesAcceso</button>
+            <button class="btn btn-warning" onclick="inspectUsuarios()">👤 Inspeccionar Usuarios</button>
+            
+            <div id="tables-results"></div>
+        </div>
+
+        <!-- Lista de Solicitudes Pendientes -->
+        <div class="section">
+            <h2>📋 Solicitudes de Acceso Pendientes</h2>
+            <p>Ver solicitudes existentes y probar aprobación paso a paso:</p>
+            
+            <button class="btn" onclick="loadPendingRequests()">📋 Cargar Solicitudes Pendientes</button>
+            <button class="btn btn-success" onclick="createTestRequest()">➕ Crear Solicitud de Prueba</button>
+            
+            <div id="requests-list"></div>
+        </div>
+
+        <!-- Test de Aprobación -->
+        <div class="section">
+            <h2>✅ Test de Aprobación Paso a Paso</h2>
+            <p>Probar cada paso del proceso de aprobación:</p>
+            
+            <button class="btn btn-warning" onclick="testStepByStep()">🔧 Test Paso a Paso</button>
+            <button class="btn btn-success" onclick="testUserCreation()">👤 Test Creación Usuario</button>
+            <button class="btn btn-danger" onclick="testUpdateMethods()">🔄 Test Métodos Update</button>
+            
+            <div id="approval-results"></div>
+        </div>
+
+        <!-- Log de Debug -->
+        <div class="section">
+            <h2>📝 Log de Debug</h2>
+            <div class="result-area" id="debug-log">Iniciando debug de aprobación...\n</div>
+            <button class="btn" onclick="clearLog()">🧹 Limpiar</button>
+            <button class="btn btn-success" onclick="exportLog()">💾 Exportar</button>
+        </div>
+    </div>
+
+    <!-- Incluir configuración de Airtable -->
+    <script src="airtable-config.js"></script>
+
+    <script>
+        let debugLog = [];
+        let pendingRequests = [];
+
+        // Funciones de logging
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('es-CO');
+            const entry = `[${timestamp}] ${message}`;
+            
+            debugLog.push({ timestamp, message, type });
+            
+            const logArea = document.getElementById('debug-log');
+            logArea.textContent += entry + '\n';
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').textContent = 'Log limpiado...\n';
+            debugLog = [];
+        }
+
+        function exportLog() {
+            const logContent = debugLog.map(r => `[${r.timestamp}] ${r.type.toUpperCase()}: ${r.message}`).join('\n');
+            const blob = new Blob([logContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `approval-debug-${new Date().toISOString().split('T')[0]}.txt`;
+            a.click();
+        }
+
+        function showResults(containerId, content, type = 'info') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="${type}">${content}</div>`;
+        }
+
+        // 📋 Verificar que las tablas existan
+        async function checkTables() {
+            log('📋 Verificando existencia de tablas...');
+            
+            const tables = ['Solicitudes', 'SolicitudesAcceso', 'Usuarios', 'Tecnicos'];
+            let results = '<h3>📋 Resultado de Verificación de Tablas</h3>';
+            results += '<table class="table"><thead><tr><th>Tabla</th><th>Estado</th><th>Records</th><th>Acción</th></tr></thead><tbody>';
+            
+            for (const table of tables) {
+                try {
+                    log(`🔍 Verificando tabla: ${table}`);
+                    
+                    const result = await window.airtableAPI.makeRequest(`${table}?maxRecords=3`);
+                    const recordCount = result.records ? result.records.length : 0;
+                    
+                    results += `<tr><td><strong>${table}</strong></td><td>✅ Existe</td><td>${recordCount}</td><td>OK</td></tr>`;
+                    log(`✅ ${table}: ${recordCount} records encontrados`);
+                    
+                } catch (error) {
+                    results += `<tr><td><strong>${table}</strong></td><td>❌ Error</td><td>-</td><td>${error.message}</td></tr>`;
+                    log(`❌ ${table}: ${error.message}`);
+                }
+            }
+            
+            results += '</tbody></table>';
+            showResults('tables-results', results, 'success');
+        }
+
+        // 📝 Inspeccionar tabla SolicitudesAcceso
+        async function inspectSolicitudesAcceso() {
+            log('📝 Inspeccionando tabla SolicitudesAcceso...');
+            
+            try {
+                const result = await window.airtableAPI.makeRequest('SolicitudesAcceso?maxRecords=5');
+                
+                log(`📊 SolicitudesAcceso: ${result.records.length} records`);
+                
+                if (result.records.length === 0) {
+                    showResults('tables-results', 
+                        '<h3>⚠️ Tabla SolicitudesAcceso Vacía</h3><p>No hay solicitudes de acceso. Necesitas crear algunas primero.</p>', 
+                        'info'
+                    );
+                    return;
+                }
+
+                // Analizar estructura
+                const firstRecord = result.records[0];
+                const fields = Object.keys(firstRecord.fields);
+                
+                let html = '<h3>📝 Estructura de SolicitudesAcceso</h3>';
+                html += `<p><strong>Records encontrados:</strong> ${result.records.length}</p>`;
+                html += `<p><strong>Campos:</strong> ${fields.join(', ')}</p>`;
+                html += '<h4>Ejemplo de Record:</h4>';
+                html += `<pre>${JSON.stringify(firstRecord, null, 2)}</pre>`;
+                
+                showResults('tables-results', html, 'success');
+
+            } catch (error) {
+                log(`❌ Error inspeccionando SolicitudesAcceso: ${error.message}`);
+                showResults('tables-results', 
+                    `<h3>❌ Error en SolicitudesAcceso</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // 👤 Inspeccionar tabla Usuarios
+        async function inspectUsuarios() {
+            log('👤 Inspeccionando tabla Usuarios...');
+            
+            try {
+                const result = await window.airtableAPI.makeRequest('Usuarios?maxRecords=5');
+                
+                log(`📊 Usuarios: ${result.records.length} records`);
+                
+                let html = '<h3>👤 Estructura de Usuarios</h3>';
+                html += `<p><strong>Records encontrados:</strong> ${result.records.length}</p>`;
+                
+                if (result.records.length > 0) {
+                    const firstRecord = result.records[0];
+                    const fields = Object.keys(firstRecord.fields);
+                    html += `<p><strong>Campos:</strong> ${fields.join(', ')}</p>`;
+                    html += '<h4>Ejemplo de Record:</h4>';
+                    html += `<pre>${JSON.stringify(firstRecord, null, 2)}</pre>`;
+                } else {
+                    html += '<p>⚠️ Tabla vacía - esto es normal si no se han aprobado solicitudes</p>';
+                }
+                
+                showResults('tables-results', html, 'success');
+
+            } catch (error) {
+                log(`❌ Error inspeccionando Usuarios: ${error.message}`);
+                showResults('tables-results', 
+                    `<h3>❌ Error en Usuarios</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // 📋 Cargar solicitudes pendientes
+        async function loadPendingRequests() {
+            log('📋 Cargando solicitudes de acceso pendientes...');
+            
+            try {
+                const result = await window.airtableAPI.makeRequest('SolicitudesAcceso');
+                pendingRequests = result.records.filter(r => 
+                    r.fields.estado === 'PENDIENTE' || !r.fields.estado
+                );
+                
+                log(`📊 ${pendingRequests.length} solicitudes pendientes encontradas`);
+                
+                if (pendingRequests.length === 0) {
+                    showResults('requests-list', 
+                        '<h3>ℹ️ No hay solicitudes pendientes</h3><p>Crea una solicitud de prueba para poder probar la aprobación.</p>', 
+                        'info'
+                    );
+                    return;
+                }
+
+                let html = '<h3>📋 Solicitudes Pendientes</h3>';
+                
+                pendingRequests.forEach((request, index) => {
+                    const fields = request.fields;
+                    html += `
+                        <div class="request-card pending">
+                            <div class="request-header">
+                                <span class="request-id">ID: ${request.id}</span>
+                                <span class="status status-pendiente">PENDIENTE</span>
+                            </div>
+                            <p><strong>Nombre:</strong> ${fields.nombreCompleto || 'No especificado'}</p>
+                            <p><strong>Email:</strong> ${fields.email || 'No especificado'}</p>
+                            <p><strong>Servicio:</strong> ${fields.servicioHospitalario || 'No especificado'}</p>
+                            <button class="btn btn-success" onclick="testApproveRequest('${request.id}', ${index})">
+                                ✅ Probar Aprobación
+                            </button>
+                            <button class="btn btn-warning" onclick="inspectRequest('${request.id}')">
+                                🔍 Inspeccionar
+                            </button>
+                        </div>
+                    `;
+                });
+                
+                showResults('requests-list', html, 'success');
+
+            } catch (error) {
+                log(`❌ Error cargando solicitudes: ${error.message}`);
+                showResults('requests-list', 
+                    `<h3>❌ Error Cargando Solicitudes</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // ➕ Crear solicitud de prueba
+        async function createTestRequest() {
+            log('➕ Creando solicitud de acceso de prueba...');
+            
+            try {
+                const testData = {
+                    fields: {
+                        id: `DEBUG${Date.now()}`,
+                        nombreCompleto: `Usuario Debug ${Date.now()}`,
+                        email: `debug${Date.now()}@hospital.com`,
+                        servicioHospitalario: 'INGENIERIA_BIOMEDICA',
+                        cargo: 'ADMINISTRATIVO',
+                        justificacion: 'Solicitud creada para debug de aprobación',
+                        fechaSolicitud: new Date().toISOString(),
+                        estado: 'PENDIENTE'
+                    }
+                };
+
+                const result = await window.airtableAPI.makeRequest('SolicitudesAcceso', 'POST', testData);
+                
+                log(`✅ Solicitud de prueba creada: ${result.id}`);
+                showResults('requests-list', 
+                    `<h3>✅ Solicitud de Prueba Creada</h3><p>ID: ${result.id}</p><pre>${JSON.stringify(result, null, 2)}</pre>`, 
+                    'success'
+                );
+
+                // Recargar solicitudes
+                setTimeout(loadPendingRequests, 1000);
+
+            } catch (error) {
+                log(`❌ Error creando solicitud de prueba: ${error.message}`);
+                showResults('requests-list', 
+                    `<h3>❌ Error Creando Solicitud</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // 🔍 Inspeccionar solicitud específica
+        async function inspectRequest(requestId) {
+            log(`🔍 Inspeccionando solicitud: ${requestId}`);
+            
+            try {
+                // Método 1: Obtener por ID directo
+                try {
+                    const directResult = await window.airtableAPI.makeRequest(`SolicitudesAcceso/${requestId}`);
+                    log(`✅ Acceso directo exitoso para: ${requestId}`);
+                    showResults('approval-results', 
+                        `<h3>✅ Acceso Directo Exitoso</h3><pre>${JSON.stringify(directResult, null, 2)}</pre>`, 
+                        'success'
+                    );
+                } catch (directError) {
+                    log(`❌ Error en acceso directo: ${directError.message}`);
+                    
+                    // Método 2: Buscar en lista
+                    const listResult = await window.airtableAPI.makeRequest('SolicitudesAcceso');
+                    const found = listResult.records.find(r => r.id === requestId);
+                    
+                    if (found) {
+                        log(`✅ Encontrado en lista: ${requestId}`);
+                        showResults('approval-results', 
+                            `<h3>✅ Encontrado en Lista</h3><p>El record existe pero el acceso directo falló.</p><pre>${JSON.stringify(found, null, 2)}</pre>`, 
+                            'info'
+                        );
+                    } else {
+                        log(`❌ No encontrado en lista: ${requestId}`);
+                        showResults('approval-results', 
+                            `<h3>❌ Record No Encontrado</h3><p>El ID ${requestId} no existe en la tabla.</p>`, 
+                            'error'
+                        );
+                    }
+                }
+
+            } catch (error) {
+                log(`❌ Error inspeccionando: ${error.message}`);
+                showResults('approval-results', 
+                    `<h3>❌ Error de Inspección</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // ✅ Probar aprobación de solicitud
+        async function testApproveRequest(requestId, index) {
+            log(`✅ Probando aprobación de solicitud: ${requestId}`);
+            
+            try {
+                // Paso 1: Verificar que la solicitud existe
+                log('📋 Paso 1: Verificando solicitud...');
+                const request = pendingRequests[index];
+                if (!request) {
+                    throw new Error('Solicitud no encontrada en lista local');
+                }
+                
+                log(`✅ Solicitud encontrada: ${request.fields.nombreCompleto}`);
+                
+                // Paso 2: Generar código único
+                log('🎲 Paso 2: Generando código de acceso...');
+                const accessCode = await window.airtableAPI.generateUniqueAccessCode();
+                log(`✅ Código generado: ${accessCode}`);
+                
+                // Paso 3: Crear usuario
+                log('👤 Paso 3: Creando usuario...');
+                const userData = {
+                    nombreCompleto: request.fields.nombreCompleto,
+                    email: request.fields.email,
+                    servicioHospitalario: request.fields.servicioHospitalario,
+                    cargo: request.fields.cargo,
+                    codigoAcceso: accessCode,
+                    estado: 'ACTIVO',
+                    fechaCreacion: new Date().toISOString(),
+                    solicitudOrigenId: requestId
+                };
+                
+                const userResult = await window.airtableAPI.createUsuario(userData);
+                log(`✅ Usuario creado: ${userResult.id}`);
+                
+                // Paso 4: Actualizar solicitud (aquí es donde suele fallar)
+                log('🔄 Paso 4: Actualizando estado de solicitud...');
+                try {
+                    const updateResult = await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                        estado: 'APROBADA',
+                        fechaAprobacion: new Date().toISOString(),
+                        usuarioCreado: userResult.id
+                    });
+                    log(`✅ Solicitud actualizada exitosamente`);
+                } catch (updateError) {
+                    log(`❌ ERROR EN PASO 4 (aquí está el problema): ${updateError.message}`);
+                    throw updateError;
+                }
+                
+                // Resultado exitoso
+                showResults('approval-results', 
+                    `<h3>🎉 Aprobación Exitosa</h3>
+                    <p><strong>Usuario:</strong> ${userData.nombreCompleto}</p>
+                    <p><strong>Email:</strong> ${userData.email}</p>
+                    <p><strong>Código:</strong> ${accessCode}</p>
+                    <p><strong>ID Usuario:</strong> ${userResult.id}</p>`, 
+                    'success'
+                );
+
+            } catch (error) {
+                log(`❌ Error en aprobación: ${error.message}`);
+                showResults('approval-results', 
+                    `<h3>❌ Error en Aprobación</h3><p>Solicitud: ${requestId}</p><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // 🔧 Test paso a paso detallado
+        async function testStepByStep() {
+            log('🔧 Iniciando test detallado paso a paso...');
+            
+            if (pendingRequests.length === 0) {
+                showResults('approval-results', 
+                    '<h3>⚠️ No hay solicitudes</h3><p>Primero carga las solicitudes pendientes.</p>', 
+                    'info'
+                );
+                return;
+            }
+
+            const request = pendingRequests[0];
+            const requestId = request.id;
+            
+            let html = '<h3>🔧 Test Paso a Paso</h3>';
+            
+            try {
+                // Test 1: Verificar acceso directo al record
+                html += '<h4>📋 Test 1: Acceso Directo</h4>';
+                try {
+                    const directAccess = await window.airtableAPI.makeRequest(`SolicitudesAcceso/${requestId}`);
+                    html += '<p>✅ Acceso directo: OK</p>';
+                } catch (e) {
+                    html += `<p>❌ Acceso directo: ${e.message}</p>`;
+                }
+                
+                // Test 2: Verificar método updateSolicitudAcceso
+                html += '<h4>🔄 Test 2: Método Update</h4>';
+                try {
+                    // Solo verificar si el método existe y está bien estructurado
+                    if (typeof window.airtableAPI.updateSolicitudAcceso === 'function') {
+                        html += '<p>✅ Método updateSolicitudAcceso: Existe</p>';
+                        
+                        // Test de update con datos mínimos
+                        const testUpdate = await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                            fechaActualizacion: new Date().toISOString()
+                        });
+                        html += '<p>✅ Update de prueba: OK</p>';
+                    } else {
+                        html += '<p>❌ Método updateSolicitudAcceso: No existe</p>';
+                    }
+                } catch (e) {
+                    html += `<p>❌ Update de prueba: ${e.message}</p>`;
+                }
+                
+                // Test 3: Verificar creación de usuario
+                html += '<h4>👤 Test 3: Creación de Usuario</h4>';
+                try {
+                    const testUserData = {
+                        nombreCompleto: 'Usuario Test',
+                        email: `test${Date.now()}@debug.com`,
+                        servicioHospitalario: 'INGENIERIA_BIOMEDICA',
+                        estado: 'ACTIVO',
+                        codigoAcceso: '9999'
+                    };
+                    
+                    const userResult = await window.airtableAPI.createUsuario(testUserData);
+                    html += '<p>✅ Creación de usuario: OK</p>';
+                    html += `<p>ID Usuario creado: ${userResult.id}</p>`;
+                } catch (e) {
+                    html += `<p>❌ Creación de usuario: ${e.message}</p>`;
+                }
+                
+                showResults('approval-results', html, 'success');
+
+            } catch (error) {
+                html += `<p>❌ Error general: ${error.message}</p>`;
+                showResults('approval-results', html, 'error');
+            }
+        }
+
+        // 👤 Test específico de creación de usuario
+        async function testUserCreation() {
+            log('👤 Probando creación de usuario...');
+            
+            try {
+                const testData = {
+                    nombreCompleto: `Usuario Test ${Date.now()}`,
+                    email: `test${Date.now()}@debug.com`,
+                    servicioHospitalario: 'INGENIERIA_BIOMEDICA',
+                    cargo: 'ADMINISTRATIVO',
+                    codigoAcceso: Math.floor(1000 + Math.random() * 9000).toString(),
+                    estado: 'ACTIVO',
+                    fechaCreacion: new Date().toISOString()
+                };
+
+                const result = await window.airtableAPI.createUsuario(testData);
+                
+                log(`✅ Usuario test creado: ${result.id}`);
+                showResults('approval-results', 
+                    `<h3>✅ Usuario Creado</h3><p>ID: ${result.id}</p><pre>${JSON.stringify(result, null, 2)}</pre>`, 
+                    'success'
+                );
+
+            } catch (error) {
+                log(`❌ Error creando usuario: ${error.message}`);
+                showResults('approval-results', 
+                    `<h3>❌ Error Creando Usuario</h3><pre>${error.message}</pre>`, 
+                    'error'
+                );
+            }
+        }
+
+        // 🔄 Test de métodos update
+        async function testUpdateMethods() {
+            log('🔄 Probando métodos de actualización...');
+            
+            if (pendingRequests.length === 0) {
+                showResults('approval-results', 
+                    '<h3>⚠️ No hay solicitudes para probar</h3>', 
+                    'info'
+                );
+                return;
+            }
+
+            const requestId = pendingRequests[0].id;
+            
+            try {
+                // Test 1: Update básico
+                log(`🔄 Probando update básico en: ${requestId}`);
+                
+                const updateData = {
+                    fechaActualizacion: new Date().toISOString()
+                };
+                
+                const result = await window.airtableAPI.updateSolicitudAcceso(requestId, updateData);
+                
+                log(`✅ Update básico exitoso`);
+                showResults('approval-results', 
+                    `<h3>✅ Update Exitoso</h3><p>Solicitud actualizada: ${requestId}</p><pre>${JSON.stringify(result, null, 2)}</pre>`, 
+                    'success'
+                );
+
+            } catch (error) {
+                log(`❌ Error en update: ${error.message}`);
+                
+                // Análisis del error
+                let errorAnalysis = '<h3>❌ Análisis del Error</h3>';
+                
+                if (error.message.includes('404')) {
+                    errorAnalysis += '<p><strong>Error 404:</strong> El record no se encuentra.</p>';
+                    errorAnalysis += '<p><strong>Posibles causas:</strong></p>';
+                    errorAnalysis += '<ul>';
+                    errorAnalysis += '<li>El ID del record no es válido</li>';
+                    errorAnalysis += '<li>El proxy no está manejando correctamente las URLs con ID</li>';
+                    errorAnalysis += '<li>La tabla SolicitudesAcceso no permite updates</li>';
+                    errorAnalysis += '<li>Permisos insuficientes en Airtable</li>';
+                    errorAnalysis += '</ul>';
+                } else if (error.message.includes('422')) {
+                    errorAnalysis += '<p><strong>Error 422:</strong> Datos inválidos.</p>';
+                } else {
+                    errorAnalysis += `<p><strong>Error:</strong> ${error.message}</p>`;
+                }
+                
+                errorAnalysis += `<pre>${error.message}</pre>`;
+                
+                showResults('approval-results', errorAnalysis, 'error');
+            }
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            log('🚀 Debug de aprobación iniciado');
+            
+            setTimeout(() => {
+                if (window.airtableAPI) {
+                    log('✅ airtableAPI disponible');
+                    checkTables();
+                } else {
+                    log('❌ airtableAPI no disponible');
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
