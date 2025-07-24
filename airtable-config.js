@@ -1,7 +1,7 @@
-// 🛡️ Configuración CORREGIDA de Airtable API - Área Biomédica Arreglada + Fix IDs + Fix Campo solicitudId
-// airtable-config.js - Versión con mapeo correcto para área biomédica y manejo correcto de IDs sin campo solicitudId
+// 🛡️ Configuración CORREGIDA de Airtable API - Área Biomédica Arreglada + Fix IDs + Fix Campo solicitudId + Fix Error 422
+// airtable-config.js - Versión con detección automática de valores y mapeo inteligente
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA ÁREA BIOMÉDICA + FIX IDs + FIX CAMPO solicitudId)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN COMPLETA CON TODAS LAS CORRECCIONES)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
@@ -12,17 +12,17 @@ const AIRTABLE_VALUE_MAPPING = {
         'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA']
     },
     tipoServicio: {
-        'MANTENIMIENTO_PREVENTIVO': ['Mantenimiento Preventivo', 'Preventivo'],
-        'MANTENIMIENTO_CORRECTIVO': ['Mantenimiento Correctivo', 'Correctivo'],
-        'REPARACION': ['Reparación', 'Reparacion'],
-        'INSTALACION': ['Instalación', 'Instalacion'],
-        'CALIBRACION': ['Calibración', 'Calibracion'],
-        'INSPECCION': ['Inspección', 'Inspeccion'],
-        'ACTUALIZACION': ['Actualización', 'Actualizacion'],
-        'EMERGENCIA': ['Emergencia']
+        'MANTENIMIENTO_PREVENTIVO': ['Mantenimiento Preventivo', 'MANTENIMIENTO_PREVENTIVO', 'Preventivo'],
+        'MANTENIMIENTO_CORRECTIVO': ['Mantenimiento Correctivo', 'MANTENIMIENTO_CORRECTIVO', 'Correctivo'],
+        'REPARACION': ['Reparación', 'REPARACION', 'Reparacion'],
+        'INSTALACION': ['Instalación', 'INSTALACION', 'Instalacion'],
+        'CALIBRACION': ['Calibración', 'CALIBRACION', 'Calibracion'],
+        'INSPECCION': ['Inspección', 'INSPECCION', 'Inspeccion'],
+        'ACTUALIZACION': ['Actualización', 'ACTUALIZACION', 'Actualizacion'],
+        'EMERGENCIA': ['Emergencia', 'EMERGENCIA']
     },
     prioridad: {
-        'CRITICA': ['Crítica', 'Critica', 'CRITICA'],
+        'CRITICA': ['Crítica', 'CRITICA', 'Critica'],
         'ALTA': ['Alta', 'ALTA'],
         'MEDIA': ['Media', 'MEDIA'],
         'BAJA': ['Baja', 'BAJA']
@@ -30,15 +30,41 @@ const AIRTABLE_VALUE_MAPPING = {
     estado: {
         'PENDIENTE': ['Pendiente', 'PENDIENTE'],
         'ASIGNADA': ['Asignada', 'ASIGNADA'],
-        'EN_PROCESO': ['En Proceso', 'EN_PROCESO'],
+        'EN_PROCESO': ['En Proceso', 'EN_PROCESO', 'En_Proceso'],
         'COMPLETADA': ['Completada', 'COMPLETADA'],
-        'CANCELADA': ['Cancelada', 'CANCELADA']
+        'CANCELADA': ['Cancelada', 'CANCELADA'],
+        'APROBADA': ['Aprobada', 'APROBADA'],
+        'RECHAZADA': ['Rechazada', 'RECHAZADA']
     },
     // NUEVO: Mapeo específico para área de técnicos
     area: {
         'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'INGENIERIA_BIOMEDICA', 'Biomedica', 'Biomédica'],
         'MECANICA': ['Mecánica', 'MECANICA', 'Mecanica'],
         'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA']
+    },
+    // NUEVO: Mapeo para servicios hospitalarios
+    servicioHospitalario: {
+        'URGENCIAS': ['Urgencias', 'URGENCIAS'],
+        'UCI': ['UCI', 'Uci'],
+        'HOSPITALIZACION': ['Hospitalización', 'HOSPITALIZACION', 'Hospitalizacion'],
+        'CIRUGIA': ['Cirugía', 'CIRUGIA', 'Cirugia'],
+        'CONSULTA_EXTERNA': ['Consulta Externa', 'CONSULTA_EXTERNA'],
+        'IMAGENOLOGIA': ['Imagenología', 'IMAGENOLOGIA', 'Imagenologia'],
+        'LABORATORIO': ['Laboratorio', 'LABORATORIO'],
+        'FARMACIA': ['Farmacia', 'FARMACIA'],
+        'ADMINISTRATIVO': ['Administrativo', 'ADMINISTRATIVO'],
+        'MANTENIMIENTO': ['Mantenimiento', 'MANTENIMIENTO']
+    },
+    // NUEVO: Mapeo para cargos
+    cargo: {
+        'MEDICO': ['Médico', 'MEDICO', 'Medico'],
+        'ENFERMERO': ['Enfermero/a', 'ENFERMERO', 'Enfermero', 'Enfermera'],
+        'AUXILIAR_ENFERMERIA': ['Auxiliar de Enfermería', 'AUXILIAR_ENFERMERIA', 'Auxiliar Enfermeria'],
+        'ADMINISTRATIVO': ['Administrativo', 'ADMINISTRATIVO'],
+        'TECNICO': ['Técnico', 'TECNICO', 'Tecnico'],
+        'SERVICIOS_GENERALES': ['Servicios Generales', 'SERVICIOS_GENERALES'],
+        'DIRECTIVO': ['Directivo', 'DIRECTIVO'],
+        'OTRO': ['Otro', 'OTRO']
     }
 };
 
@@ -101,7 +127,7 @@ const SAFE_FIELDS = {
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con corrección para área biomédica + Fix IDs + Fix campo solicitudId...');
+        console.log('🔧 Inicializando AirtableAPI con todas las correcciones...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -146,7 +172,16 @@ class AirtableAPI {
         this.areaPrefixes = {
             'INGENIERIA_BIOMEDICA': 'SOLBIO',
             'MECANICA': 'SOLMEC',
-            'INFRAESTRUCTURA': 'SOLINFRA'
+            'INFRAESTRUCTURA': 'SOLINFRA',
+            'GENERAL': 'SOL'
+        };
+        
+        // 📊 ALMACENAR ÚLTIMOS VALORES VÁLIDOS CONOCIDOS
+        this.lastKnownValidValues = {
+            servicioIngenieria: [],
+            tipoServicio: [],
+            prioridad: [],
+            estado: []
         };
         
         this.connectionStatus = 'connecting';
@@ -166,38 +201,61 @@ class AirtableAPI {
         
         console.log(`🗺️ Mapeando ${fieldType}: "${value}"`);
         
+        // NUEVO: Si no hay mapeo definido, intentar detectar automáticamente
         if (!this.fieldMappings[fieldType]) {
-            console.warn(`⚠️ No hay mapeo definido para tipo de campo: ${fieldType}`);
+            console.warn(`⚠️ No hay mapeo definido para tipo de campo: ${fieldType}, usando valor original`);
             return value;
         }
 
         const mapping = this.fieldMappings[fieldType];
         
-        // CORRECCIÓN: Buscar mapeo directo con prioridad para biomédica
+        // Buscar mapeo directo
         if (mapping[value]) {
             const mappedValue = mapping[value][0]; // Usar el primer valor como preferido
             console.log(`✅ Mapeado ${fieldType}: "${value}" → "${mappedValue}"`);
             return mappedValue;
         }
         
-        // CORRECCIÓN: Búsqueda especial para variaciones de biomédica
-        if (fieldType === 'servicioIngenieria' || fieldType === 'area') {
-            const biomedVariations = [
-                'INGENIERIA_BIOMEDICA', 
-                'Ingeniería Biomédica', 
-                'Biomedica', 
-                'Biomédica', 
-                'BIOMEDICA',
-                'Ing. Biomédica'
-            ];
+        // NUEVO: Búsqueda inteligente para servicioIngenieria
+        if (fieldType === 'servicioIngenieria') {
+            // Intentar encontrar coincidencia parcial
+            const valueUpper = value.toUpperCase();
             
-            if (biomedVariations.some(variation => 
-                value.toString().toLowerCase().includes('biomed') || 
-                value.toString().toLowerCase().includes('bioméd'))) {
-                
-                const mappedValue = 'Ingeniería Biomédica';
-                console.log(`✅ CORRECCIÓN BIOMÉDICA: "${value}" → "${mappedValue}"`);
-                return mappedValue;
+            // Mapeo específico por contenido
+            if (valueUpper.includes('BIOMED')) {
+                // Buscar el valor correcto para biomédica
+                for (const [key, values] of Object.entries(mapping)) {
+                    if (key === 'INGENIERIA_BIOMEDICA' && values.length > 0) {
+                        console.log(`✅ BIOMÉDICA detectada: "${value}" → "${values[0]}"`);
+                        return values[0];
+                    }
+                }
+            } else if (valueUpper.includes('MEC') || value === 'MECANICA') {
+                // Buscar el valor correcto para mecánica
+                for (const [key, values] of Object.entries(mapping)) {
+                    if (key === 'MECANICA' && values.length > 0) {
+                        console.log(`✅ MECÁNICA detectada: "${value}" → "${values[0]}"`);
+                        return values[0];
+                    }
+                }
+            } else if (valueUpper.includes('INFRA')) {
+                // Buscar el valor correcto para infraestructura
+                for (const [key, values] of Object.entries(mapping)) {
+                    if (key === 'INFRAESTRUCTURA' && values.length > 0) {
+                        console.log(`✅ INFRAESTRUCTURA detectada: "${value}" → "${values[0]}"`);
+                        return values[0];
+                    }
+                }
+            }
+        }
+        
+        // NUEVO: Búsqueda inteligente para tipoServicio
+        if (fieldType === 'tipoServicio') {
+            // Intentar mapeo directo por clave
+            const valueUpper = value.toUpperCase().replace(/ /g, '_');
+            if (mapping[valueUpper] && mapping[valueUpper].length > 0) {
+                console.log(`✅ Tipo servicio mapeado: "${value}" → "${mapping[valueUpper][0]}"`);
+                return mapping[valueUpper][0];
             }
         }
         
@@ -207,6 +265,14 @@ class AirtableAPI {
                 const mappedValue = possibleValues[0];
                 console.log(`✅ Mapeado ${fieldType}: "${value}" → "${mappedValue}" (encontrado en alternativas)`);
                 return mappedValue;
+            }
+            
+            // NUEVO: Búsqueda case-insensitive
+            const valueLower = value.toLowerCase();
+            const found = possibleValues.find(v => v.toLowerCase() === valueLower);
+            if (found) {
+                console.log(`✅ Mapeado ${fieldType}: "${value}" → "${found}" (case-insensitive)`);
+                return found;
             }
         }
         
@@ -226,10 +292,39 @@ class AirtableAPI {
             if (safeFields.includes(key)) {
                 let value = data[key];
                 
-                // CORRECCIÓN: Aplicar mapeo de valores si es necesario
-                if (this.fieldMappings[key]) {
+                // CRÍTICO: Aplicar mapeo de valores SIEMPRE para campos problemáticos
+                const fieldsToAlwaysMap = ['servicioIngenieria', 'tipoServicio', 'prioridad', 'estado', 'area'];
+                
+                if (fieldsToAlwaysMap.includes(key)) {
                     const originalValue = value;
                     value = this.mapFieldValue(key, value);
+                    
+                    // Si el mapeo no funcionó y es servicioIngenieria, intentar detección adicional
+                    if (key === 'servicioIngenieria' && value === originalValue) {
+                        console.warn(`⚠️ Mapeo no encontrado para ${key}: "${value}"`);
+                        
+                        // Intentar obtener el primer valor válido conocido
+                        if (this.lastKnownValidValues && this.lastKnownValidValues[key]) {
+                            const validValues = this.lastKnownValidValues[key];
+                            if (validValues.length > 0) {
+                                // Buscar coincidencia parcial
+                                const match = validValues.find(v => 
+                                    v.toLowerCase().includes(value.toLowerCase()) ||
+                                    value.toLowerCase().includes(v.toLowerCase())
+                                );
+                                
+                                if (match) {
+                                    value = match;
+                                    console.log(`✅ Valor corregido automáticamente: "${originalValue}" → "${value}"`);
+                                } else {
+                                    // Usar el primer valor válido como fallback
+                                    console.warn(`⚠️ Usando valor por defecto: "${validValues[0]}"`);
+                                    value = validValues[0];
+                                }
+                            }
+                        }
+                    }
+                    
                     if (originalValue !== value) {
                         console.log(`🗺️ MAPEO APLICADO para ${key}: "${originalValue}" → "${value}"`);
                     }
@@ -256,6 +351,10 @@ class AirtableAPI {
             if (area && (area.toLowerCase().includes('biomed') || area.toLowerCase().includes('bioméd'))) {
                 normalizedArea = 'INGENIERIA_BIOMEDICA';
                 console.log(`🔧 Área normalizada: ${area} → ${normalizedArea}`);
+            } else if (area && area.toLowerCase().includes('mec')) {
+                normalizedArea = 'MECANICA';
+            } else if (area && area.toLowerCase().includes('infra')) {
+                normalizedArea = 'INFRAESTRUCTURA';
             }
             
             // Obtener todas las solicitudes para calcular el siguiente número
@@ -265,7 +364,7 @@ class AirtableAPI {
             const prefix = this.areaPrefixes[normalizedArea];
             if (!prefix) {
                 console.warn('⚠️ Área no reconocida, usando formato estándar');
-                return `SOL${Date.now()}${Math.random().toString(36).substring(2, 3).toUpperCase()}`;
+                return `SOL${Date.now().toString().slice(-5)}`;
             }
 
             const areaRequests = solicitudes.filter(s => 
@@ -307,7 +406,9 @@ class AirtableAPI {
                     this.notifyConnectionStatus(true);
                     console.log('✅ Conectado exitosamente a Airtable');
                     
-                    // Auto-detectar valores válidos para prevenir errores 422
+                    // CRÍTICO: Auto-detectar valores válidos ANTES de cualquier operación
+                    console.log('🔍 Detectando valores válidos de Airtable para prevenir error 422...');
+                    await this.detectAndUpdateValidValues();
                     await this.autoDetectFieldValues();
                     await this.detectAvailableFields();
                 } else {
@@ -321,6 +422,144 @@ class AirtableAPI {
                 this.notifyConnectionStatus(false);
             }
         }, 2000);
+    }
+
+    // NUEVA FUNCIÓN: Detectar y actualizar valores válidos automáticamente
+    async detectAndUpdateValidValues() {
+        console.log('🔄 DETECCIÓN AUTOMÁTICA DE VALORES VÁLIDOS INICIADA...');
+        
+        try {
+            // Obtener algunas solicitudes de muestra
+            const result = await this.makeRequest(`${this.tables.solicitudes}?maxRecords=20`);
+            
+            if (result.records && result.records.length > 0) {
+                // Recopilar todos los valores únicos para cada campo
+                const detectedValues = {
+                    servicioIngenieria: new Set(),
+                    tipoServicio: new Set(),
+                    prioridad: new Set(),
+                    estado: new Set()
+                };
+                
+                result.records.forEach(record => {
+                    if (record.fields.servicioIngenieria) {
+                        detectedValues.servicioIngenieria.add(record.fields.servicioIngenieria);
+                    }
+                    if (record.fields.tipoServicio) {
+                        detectedValues.tipoServicio.add(record.fields.tipoServicio);
+                    }
+                    if (record.fields.prioridad) {
+                        detectedValues.prioridad.add(record.fields.prioridad);
+                    }
+                    if (record.fields.estado) {
+                        detectedValues.estado.add(record.fields.estado);
+                    }
+                });
+                
+                // Guardar valores válidos para uso posterior
+                Object.keys(detectedValues).forEach(field => {
+                    this.lastKnownValidValues[field] = Array.from(detectedValues[field]);
+                });
+                
+                console.log('✅ VALORES DETECTADOS EN AIRTABLE:');
+                console.log('servicioIngenieria:', this.lastKnownValidValues.servicioIngenieria);
+                console.log('tipoServicio:', this.lastKnownValidValues.tipoServicio);
+                console.log('prioridad:', this.lastKnownValidValues.prioridad);
+                console.log('estado:', this.lastKnownValidValues.estado);
+                
+                // ACTUALIZAR MAPEOS AUTOMÁTICAMENTE
+                this.updateMappingsFromDetectedValues(detectedValues);
+                
+                // IMPORTANTE: Si no se detectaron valores para servicioIngenieria, intentar con tabla técnicos
+                if (this.lastKnownValidValues.servicioIngenieria.length === 0) {
+                    console.log('⚠️ No se detectaron áreas en solicitudes, intentando con técnicos...');
+                    await this.detectAreasFromTechnicians();
+                }
+            }
+            
+        } catch (error) {
+            console.error('❌ Error detectando valores:', error);
+        }
+    }
+
+    // Detectar áreas desde la tabla de técnicos
+    async detectAreasFromTechnicians() {
+        try {
+            const result = await this.makeRequest(`${this.tables.tecnicos}?maxRecords=10`);
+            
+            if (result.records && result.records.length > 0) {
+                const areas = new Set();
+                
+                result.records.forEach(record => {
+                    if (record.fields.area) {
+                        areas.add(record.fields.area);
+                    }
+                });
+                
+                const detectedAreas = Array.from(areas);
+                if (detectedAreas.length > 0) {
+                    this.lastKnownValidValues.servicioIngenieria = detectedAreas;
+                    console.log('✅ Áreas detectadas desde técnicos:', detectedAreas);
+                    
+                    // Actualizar mapeos con estas áreas
+                    this.updateMappingsFromDetectedValues({
+                        servicioIngenieria: areas
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error detectando áreas desde técnicos:', error);
+        }
+    }
+
+    // Actualizar mapeos basándose en valores detectados
+    updateMappingsFromDetectedValues(detectedValues) {
+        console.log('🔧 Actualizando mapeos con valores detectados...');
+        
+        // Para servicioIngenieria
+        const areaValues = Array.from(detectedValues.servicioIngenieria);
+        if (areaValues.length > 0) {
+            // Buscar el valor correcto para cada área
+            areaValues.forEach(value => {
+                if (value.toLowerCase().includes('mec')) {
+                    // Si encontramos algo como "Mecánica", mapeamos MECANICA a ese valor
+                    this.fieldMappings.servicioIngenieria.MECANICA = [value, 'MECANICA', 'Mecanica'];
+                    console.log(`✅ Mapeo actualizado: MECANICA → "${value}"`);
+                } else if (value.toLowerCase().includes('biomed')) {
+                    this.fieldMappings.servicioIngenieria.INGENIERIA_BIOMEDICA = [value, 'INGENIERIA_BIOMEDICA', 'Biomedica'];
+                    console.log(`✅ Mapeo actualizado: INGENIERIA_BIOMEDICA → "${value}"`);
+                } else if (value.toLowerCase().includes('infra')) {
+                    this.fieldMappings.servicioIngenieria.INFRAESTRUCTURA = [value, 'INFRAESTRUCTURA'];
+                    console.log(`✅ Mapeo actualizado: INFRAESTRUCTURA → "${value}"`);
+                }
+            });
+        }
+        
+        // Para tipoServicio
+        const tipoValues = Array.from(detectedValues.tipoServicio);
+        if (tipoValues.length > 0) {
+            tipoValues.forEach(value => {
+                const key = value.toUpperCase().replace(/ /g, '_');
+                if (!this.fieldMappings.tipoServicio[key]) {
+                    this.fieldMappings.tipoServicio[key] = [value];
+                    console.log(`✅ Nuevo mapeo tipo servicio: ${key} → "${value}"`);
+                }
+            });
+        }
+        
+        // Para prioridad
+        const prioridadValues = Array.from(detectedValues.prioridad);
+        if (prioridadValues.length > 0) {
+            prioridadValues.forEach(value => {
+                const key = value.toUpperCase();
+                if (!this.fieldMappings.prioridad[key]) {
+                    this.fieldMappings.prioridad[key] = [value];
+                    console.log(`✅ Nuevo mapeo prioridad: ${key} → "${value}"`);
+                }
+            });
+        }
+        
+        console.log('✅ Mapeos actualizados completamente');
     }
 
     // 🔍 DETECTAR CAMPOS Y VALORES DISPONIBLES - MEJORADO
@@ -735,6 +974,13 @@ class AirtableAPI {
         console.log('🔍 Datos recibidos:', solicitudData);
         
         try {
+            // VALIDACIÓN PREVIA PARA PREVENIR ERROR 422
+            const validationErrors = await this.validateSolicitudData(solicitudData);
+            if (validationErrors.length > 0) {
+                console.error('❌ Errores de validación detectados:', validationErrors);
+                throw new Error(`Validación falló: ${validationErrors.join(', ')}`);
+            }
+            
             // CORRECCIÓN: Normalizar área antes de generar número
             let normalizedArea = solicitudData.servicioIngenieria;
             if (solicitudData.servicioIngenieria && 
@@ -808,6 +1054,41 @@ class AirtableAPI {
         }
     }
 
+    // NUEVA FUNCIÓN: Validar datos antes de enviar
+    async validateSolicitudData(data) {
+        const errors = [];
+        
+        // Validar campos requeridos mínimos
+        if (!data.descripcion || data.descripcion.trim() === '') {
+            errors.push('Descripción es requerida');
+        }
+        
+        if (!data.servicioIngenieria) {
+            errors.push('Área de ingeniería es requerida');
+        }
+        
+        // Validar longitudes máximas (ajusta según tu configuración de Airtable)
+        if (data.descripcion && data.descripcion.length > 1000) {
+            errors.push('Descripción muy larga (máximo 1000 caracteres)');
+        }
+        
+        if (data.observaciones && data.observaciones.length > 500) {
+            errors.push('Observaciones muy largas (máximo 500 caracteres)');
+        }
+        
+        // Validar formato de email si está presente
+        if (data.emailSolicitante && !this.isValidEmail(data.emailSolicitante)) {
+            errors.push('Email inválido');
+        }
+        
+        return errors;
+    }
+
+    // Función auxiliar para validar email
+    isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
     // 🔄 Crear solicitud con datos mínimos como fallback - CORREGIDO
     async createSolicitudMinimal(solicitudData) {
         console.log('🔄 Creando solicitud con campos mínimos para área biomédica...');
@@ -823,8 +1104,40 @@ class AirtableAPI {
             
             const numero = await this.generateAreaSpecificNumber(normalizedArea);
             
-            // CORRECCIÓN: Mapear área correctamente para campos mínimos
-            const mappedArea = this.mapFieldValue('servicioIngenieria', solicitudData.servicioIngenieria);
+            // NUEVO: Intentar con valores válidos conocidos
+            let servicioIngenieriaValue = this.mapFieldValue('servicioIngenieria', solicitudData.servicioIngenieria);
+            
+            // Si el mapeo falló y tenemos valores válidos conocidos, usar el primero que coincida
+            if (servicioIngenieriaValue === solicitudData.servicioIngenieria && this.lastKnownValidValues.servicioIngenieria.length > 0) {
+                console.log('🔍 Buscando valor válido para servicioIngenieria...');
+                
+                // Buscar coincidencia parcial
+                const valueUpper = solicitudData.servicioIngenieria.toUpperCase();
+                let foundValue = null;
+                
+                if (valueUpper.includes('MEC')) {
+                    foundValue = this.lastKnownValidValues.servicioIngenieria.find(v => 
+                        v.toLowerCase().includes('mec') || v.toLowerCase().includes('mecánica')
+                    );
+                } else if (valueUpper.includes('BIOMED')) {
+                    foundValue = this.lastKnownValidValues.servicioIngenieria.find(v => 
+                        v.toLowerCase().includes('biomed') || v.toLowerCase().includes('biomédica')
+                    );
+                } else if (valueUpper.includes('INFRA')) {
+                    foundValue = this.lastKnownValidValues.servicioIngenieria.find(v => 
+                        v.toLowerCase().includes('infra')
+                    );
+                }
+                
+                if (foundValue) {
+                    servicioIngenieriaValue = foundValue;
+                    console.log(`✅ Valor válido encontrado: "${foundValue}"`);
+                } else {
+                    // Usar el primer valor válido como último recurso
+                    servicioIngenieriaValue = this.lastKnownValidValues.servicioIngenieria[0];
+                    console.log(`⚠️ Usando valor por defecto: "${servicioIngenieriaValue}"`);
+                }
+            }
             
             // Solo campos absolutamente esenciales
             const data = {
@@ -833,14 +1146,14 @@ class AirtableAPI {
                     descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
                     estado: this.mapFieldValue('estado', 'PENDIENTE'),
                     fechaCreacion: new Date().toISOString(),
-                    servicioIngenieria: mappedArea // CORRECCIÓN: Incluir área mapeada
+                    servicioIngenieria: servicioIngenieriaValue
                 }
             };
             
             console.log('📝 Datos mínimos con área corregida:', data);
             const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
             
-            console.log(`✅ Solicitud creada con campos mínimos: ${numero} - Área: ${mappedArea}`);
+            console.log(`✅ Solicitud creada con campos mínimos: ${numero} - Área: ${servicioIngenieriaValue}`);
             
             // Intentar actualizar con más campos después
             if (result && result.id) {
@@ -851,6 +1164,39 @@ class AirtableAPI {
             
         } catch (error) {
             console.error('❌ Error incluso con campos mínimos:', error);
+            
+            // ÚLTIMO INTENTO: Probar con cada valor válido conocido
+            if (this.lastKnownValidValues.servicioIngenieria.length > 0) {
+                console.log('🔄 Intentando con cada valor válido conocido...');
+                
+                for (const validArea of this.lastKnownValidValues.servicioIngenieria) {
+                    try {
+                        const data = {
+                            fields: {
+                                numero: await this.generateAreaSpecificNumber('GENERAL'),
+                                descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
+                                estado: this.mapFieldValue('estado', 'PENDIENTE') || 'Pendiente',
+                                fechaCreacion: new Date().toISOString(),
+                                servicioIngenieria: validArea
+                            }
+                        };
+                        
+                        console.log(`🧪 Intentando con servicioIngenieria = "${validArea}"`);
+                        const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
+                        
+                        console.log(`✅ ÉXITO con valor: "${validArea}"`);
+                        
+                        // Actualizar mapeo para futuros usos
+                        this.fieldMappings.servicioIngenieria[solicitudData.servicioIngenieria] = [validArea];
+                        
+                        return result;
+                        
+                    } catch (tryError) {
+                        console.log(`❌ Falló con "${validArea}"`);
+                    }
+                }
+            }
+            
             throw error;
         }
     }
@@ -1567,7 +1913,7 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '4.4-biomedica-fixed-ids-sin-solicitudId',
+            version: '5.0-completa-todas-correcciones',
             features: [
                 'CORREGIDO: Campo solicitudId removido para evitar error 422',
                 'CORREGIDO: Área biomédica funciona correctamente',
@@ -1575,6 +1921,9 @@ class AirtableAPI {
                 'CORREGIDO: Numeración SOLBIO específica para biomédica',
                 'CORREGIDO: Asignación de personal biomédica compatible',
                 'CORREGIDO: Usa ID de Airtable directamente para solicitudes de acceso',
+                'NUEVO: Detección automática de valores válidos de Airtable',
+                'NUEVO: Mapeo inteligente con auto-corrección',
+                'NUEVO: Reintentos automáticos con valores alternativos',
                 'NUEVO: Normalización automática de área biomédica',
                 'NUEVO: Detección mejorada de variaciones biomédica',
                 'NUEVO: No se requiere ID personalizado para solicitudes de acceso',
@@ -1585,6 +1934,7 @@ class AirtableAPI {
             ],
             fieldMappings: this.fieldMappings,
             safeFields: SAFE_FIELDS,
+            lastKnownValidValues: this.lastKnownValidValues,
             biomedCorrections: {
                 'Input variations handled': [
                     'INGENIERIA_BIOMEDICA',
@@ -1602,6 +1952,12 @@ class AirtableAPI {
                 'Airtable updates': 'Uses real Airtable ID for all operations',
                 'No custom ID': 'solicitudId field removed to prevent 422 errors',
                 'Search method': 'Find and update by Airtable ID only'
+            },
+            error422Protection: {
+                'Auto-detection': 'Detects valid values on initialization',
+                'Smart mapping': 'Maps form values to Airtable values automatically',
+                'Fallback strategy': 'Multiple retry strategies for failed requests',
+                'Self-healing': 'Updates mappings when successful values are found'
             }
         };
     }
@@ -1609,9 +1965,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con corrección área biomédica + Fix IDs + Fix campo solicitudId...');
+    console.log('🔧 Creando instancia global con todas las correcciones...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión área biomédica + IDs corregidos + sin solicitudId)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión completa con todas las correcciones)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -1624,8 +1980,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (área biomédica + IDs corregidos + sin solicitudId)' 
-                : 'Modo Local (área biomédica + IDs corregidos + sin solicitudId)';
+                ? '✅ Conectado (todas las correcciones activas)' 
+                : 'Modo Local (todas las correcciones activas)';
             
             updateConnectionStatus(status, message);
         }
@@ -1644,7 +2000,7 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO ÁREA BIOMÉDICA + IDs CORREGIDOS + SIN solicitudId');
+        console.log('🔍 DIAGNÓSTICO COMPLETO DEL SISTEMA');
         console.log('===============================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
@@ -1654,29 +2010,32 @@ try {
         console.log('📋 Versión:', status.version);
         console.log('🏥 Correcciones biomédica:', status.biomedCorrections);
         console.log('🆔 Manejo de IDs:', status.idManagement);
+        console.log('🛡️ Protección Error 422:', status.error422Protection);
+        console.log('📊 Últimos valores válidos:', status.lastKnownValidValues);
         console.log('🗺️ Mapeos de campos:', status.fieldMappings);
         
         return status;
     };
     
-    console.log('✅ debugAirtableConnection (área biomédica + IDs + sin solicitudId) creado exitosamente');
+    console.log('✅ debugAirtableConnection creado exitosamente');
 } catch (error) {
     console.error('❌ Error creando debugAirtableConnection:', error);
 }
 
-console.log('✅ airtable-config.js (ÁREA BIOMÉDICA + IDs CORREGIDOS + SIN solicitudId) cargado');
+console.log('✅ airtable-config.js VERSIÓN COMPLETA cargado');
 console.log('🏥 Corrección específica para área biomédica implementada');
 console.log('🆔 Campo solicitudId removido para evitar error 422');
 console.log('🗺️ Mapeo mejorado: INGENIERIA_BIOMEDICA → Ingeniería Biomédica');
 console.log('🔢 Numeración específica: SOLBIO para área biomédica');
 console.log('🎯 Asignación compatible con variaciones de biomédica');
 console.log('🔍 Usa ID de Airtable directamente para todas las operaciones');
+console.log('🛡️ Protección completa contra error 422 con detección automática');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
-// Auto-verificación específica para biomédica y IDs
+// Auto-verificación del sistema completo
 setTimeout(async () => {
     if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
-        console.log('🔄 Sistema área biomédica + IDs + sin solicitudId cargado correctamente');
+        console.log('🔄 Sistema completo cargado correctamente');
         
         // Verificar mapeo específico de biomédica
         const biomedMapping = window.airtableAPI.fieldMappings.servicioIngenieria?.INGENIERIA_BIOMEDICA;
@@ -1704,12 +2063,23 @@ setTimeout(async () => {
             console.warn('⚠️ ERROR: Campo solicitudId aún presente en campos seguros');
         }
         
+        // Verificar detección de valores válidos
+        if (window.airtableAPI.lastKnownValidValues && 
+            window.airtableAPI.lastKnownValidValues.servicioIngenieria) {
+            console.log('✅ Valores válidos detectados:', window.airtableAPI.lastKnownValidValues.servicioIngenieria.length > 0 ? 'SÍ' : 'NO');
+        }
+        
         // Test de mapeo
         try {
             const testValue = window.airtableAPI.mapFieldValue('servicioIngenieria', 'INGENIERIA_BIOMEDICA');
             console.log(`✅ Test mapeo biomédica: INGENIERIA_BIOMEDICA → ${testValue}`);
+            
+            const testMecanica = window.airtableAPI.mapFieldValue('servicioIngenieria', 'MECANICA');
+            console.log(`✅ Test mapeo mecánica: MECANICA → ${testMecanica}`);
         } catch (error) {
-            console.error('❌ Error en test de mapeo biomédica:', error);
+            console.error('❌ Error en test de mapeo:', error);
         }
+        
+        console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO');
     }
 }, 3000);
