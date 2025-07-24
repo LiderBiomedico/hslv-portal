@@ -962,7 +962,11 @@
                     showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente con protección. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
-                document.getElementById('request-form').reset();
+                // CORRECCIÓN: Resetear el formulario correctamente
+                const formElement = document.querySelector('#request-form form');
+                if (formElement) {
+                    formElement.reset();
+                }
                 
                 setTimeout(() => {
                     showAuthTab('login');
