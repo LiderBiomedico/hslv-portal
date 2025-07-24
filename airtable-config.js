@@ -2082,4 +2082,41 @@ setTimeout(async () => {
         
         console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO');
     }
+// Función para forzar actualización de mapeos
+window.forceUpdateServiceMapping = function(mappings) {
+    console.log('🔧 Forzando actualización de mapeos de servicioIngenieria...');
+    
+    if (window.airtableAPI && window.airtableAPI.fieldMappings) {
+        // Actualizar mapeos
+        Object.entries(mappings).forEach(([key, value]) => {
+            window.airtableAPI.fieldMappings.servicioIngenieria[key] = [value];
+            console.log(`✅ Actualizado: ${key} → ${value}`);
+        });
+        
+        // También guardar en lastKnownValidValues
+        if (window.airtableAPI.lastKnownValidValues) {
+            window.airtableAPI.lastKnownValidValues.servicioIngenieria = Object.values(mappings);
+        }
+        
+        console.log('✅ Mapeos actualizados correctamente');
+        return true;
+    }
+    
+    console.error('❌ No se pudo actualizar - airtableAPI no disponible');
+    return false;
+};
+
+// Auto-corrección al cargar si hay valores guardados
+setTimeout(() => {
+    const savedMapping = localStorage.getItem('hospital_service_mapping');
+    if (savedMapping) {
+        try {
+            const mapping = JSON.parse(savedMapping);
+            console.log('🔄 Aplicando mapeo guardado:', mapping);
+            window.forceUpdateServiceMapping(mapping);
+        } catch (e) {
+            console.error('Error aplicando mapeo guardado:', e);
+        }
+    }
+}, 4000);
 }, 3000);
