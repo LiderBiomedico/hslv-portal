@@ -1,4 +1,4 @@
-// 🛡️ Configuración CORREGIDA de Airtable API - Área Biomédica Arreglada + Fix IDs + Fix Campo solicitudId + Fix Error 422
+// 🛡️ Configuración CORREGIDA de Airtable API - Fix Error Comillas en Estado
 // airtable-config.js - Versión con detección automática de valores y mapeo inteligente
 
 console.log('🚀 Cargando airtable-config.js (VERSIÓN COMPLETA CON TODAS LAS CORRECCIONES)...');
@@ -201,6 +201,11 @@ class AirtableAPI {
     mapFieldValue(fieldType, value) {
         if (!value) return value;
         
+        // CORRECCIÓN CRÍTICA: Asegurar que el valor no tenga comillas adicionales
+        if (typeof value === 'string') {
+            value = value.replace(/^["']|["']$/g, '').trim();
+        }
+        
         console.log(`🗺️ Mapeando ${fieldType}: "${value}"`);
         
         // NUEVO: Si no hay mapeo definido, intentar detectar automáticamente
@@ -294,6 +299,11 @@ class AirtableAPI {
             if (safeFields.includes(key)) {
                 let value = data[key];
                 
+                // CORRECCIÓN CRÍTICA: Limpiar comillas adicionales antes de procesar
+                if (typeof value === 'string') {
+                    value = value.replace(/^["']|["']$/g, '').trim();
+                }
+                
                 // CORRECCIÓN CRÍTICA: Agregar servicioHospitalario y cargo a campos que siempre se mapean
                 const fieldsToAlwaysMap = [
                     'servicioIngenieria', 
@@ -338,6 +348,11 @@ class AirtableAPI {
                     if (originalValue !== value) {
                         console.log(`🗺️ MAPEO APLICADO para ${key}: "${originalValue}" → "${value}"`);
                     }
+                }
+                
+                // CORRECCIÓN FINAL: Asegurar que el valor final no tenga comillas adicionales
+                if (typeof value === 'string') {
+                    value = value.replace(/^["']|["']$/g, '').trim();
                 }
                 
                 safeData[key] = value;
@@ -493,10 +508,47 @@ class AirtableAPI {
                 
                 // NUEVO: Detectar valores de cargo desde usuarios
                 await this.detectCargoValues();
+                
+                // NUEVO: Detectar valores de estado desde SolicitudesAcceso
+                await this.detectEstadoValuesFromSolicitudesAcceso();
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores:', error);
+        }
+    }
+
+    // NUEVA FUNCIÓN: Detectar valores de estado desde SolicitudesAcceso
+    async detectEstadoValuesFromSolicitudesAcceso() {
+        try {
+            const result = await this.makeRequest(`${this.tables.solicitudesAcceso}?maxRecords=10`);
+            
+            if (result.records && result.records.length > 0) {
+                const estadoValues = new Set();
+                
+                result.records.forEach(record => {
+                    if (record.fields.estado) {
+                        // Limpiar el valor de cualquier comilla adicional
+                        const cleanEstado = record.fields.estado.replace(/^["']|["']$/g, '').trim();
+                        estadoValues.add(cleanEstado);
+                    }
+                });
+                
+                const detectedEstados = Array.from(estadoValues);
+                if (detectedEstados.length > 0) {
+                    console.log('✅ Estados detectados en SolicitudesAcceso:', detectedEstados);
+                    
+                    // Actualizar mapeos con estos estados
+                    detectedEstados.forEach(estado => {
+                        const key = estado.toUpperCase();
+                        if (!this.fieldMappings.estado[key]) {
+                            this.fieldMappings.estado[key] = [estado];
+                        }
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error detectando estados desde SolicitudesAcceso:', error);
         }
     }
 
@@ -937,6 +989,20 @@ class AirtableAPI {
                                 const fieldMatch = message.match(/Unknown field name: "([^"]+)"/);
                                 if (fieldMatch) {
                                     problemInfo = `Campo desconocido: ${fieldMatch[1]}`;
+                                }
+                            } else if (airtableError.type === 'INVALID_MULTIPLE_CHOICE_OPTIONS') {
+                                const message = airtableError.message;
+                                console.error('🎯 Opción inválida para campo de selección:', message);
+                                
+                                // Extraer el valor problemático
+                                const valueMatch = message.match(/"([^"]+)"/);
+                                if (valueMatch) {
+                                    const problematicValue = valueMatch[1];
+                                    problemInfo = `Valor "${problematicValue}" no es una opción válida`;
+                                    
+                                    console.log('💡 PROBLEMA DETECTADO:');
+                                    console.log(`El valor "${problematicValue}" no existe en las opciones del campo`);
+                                    console.log('Verifica que el valor no tenga comillas adicionales o espacios');
                                 }
                             }
                         }
@@ -1718,7 +1784,7 @@ class AirtableAPI {
             cargo: solicitudData.cargo, // Se mapeará en prepareSafeData
             justificacion: solicitudData.justificacion || '',
             fechaSolicitud: solicitudData.fechaSolicitud,
-            estado: solicitudData.estado || 'PENDIENTE',
+            estado: 'PENDIENTE', // CORRECCIÓN: Usar PENDIENTE en lugar de estado || 'PENDIENTE'
             esUrgente: solicitudData.esUrgente || false
         }, 'solicitudesAcceso');
         
@@ -1749,61 +1815,51 @@ class AirtableAPI {
     async retryCreateSolicitudAcceso(originalData) {
         console.log('🔄 Reintentando creación con valores alternativos...');
         
-        // Intentar con valores válidos conocidos
-        if (this.lastKnownValidValues.servicioHospitalario && this.lastKnownValidValues.servicioHospitalario.length > 0) {
-            const validServicio = this.lastKnownValidValues.servicioHospitalario[0];
-            console.log(`🔧 Usando servicio hospitalario válido conocido: ${validServicio}`);
-            
-            const data = {
-                fields: {
-                    nombreCompleto: originalData.nombreCompleto,
-                    email: originalData.email,
-                    telefono: originalData.telefono || '',
-                    servicioHospitalario: validServicio,
-                    cargo: this.lastKnownValidValues.cargo && this.lastKnownValidValues.cargo.length > 0 ? 
-                           this.lastKnownValidValues.cargo[0] : 'Otro',
-                    justificacion: originalData.justificacion || '',
-                    fechaSolicitud: originalData.fechaSolicitud,
-                    estado: 'Pendiente', // Usar valor conocido
-                    esUrgente: false
-                }
-            };
-            
-            console.log('📝 Datos alternativos:', data);
-            
-            try {
-                const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
-                console.log('✅ Solicitud creada con valores alternativos');
-                
-                // Actualizar mapeos para futuro uso
-                this.fieldMappings.servicioHospitalario[originalData.servicioHospitalario] = [validServicio];
-                this.fieldMappings.cargo[originalData.cargo] = [data.fields.cargo];
-                
-                return result;
-            } catch (retryError) {
-                console.error('❌ Error incluso con valores alternativos:', retryError);
-                throw retryError;
-            }
-        }
-        
-        // Si no hay valores conocidos, usar valores por defecto
-        console.log('⚠️ No hay valores conocidos, usando valores por defecto...');
-        
+        // CORRECCIÓN: No usar valores mapeados directamente, usar la clave para que se mapee
         const data = {
             fields: {
                 nombreCompleto: originalData.nombreCompleto,
                 email: originalData.email,
                 telefono: originalData.telefono || '',
-                servicioHospitalario: 'Administrativo',
-                cargo: 'Otro',
+                servicioHospitalario: this.lastKnownValidValues.servicioHospitalario && this.lastKnownValidValues.servicioHospitalario.length > 0 ? 
+                       this.lastKnownValidValues.servicioHospitalario[0] : 'Administrativo',
+                cargo: this.lastKnownValidValues.cargo && this.lastKnownValidValues.cargo.length > 0 ? 
+                       this.lastKnownValidValues.cargo[0] : 'Otro',
                 justificacion: originalData.justificacion || '',
                 fechaSolicitud: originalData.fechaSolicitud,
-                estado: 'Pendiente',
+                estado: this.lastKnownValidValues.estado && this.lastKnownValidValues.estado.length > 0 ?
+                        this.lastKnownValidValues.estado.find(e => e === 'Pendiente' || e.toLowerCase() === 'pendiente') || 'Pendiente' :
+                        'Pendiente', // Usar valor conocido sin comillas adicionales
                 esUrgente: false
             }
         };
         
-        return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+        console.log('📝 Datos alternativos sin comillas adicionales:', data);
+        
+        try {
+            const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+            console.log('✅ Solicitud creada con valores alternativos');
+            
+            // Actualizar mapeos para futuro uso
+            this.fieldMappings.servicioHospitalario[originalData.servicioHospitalario] = [data.fields.servicioHospitalario];
+            this.fieldMappings.cargo[originalData.cargo] = [data.fields.cargo];
+            
+            return result;
+        } catch (retryError) {
+            console.error('❌ Error incluso con valores alternativos:', retryError);
+            
+            // Último intento: usar valores mínimos absolutos
+            const minimalData = {
+                fields: {
+                    nombreCompleto: originalData.nombreCompleto,
+                    email: originalData.email,
+                    estado: 'Pendiente' // Sin mapeo, valor directo
+                }
+            };
+            
+            console.log('📝 Último intento con datos mínimos:', minimalData);
+            return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', minimalData);
+        }
     }
 
     // CORRECCIÓN CRÍTICA: Usar ID de Airtable directamente
@@ -1828,7 +1884,7 @@ class AirtableAPI {
 
             console.log('✅ Solicitud encontrada:', solicitud);
 
-            if (solicitud.estado === 'APROBADA') {
+            if (solicitud.estado === 'APROBADA' || solicitud.estado === 'Aprobada') {
                 throw new Error('La solicitud ya fue aprobada anteriormente');
             }
 
@@ -2085,7 +2141,7 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '5.1-completa-fix-solicitudes-acceso',
+            version: '5.2-fix-quotes-estado',
             features: [
                 'CORREGIDO: Campo solicitudId removido para evitar error 422',
                 'CORREGIDO: Área biomédica funciona correctamente',
@@ -2094,6 +2150,8 @@ class AirtableAPI {
                 'CORREGIDO: Asignación de personal biomédica compatible',
                 'CORREGIDO: Usa ID de Airtable directamente para solicitudes de acceso',
                 'CORREGIDO: Mapeo de servicioHospitalario y cargo en solicitudes de acceso',
+                'CORREGIDO: Limpieza de comillas adicionales en valores de campos',
+                'CORREGIDO: Error de estado "Pendiente" con comillas dobles',
                 'NUEVO: Detección automática de valores válidos de Airtable',
                 'NUEVO: Mapeo inteligente con auto-corrección',
                 'NUEVO: Reintentos automáticos con valores alternativos',
@@ -2131,7 +2189,8 @@ class AirtableAPI {
                 'Smart mapping': 'Maps form values to Airtable values automatically',
                 'Fallback strategy': 'Multiple retry strategies for failed requests',
                 'Self-healing': 'Updates mappings when successful values are found',
-                'Field mapping': 'servicioHospitalario and cargo now properly mapped'
+                'Field mapping': 'servicioHospitalario and cargo now properly mapped',
+                'Quote cleaning': 'Removes extra quotes from field values automatically'
             }
         };
     }
@@ -2205,6 +2264,7 @@ console.log('🎯 Asignación compatible con variaciones de biomédica');
 console.log('🔍 Usa ID de Airtable directamente para todas las operaciones');
 console.log('🛡️ Protección completa contra error 422 con detección automática');
 console.log('✅ NUEVO: Mapeo de servicioHospitalario y cargo para solicitudes de acceso');
+console.log('✅ NUEVO: Limpieza automática de comillas adicionales en valores');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
 // Auto-verificación del sistema completo
@@ -2262,11 +2322,14 @@ setTimeout(async () => {
             
             const testCargo = window.airtableAPI.mapFieldValue('cargo', 'MEDICO');
             console.log(`✅ Test mapeo cargo: MEDICO → ${testCargo}`);
+            
+            const testEstado = window.airtableAPI.mapFieldValue('estado', 'PENDIENTE');
+            console.log(`✅ Test mapeo estado: PENDIENTE → ${testEstado} (sin comillas adicionales)`);
         } catch (error) {
             console.error('❌ Error en test de mapeo:', error);
         }
         
-        console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO CON CORRECCIÓN DE SOLICITUDES DE ACCESO');
+        console.log('\n🎉 SISTEMA COMPLETAMENTE OPERATIVO CON CORRECCIÓN DE COMILLAS EN ESTADO');
     }
 }, 3000);
 
