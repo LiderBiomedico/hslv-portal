@@ -6,49 +6,49 @@ console.log('🚀 Cargando airtable-config.js (VERSIÓN COMPLETA CORREGIDA)...')
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
     servicioIngenieria: {
-        'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'INGENIERIA_BIOMEDICA', 'Biomedica', 'Biomédica', 'Ing. Biomédica'],
-        'MECANICA': ['Mecánica', 'MECANICA', 'Mecanica'],
-        'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA']
+        'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+        'MECANICA': 'Mecánica',
+        'INFRAESTRUCTURA': 'Infraestructura'
     },
     tipoServicio: {
-        'MANTENIMIENTO_PREVENTIVO': ['Mantenimiento Preventivo', 'Preventivo'],
-        'MANTENIMIENTO_CORRECTIVO': ['Mantenimiento Correctivo', 'Correctivo'],
-        'REPARACION': ['Reparación', 'Reparacion'],
-        'INSTALACION': ['Instalación', 'Instalacion'],
-        'CALIBRACION': ['Calibración', 'Calibracion'],
-        'INSPECCION': ['Inspección', 'Inspeccion'],
-        'ACTUALIZACION': ['Actualización', 'Actualizacion'],
-        'EMERGENCIA': ['Emergencia']
+        'MANTENIMIENTO_PREVENTIVO': 'Mantenimiento Preventivo',
+        'MANTENIMIENTO_CORRECTIVO': 'Mantenimiento Correctivo',
+        'REPARACION': 'Reparación',
+        'INSTALACION': 'Instalación',
+        'CALIBRACION': 'Calibración',
+        'INSPECCION': 'Inspección',
+        'ACTUALIZACION': 'Actualización',
+        'EMERGENCIA': 'Emergencia'
     },
     prioridad: {
-        'CRITICA': ['Crítica', 'Critica', 'CRITICA'],
-        'ALTA': ['Alta', 'ALTA'],
-        'MEDIA': ['Media', 'MEDIA'],
-        'BAJA': ['Baja', 'BAJA']
+        'CRITICA': 'Crítica',
+        'ALTA': 'Alta',
+        'MEDIA': 'Media',
+        'BAJA': 'Baja'
     },
     estado: {
-        'PENDIENTE': ['Pendiente', 'PENDIENTE', 'pendiente'],
-        'ASIGNADA': ['Asignada', 'ASIGNADA'],
-        'EN_PROCESO': ['En Proceso', 'EN_PROCESO'],
-        'COMPLETADA': ['Completada', 'COMPLETADA'],
-        'CANCELADA': ['Cancelada', 'CANCELADA']
+        'PENDIENTE': 'Pendiente',
+        'ASIGNADA': 'Asignada',
+        'EN_PROCESO': 'En Proceso',
+        'COMPLETADA': 'Completada',
+        'CANCELADA': 'Cancelada'
     },
     area: {
-        'INGENIERIA_BIOMEDICA': ['Ingeniería Biomédica', 'INGENIERIA_BIOMEDICA', 'Biomedica', 'Biomédica'],
-        'MECANICA': ['Mecánica', 'MECANICA', 'Mecanica'],
-        'INFRAESTRUCTURA': ['Infraestructura', 'INFRAESTRUCTURA']
+        'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+        'MECANICA': 'Mecánica',
+        'INFRAESTRUCTURA': 'Infraestructura'
     },
     // NUEVO: Mapeo específico para estados de solicitudes de acceso
     estadoSolicitudAcceso: {
-        'PENDIENTE': ['Pendiente', 'PENDIENTE', 'pendiente'],
-        'APROBADA': ['Aprobada', 'APROBADA', 'aprobada'],
-        'RECHAZADA': ['Rechazada', 'RECHAZADA', 'rechazada']
+        'PENDIENTE': 'Pendiente',
+        'APROBADA': 'Aprobada',
+        'RECHAZADA': 'Rechazada'
     },
     // NUEVO: Mapeo específico para estados de usuarios
     estadoUsuario: {
-        'ACTIVO': ['Activo', 'ACTIVO', 'activo'],
-        'INACTIVO': ['Inactivo', 'INACTIVO', 'inactivo'],
-        'SUSPENDIDO': ['Suspendido', 'SUSPENDIDO', 'suspendido']
+        'ACTIVO': 'Activo',
+        'INACTIVO': 'Inactivo',
+        'SUSPENDIDO': 'Suspendido'
     }
 };
 
@@ -188,6 +188,9 @@ class AirtableAPI {
         
         // Remover comillas dobles extras al principio y final
         let cleanValue = value.trim();
+        
+        // Remover múltiples comillas dobles consecutivas
+        cleanValue = cleanValue.replace(/"+/g, '"');
         
         // Si el valor empieza y termina con comillas, removerlas
         if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
@@ -953,24 +956,23 @@ class AirtableAPI {
         
         console.log(`🗺️ Mapeando ${fieldType}: "${cleanValue}"`);
         
-        if (!this.fieldMappings[fieldType]) {
-            console.warn(`⚠️ No hay mapeo definido para tipo de campo: ${fieldType}`);
-            return cleanValue;
-        }
-
-        const mapping = this.fieldMappings[fieldType];
-        
-        if (mapping[cleanValue]) {
-            const mappedValue = mapping[cleanValue][0];
-            console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
-            return mappedValue;
-        }
-        
-        for (const [key, possibleValues] of Object.entries(mapping)) {
-            if (possibleValues.includes(cleanValue)) {
-                const mappedValue = possibleValues[0];
-                console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}" (encontrado en alternativas)`);
+        // Si el valor ya es el esperado, devolverlo tal cual
+        if (this.fieldMappings[fieldType]) {
+            const mapping = this.fieldMappings[fieldType];
+            
+            // Si el valor es una clave directa del mapeo, devolver su valor mapeado
+            if (mapping[cleanValue]) {
+                const mappedValue = mapping[cleanValue];
+                console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
                 return mappedValue;
+            }
+            
+            // Buscar si el valor es uno de los valores mapeados
+            for (const [key, mappedValue] of Object.entries(mapping)) {
+                if (mappedValue === cleanValue) {
+                    console.log(`✅ Valor ya mapeado correctamente: "${cleanValue}"`);
+                    return mappedValue;
+                }
             }
         }
         
@@ -1671,10 +1673,11 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '6.0-fix-completo',
+            version: '6.1-fix-mapeo-correcto',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             features: [
+                'FIX: Mapeo simplificado para evitar errores 422',
                 'FIX: Detección automática de valores válidos para solicitudes y usuarios',
                 'FIX: Eliminación de campos inexistentes (fechaAprobacion)',
                 'FIX: Manejo robusto del campo estado',
@@ -1766,7 +1769,8 @@ try {
 }
 
 console.log('✅ airtable-config.js (FIX COMPLETO) cargado');
-console.log('🔐 FIX: Detección automática de valores válidos para solicitudes y usuarios');
+console.log('🔐 FIX: Mapeo simplificado para evitar errores 422');
+console.log('🛡️ FIX: Detección automática de valores válidos para solicitudes y usuarios');
 console.log('🛡️ FIX: Eliminación de campos inexistentes (fechaAprobacion)');
 console.log('🧹 FIX: Limpieza mejorada de valores string');
 console.log('🛡️ FIX: Creación robusta con fallbacks');
