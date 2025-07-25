@@ -1,7 +1,7 @@
-// 🛡️ Configuración CORREGIDA de Airtable API - Área Biomédica Arreglada
-// airtable-config.js - Versión con mapeo correcto para área biomédica
+// 🛡️ Configuración CORREGIDA de Airtable API - Área Biomédica Arreglada + Solicitudes de Acceso
+// airtable-config.js - Versión con mapeo correcto para área biomédica y solicitudes de acceso
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA ÁREA BIOMÉDICA)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN CORREGIDA ÁREA BIOMÉDICA + SOLICITUDES ACCESO)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
@@ -72,12 +72,35 @@ const SAFE_FIELDS = {
         'estado',
         'fechaCreacion',
         'solicitudAsignada'
+    ],
+    solicitudesAcceso: [
+        'nombreCompleto',
+        'email',
+        'telefono',
+        'servicioHospitalario',
+        'cargo',
+        'justificacion',
+        'fechaSolicitud',
+        'estado',
+        'esUrgente',
+        'fechaAprobacion',
+        'usuarioCreado'
+    ],
+    usuarios: [
+        'nombreCompleto',
+        'email',
+        'servicioHospitalario',
+        'cargo',
+        'codigoAcceso',
+        'estado',
+        'fechaCreacion',
+        'solicitudOrigenId'
     ]
 };
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con corrección para área biomédica...');
+        console.log('🔧 Inicializando AirtableAPI con corrección para área biomédica y solicitudes de acceso...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -1175,9 +1198,7 @@ class AirtableAPI {
         }
     }
 
-    // Continúo con los métodos restantes (usuarios, solicitudes de acceso, etc.)
-    // mantenidos iguales que en el archivo original...
-
+    // 👤 MÉTODOS DE USUARIOS
     async getUsuarios() {
         try {
             const result = await this.makeRequest(this.tables.usuarios);
@@ -1229,6 +1250,7 @@ class AirtableAPI {
         }
     }
 
+    // 🔐 MÉTODOS DE SOLICITUDES DE ACCESO - CORREGIDOS
     async getSolicitudesAcceso() {
         try {
             const result = await this.makeRequest(this.tables.solicitudesAcceso);
@@ -1242,24 +1264,115 @@ class AirtableAPI {
         }
     }
 
+    // CORRECCIÓN CRÍTICA: Método createSolicitudAcceso sin campo id
     async createSolicitudAcceso(solicitudData) {
-        const data = {
-            fields: {
-                id: solicitudData.id,
+        console.log('📝 Creando solicitud de acceso CORREGIDA (sin campo id)...');
+        console.log('🔍 Datos recibidos:', solicitudData);
+        
+        try {
+            // CORRECCIÓN: NO incluir campo id, solo campos válidos
+            const rawData = {
                 nombreCompleto: solicitudData.nombreCompleto,
                 email: solicitudData.email,
                 telefono: solicitudData.telefono || '',
                 servicioHospitalario: solicitudData.servicioHospitalario,
                 cargo: solicitudData.cargo,
                 justificacion: solicitudData.justificacion || '',
-                fechaSolicitud: solicitudData.fechaSolicitud,
+                fechaSolicitud: solicitudData.fechaSolicitud || new Date().toISOString(),
                 estado: solicitudData.estado || 'PENDIENTE',
                 esUrgente: solicitudData.esUrgente || false
+            };
+            
+            console.log('🔍 Datos limpios (sin id):', rawData);
+            
+            // Preparar datos seguros
+            const safeData = this.prepareSafeData(rawData, 'solicitudesAcceso');
+            
+            const data = {
+                fields: safeData
+            };
+            
+            console.log('📝 Creando solicitud de acceso con datos finales:', data);
+            const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+            
+            console.log(`✅ Solicitud de acceso creada exitosamente:`, result.id);
+            console.log('📧 Email:', solicitudData.email);
+            
+            return result;
+            
+        } catch (error) {
+            console.error('❌ Error creando solicitud de acceso:', error);
+            
+            // Si hay error 422, intentar con campos mínimos
+            if (error.message.includes('422')) {
+                console.log('🔄 Reintentando con campos mínimos...');
+                return await this.createSolicitudAccesoMinimal(solicitudData);
             }
-        };
+            
+            throw error;
+        }
+    }
+
+    // Método fallback para crear solicitud de acceso con campos mínimos
+    async createSolicitudAccesoMinimal(solicitudData) {
+        console.log('🔄 Creando solicitud de acceso con campos mínimos...');
         
-        console.log('📝 Creando solicitud de acceso:', solicitudData.email);
-        return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+        try {
+            const data = {
+                fields: {
+                    nombreCompleto: solicitudData.nombreCompleto,
+                    email: solicitudData.email,
+                    estado: 'PENDIENTE',
+                    fechaSolicitud: new Date().toISOString()
+                }
+            };
+            
+            console.log('📝 Datos mínimos:', data);
+            const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+            
+            console.log(`✅ Solicitud de acceso creada con campos mínimos:`, result.id);
+            
+            // Intentar actualizar con más campos después
+            if (result && result.id) {
+                await this.updateSolicitudAccesoSafely(result.id, solicitudData);
+            }
+            
+            return result;
+            
+        } catch (error) {
+            console.error('❌ Error incluso con campos mínimos:', error);
+            throw error;
+        }
+    }
+
+    // Actualizar solicitud de acceso de forma segura
+    async updateSolicitudAccesoSafely(solicitudId, originalData) {
+        console.log('🔄 Actualizando solicitud de acceso con campos adicionales...');
+        
+        const fieldsToTry = [
+            { telefono: originalData.telefono },
+            { servicioHospitalario: originalData.servicioHospitalario },
+            { cargo: originalData.cargo },
+            { justificacion: originalData.justificacion },
+            { esUrgente: originalData.esUrgente || false }
+        ];
+        
+        for (const fieldObj of fieldsToTry) {
+            const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
+            
+            if (fieldValue !== undefined && fieldValue !== null && SAFE_FIELDS.solicitudesAcceso.includes(fieldName)) {
+                try {
+                    await this.makeRequest(
+                        `${this.tables.solicitudesAcceso}/${solicitudId}`, 
+                        'PATCH', 
+                        { fields: { [fieldName]: fieldValue } }
+                    );
+                    console.log(`✅ Campo ${fieldName} agregado`);
+                } catch (error) {
+                    console.warn(`⚠️ Campo ${fieldName} no se pudo agregar:`, error.message);
+                }
+            }
+        }
     }
 
     async approveAccessRequestAndCreateUser(requestId) {
@@ -1502,6 +1615,39 @@ class AirtableAPI {
         }
     }
 
+    // Test específico para solicitudes de acceso
+    async testSolicitudesAccesoTable() {
+        console.log('🧪 Test específico de tabla SolicitudesAcceso...');
+        
+        try {
+            const result = await this.makeRequest(`${this.tables.solicitudesAcceso}?maxRecords=3`);
+            
+            console.log('✅ Test SolicitudesAcceso exitoso');
+            console.log('📊 Registros encontrados:', result.records ? result.records.length : 0);
+            
+            if (result.records && result.records.length > 0) {
+                console.log('🔍 Campos disponibles:', Object.keys(result.records[0].fields));
+                console.log('📋 Muestra de datos:', result.records[0]);
+            }
+            
+            return {
+                success: true,
+                records: result.records ? result.records.length : 0,
+                availableFields: result.records && result.records.length > 0 ? Object.keys(result.records[0].fields) : [],
+                sampleData: result.records ? result.records[0] : null
+            };
+            
+        } catch (error) {
+            console.error('❌ Test de SolicitudesAcceso falló:', error);
+            
+            return {
+                success: false,
+                error: error.message,
+                status: error.message.includes('HTTP') ? error.message.match(/HTTP (\d+)/)?.[1] : null
+            };
+        }
+    }
+
     getStatus() {
         return {
             isConnected: this.connectionStatus === 'connected',
@@ -1511,14 +1657,16 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '4.2-biomedica-fixed',
+            version: '4.3-biomedica-solicitudesacceso-fixed',
             features: [
                 'CORREGIDO: Área biomédica funciona correctamente',
                 'CORREGIDO: Mapeo mejorado para INGENIERIA_BIOMEDICA',
                 'CORREGIDO: Numeración SOLBIO específica para biomédica',
                 'CORREGIDO: Asignación de personal biomédica compatible',
+                'CORREGIDO: Solicitudes de acceso sin campo id',
                 'NUEVO: Normalización automática de área biomédica',
                 'NUEVO: Detección mejorada de variaciones biomédica',
+                'NUEVO: Métodos seguros para solicitudes de acceso',
                 'Protección completa contra errores 422',
                 'Sistema completo de asignación de personal',
                 'Cálculo automático de tiempos de respuesta',
@@ -1537,6 +1685,12 @@ class AirtableAPI {
                 'Normalized output': 'Ingeniería Biomédica (as detected in Airtable)',
                 'Number prefix': 'SOLBIO',
                 'Assignment compatibility': 'Full support for biomedical area matching'
+            },
+            accessRequestsCorrections: {
+                'Fixed': 'Removed id field from createSolicitudAcceso',
+                'SafeFields': 'Added solicitudesAcceso safe fields list',
+                'Fallback': 'Added minimal fields creation method',
+                'Testing': 'Added testSolicitudesAccesoTable method'
             }
         };
     }
@@ -1544,9 +1698,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con corrección área biomédica...');
+    console.log('🔧 Creando instancia global con corrección área biomédica y solicitudes de acceso...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión área biomédica corregida)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión área biomédica + solicitudes acceso corregida)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -1559,8 +1713,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (área biomédica corregida)' 
-                : 'Modo Local (área biomédica corregida)';
+                ? '✅ Conectado (área biomédica + solicitudes acceso corregidas)' 
+                : 'Modo Local (área biomédica + solicitudes acceso corregidas)';
             
             updateConnectionStatus(status, message);
         }
@@ -1579,8 +1733,8 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO ÁREA BIOMÉDICA CORREGIDA');
-        console.log('======================================');
+        console.log('🔍 DIAGNÓSTICO ÁREA BIOMÉDICA + SOLICITUDES ACCESO CORREGIDAS');
+        console.log('=====================================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
@@ -1588,27 +1742,29 @@ try {
         console.log('🔍 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
         console.log('📋 Versión:', status.version);
         console.log('🏥 Correcciones biomédica:', status.biomedCorrections);
+        console.log('🔐 Correcciones solicitudes acceso:', status.accessRequestsCorrections);
         console.log('🗺️ Mapeos de campos:', status.fieldMappings);
         
         return status;
     };
     
-    console.log('✅ debugAirtableConnection (área biomédica) creado exitosamente');
+    console.log('✅ debugAirtableConnection (área biomédica + solicitudes acceso) creado exitosamente');
 } catch (error) {
     console.error('❌ Error creando debugAirtableConnection:', error);
 }
 
-console.log('✅ airtable-config.js (ÁREA BIOMÉDICA CORREGIDA) cargado');
+console.log('✅ airtable-config.js (ÁREA BIOMÉDICA + SOLICITUDES ACCESO CORREGIDAS) cargado');
 console.log('🏥 Corrección específica para área biomédica implementada');
+console.log('🔐 Corrección para solicitudes de acceso sin campo id');
 console.log('🗺️ Mapeo mejorado: INGENIERIA_BIOMEDICA → Ingeniería Biomédica');
 console.log('🔢 Numeración específica: SOLBIO para área biomédica');
 console.log('🎯 Asignación compatible con variaciones de biomédica');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 
-// Auto-verificación específica para biomédica
+// Auto-verificación específica para biomédica y solicitudes de acceso
 setTimeout(async () => {
     if (window.airtableAPI && typeof window.debugAirtableConnection === 'function') {
-        console.log('🔄 Sistema área biomédica cargado correctamente');
+        console.log('🔄 Sistema área biomédica + solicitudes acceso cargado correctamente');
         
         // Verificar mapeo específico de biomédica
         const biomedMapping = window.airtableAPI.fieldMappings.servicioIngenieria?.INGENIERIA_BIOMEDICA;
@@ -1626,12 +1782,33 @@ setTimeout(async () => {
             console.warn('⚠️ Prefijo biomédica no configurado correctamente');
         }
         
+        // Verificar campos seguros para solicitudes de acceso
+        const safeFieldsAccess = SAFE_FIELDS.solicitudesAcceso;
+        if (safeFieldsAccess && !safeFieldsAccess.includes('id')) {
+            console.log('✅ Campos seguros para solicitudes de acceso configurados (sin id)');
+        } else {
+            console.warn('⚠️ Campos seguros para solicitudes de acceso no configurados correctamente');
+        }
+        
         // Test de mapeo
         try {
             const testValue = window.airtableAPI.mapFieldValue('servicioIngenieria', 'INGENIERIA_BIOMEDICA');
             console.log(`✅ Test mapeo biomédica: INGENIERIA_BIOMEDICA → ${testValue}`);
         } catch (error) {
             console.error('❌ Error en test de mapeo biomédica:', error);
+        }
+        
+        // Test de conexión con solicitudes de acceso
+        try {
+            console.log('🔍 Iniciando test de tabla SolicitudesAcceso...');
+            const testResult = await window.airtableAPI.testSolicitudesAccesoTable();
+            if (testResult.success) {
+                console.log('✅ Test de SolicitudesAcceso exitoso:', testResult);
+            } else {
+                console.warn('⚠️ Test de SolicitudesAcceso falló:', testResult);
+            }
+        } catch (error) {
+            console.error('❌ Error en test de SolicitudesAcceso:', error);
         }
     }
 }, 3000);
