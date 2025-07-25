@@ -150,6 +150,9 @@ class AirtableAPI {
         
         this.connectionStatus = 'connecting';
         
+        // NUEVO: Almacenar valores válidos detectados
+        this.validAccessRequestStates = [];
+        
         console.log('📡 URL base:', this.baseUrl);
         console.log('🛡️ Usando proxy:', this.useProxy);
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
@@ -466,6 +469,14 @@ class AirtableAPI {
             const areaValuesTecnicos = await this.detectValidFieldValues('Tecnicos', 'area');
             const tipoValues = await this.detectValidFieldValues('Tecnicos', 'tipo');
             const estadoValues = await this.detectValidFieldValues('Tecnicos', 'estado');
+            
+            // NUEVO: Detectar valores válidos para SolicitudesAcceso
+            const estadoSolicitudesAcceso = await this.detectValidFieldValues('SolicitudesAcceso', 'estado');
+            if (estadoSolicitudesAcceso.length > 0) {
+                console.log('📋 Valores válidos de estado para SolicitudesAcceso:', estadoSolicitudesAcceso);
+                // Guardar en una variable para uso posterior
+                this.validAccessRequestStates = estadoSolicitudesAcceso;
+            }
             
             // Combinar valores de área de ambas tablas
             const allAreaValues = [...new Set([...areaValuesSolicitudes, ...areaValuesTecnicos])];
@@ -1264,13 +1275,14 @@ class AirtableAPI {
         }
     }
 
-    // CORRECCIÓN CRÍTICA: Método createSolicitudAcceso sin campo id
+    // CORRECCIÓN CRÍTICA: Método createSolicitudAcceso sin campo id y sin mapeo de estado
     async createSolicitudAcceso(solicitudData) {
         console.log('📝 Creando solicitud de acceso CORREGIDA (sin campo id)...');
         console.log('🔍 Datos recibidos:', solicitudData);
         
         try {
             // CORRECCIÓN: NO incluir campo id, solo campos válidos
+            // IMPORTANTE: No aplicar mapeo al campo estado para solicitudesAcceso
             const rawData = {
                 nombreCompleto: solicitudData.nombreCompleto,
                 email: solicitudData.email,
@@ -1279,17 +1291,15 @@ class AirtableAPI {
                 cargo: solicitudData.cargo,
                 justificacion: solicitudData.justificacion || '',
                 fechaSolicitud: solicitudData.fechaSolicitud || new Date().toISOString(),
-                estado: solicitudData.estado || 'PENDIENTE',
+                estado: 'PENDIENTE', // Sin mapeo, valor directo
                 esUrgente: solicitudData.esUrgente || false
             };
             
             console.log('🔍 Datos limpios (sin id):', rawData);
             
-            // Preparar datos seguros
-            const safeData = this.prepareSafeData(rawData, 'solicitudesAcceso');
-            
+            // CORRECCIÓN: Enviar datos directamente sin prepareSafeData para evitar mapeo
             const data = {
-                fields: safeData
+                fields: rawData
             };
             
             console.log('📝 Creando solicitud de acceso con datos finales:', data);
@@ -1303,36 +1313,90 @@ class AirtableAPI {
         } catch (error) {
             console.error('❌ Error creando solicitud de acceso:', error);
             
-            // Si hay error 422, intentar con campos mínimos
-            if (error.message.includes('422')) {
-                console.log('🔄 Reintentando con campos mínimos...');
-                return await this.createSolicitudAccesoMinimal(solicitudData);
+            // Si hay error 422, intentar detectar valores válidos
+            if (error.message.includes('422') && error.message.includes('INVALID_MULTIPLE_CHOICE_OPTIONS')) {
+                console.log('🔄 Detectando valores válidos para campo estado...');
+                return await this.createSolicitudAccesoWithValidation(solicitudData);
             }
             
             throw error;
         }
     }
 
-    // Método fallback para crear solicitud de acceso con campos mínimos
-    async createSolicitudAccesoMinimal(solicitudData) {
-        console.log('🔄 Creando solicitud de acceso con campos mínimos...');
+    // Nuevo método para crear solicitud con validación de valores
+    async createSolicitudAccesoWithValidation(solicitudData) {
+        console.log('🔍 Detectando valores válidos para solicitudes de acceso...');
         
         try {
+            // Primero, obtener una solicitud existente para ver los valores válidos
+            const existingRequests = await this.getSolicitudesAcceso();
+            let validEstado = 'PENDIENTE';
+            
+            if (existingRequests.length > 0) {
+                // Buscar una solicitud con estado PENDIENTE
+                const pendingRequest = existingRequests.find(r => 
+                    r.estado && (r.estado === 'PENDIENTE' || r.estado.toUpperCase() === 'PENDIENTE')
+                );
+                
+                if (pendingRequest) {
+                    validEstado = pendingRequest.estado; // Usar el formato exacto de Airtable
+                    console.log('✅ Valor válido detectado para estado:', validEstado);
+                } else {
+                    // Si no hay pendientes, usar el primer estado encontrado
+                    const firstWithStatus = existingRequests.find(r => r.estado);
+                    if (firstWithStatus) {
+                        console.log('⚠️ No se encontró PENDIENTE, usando:', firstWithStatus.estado);
+                        // Intentar crear sin estado y actualizar después
+                        return await this.createSolicitudAccesoMinimal(solicitudData);
+                    }
+                }
+            }
+            
+            // Reintentar con el valor detectado
             const data = {
                 fields: {
                     nombreCompleto: solicitudData.nombreCompleto,
                     email: solicitudData.email,
-                    estado: 'PENDIENTE',
+                    telefono: solicitudData.telefono || '',
+                    servicioHospitalario: solicitudData.servicioHospitalario,
+                    cargo: solicitudData.cargo,
+                    justificacion: solicitudData.justificacion || '',
+                    fechaSolicitud: solicitudData.fechaSolicitud || new Date().toISOString(),
+                    estado: validEstado,
+                    esUrgente: solicitudData.esUrgente || false
+                }
+            };
+            
+            console.log('📝 Reintentando con valor detectado:', data);
+            return await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
+            
+        } catch (error) {
+            console.error('❌ Error incluso con validación:', error);
+            // Último intento: crear sin estado
+            return await this.createSolicitudAccesoMinimal(solicitudData);
+        }
+    }
+
+    // Método fallback para crear solicitud de acceso con campos mínimos
+    async createSolicitudAccesoMinimal(solicitudData) {
+        console.log('🔄 Creando solicitud de acceso con campos mínimos (sin estado)...');
+        
+        try {
+            // CORRECCIÓN: Crear sin campo estado para evitar error 422
+            const data = {
+                fields: {
+                    nombreCompleto: solicitudData.nombreCompleto,
+                    email: solicitudData.email,
                     fechaSolicitud: new Date().toISOString()
                 }
             };
             
-            console.log('📝 Datos mínimos:', data);
+            console.log('📝 Datos mínimos (sin estado):', data);
             const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
             
             console.log(`✅ Solicitud de acceso creada con campos mínimos:`, result.id);
             
-            // Intentar actualizar con más campos después
+            // Intentar actualizar con más campos después (excepto estado)
             if (result && result.id) {
                 await this.updateSolicitudAccesoSafely(result.id, solicitudData);
             }
@@ -1355,12 +1419,13 @@ class AirtableAPI {
             { cargo: originalData.cargo },
             { justificacion: originalData.justificacion },
             { esUrgente: originalData.esUrgente || false }
+            // NO incluir estado aquí para evitar error 422
         ];
         
         for (const fieldObj of fieldsToTry) {
             const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
             
-            if (fieldValue !== undefined && fieldValue !== null && SAFE_FIELDS.solicitudesAcceso.includes(fieldName)) {
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '' && SAFE_FIELDS.solicitudesAcceso.includes(fieldName)) {
                 try {
                     await this.makeRequest(
                         `${this.tables.solicitudesAcceso}/${solicitudId}`, 
@@ -1412,7 +1477,7 @@ class AirtableAPI {
             // Actualizar solicitud de acceso
             await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
                 fields: {
-                    estado: 'APROBADA',
+                    estado: 'APROBADA', // Sin mapeo, valor directo
                     fechaAprobacion: new Date().toISOString(),
                     usuarioCreado: newUser.id
                 }
@@ -1437,7 +1502,13 @@ class AirtableAPI {
     }
 
     async updateSolicitudAcceso(requestId, updateData) {
-        const data = { fields: updateData };
+        // CORRECCIÓN: Si el campo estado está presente, enviarlo directamente sin mapeo
+        const cleanData = { ...updateData };
+        if (cleanData.estado) {
+            console.log(`📝 Estado a actualizar (sin mapeo): ${cleanData.estado}`);
+        }
+        
+        const data = { fields: cleanData };
         return await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', data);
     }
 
