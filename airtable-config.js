@@ -162,23 +162,51 @@ class AirtableAPI {
         this.initializeConnectionAsync();
     }
 
+    // 🔧 FUNCIÓN CRÍTICA: Limpiar valores de comillas extras
+    cleanFieldValue(value) {
+        if (typeof value !== 'string') return value;
+        
+        // Remover comillas dobles extras al principio y final
+        let cleanValue = value;
+        
+        // Si el valor empieza y termina con comillas, removerlas
+        if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
+            cleanValue = cleanValue.slice(1, -1);
+        }
+        
+        // Remover comillas dobles escapadas
+        cleanValue = cleanValue.replace(/\\"/g, '');
+        
+        // Si aún tiene comillas dobles al principio y final, removerlas otra vez
+        if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
+            cleanValue = cleanValue.slice(1, -1);
+        }
+        
+        console.log(`🧹 Limpieza de valor: "${value}" → "${cleanValue}"`);
+        
+        return cleanValue;
+    }
+
     // 🗺️ FUNCIÓN MEJORADA PARA MAPEAR VALORES - CORRECCIÓN ÁREA BIOMÉDICA
     mapFieldValue(fieldType, value) {
         if (!value) return value;
         
-        console.log(`🗺️ Mapeando ${fieldType}: "${value}"`);
+        // CORRECCIÓN: Limpiar el valor de comillas extras primero
+        const cleanValue = this.cleanFieldValue(value);
+        
+        console.log(`🗺️ Mapeando ${fieldType}: "${cleanValue}"`);
         
         if (!this.fieldMappings[fieldType]) {
             console.warn(`⚠️ No hay mapeo definido para tipo de campo: ${fieldType}`);
-            return value;
+            return cleanValue;
         }
 
         const mapping = this.fieldMappings[fieldType];
         
         // CORRECCIÓN: Buscar mapeo directo con prioridad para biomédica
-        if (mapping[value]) {
-            const mappedValue = mapping[value][0]; // Usar el primer valor como preferido
-            console.log(`✅ Mapeado ${fieldType}: "${value}" → "${mappedValue}"`);
+        if (mapping[cleanValue]) {
+            const mappedValue = mapping[cleanValue][0]; // Usar el primer valor como preferido
+            console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
             return mappedValue;
         }
         
@@ -194,26 +222,26 @@ class AirtableAPI {
             ];
             
             if (biomedVariations.some(variation => 
-                value.toString().toLowerCase().includes('biomed') || 
-                value.toString().toLowerCase().includes('bioméd'))) {
+                cleanValue.toString().toLowerCase().includes('biomed') || 
+                cleanValue.toString().toLowerCase().includes('bioméd'))) {
                 
                 const mappedValue = 'Ingeniería Biomédica';
-                console.log(`✅ CORRECCIÓN BIOMÉDICA: "${value}" → "${mappedValue}"`);
+                console.log(`✅ CORRECCIÓN BIOMÉDICA: "${cleanValue}" → "${mappedValue}"`);
                 return mappedValue;
             }
         }
         
         // Buscar en valores alternativos
         for (const [key, possibleValues] of Object.entries(mapping)) {
-            if (possibleValues.includes(value)) {
+            if (possibleValues.includes(cleanValue)) {
                 const mappedValue = possibleValues[0];
-                console.log(`✅ Mapeado ${fieldType}: "${value}" → "${mappedValue}" (encontrado en alternativas)`);
+                console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}" (encontrado en alternativas)`);
                 return mappedValue;
             }
         }
         
-        console.log(`⚠️ No se encontró mapeo para ${fieldType}: "${value}" - usando valor original`);
-        return value;
+        console.log(`⚠️ No se encontró mapeo para ${fieldType}: "${cleanValue}" - usando valor original`);
+        return cleanValue;
     }
 
     // 🛡️ FUNCIÓN PARA PREPARAR DATOS SEGUROS - MEJORADA
@@ -227,6 +255,11 @@ class AirtableAPI {
         Object.keys(data).forEach(key => {
             if (safeFields.includes(key)) {
                 let value = data[key];
+                
+                // CORRECCIÓN: Limpiar comillas extras de todos los valores
+                if (typeof value === 'string') {
+                    value = this.cleanFieldValue(value);
+                }
                 
                 // CORRECCIÓN: Aplicar mapeo de valores si es necesario
                 if (this.fieldMappings[key]) {
@@ -565,7 +598,16 @@ class AirtableAPI {
             }
             
             if (data && (method === 'POST' || method === 'PATCH')) {
-                options.body = JSON.stringify(data);
+                // CORRECCIÓN CRÍTICA: Verificar que no haya comillas extras en los datos
+                const dataStr = JSON.stringify(data);
+                console.log('📊 Datos a enviar (string):', dataStr);
+                
+                // Verificar si hay comillas dobles extras
+                if (dataStr.includes('""')) {
+                    console.warn('⚠️ ADVERTENCIA: Se detectaron comillas dobles extras en los datos');
+                }
+                
+                options.body = dataStr;
             }
             
             console.log('🎯 URL final:', url);
@@ -610,6 +652,23 @@ class AirtableAPI {
                                     if (data && data.fields && data.fields[fieldName]) {
                                         console.log(`🔍 Valor enviado: "${data.fields[fieldName]}"`);
                                         console.log(`🔍 Mapeo actual:`, this.fieldMappings[fieldName] || 'No definido');
+                                    }
+                                }
+                            } else if (airtableError.type === 'INVALID_MULTIPLE_CHOICE_OPTIONS') {
+                                // CORRECCIÓN: Manejar específicamente el error de comillas extras
+                                const message = airtableError.message;
+                                console.error('🎯 Error de opciones múltiples:', message);
+                                
+                                // Buscar el valor problemático con comillas extras
+                                const valueMatch = message.match(/option "(.+?)"/);
+                                if (valueMatch) {
+                                    const problematicValue = valueMatch[1];
+                                    console.error(`🚨 Valor problemático detectado: "${problematicValue}"`);
+                                    
+                                    // Si tiene comillas dobles al principio y final, es el problema
+                                    if (problematicValue.startsWith('"') && problematicValue.endsWith('"')) {
+                                        console.error('⚠️ EL VALOR TIENE COMILLAS EXTRAS!');
+                                        problemInfo = `Valor con comillas extras: ${problematicValue}`;
                                     }
                                 }
                             } else if (airtableError.type === 'UNKNOWN_FIELD_NAME') {
@@ -1277,36 +1336,62 @@ class AirtableAPI {
 
     // CORRECCIÓN CRÍTICA: Método createSolicitudAcceso sin campo id y sin mapeo de estado
     async createSolicitudAcceso(solicitudData) {
-        console.log('📝 Creando solicitud de acceso CORREGIDA (sin campo id)...');
+        console.log('📝 Creando solicitud de acceso CORREGIDA (sin campo id, limpiando comillas)...');
         console.log('🔍 Datos recibidos:', solicitudData);
         
         try {
+            // CORRECCIÓN CRÍTICA: Limpiar todos los valores de string de comillas extras
+            const cleanData = {};
+            Object.keys(solicitudData).forEach(key => {
+                const value = solicitudData[key];
+                if (typeof value === 'string') {
+                    cleanData[key] = this.cleanFieldValue(value);
+                } else {
+                    cleanData[key] = value;
+                }
+            });
+            
             // CORRECCIÓN: NO incluir campo id, solo campos válidos
-            // IMPORTANTE: No aplicar mapeo al campo estado para solicitudesAcceso
+            // IMPORTANTE: Usar el valor limpio de estado
             const rawData = {
-                nombreCompleto: solicitudData.nombreCompleto,
-                email: solicitudData.email,
-                telefono: solicitudData.telefono || '',
-                servicioHospitalario: solicitudData.servicioHospitalario,
-                cargo: solicitudData.cargo,
-                justificacion: solicitudData.justificacion || '',
-                fechaSolicitud: solicitudData.fechaSolicitud || new Date().toISOString(),
-                estado: 'PENDIENTE', // Sin mapeo, valor directo
-                esUrgente: solicitudData.esUrgente || false
+                nombreCompleto: cleanData.nombreCompleto || '',
+                email: cleanData.email || '',
+                telefono: cleanData.telefono || '',
+                servicioHospitalario: cleanData.servicioHospitalario || '',
+                cargo: cleanData.cargo || '',
+                justificacion: cleanData.justificacion || '',
+                fechaSolicitud: cleanData.fechaSolicitud || new Date().toISOString(),
+                estado: this.cleanFieldValue('PENDIENTE'), // Asegurar que no tenga comillas extras
+                esUrgente: cleanData.esUrgente || false
             };
             
-            console.log('🔍 Datos limpios (sin id):', rawData);
+            console.log('🔍 Datos limpios (sin id, sin comillas extras):', rawData);
+            
+            // Verificar específicamente el campo estado
+            console.log(`🔍 Valor de estado a enviar: "${rawData.estado}" (longitud: ${rawData.estado.length})`);
             
             // CORRECCIÓN: Enviar datos directamente sin prepareSafeData para evitar mapeo
             const data = {
                 fields: rawData
             };
             
-            console.log('📝 Creando solicitud de acceso con datos finales:', data);
+            console.log('📝 Creando solicitud de acceso con datos finales:', JSON.stringify(data, null, 2));
+            
+            // Verificar una vez más antes de enviar
+            if (JSON.stringify(data).includes('""')) {
+                console.error('⚠️ ADVERTENCIA: Se detectaron comillas dobles en los datos!');
+                // Intentar limpiar una vez más
+                Object.keys(data.fields).forEach(key => {
+                    if (typeof data.fields[key] === 'string') {
+                        data.fields[key] = data.fields[key].replace(/^"|"$/g, '').replace(/\\"/g, '');
+                    }
+                });
+            }
+            
             const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
             
             console.log(`✅ Solicitud de acceso creada exitosamente:`, result.id);
-            console.log('📧 Email:', solicitudData.email);
+            console.log('📧 Email:', cleanData.email);
             
             return result;
             
@@ -1353,17 +1438,27 @@ class AirtableAPI {
             }
             
             // Reintentar con el valor detectado
+            const cleanData = {};
+            Object.keys(solicitudData).forEach(key => {
+                const value = solicitudData[key];
+                if (typeof value === 'string') {
+                    cleanData[key] = this.cleanFieldValue(value);
+                } else {
+                    cleanData[key] = value;
+                }
+            });
+            
             const data = {
                 fields: {
-                    nombreCompleto: solicitudData.nombreCompleto,
-                    email: solicitudData.email,
-                    telefono: solicitudData.telefono || '',
-                    servicioHospitalario: solicitudData.servicioHospitalario,
-                    cargo: solicitudData.cargo,
-                    justificacion: solicitudData.justificacion || '',
-                    fechaSolicitud: solicitudData.fechaSolicitud || new Date().toISOString(),
+                    nombreCompleto: cleanData.nombreCompleto || '',
+                    email: cleanData.email || '',
+                    telefono: cleanData.telefono || '',
+                    servicioHospitalario: cleanData.servicioHospitalario || '',
+                    cargo: cleanData.cargo || '',
+                    justificacion: cleanData.justificacion || '',
+                    fechaSolicitud: cleanData.fechaSolicitud || new Date().toISOString(),
                     estado: validEstado,
-                    esUrgente: solicitudData.esUrgente || false
+                    esUrgente: cleanData.esUrgente || false
                 }
             };
             
@@ -1382,11 +1477,22 @@ class AirtableAPI {
         console.log('🔄 Creando solicitud de acceso con campos mínimos (sin estado)...');
         
         try {
+            // Limpiar datos primero
+            const cleanData = {};
+            Object.keys(solicitudData).forEach(key => {
+                const value = solicitudData[key];
+                if (typeof value === 'string') {
+                    cleanData[key] = this.cleanFieldValue(value);
+                } else {
+                    cleanData[key] = value;
+                }
+            });
+            
             // CORRECCIÓN: Crear sin campo estado para evitar error 422
             const data = {
                 fields: {
-                    nombreCompleto: solicitudData.nombreCompleto,
-                    email: solicitudData.email,
+                    nombreCompleto: cleanData.nombreCompleto || '',
+                    email: cleanData.email || '',
                     fechaSolicitud: new Date().toISOString()
                 }
             };
@@ -1398,7 +1504,7 @@ class AirtableAPI {
             
             // Intentar actualizar con más campos después (excepto estado)
             if (result && result.id) {
-                await this.updateSolicitudAccesoSafely(result.id, solicitudData);
+                await this.updateSolicitudAccesoSafely(result.id, cleanData);
             }
             
             return result;
@@ -1477,7 +1583,7 @@ class AirtableAPI {
             // Actualizar solicitud de acceso
             await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
                 fields: {
-                    estado: 'APROBADA', // Sin mapeo, valor directo
+                    estado: this.cleanFieldValue('APROBADA'), // Limpiar valor antes de enviar
                     fechaAprobacion: new Date().toISOString(),
                     usuarioCreado: newUser.id
                 }
@@ -1502,11 +1608,17 @@ class AirtableAPI {
     }
 
     async updateSolicitudAcceso(requestId, updateData) {
-        // CORRECCIÓN: Si el campo estado está presente, enviarlo directamente sin mapeo
-        const cleanData = { ...updateData };
-        if (cleanData.estado) {
-            console.log(`📝 Estado a actualizar (sin mapeo): ${cleanData.estado}`);
-        }
+        // CORRECCIÓN: Limpiar todos los valores de string antes de enviar
+        const cleanData = {};
+        Object.keys(updateData).forEach(key => {
+            const value = updateData[key];
+            if (typeof value === 'string') {
+                cleanData[key] = this.cleanFieldValue(value);
+                console.log(`📝 Campo ${key} limpiado: "${updateData[key]}" → "${cleanData[key]}"`);
+            } else {
+                cleanData[key] = value;
+            }
+        });
         
         const data = { fields: cleanData };
         return await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', data);
@@ -1728,13 +1840,16 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '4.3-biomedica-solicitudesacceso-fixed',
+            version: '4.4-biomedica-solicitudesacceso-quotation-fix',
             features: [
+                'CORREGIDO: Manejo de comillas extras en valores',
                 'CORREGIDO: Área biomédica funciona correctamente',
                 'CORREGIDO: Mapeo mejorado para INGENIERIA_BIOMEDICA',
                 'CORREGIDO: Numeración SOLBIO específica para biomédica',
                 'CORREGIDO: Asignación de personal biomédica compatible',
                 'CORREGIDO: Solicitudes de acceso sin campo id',
+                'CORREGIDO: Limpieza de comillas en todos los valores string',
+                'NUEVO: Función cleanFieldValue para eliminar comillas extras',
                 'NUEVO: Normalización automática de área biomédica',
                 'NUEVO: Detección mejorada de variaciones biomédica',
                 'NUEVO: Métodos seguros para solicitudes de acceso',
@@ -1761,7 +1876,8 @@ class AirtableAPI {
                 'Fixed': 'Removed id field from createSolicitudAcceso',
                 'SafeFields': 'Added solicitudesAcceso safe fields list',
                 'Fallback': 'Added minimal fields creation method',
-                'Testing': 'Added testSolicitudesAccesoTable method'
+                'Testing': 'Added testSolicitudesAccesoTable method',
+                'QuotationFix': 'Added cleanFieldValue method to remove extra quotes'
             }
         };
     }
@@ -1827,6 +1943,7 @@ try {
 console.log('✅ airtable-config.js (ÁREA BIOMÉDICA + SOLICITUDES ACCESO CORREGIDAS) cargado');
 console.log('🏥 Corrección específica para área biomédica implementada');
 console.log('🔐 Corrección para solicitudes de acceso sin campo id');
+console.log('🧹 NUEVO: Limpieza automática de comillas extras en valores');
 console.log('🗺️ Mapeo mejorado: INGENIERIA_BIOMEDICA → Ingeniería Biomédica');
 console.log('🔢 Numeración específica: SOLBIO para área biomédica');
 console.log('🎯 Asignación compatible con variaciones de biomédica');
@@ -1867,6 +1984,14 @@ setTimeout(async () => {
             console.log(`✅ Test mapeo biomédica: INGENIERIA_BIOMEDICA → ${testValue}`);
         } catch (error) {
             console.error('❌ Error en test de mapeo biomédica:', error);
+        }
+        
+        // Test de limpieza de comillas
+        try {
+            const testQuotes = window.airtableAPI.cleanFieldValue('"PENDIENTE"');
+            console.log(`✅ Test limpieza comillas: '"PENDIENTE"' → '${testQuotes}'`);
+        } catch (error) {
+            console.error('❌ Error en test de limpieza:', error);
         }
         
         // Test de conexión con solicitudes de acceso
