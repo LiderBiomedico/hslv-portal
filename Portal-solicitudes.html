@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Solicitudes Cloud - Hospital Susana López de Valencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f1f5f9;
+            line-height: 1.6;
+            min-height: 100vh;
+            color: #334155;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #2563eb 100%);
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .hospital-info h1 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .hospital-info p {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-logout:hover {
+            background: rgba(220, 38, 38, 1);
+            transform: translateY(-1px);
+        }
+
+        /* Cloud Status Indicator */
+        .cloud-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            font-size: 0.875rem;
+        }
+
+        .cloud-status.connected {
+            border-left: 4px solid #10b981;
+        }
+
+        .cloud-status.disconnected {
+            border-left: 4px solid #ef4444;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .auth-tab.active {
+            color: #059669;
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #059669;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+            min-height: calc(100vh - 100px);
+        }
+
+        .welcome-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+        }
+
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        /* Request Form Card */
+        .request-form-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .form-title {
+            flex: 1;
+        }
+
+        .form-title h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-title p {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Priority badges */
+        .priority-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .priority-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-option:hover {
+            border-color: #059669;
+            background: #f0fdf4;
+        }
+
+        .priority-option.selected {
+            border-color: #059669;
+            background: #ecfdf5;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .priority-critica {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .priority-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .priority-media {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .priority-baja {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Success Message */
+        .success-container {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .priority-options {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #059669;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Cloud Status Indicator -->
+    <div id="cloud-status" class="cloud-status disconnected">
+        <span id="cloud-icon">🔄</span>
+        <span id="cloud-text">Conectando...</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-img">🏥</div>
+                    <div class="hospital-info">
+                        <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
+                        <p>Portal de Solicitudes de Mantenimiento - Sistema Cloud</p>
+                    </div>
+                </div>
+                <div class="user-actions" id="user-actions" style="display: none;">
+                    <div class="user-info">
+                        <span id="user-name">Usuario</span>
+                    </div>
+                    <button class="btn-logout" onclick="logout()">
+                        🚪 Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="auth-modal show">
+        <div class="auth-content">
+            <div class="auth-header">
+                <h2 class="auth-title">🏥 Portal de Solicitudes</h2>
+                <p class="auth-subtitle">Hospital Susana López de Valencia</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')" data-tab="login">
+                    🔐 Iniciar Sesión
+                </button>
+                <button class="auth-tab" onclick="showAuthTab('request')" data-tab="request">
+                    📝 Solicitar Acceso
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <form onsubmit="handleLoginCloud(event)">
+                    <div id="login-alert"></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">📧 Email</label>
+                        <input type="email" id="login-email" class="form-input" required 
+                               placeholder="correo@hospital.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">🔑 Código de Acceso</label>
+                        <input type="text" id="login-code" class="form-input" required 
+                               placeholder="Código de 4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="login-btn">
+                        🚀 Ingresar al Sistema
+                    </button>
+                </form>
+
+                <div class="alert alert-info" style="margin-top: 1rem;">
+                    <strong>ℹ️ Sistema Cloud Protegido</strong><br>
+                    • Necesitas un código de acceso aprobado<br>
+                    • Si no tienes código, solicita acceso<br>
+                    • Sistema sincronizado con Airtable
+                </div>
+            </div>
+
+            <!-- Request Access Form -->
+            <div id="request-form" class="auth-form" style="display: none;">
+                <form onsubmit="handleAccessRequestCloud(event)">
+                    <div id="request-alert"></div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">👤 Nombre Completo *</label>
+                        <input type="text" id="req-name" class="form-input" required 
+                               placeholder="Nombres y apellidos completos">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">📧 Email *</label>
+                        <input type="email" id="req-email" class="form-input" required 
+                               placeholder="correo@hospital.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">📱 Teléfono</label>
+                        <input type="tel" id="req-phone" class="form-input" 
+                               placeholder="Número de contacto">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">🏥 Servicio Hospitalario *</label>
+                        <select id="req-service" class="form-select" required>
+                            <option value="">Seleccione su servicio</option>
+                            <option value="URGENCIAS">Urgencias</option>
+                            <option value="UCI">UCI</option>
+                            <option value="HOSPITALIZACION">Hospitalización</option>
+                            <option value="CIRUGIA">Cirugía</option>
+                            <option value="CONSULTA_EXTERNA">Consulta Externa</option>
+                            <option value="IMAGENOLOGIA">Imagenología</option>
+                            <option value="LABORATORIO">Laboratorio</option>
+                            <option value="FARMACIA">Farmacia</option>
+                            <option value="ADMINISTRATIVO">Administrativo</option>
+                            <option value="MANTENIMIENTO">Mantenimiento</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">💼 Cargo *</label>
+                        <select id="req-position" class="form-select" required>
+                            <option value="">Seleccione su cargo</option>
+                            <option value="MEDICO">Médico</option>
+                            <option value="ENFERMERO">Enfermero/a</option>
+                            <option value="AUXILIAR_ENFERMERIA">Auxiliar de Enfermería</option>
+                            <option value="ADMINISTRATIVO">Administrativo</option>
+                            <option value="TECNICO">Técnico</option>
+                            <option value="SERVICIOS_GENERALES">Servicios Generales</option>
+                            <option value="DIRECTIVO">Directivo</option>
+                            <option value="OTRO">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">📝 Justificación</label>
+                        <textarea id="req-justification" class="form-textarea" 
+                                  placeholder="¿Por qué necesita acceso al sistema? (opcional)"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="request-btn">
+                        📤 Enviar Solicitud
+                    </button>
+                </form>
+
+                <div class="alert alert-info" style="margin-top: 1rem;">
+                    <strong>📋 Proceso de Aprobación</strong><br>
+                    • Tu solicitud será revisada por el administrador<br>
+                    • Recibirás un código de 4 dígitos único<br>
+                    • Sistema protegido contra errores 422<br>
+                    • Sin campo solicitudId - Usa ID de Airtable
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden until login) -->
+    <main class="main-content container" id="main-content" style="display: none;">
+        <div class="welcome-section">
+            <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
+            <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento conectado a la nube</p>
+        </div>
+
+        <!-- Request Form -->
+        <div class="request-form-card">
+            <div class="form-header">
+                <div class="form-icon">🔧</div>
+                <div class="form-title">
+                    <h2>Nueva Solicitud de Mantenimiento</h2>
+                    <p>Complete el formulario para reportar un problema o solicitar mantenimiento</p>
+                </div>
+            </div>
+
+            <form id="maintenance-form" onsubmit="handleMaintenanceRequest(event)">
+                <div id="form-alert"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">🏥 Área de Ingeniería *</label>
+                        <select id="area" class="form-select" required>
+                            <option value="">Seleccione el área</option>
+                            <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
+                            <option value="MECANICA">⚙️ Mecánica</option>
+                            <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🔨 Tipo de Servicio *</label>
+                        <select id="tipo-servicio" class="form-select" required>
+                            <option value="">Seleccione el tipo</option>
+                            <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
+                            <option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
+                            <option value="REPARACION">Reparación</option>
+                            <option value="INSTALACION">Instalación</option>
+                            <option value="CALIBRACION">Calibración</option>
+                            <option value="INSPECCION">Inspección</option>
+                            <option value="ACTUALIZACION">Actualización</option>
+                            <option value="EMERGENCIA">Emergencia</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🖥️ Equipo o Sistema *</label>
+                        <input type="text" id="equipo" class="form-input" required 
+                               placeholder="Ej: Ventilador mecánico, Aire acondicionado, etc.">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📍 Ubicación *</label>
+                        <input type="text" id="ubicacion" class="form-input" required 
+                               placeholder="Ej: UCI 3er piso, Quirófano 2, etc.">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">⚡ Prioridad *</label>
+                    <div class="priority-options">
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="CRITICA" required>
+                            <span class="priority-badge priority-critica">🚨 CRÍTICA</span>
+                            <span>Afecta servicios vitales</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="ALTA" required>
+                            <span class="priority-badge priority-alta">🔴 ALTA</span>
+                            <span>Requiere atención pronta</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="MEDIA" required checked>
+                            <span class="priority-badge priority-media">🟡 MEDIA</span>
+                            <span>Atención normal</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="BAJA" required>
+                            <span class="priority-badge priority-baja">🟢 BAJA</span>
+                            <span>Puede programarse</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📝 Descripción del Problema *</label>
+                    <textarea id="descripcion" class="form-textarea" required 
+                              placeholder="Describa detalladamente el problema o solicitud"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📋 Observaciones Adicionales</label>
+                    <textarea id="observaciones" class="form-textarea" 
+                              placeholder="Información adicional que pueda ser útil (opcional)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        📤 Enviar Solicitud
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                        🔄 Limpiar Formulario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Include Airtable config -->
+    <script src="airtable-config.js"></script>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let isCloudConnected = false;
+        const serviciosHospitalarios = {
+            'URGENCIAS': 'Urgencias',
+            'UCI': 'UCI',
+            'HOSPITALIZACION': 'Hospitalización',
+            'CIRUGIA': 'Cirugía',
+            'CONSULTA_EXTERNA': 'Consulta Externa',
+            'IMAGENOLOGIA': 'Imagenología',
+            'LABORATORIO': 'Laboratorio',
+            'FARMACIA': 'Farmacia',
+            'ADMINISTRATIVO': 'Administrativo',
+            'MANTENIMIENTO': 'Mantenimiento'
+        };
+
+        // Inicializar al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
+            console.log('📋 Sistema con área biomédica corregida y sin campo solicitudId');
+            
+            // Verificar sesión
+            checkSession();
+            
+            // Listener para prioridades
+            document.querySelectorAll('.priority-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Conectar con Airtable después de un breve delay
+            setTimeout(() => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    monitorCloudConnection();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateCloudStatus('disconnected');
+                }
+            }, 1000);
+        });
+
+        // Monitor de conexión cloud
+        function monitorCloudConnection() {
+            // Listener para cambios de conexión
+            window.addEventListener('airtableConnectionUpdate', function(event) {
+                console.log('🔄 Estado de conexión actualizado:', event.detail);
+                isCloudConnected = event.detail.connected;
+                updateCloudStatus(event.detail.connected ? 'connected' : 'disconnected');
+            });
+            
+            // Check inicial
+            if (window.airtableAPI) {
+                const status = window.airtableAPI.getStatus();
+                isCloudConnected = status.isConnected;
+                updateCloudStatus(isCloudConnected ? 'connected' : 'disconnected');
+            }
+        }
+
+        function updateCloudStatus(status) {
+            const statusDiv = document.getElementById('cloud-status');
+            const iconSpan = document.getElementById('cloud-icon');
+            const textSpan = document.getElementById('cloud-text');
+            
+            statusDiv.className = `cloud-status ${status}`;
+            
+            if (status === 'connected') {
+                iconSpan.textContent = '☁️';
+                textSpan.textContent = 'Conectado a Airtable';
+            } else {
+                iconSpan.textContent = '📴';
+                textSpan.textContent = 'Sin conexión (Modo local)';
+            }
+        }
+
+        // Gestión de pestañas de autenticación
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
+        }
+
+        // Verificar sesión
+        function checkSession() {
+            const savedUser = localStorage.getItem('hospital_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainContent();
+            }
+        }
+
+        // Login con validación cloud
+        async function handleLoginCloud(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+            const alertDiv = document.getElementById('login-alert');
+            const loginBtn = document.getElementById('login-btn');
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '⏳ Verificando...';
+            
+            try {
+                let validationResult;
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    // Validación en la nube
+                    console.log('🌐 Validando credenciales en Airtable...');
+                    validationResult = await window.airtableAPI.validateUserCredentials(email, code);
+                } else {
+                    // Validación local como fallback
+                    console.log('📱 Validando credenciales localmente...');
+                    validationResult = validateLocalCredentials(email, code);
+                }
+                
+                if (validationResult.valid) {
+                    currentUser = validationResult.user;
+                    localStorage.setItem('hospital_user', JSON.stringify(currentUser));
+                    showAlert(alertDiv, 'success', '✅ ¡Bienvenido al sistema!');
+                    
+                    setTimeout(() => {
+                        showMainContent();
+                    }, 1000);
+                } else {
+                    showAlert(alertDiv, 'error', `❌ ${validationResult.error || 'Credenciales inválidas'}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en login:', error);
+                showAlert(alertDiv, 'error', '❌ Error al verificar credenciales. Intente nuevamente.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '🚀 Ingresar al Sistema';
+            }
+        }
+
+        function validateLocalCredentials(email, code) {
+            const approvedUsers = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
+            const user = approvedUsers.find(u => u.email === email && u.codigoAcceso === code);
+            
+            if (user) {
+                return { valid: true, user: user };
+            } else {
+                return { valid: false, error: 'Credenciales inválidas' };
+            }
+        }
+
+        // CORRECCIÓN CRÍTICA: Solicitud de acceso sin campo solicitudId
+        async function handleAccessRequestCloud(e) {
+            e.preventDefault();
+            
+            console.log('🔍 Procesando solicitud de acceso cloud protegido...');
+            
+            const formData = {
+                // CORRECCIÓN: No incluir id, Airtable generará uno automáticamente
+                nombreCompleto: document.getElementById('req-name').value.trim(),
+                email: document.getElementById('req-email').value.trim(),
+                telefono: document.getElementById('req-phone').value.trim(),
+                servicioHospitalario: document.getElementById('req-service').value,
+                cargo: document.getElementById('req-position').value,
+                justificacion: document.getElementById('req-justification').value.trim() || 'Solicitud de acceso al Portal de Solicitudes',
+                fechaSolicitud: new Date().toISOString(),
+                estado: 'PENDIENTE',
+                esUrgente: false
+            };
+            
+            const alertDiv = document.getElementById('request-alert');
+            const requestBtn = document.getElementById('request-btn');
+            
+            if (!formData.nombreCompleto || !formData.email || !formData.servicioHospitalario || !formData.cargo) {
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
+                return;
+            }
+            
+            requestBtn.disabled = true;
+            requestBtn.innerHTML = '⏳ Enviando a Airtable protegido...';
+            
+            try {
+                if (window.airtableAPI && isCloudConnected) {
+                    await window.airtableAPI.createSolicitudAcceso(formData);
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud enviada exitosamente sin errores\n\n` +
+                        `📋 DATOS ENVIADOS:\n` +
+                        `• Nombre: ${formData.nombreCompleto}\n` +
+                        `• Email: ${formData.email}\n` +
+                        `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `🛡️ SISTEMA PROTEGIDO:\n` +
+                        `1. Su solicitud fue guardada sin errores 422\n` +
+                        `2. Está visible en el Portal de Gestión\n` +
+                        `3. El administrador la revisará y aprobará\n` +
+                        `4. Recibirá un código de 4 dígitos único\n` +
+                        `5. Podrá ingresar con email + código\n\n` +
+                        `⏰ Tiempo estimado: 24-48 horas laborales`
+                    );
+                } else {
+                    const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
+                    existingRequests.push(formData);
+                    localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
+                    
+                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente con protección. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                }
+                
+                // CORRECCIÓN: Resetear el formulario correctamente
+                const formElement = document.querySelector('#request-form form');
+                if (formElement) {
+                    formElement.reset();
+                }
+                
+                setTimeout(() => {
+                    showAuthTab('login');
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error enviando solicitud:', error);
+                showAlert(alertDiv, 'error', '❌ Error al enviar la solicitud: ' + error.message);
+            } finally {
+                requestBtn.disabled = false;
+                requestBtn.innerHTML = '📤 Enviar Solicitud';
+            }
+        }
+
+        // Mostrar contenido principal
+        function showMainContent() {
+            document.getElementById('auth-modal').classList.remove('show');
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('user-actions').style.display = 'flex';
+            document.getElementById('user-name').textContent = currentUser.nombreCompleto || currentUser.email;
+            document.getElementById('welcome-user').textContent = currentUser.nombreCompleto || currentUser.email;
+        }
+
+        // Cerrar sesión
+        function logout() {
+            if (confirm('¿Está seguro que desea cerrar sesión?')) {
+                localStorage.removeItem('hospital_user');
+                currentUser = null;
+                location.reload();
+            }
+        }
+
+        // Manejar solicitud de mantenimiento - CORREGIDO PARA ÁREA BIOMÉDICA
+        async function handleMaintenanceRequest(e) {
+            e.preventDefault();
+            
+            const formData = {
+                servicioIngenieria: document.getElementById('area').value,
+                tipoServicio: document.getElementById('tipo-servicio').value,
+                equipo: document.getElementById('equipo').value.trim(),
+                ubicacion: document.getElementById('ubicacion').value.trim(),
+                prioridad: document.querySelector('input[name="prioridad"]:checked').value,
+                descripcion: document.getElementById('descripcion').value.trim(),
+                observaciones: document.getElementById('observaciones').value.trim(),
+                // Datos del solicitante
+                solicitante: currentUser.nombreCompleto || currentUser.email,
+                servicioHospitalario: currentUser.servicioHospitalario || 'NO_ESPECIFICADO',
+                emailSolicitante: currentUser.email
+            };
+            
+            console.log('📋 Datos de solicitud con área corregida:', formData);
+            
+            const alertDiv = document.getElementById('form-alert');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '⏳ Enviando...';
+            
+            try {
+                let result;
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    console.log('☁️ Enviando a Airtable con área biomédica corregida...');
+                    result = await window.airtableAPI.createSolicitud(formData);
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud enviada exitosamente a Airtable\n\n` +
+                        `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
+                        `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
+                        `📍 Ubicación: ${formData.ubicacion}\n` +
+                        `⚡ Prioridad: ${formData.prioridad}\n\n` +
+                        `🌐 Su solicitud está visible en el Portal de Gestión\n` +
+                        `⏱️ Tiempo estimado de respuesta según prioridad\n` +
+                        `🔄 Sistema con asignación automática de personal`
+                    );
+                } else {
+                    console.log('💾 Guardando localmente...');
+                    const localRequest = {
+                        ...formData,
+                        id: `LOCAL-${Date.now()}`,
+                        numero: `TEMP-${Date.now().toString().slice(-6)}`,
+                        fechaCreacion: new Date().toISOString(),
+                        estado: 'PENDIENTE'
+                    };
+                    
+                    const existingRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+                    existingRequests.push(localRequest);
+                    localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud guardada localmente (Modo sin conexión)\n\n` +
+                        `📋 Número temporal: ${localRequest.numero}\n` +
+                        `🔄 Se sincronizará cuando se restablezca la conexión`
+                    );
+                }
+                
+                // Limpiar formulario después de éxito
+                setTimeout(() => {
+                    document.getElementById('maintenance-form').reset();
+                    document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error enviando solicitud:', error);
+                showAlert(alertDiv, 'error', 
+                    `❌ Error al enviar la solicitud\n\n` +
+                    `${error.message}\n\n` +
+                    `Por favor intente nuevamente o contacte al administrador.`
+                );
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '📤 Enviar Solicitud';
+            }
+        }
+
+        // Helper para mostrar nombre de área
+        function getAreaDisplayName(area) {
+            const areaNames = {
+                'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
+                'MECANICA': '⚙️ Mecánica',
+                'INFRAESTRUCTURA': '🏗️ Infraestructura'
+            };
+            return areaNames[area] || area;
+        }
+
+        // Resetear formulario
+        function resetForm() {
+            if (confirm('¿Está seguro que desea limpiar el formulario?')) {
+                document.getElementById('maintenance-form').reset();
+                document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                document.getElementById('form-alert').innerHTML = '';
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(alertDiv, type, message) {
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message.replace(/\n/g, '<br>');
+            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    </script>
+</body>
+</html>
