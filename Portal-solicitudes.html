@@ -999,12 +999,16 @@
             }
         }
 
-        // Manejar solicitud de mantenimiento - CORREGIDO PARA ÁREA BIOMÉDICA
+        // CORRECCIÓN CRÍTICA: Manejar solicitud de mantenimiento con área correcta
         async function handleMaintenanceRequest(e) {
             e.preventDefault();
             
+            // CORRECCIÓN: Obtener el valor del área directamente
+            const areaValue = document.getElementById('area').value;
+            console.log('📋 Área seleccionada:', areaValue);
+            
             const formData = {
-                servicioIngenieria: document.getElementById('area').value,
+                servicioIngenieria: areaValue, // IMPORTANTE: Usar el valor tal como está
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 equipo: document.getElementById('equipo').value.trim(),
                 ubicacion: document.getElementById('ubicacion').value.trim(),
@@ -1017,10 +1021,16 @@
                 emailSolicitante: currentUser.email
             };
             
-            console.log('📋 Datos de solicitud con área corregida:', formData);
+            console.log('📋 Datos de solicitud completos:', formData);
             
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-btn');
+            
+            // Validación crítica del área
+            if (!formData.servicioIngenieria) {
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
+                return;
+            }
             
             submitBtn.disabled = true;
             submitBtn.innerHTML = '⏳ Enviando...';
@@ -1029,7 +1039,7 @@
                 let result;
                 
                 if (window.airtableAPI && isCloudConnected) {
-                    console.log('☁️ Enviando a Airtable con área biomédica corregida...');
+                    console.log('☁️ Enviando a Airtable con área:', formData.servicioIngenieria);
                     result = await window.airtableAPI.createSolicitud(formData);
                     
                     showAlert(alertDiv, 'success', 
