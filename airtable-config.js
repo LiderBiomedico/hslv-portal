@@ -404,7 +404,7 @@ class AirtableAPI {
         console.log('🔍 Detectando valores válidos para tabla Solicitudes...');
         
         try {
-            const result = await this.makeRequest(`${this.tables.solicitudes}?maxRecords=10`);
+            const result = await this.makeRequest(`${this.tables.solicitudes}?maxRecords=20`);
             
             if (result.records && result.records.length > 0) {
                 const servicioValues = new Set();
@@ -422,6 +422,7 @@ class AirtableAPI {
                         
                         if (record.fields.servicioIngenieria) {
                             servicioValues.add(record.fields.servicioIngenieria);
+                            console.log(`📋 Área detectada: "${record.fields.servicioIngenieria}"`);
                         }
                         if (record.fields.tipoServicio) {
                             tipoServicioValues.add(record.fields.tipoServicio);
@@ -451,6 +452,16 @@ class AirtableAPI {
                     campos: this.validSolicitudValues.availableFields
                 });
                 
+                // Si no hay valores de servicioIngenieria, intentar con valores conocidos
+                if (this.validSolicitudValues.servicioIngenieria.length === 0) {
+                    console.warn('⚠️ No se detectaron valores de servicioIngenieria, usando valores por defecto');
+                    this.validSolicitudValues.servicioIngenieria = [
+                        'Ingeniería Biomédica',
+                        'Mecánica',
+                        'Infraestructura'
+                    ];
+                }
+                
             } else {
                 console.warn('⚠️ No hay registros en Solicitudes para detectar valores');
                 // Intentar con valores por defecto conocidos
@@ -459,6 +470,12 @@ class AirtableAPI {
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos de solicitudes:', error);
+            // Usar valores por defecto en caso de error
+            this.validSolicitudValues.servicioIngenieria = [
+                'Ingeniería Biomédica',
+                'Mecánica', 
+                'Infraestructura'
+            ];
         }
     }
 
@@ -1186,12 +1203,37 @@ class AirtableAPI {
     async createSolicitud(solicitudData) {
         console.log('📝 Creando solicitud con detección automática...');
         console.log('🔍 Datos recibidos:', solicitudData);
+        console.log('🏥 ÁREA RECIBIDA:', solicitudData.servicioIngenieria);
         
         try {
             // Detectar valores válidos si no se han detectado
             if (!this.validSolicitudValues.servicioIngenieria || 
                 this.validSolicitudValues.servicioIngenieria.length === 0) {
                 await this.detectValidSolicitudValues();
+            }
+            
+            // CRÍTICO: Mapear el área correctamente
+            let areaParaGuardar = solicitudData.servicioIngenieria;
+            
+            // Si tenemos el mapeo, aplicarlo
+            if (this.fieldMappings.servicioIngenieria && this.fieldMappings.servicioIngenieria[areaParaGuardar]) {
+                areaParaGuardar = this.fieldMappings.servicioIngenieria[areaParaGuardar];
+                console.log(`🗺️ ÁREA MAPEADA: ${solicitudData.servicioIngenieria} → ${areaParaGuardar}`);
+            }
+            
+            // Verificar si el valor mapeado está en los valores válidos detectados
+            if (this.validSolicitudValues.servicioIngenieria.length > 0) {
+                const areaValida = this.validSolicitudValues.servicioIngenieria.find(v => 
+                    v === areaParaGuardar || v.toLowerCase() === areaParaGuardar.toLowerCase()
+                );
+                
+                if (areaValida) {
+                    areaParaGuardar = areaValida;
+                    console.log(`✅ ÁREA VÁLIDA CONFIRMADA: ${areaParaGuardar}`);
+                } else {
+                    console.warn(`⚠️ ÁREA NO ENCONTRADA EN VALORES VÁLIDOS`);
+                    console.log('📋 Valores válidos disponibles:', this.validSolicitudValues.servicioIngenieria);
+                }
             }
             
             // Función helper para encontrar valor válido
@@ -1246,7 +1288,7 @@ class AirtableAPI {
                 descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
                 estado: findValidValue('estado', 'PENDIENTE'),
                 fechaCreacion: new Date().toISOString(),
-                servicioIngenieria: findValidValue('servicioIngenieria', solicitudData.servicioIngenieria),
+                servicioIngenieria: areaParaGuardar, // USAR EL ÁREA MAPEADA
                 tipoServicio: findValidValue('tipoServicio', solicitudData.tipoServicio),
                 prioridad: findValidValue('prioridad', solicitudData.prioridad),
                 equipo: solicitudData.equipo,
@@ -1257,6 +1299,13 @@ class AirtableAPI {
                 emailSolicitante: solicitudData.emailSolicitante,
                 tiempoRespuestaMaximo: this.calculateMaxResponseTime(solicitudData.prioridad || 'MEDIA')
             };
+            
+            // CRÍTICO: Verificar que el área no sea undefined o null
+            if (!rawData.servicioIngenieria) {
+                console.error('❌ ERROR CRÍTICO: servicioIngenieria es undefined o null');
+                console.error('Datos originales:', solicitudData);
+                throw new Error('El área de ingeniería es requerida');
+            }
             
             // Limpiar campos undefined o null
             const cleanData = {};
@@ -1272,10 +1321,21 @@ class AirtableAPI {
             };
             
             console.log('📝 Datos finales a enviar (con valores detectados):', JSON.stringify(data, null, 2));
+            console.log('🏥 ÁREA FINAL A GUARDAR:', data.fields.servicioIngenieria);
             
             try {
                 const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
                 console.log(`✅ Solicitud creada correctamente: ${numero}`);
+                console.log(`🏥 Área guardada: ${data.fields.servicioIngenieria}`);
+                
+                // Verificar que el área se guardó
+                if (result.fields && result.fields.servicioIngenieria) {
+                    console.log(`✅ ÁREA CONFIRMADA EN RESPUESTA: ${result.fields.servicioIngenieria}`);
+                } else {
+                    console.warn(`⚠️ ÁREA NO CONFIRMADA EN RESPUESTA`);
+                    console.log('Respuesta completa:', result);
+                }
+                
                 return result;
                 
             } catch (error) {
@@ -1284,7 +1344,7 @@ class AirtableAPI {
                     console.error('📋 Valores detectados disponibles:', this.validSolicitudValues);
                     console.error('📝 Datos que se intentaron enviar:', data);
                     
-                    // Intentar crear con campos mínimos
+                    // Intentar crear con campos mínimos pero incluyendo el área
                     console.log('🔄 Reintentando con campos mínimos...');
                     return await this.createSolicitudMinimal(solicitudData, numero);
                 }
@@ -1301,13 +1361,22 @@ class AirtableAPI {
     // Método fallback para crear solicitud con campos mínimos
     async createSolicitudMinimal(solicitudData, numero) {
         console.log('🔄 Creando solicitud con campos mínimos...');
+        console.log('🏥 ÁREA ORIGINAL:', solicitudData.servicioIngenieria);
         
         try {
+            // CRÍTICO: Intentar mapear el área incluso en modo mínimo
+            let areaParaGuardar = solicitudData.servicioIngenieria;
+            if (this.fieldMappings.servicioIngenieria && this.fieldMappings.servicioIngenieria[areaParaGuardar]) {
+                areaParaGuardar = this.fieldMappings.servicioIngenieria[areaParaGuardar];
+                console.log(`🗺️ ÁREA MAPEADA (modo mínimo): ${solicitudData.servicioIngenieria} → ${areaParaGuardar}`);
+            }
+            
             const minimalData = {
                 fields: {
                     numero: numero,
                     descripcion: this.cleanFieldValue(solicitudData.descripcion || 'Solicitud de mantenimiento'),
-                    fechaCreacion: new Date().toISOString()
+                    fechaCreacion: new Date().toISOString(),
+                    servicioIngenieria: areaParaGuardar // INCLUIR EL ÁREA MAPEADA
                 }
             };
             
@@ -1319,7 +1388,6 @@ class AirtableAPI {
             // Intentar agregar más campos uno por uno
             const fieldsToAdd = {
                 estado: 'PENDIENTE',
-                servicioIngenieria: solicitudData.servicioIngenieria,
                 tipoServicio: solicitudData.tipoServicio,
                 prioridad: solicitudData.prioridad,
                 equipo: solicitudData.equipo,
@@ -1917,6 +1985,103 @@ class AirtableAPI {
         }
     }
 
+    // 🔍 NUEVO: Diagnóstico específico para problema de área
+    async debugAreaProblem() {
+        console.log('🔍 DIAGNÓSTICO ESPECÍFICO: PROBLEMA DE ÁREA');
+        console.log('==========================================');
+        
+        try {
+            // 1. Detectar valores válidos
+            await this.detectValidSolicitudValues();
+            
+            console.log('📋 Valores de área detectados:', this.validSolicitudValues.servicioIngenieria);
+            console.log('🗺️ Mapeo configurado:', this.fieldMappings.servicioIngenieria);
+            
+            // 2. Obtener algunas solicitudes recientes
+            const solicitudes = await this.getSolicitudes();
+            const solicitudesRecientes = solicitudes.slice(0, 5);
+            
+            console.log('\n📋 SOLICITUDES RECIENTES:');
+            solicitudesRecientes.forEach(sol => {
+                console.log(`- ${sol.numero}: Área = "${sol.servicioIngenieria}" (${sol.servicioIngenieria ? '✅' : '❌ SIN ÁREA'})`);
+            });
+            
+            // 3. Probar creación con cada valor de área
+            console.log('\n🧪 PROBANDO VALORES DE ÁREA:');
+            const testResults = {};
+            
+            const areasAPrubar = [
+                'INGENIERIA_BIOMEDICA',
+                'Ingeniería Biomédica',
+                'MECANICA',
+                'Mecánica',
+                'INFRAESTRUCTURA',
+                'Infraestructura'
+            ];
+            
+            for (const area of areasAPrubar) {
+                try {
+                    const testData = {
+                        fields: {
+                            numero: 'TEST_AREA_' + Date.now(),
+                            descripcion: 'Test de área',
+                            servicioIngenieria: area,
+                            fechaCreacion: new Date().toISOString()
+                        }
+                    };
+                    
+                    const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
+                    
+                    if (result && result.id) {
+                        console.log(`✅ "${area}" - VÁLIDO`);
+                        testResults[area] = 'VÁLIDO';
+                        
+                        // Verificar qué valor se guardó realmente
+                        const savedValue = result.fields ? result.fields.servicioIngenieria : 'No retornado';
+                        console.log(`   Valor guardado: "${savedValue}"`);
+                        
+                        // Eliminar registro de prueba
+                        try {
+                            await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'DELETE');
+                        } catch (deleteError) {
+                            console.warn('⚠️ No se pudo eliminar registro de prueba');
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.log(`❌ "${area}" - INVÁLIDO: ${error.message}`);
+                    testResults[area] = 'INVÁLIDO';
+                }
+            }
+            
+            // 4. Recomendaciones
+            const valoresValidos = Object.entries(testResults)
+                .filter(([area, result]) => result === 'VÁLIDO')
+                .map(([area]) => area);
+            
+            return {
+                diagnostico: {
+                    valoresDetectados: this.validSolicitudValues.servicioIngenieria,
+                    mapeoConfigurado: this.fieldMappings.servicioIngenieria,
+                    pruebasRealizadas: testResults,
+                    valoresValidos: valoresValidos,
+                    solicitudesSinArea: solicitudes.filter(s => !s.servicioIngenieria).length,
+                    totalSolicitudes: solicitudes.length
+                },
+                recomendaciones: [
+                    `Usar valores válidos: ${valoresValidos.join(', ')}`,
+                    'Verificar que el mapeo esté configurado correctamente',
+                    'Asegurar que el campo servicioIngenieria existe en Airtable',
+                    'Revisar permisos del campo en Airtable'
+                ]
+            };
+            
+        } catch (error) {
+            console.error('❌ Error en diagnóstico de área:', error);
+            return { error: error.message };
+        }
+    }
+
     getStatus() {
         return {
             isConnected: this.connectionStatus === 'connected',
@@ -2028,6 +2193,16 @@ try {
         return await window.airtableAPI.debugSolicitudValues();
     };
     
+    // NUEVA: Función para debug específico del problema de área
+    window.debugAreaProblem = async function() {
+        if (!window.airtableAPI) {
+            console.error('❌ window.airtableAPI no está disponible');
+            return { error: 'airtableAPI no disponible' };
+        }
+        
+        return await window.airtableAPI.debugAreaProblem();
+    };
+    
     console.log('✅ Funciones de debug creadas exitosamente');
 } catch (error) {
     console.error('❌ Error creando funciones de debug:', error);
@@ -2041,10 +2216,12 @@ console.log('🛡️ FIX: Eliminación de campos inexistentes');
 console.log('🧹 FIX: Limpieza mejorada de valores string');
 console.log('🛡️ FIX: Creación robusta con fallbacks');
 console.log('✅ FIX: Sistema completo sin errores 422');
+console.log('🏥 FIX: Problema de área - mapeo mejorado y diagnóstico');
 console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
 console.log('🔍 Para debug de accesos: debugAccessRequests()');
 console.log('👤 Para debug de aprobación: debugApprovalValues()');
 console.log('📋 Para debug de solicitudes: debugSolicitudValues()');
+console.log('🏥 Para debug de área: debugAreaProblem()');
 
 // Auto-verificación después de la carga
 setTimeout(async () => {
@@ -2064,6 +2241,11 @@ setTimeout(async () => {
             console.log('📋 Solicitudes de acceso:', accessValues.estado ? `Estado PENDIENTE: "${accessValues.estado}"` : 'Sin estado detectado');
             console.log('👤 Usuarios:', userValues.estado ? `Estado ACTIVO: "${userValues.estado}"` : 'Sin estado detectado');
             console.log('📋 Solicitudes:', solicitudValues.servicioIngenieria.length > 0 ? `${solicitudValues.servicioIngenieria.length} áreas detectadas` : 'Sin valores detectados');
+            
+            // Mostrar específicamente los valores de área detectados
+            if (solicitudValues.servicioIngenieria.length > 0) {
+                console.log('🏥 ÁREAS DETECTADAS:', solicitudValues.servicioIngenieria);
+            }
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);
