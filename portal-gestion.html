@@ -1691,15 +1691,17 @@
             const biomedica = cloudSolicitudes.filter(r => isBiomedicalArea(r.servicioIngenieria)).length;
             const mecanica = cloudSolicitudes.filter(r => 
                 r.servicioIngenieria === 'MECANICA' || 
+                r.servicioIngenieria === 'Mecánica' ||
                 (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('mec'))
             ).length;
             const infraestructura = cloudSolicitudes.filter(r => 
                 r.servicioIngenieria === 'INFRAESTRUCTURA' || 
+                r.servicioIngenieria === 'Infraestructura' ||
                 (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('infra'))
             ).length;
             
-            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || !r.tecnicoAsignado).length;
-            const asignadas = cloudSolicitudes.filter(r => r.estado === 'ASIGNADA').length;
+            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || r.estado === 'Pendiente' || !r.tecnicoAsignado).length;
+            const asignadas = cloudSolicitudes.filter(r => r.estado === 'ASIGNADA' || r.estado === 'Asignada').length;
 
             document.getElementById('metric-total').textContent = total;
             document.getElementById('metric-biomedica').textContent = biomedica;
@@ -1714,10 +1716,12 @@
             const biomedicaTecnicos = cloudTecnicos.filter(t => isBiomedicalArea(t.area)).length;
             const mecanicaTecnicos = cloudTecnicos.filter(t => 
                 t.area === 'MECANICA' || 
+                t.area === 'Mecánica' ||
                 (t.area && t.area.toLowerCase().includes('mec'))
             ).length;
             const infraestructuraTecnicos = cloudTecnicos.filter(t => 
                 t.area === 'INFRAESTRUCTURA' || 
+                t.area === 'Infraestructura' ||
                 (t.area && t.area.toLowerCase().includes('infra'))
             ).length;
 
@@ -1727,7 +1731,7 @@
             document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
 
             // Contadores de accesos
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado).length;
             document.getElementById('pending-access-count').textContent = pendingAccess;
             document.getElementById('notification-count').textContent = pendingAccess + pendientes;
 
@@ -1764,11 +1768,13 @@
                 } else if (area.key === 'MECANICA') {
                     personnel = cloudTecnicos.filter(t => 
                         t.area === 'MECANICA' || 
+                        t.area === 'Mecánica' ||
                         (t.area && t.area.toLowerCase().includes('mec'))
                     );
                 } else if (area.key === 'INFRAESTRUCTURA') {
                     personnel = cloudTecnicos.filter(t => 
                         t.area === 'INFRAESTRUCTURA' || 
+                        t.area === 'Infraestructura' ||
                         (t.area && t.area.toLowerCase().includes('infra'))
                     );
                 } else {
@@ -1891,7 +1897,7 @@
             } else {
                 const solicitudesSorted = [...filteredSolicitudes].sort((a, b) => {
                     // Ordenar por prioridad y fecha
-                    const prioridadOrder = { 'CRITICA': 4, 'ALTA': 3, 'MEDIA': 2, 'BAJA': 1 };
+                    const prioridadOrder = { 'CRITICA': 4, 'Crítica': 4, 'ALTA': 3, 'Alta': 3, 'MEDIA': 2, 'Media': 2, 'BAJA': 1, 'Baja': 1 };
                     const aPrio = prioridadOrder[a.prioridad] || 1;
                     const bPrio = prioridadOrder[b.prioridad] || 1;
                     
@@ -1926,35 +1932,41 @@
 
         function createSolicitudCard(solicitud) {
             const getStatusClass = (status) => {
+                const normalizedStatus = status ? status.toUpperCase() : 'PENDIENTE';
                 const statusMap = {
                     'PENDIENTE': 'pending',
                     'ASIGNADA': 'assigned',
                     'EN_PROCESO': 'in-progress',
+                    'EN PROCESO': 'in-progress',
                     'COMPLETADA': 'completed',
                     'CANCELADA': 'cancelled'
                 };
-                return statusMap[status] || 'pending';
+                return statusMap[normalizedStatus] || 'pending';
             };
 
             const getStatusBadge = (status) => {
+                const normalizedStatus = status ? status.toUpperCase() : 'PENDIENTE';
                 const badges = {
                     'PENDIENTE': 'status-pendiente',
                     'ASIGNADA': 'status-asignada',
                     'EN_PROCESO': 'status-en-proceso',
+                    'EN PROCESO': 'status-en-proceso',
                     'COMPLETADA': 'status-completada',
                     'CANCELADA': 'status-cancelada'
                 };
-                return badges[status] || 'status-pendiente';
+                return badges[normalizedStatus] || 'status-pendiente';
             };
 
             const getPriorityBadge = (priority) => {
+                const normalizedPriority = priority ? priority.toUpperCase() : 'MEDIA';
                 const badges = {
                     'CRITICA': 'priority-critica',
+                    'CRÍTICA': 'priority-critica',
                     'ALTA': 'priority-alta',
                     'MEDIA': 'priority-media',
                     'BAJA': 'priority-baja'
                 };
-                return badges[priority] || 'priority-media';
+                return badges[normalizedPriority] || 'priority-media';
             };
 
             const getAreaBadge = (area) => {
@@ -1967,9 +1979,9 @@
                     lowerArea.includes('biomed') || 
                     lowerArea.includes('bioméd')) {
                     return 'badge-biomedica';
-                } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                } else if (area === 'MECANICA' || area === 'Mecánica' || lowerArea.includes('mec')) {
                     return 'badge-mecanica';
-                } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                     return 'badge-infraestructura';
                 }
                 
@@ -1986,9 +1998,9 @@
                     lowerArea.includes('biomed') || 
                     lowerArea.includes('bioméd')) {
                     return '🏥 Biomédica';
-                } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+                } else if (area === 'MECANICA' || area === 'Mecánica' || lowerArea.includes('mec')) {
                     return '⚙️ Mecánica';
-                } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+                } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                     return '🏗️ Infraestructura';
                 }
                 
@@ -2006,7 +2018,8 @@
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
 
-            if (solicitud.tiempoRespuestaMaximo && solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'CANCELADA') {
+            const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
+            if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
                 if (ahora > fechaMaxima) {
                     timeIndicatorClass = 'overdue';
@@ -2087,13 +2100,14 @@
                     </div>
 
                     <div class="request-actions">
-                        ${solicitud.estado === 'PENDIENTE' || !solicitud.tecnicoAsignado ? `
+                        ${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
                             <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
                                 🎯 Asignar Personal
                             </button>
                         ` : ''}
                         
-                        ${solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'CANCELADA' ? `
+                        ${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
+                           solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
                             <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
                                 🔄 Cambiar Estado
                             </button>
@@ -2103,7 +2117,8 @@
                             👁️ Ver Detalles
                         </button>
                         
-                        ${solicitud.tecnicoAsignado && solicitud.estado !== 'COMPLETADA' ? `
+                        ${solicitud.tecnicoAsignado && 
+                          solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
                             <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
                                 🔓 Liberar Personal
                             </button>
@@ -2128,104 +2143,16 @@
                 lowerArea.includes('biomed') || 
                 lowerArea.includes('bioméd')) {
                 return 'Ing. Biomédica';
-            } else if (area === 'MECANICA' || lowerArea.includes('mec')) {
+            } else if (area === 'MECANICA' || area === 'Mecánica' || lowerArea.includes('mec')) {
                 return 'Mecánica';
-            } else if (area === 'INFRAESTRUCTURA' || lowerArea.includes('infra')) {
+            } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                 return 'Infraestructura';
             }
             
             return area; // Devolver tal como viene si no coincide
         }
 
-        // CORRECCIÓN CRÍTICA: Función de aprobación con manejo correcto de IDs
-        async function approveAccessRequest(requestId) {
-            console.log('✅ Iniciando aprobación de solicitud con ID de Airtable:', requestId);
-            
-            try {
-                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
-                if (!solicitud) {
-                    console.error('❌ Solicitud no encontrada con ID de Airtable:', requestId);
-                    console.error('🔍 Solicitudes disponibles:', cloudSolicitudesAcceso.map(s => ({ 
-                        id: s.id, 
-                        email: s.email 
-                    })));
-                    alert(`❌ Error: Solicitud no encontrada con ID: ${requestId}`);
-                    return;
-                }
-
-                showApprovalModal(solicitud);
-
-            } catch (error) {
-                console.error('❌ Error iniciando aprobación:', error);
-                alert('❌ Error al procesar la solicitud: ' + error.message);
-            }
-        }
-
-        // 🎯 Otras funciones existentes
-        function showView(viewName) {
-            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
-            document.getElementById(viewName + '-view').classList.remove('hidden');
-            
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-            
-            switch(viewName) {
-                case 'solicitudes':
-                    updateSolicitudesList();
-                    break;
-                case 'personal':
-                    updateTechniciansList();
-                    break;
-                case 'accesos':
-                    updateAccessRequestsList();
-                    break;
-            }
-        }
-
-        function showNotifications() {
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length;
-            const pendingSolicitudes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado).length;
-            
-            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
-        }
-
-        function filterByArea(area) {
-            console.log('Filtrar por área:', area);
-        }
-
-        function filterByStatus(status) {
-            console.log('Filtrar por estado:', status);
-        }
-
-        // 🚀 Inicialización
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (ÁREA BIOMÉDICA + Sin solicitudId + AUTO-REFRESH)');
-            
-            document.addEventListener('click', function(e) {
-                if (e.target.classList.contains('modal')) {
-                    e.target.classList.remove('show');
-                }
-            });
-            
-            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
-            
-            setTimeout(async () => {
-                if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
-                    await loadAllDataFromCloud();
-                    
-                    // Iniciar auto-refresh después de la carga inicial
-                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
-                    startAutoRefresh();
-                } else {
-                    console.error('❌ No se pudo cargar airtable-config.js');
-                    updateConnectionStatus('disconnected');
-                    loadDataFromLocalStorage();
-                }
-            }, 1000);
-        });
-
-        // 🎯 Funciones de asignación de personal - CORREGIDAS PARA ÁREA BIOMÉDICA
+        // 🎯 FUNCIÓN CRÍTICA CORREGIDA: showAssignPersonalModal con mejor detección de área
         async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
@@ -2236,44 +2163,120 @@
                     return;
                 }
 
-                // CORRECCIÓN: Obtener personal disponible con detección mejorada de área biomédica
+                console.log('📋 Solicitud encontrada:', {
+                    numero: solicitud.numero,
+                    area: solicitud.servicioIngenieria,
+                    prioridad: solicitud.prioridad
+                });
+
+                // CORRECCIÓN CRÍTICA: Normalización mejorada de áreas
+                const normalizarArea = (area) => {
+                    if (!area) return '';
+                    
+                    const areaStr = String(area).trim();
+                    const areaLower = areaStr.toLowerCase();
+                    
+                    // Mapeo completo de variaciones
+                    if (areaStr === 'INGENIERIA_BIOMEDICA' || 
+                        areaStr === 'Ingeniería Biomédica' ||
+                        areaLower === 'ingeniería biomédica' ||
+                        areaLower === 'ingenieria biomedica' ||
+                        areaLower.includes('biomed') || 
+                        areaLower.includes('bioméd')) {
+                        return 'BIOMEDICA';
+                    }
+                    
+                    if (areaStr === 'MECANICA' || 
+                        areaStr === 'Mecánica' ||
+                        areaLower === 'mecánica' ||
+                        areaLower === 'mecanica' ||
+                        areaLower.includes('mec')) {
+                        return 'MECANICA';
+                    }
+                    
+                    if (areaStr === 'INFRAESTRUCTURA' || 
+                        areaStr === 'Infraestructura' ||
+                        areaLower === 'infraestructura' ||
+                        areaLower.includes('infra')) {
+                        return 'INFRAESTRUCTURA';
+                    }
+                    
+                    return areaStr.toUpperCase();
+                };
+
+                const areaSolicitudNormalizada = normalizarArea(solicitud.servicioIngenieria);
+                console.log('🔍 Área de solicitud normalizada:', areaSolicitudNormalizada);
+
+                // Filtrar personal disponible con normalización
                 const personalDisponible = cloudTecnicos.filter(t => {
-                    if (t.estado !== 'disponible') return false;
+                    // Verificar disponibilidad
+                    if (t.estado !== 'disponible') {
+                        console.log(`❌ ${t.nombre} no disponible (estado: ${t.estado})`);
+                        return false;
+                    }
                     
-                    // Función helper para comparar áreas
-                    const normalizeBiomedArea = (area) => {
-                        if (!area) return area;
-                        const lowerArea = area.toLowerCase();
-                        if (area === 'INGENIERIA_BIOMEDICA' || 
-                            area === 'Ingeniería Biomédica' ||
-                            lowerArea.includes('biomed') || 
-                            lowerArea.includes('bioméd')) {
-                            return 'BIOMEDICA_NORMALIZED';
-                        }
-                        return area.toUpperCase();
-                    };
+                    // Normalizar área del técnico
+                    const areaTecnicoNormalizada = normalizarArea(t.area);
                     
-                    const solicitudAreaNorm = normalizeBiomedArea(solicitud.servicioIngenieria);
-                    const tecnicoAreaNorm = normalizeBiomedArea(t.area);
+                    // Comparar áreas normalizadas
+                    const coincide = areaSolicitudNormalizada === areaTecnicoNormalizada;
                     
-                    return solicitudAreaNorm === tecnicoAreaNorm;
+                    if (!coincide) {
+                        console.log(`❌ ${t.nombre} área no coincide: ${t.area} (${areaTecnicoNormalizada}) !== ${solicitud.servicioIngenieria} (${areaSolicitudNormalizada})`);
+                    } else {
+                        console.log(`✅ ${t.nombre} área coincide: ${t.area} (${areaTecnicoNormalizada})`);
+                    }
+                    
+                    return coincide;
+                });
+
+                console.log(`📊 Personal disponible encontrado: ${personalDisponible.length} técnicos`);
+                personalDisponible.forEach(p => {
+                    console.log(`  - ${p.nombre} (${p.tipo}) - Área: ${p.area}`);
                 });
 
                 const modal = document.getElementById('assignment-modal');
                 const content = document.getElementById('assignment-modal-content');
                 
                 if (personalDisponible.length === 0) {
+                    // Mostrar todo el personal del área para debug
+                    const personalDelArea = cloudTecnicos.filter(t => {
+                        const areaNorm = normalizarArea(t.area);
+                        return areaNorm === areaSolicitudNormalizada;
+                    });
+
+                    let debugInfo = '';
+                    if (personalDelArea.length > 0) {
+                        debugInfo = `
+                            <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                                <h5 style="color: #d97706; margin-bottom: 0.5rem;">📊 Personal del área ${getAreaName(solicitud.servicioIngenieria)} (${personalDelArea.length} total):</h5>
+                                ${personalDelArea.map(p => `
+                                    <div style="padding: 0.5rem; margin: 0.25rem 0; background: white; border-radius: 0.25rem;">
+                                        <strong>${p.nombre}</strong> - Estado: <span style="color: ${p.estado === 'disponible' ? '#059669' : '#ef4444'};">${p.estado}</span>
+                                        ${p.solicitudAsignada ? ` - Asignado a: ${p.solicitudAsignada}` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+
                     content.innerHTML = `
                         <div class="alert alert-warning">
                             <h4 style="margin-bottom: 0.5rem;">⚠️ No hay personal disponible</h4>
                             <p>No se encontró personal disponible en el área de <strong>${getAreaName(solicitud.servicioIngenieria)}</strong>.</p>
                             <p style="margin-top: 1rem;">
+                                <strong>Área solicitada:</strong> ${solicitud.servicioIngenieria}<br>
+                                <strong>Área normalizada:</strong> ${areaSolicitudNormalizada}
+                            </p>
+                            <p style="margin-top: 1rem;">
                                 <strong>Opciones:</strong><br>
                                 • Esperar a que se libere personal<br>
-                                • Asignar personal de otra área<br>
+                                • Verificar el estado del personal existente<br>
                                 • Agregar más personal al sistema
                             </p>
                         </div>
+                        
+                        ${debugInfo}
                         
                         <div style="text-align: center; margin-top: 1rem;">
                             <button class="btn btn-secondary" onclick="closeAssignmentModal()">
@@ -2281,6 +2284,9 @@
                             </button>
                             <button class="btn btn-primary" onclick="showAddPersonalModal()">
                                 ➕ Agregar Personal
+                            </button>
+                            <button class="btn btn-info" onclick="syncTechniciansWithCloud()">
+                                🔄 Actualizar Personal
                             </button>
                         </div>
                     `;
@@ -2290,7 +2296,7 @@
                             <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
                             <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
                                 <p><strong>Número:</strong> ${solicitud.numero}</p>
-                                <p><strong>Área:</strong> ${getAreaName(solicitud.servicioIngenieria)}</p>
+                                <p><strong>Área:</strong> ${getAreaName(solicitud.servicioIngenieria)} (${solicitud.servicioIngenieria})</p>
                                 <p><strong>Prioridad:</strong> ${solicitud.prioridad}</p>
                                 <p><strong>Equipo:</strong> ${solicitud.equipo || 'No especificado'}</p>
                                 <p><strong>Ubicación:</strong> ${solicitud.ubicacion || 'No especificado'}</p>
@@ -2324,6 +2330,7 @@
                                         <div style="padding: 0.5rem; margin: 0.25rem 0; background: white; border-radius: 0.25rem; border: 1px solid #d1fae5;">
                                             <strong>${personal.nombre}</strong> - ${personal.tipo}
                                             ${personal.especialidad ? `<br><small style="color: #6b7280;">Especialidad: ${personal.especialidad}</small>` : ''}
+                                            <br><small style="color: #059669;">Área: ${personal.area}</small>
                                         </div>
                                     `).join('')}
                                 </div>
@@ -2456,11 +2463,12 @@
                                 placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
                         </div>
 
-                        ${solicitud.estado === 'ASIGNADA' || solicitud.estado === 'EN_PROCESO' ? `
+                        ${solicitud.estado === 'ASIGNADA' || solicitud.estado === 'Asignada' || 
+                          solicitud.estado === 'EN_PROCESO' || solicitud.estado === 'En Proceso' ? `
                             <div class="alert alert-warning">
                                 <h5 style="margin-bottom: 0.5rem;">⚠️ Información Importante</h5>
                                 <p style="margin: 0;">
-                                    ${solicitud.estado === 'ASIGNADA' ? 
+                                    ${solicitud.estado === 'ASIGNADA' || solicitud.estado === 'Asignada' ? 
                                         'Si marca como "En Proceso", se registrará el inicio del trabajo.' :
                                         'Si marca como "Completada", se liberará automáticamente el personal asignado.'
                                     }
@@ -2505,14 +2513,16 @@
         }
 
         function getStatusBadge(status) {
+            const normalizedStatus = status ? status.toUpperCase() : 'PENDIENTE';
             const badges = {
                 'PENDIENTE': 'status-pendiente',
                 'ASIGNADA': 'status-asignada',
                 'EN_PROCESO': 'status-en-proceso',
+                'EN PROCESO': 'status-en-proceso',
                 'COMPLETADA': 'status-completada',
                 'CANCELADA': 'status-cancelada'
             };
-            return badges[status] || 'status-pendiente';
+            return badges[normalizedStatus] || 'status-pendiente';
         }
 
         async function handleChangeStatus(event, solicitudId) {
@@ -2687,10 +2697,22 @@
 
         function showRequestsStatistics() {
             const total = cloudSolicitudes.length;
-            const pendientes = cloudSolicitudes.filter(s => s.estado === 'PENDIENTE').length;
-            const asignadas = cloudSolicitudes.filter(s => s.estado === 'ASIGNADA').length;
-            const enProceso = cloudSolicitudes.filter(s => s.estado === 'EN_PROCESO').length;
-            const completadas = cloudSolicitudes.filter(s => s.estado === 'COMPLETADA').length;
+            const pendientes = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
+                return estado === 'PENDIENTE';
+            }).length;
+            const asignadas = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'ASIGNADA';
+            }).length;
+            const enProceso = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+            }).length;
+            const completadas = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'COMPLETADA';
+            }).length;
             
             alert(`📊 ESTADÍSTICAS DE SOLICITUDES\n\n` +
                 `📋 Total: ${total}\n` +
@@ -2713,8 +2735,11 @@
             filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
                 let pass = true;
                 
-                if (estadoFilter && solicitud.estado !== estadoFilter) {
-                    pass = false;
+                if (estadoFilter) {
+                    const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
+                    if (solicitudEstado !== estadoFilter) {
+                        pass = false;
+                    }
                 }
                 
                 if (areaFilter) {
@@ -2729,14 +2754,17 @@
                             lowerArea.includes('bioméd')
                         );
                     } else if (areaFilter === 'MECANICA') {
-                        pass = pass && (solicitudArea === 'MECANICA' || lowerArea.includes('mec'));
+                        pass = pass && (solicitudArea === 'MECANICA' || solicitudArea === 'Mecánica' || lowerArea.includes('mec'));
                     } else if (areaFilter === 'INFRAESTRUCTURA') {
-                        pass = pass && (solicitudArea === 'INFRAESTRUCTURA' || lowerArea.includes('infra'));
+                        pass = pass && (solicitudArea === 'INFRAESTRUCTURA' || solicitudArea === 'Infraestructura' || lowerArea.includes('infra'));
                     }
                 }
                 
-                if (prioridadFilter && solicitud.prioridad !== prioridadFilter) {
-                    pass = false;
+                if (prioridadFilter) {
+                    const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
+                    if (solicitudPrioridad !== prioridadFilter) {
+                        pass = false;
+                    }
                 }
                 
                 return pass;
@@ -2789,9 +2817,9 @@
                                    lowerArea.includes('biomed') || 
                                    lowerArea.includes('bioméd');
                         } else if (areaFilter === 'MECANICA') {
-                            return tecnicoArea === 'MECANICA' || lowerArea.includes('mec');
+                            return tecnicoArea === 'MECANICA' || tecnicoArea === 'Mecánica' || lowerArea.includes('mec');
                         } else if (areaFilter === 'INFRAESTRUCTURA') {
-                            return tecnicoArea === 'INFRAESTRUCTURA' || lowerArea.includes('infra');
+                            return tecnicoArea === 'INFRAESTRUCTURA' || tecnicoArea === 'Infraestructura' || lowerArea.includes('infra');
                         }
                         return false;
                     });
@@ -2992,8 +3020,8 @@
                             <label class="form-label">🏥 Área de Trabajo</label>
                             <select id="edit-area" required class="form-select">
                                 <option value="INGENIERIA_BIOMEDICA" ${personal.area === 'INGENIERIA_BIOMEDICA' || personal.area === 'Ingeniería Biomédica' ? 'selected' : ''}>Ingeniería Biomédica</option>
-                                <option value="MECANICA" ${personal.area === 'MECANICA' ? 'selected' : ''}>Mecánica</option>
-                                <option value="INFRAESTRUCTURA" ${personal.area === 'INFRAESTRUCTURA' ? 'selected' : ''}>Infraestructura</option>
+                                <option value="MECANICA" ${personal.area === 'MECANICA' || personal.area === 'Mecánica' ? 'selected' : ''}>Mecánica</option>
+                                <option value="INFRAESTRUCTURA" ${personal.area === 'INFRAESTRUCTURA' || personal.area === 'Infraestructura' ? 'selected' : ''}>Infraestructura</option>
                             </select>
                         </div>
                         <div>
@@ -3102,8 +3130,14 @@
             }
 
             const solicitudesAsignadas = cloudSolicitudes.filter(s => s.tecnicoAsignado === personal.nombre);
-            const completadas = solicitudesAsignadas.filter(s => s.estado === 'COMPLETADA').length;
-            const enProceso = solicitudesAsignadas.filter(s => s.estado === 'EN_PROCESO' || s.estado === 'ASIGNADA').length;
+            const completadas = solicitudesAsignadas.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'COMPLETADA';
+            }).length;
+            const enProceso = solicitudesAsignadas.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO' || estado === 'ASIGNADA';
+            }).length;
 
             alert(`📊 HISTORIAL DE ${personal.nombre.toUpperCase()}\n\n` +
                 `👤 Información Personal:\n` +
@@ -3179,9 +3213,18 @@
                 `;
             } else {
                 // Separar solicitudes por estado
-                const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
-                const aprobadas = cloudSolicitudesAcceso.filter(s => s.estado === 'APROBADA');
-                const rechazadas = cloudSolicitudesAcceso.filter(s => s.estado === 'RECHAZADA');
+                const pendientes = cloudSolicitudesAcceso.filter(s => {
+                    const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
+                    return estado === 'PENDIENTE';
+                });
+                const aprobadas = cloudSolicitudesAcceso.filter(s => {
+                    const estado = s.estado ? s.estado.toUpperCase() : '';
+                    return estado === 'APROBADA';
+                });
+                const rechazadas = cloudSolicitudesAcceso.filter(s => {
+                    const estado = s.estado ? s.estado.toUpperCase() : '';
+                    return estado === 'RECHAZADA';
+                });
                 
                 container.innerHTML = `
                     <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
@@ -3334,6 +3377,30 @@
                 'OTRO': 'Otro'
             };
             return cargos[position] || position || 'No especificado';
+        }
+
+        // CORRECCIÓN CRÍTICA: Función de aprobación con manejo correcto de IDs
+        async function approveAccessRequest(requestId) {
+            console.log('✅ Iniciando aprobación de solicitud con ID de Airtable:', requestId);
+            
+            try {
+                const solicitud = cloudSolicitudesAcceso.find(s => s.id === requestId);
+                if (!solicitud) {
+                    console.error('❌ Solicitud no encontrada con ID de Airtable:', requestId);
+                    console.error('🔍 Solicitudes disponibles:', cloudSolicitudesAcceso.map(s => ({ 
+                        id: s.id, 
+                        email: s.email 
+                    })));
+                    alert(`❌ Error: Solicitud no encontrada con ID: ${requestId}`);
+                    return;
+                }
+
+                showApprovalModal(solicitud);
+
+            } catch (error) {
+                console.error('❌ Error iniciando aprobación:', error);
+                alert('❌ Error al procesar la solicitud: ' + error.message);
+            }
         }
 
         // CORRECCIÓN: Función showApprovalModal con ID de Airtable
@@ -3508,7 +3575,10 @@
         }
 
         async function approveAllPending() {
-            const pendientes = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado);
+            const pendientes = cloudSolicitudesAcceso.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
+                return estado === 'PENDIENTE';
+            });
             
             if (pendientes.length === 0) {
                 alert('No hay solicitudes pendientes para aprobar');
@@ -3541,6 +3611,76 @@
         }
 
         const isCloudConnected = isConnectedToAirtable;
+
+        // 🎯 Otras funciones existentes
+        function showView(viewName) {
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewName + '-view').classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            
+            switch(viewName) {
+                case 'solicitudes':
+                    updateSolicitudesList();
+                    break;
+                case 'personal':
+                    updateTechniciansList();
+                    break;
+                case 'accesos':
+                    updateAccessRequestsList();
+                    break;
+            }
+        }
+
+        function showNotifications() {
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
+                return estado === 'PENDIENTE';
+            }).length;
+            const pendingSolicitudes = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
+                return estado === 'PENDIENTE' || !s.tecnicoAsignado;
+            }).length;
+            
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
+        }
+
+        function filterByArea(area) {
+            console.log('Filtrar por área:', area);
+        }
+
+        function filterByStatus(status) {
+            console.log('Filtrar por estado:', status);
+        }
+
+        // 🚀 Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (ÁREA BIOMÉDICA + Sin solicitudId + AUTO-REFRESH)');
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+            
+            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
+            
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                    
+                    // Iniciar auto-refresh después de la carga inicial
+                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+                    startAutoRefresh();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                    loadDataFromLocalStorage();
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
