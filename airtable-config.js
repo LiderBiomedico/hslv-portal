@@ -538,29 +538,39 @@ class AirtableAPI {
                 if (response.status === 422) {
                     console.error('🚨 ERROR 422 - Valores de campo inválidos');
                     console.error('🔍 Datos enviados:', data);
-                    
+
+                    let detailedMessage = null;
                     try {
                         const errorData = JSON.parse(errorText);
-                        if (errorData.error && errorData.error.type === 'INVALID_MULTIPLE_CHOICE_OPTIONS') {
+                        if (errorData.error) {
                             const message = errorData.error.message || '';
-                            const fieldMatch = message.match(/field (\w+)/);
-                            const valueMatch = message.match(/option "(.+?)"/);
-                            
+                            const type = errorData.error.type || '';
+                            // Ejemplo típico: "Invalid single select option: Field "servicioIngenieria" cannot accept the provided value: "XYZ""
+                            const fieldMatch = message.match(/field\s+"?(\w+)"?/i);
+                            const valueMatch = message.match(/value:?\s+"(.+?)"/i) || message.match(/option\s+"(.+?)"/i);
                             if (fieldMatch && valueMatch) {
                                 const fieldName = fieldMatch[1];
                                 const invalidValue = valueMatch[1];
-                                console.error(`🎯 Campo: ${fieldName}, Valor inválido: "${invalidValue}"`);
-                                
-                                // Sugerir solución
-                                console.log('💡 SOLUCIÓN: Verificar valores válidos en Airtable para el campo', fieldName);
-                                console.log('💡 Valores detectados:', this.validSolicitudValues);
+                                console.error(`🎯 Campo inválido detectado: ${fieldName}, Valor recibido: "${invalidValue}"`);
+                                // Preparar mensaje detallado
+                                detailedMessage = `Valor inválido para el campo "${fieldName}": "${invalidValue}". `;
+                                // Añadir lista de valores válidos si está disponible
+                                if (this.validSolicitudValues && this.validSolicitudValues[fieldName]) {
+                                    const validList = this.validSolicitudValues[fieldName];
+                                    if (Array.isArray(validList) && validList.length > 0) {
+                                        detailedMessage += `Valores válidos: ${validList.join(', ')}.`;
+                                    }
+                                }
                             }
                         }
                     } catch (parseError) {
                         console.error('Error parseando respuesta 422:', parseError);
                     }
-                    
-                    throw new Error(`HTTP 422: Valores inválidos. Verificar configuración de campos en Airtable.`);
+                    if (!detailedMessage) {
+                        // Fallback genérico
+                        detailedMessage = 'Valores inválidos. Verifique configuración de campos en Airtable.';
+                    }
+                    throw new Error(`HTTP 422: ${detailedMessage}`);
                 }
                 
                 throw new Error(`HTTP ${response.status}: ${errorText}`);
@@ -1093,19 +1103,10 @@ class AirtableAPI {
             const numero = await this.generateAreaSpecificNumber(solicitudData.servicioIngenieria);
             
             // Preparar datos con valores mapeados
-            // Determinar valor de estado inicial de manera flexible.  Usar la lista detectada o el mapeo
-            let estadoInicial = 'PENDIENTE';
-            if (this.validSolicitudValues.estado && this.validSolicitudValues.estado.length > 0) {
-                // Tomar el primer valor configurado en Airtable como valor por defecto
-                estadoInicial = this.validSolicitudValues.estado[0];
-            }
-            // Mapear estado para obtener el valor correcto (en mayúsculas o con acento) definido en Airtable
-            estadoInicial = this.mapFieldValue('estado', estadoInicial);
-
             const rawData = {
                 numero: numero,
                 descripcion: mappedData.descripcion || 'Solicitud de mantenimiento',
-                estado: estadoInicial,
+                estado: 'Pendiente', // Usar valor que sabemos que funciona
                 fechaCreacion: new Date().toISOString(),
                 servicioIngenieria: mappedData.servicioIngenieria,
                 tipoServicio: mappedData.tipoServicio,
@@ -1162,26 +1163,25 @@ class AirtableAPI {
                     console.error('📋 Valores detectados disponibles:', this.validSolicitudValues);
                     console.error('📝 Datos que se intentaron enviar:', data);
                     
-                    // Proporcionar información más específica del error
+                    // Construir mensaje de error combinando la información recibida de makeRequest y valores válidos detectados
                     let mensajeError = 'No se pudo crear la solicitud. ';
+                    // Extraer detalle del mensaje (sin prefijo HTTP)
+                    const detalle = error.message.replace(/^HTTP\s*422:\s*/i, '').trim();
+                    if (detalle) {
+                        mensajeError += detalle;
+                        if (!detalle.endsWith('.')) mensajeError += '.';
+                        mensajeError += ' ';
+                    }
                     
-                    try {
-                        // Intentar extraer información específica del error
-                        if (error.message.includes('servicioIngenieria')) {
-                            mensajeError += `El valor "${mappedData.servicioIngenieria}" no es válido para el área. `;
-                            mensajeError += `Valores válidos: ${this.validSolicitudValues.servicioIngenieria.join(', ')}`;
-                        } else if (error.message.includes('tipoServicio')) {
-                            mensajeError += `El tipo de servicio "${mappedData.tipoServicio}" no es válido. `;
-                        } else if (error.message.includes('prioridad')) {
-                            mensajeError += `La prioridad "${mappedData.prioridad}" no es válida. `;
-                        } else {
-                            mensajeError += 'Verifique la configuración de campos en Airtable.';
-                        }
-                    } catch (e) {
+                    // Si aún no se identificó el campo, añadir sugerencia genérica
+                    if (!detalle.toLowerCase().includes('servicioingenieria') &&
+                        !detalle.toLowerCase().includes('tiposervicio') &&
+                        !detalle.toLowerCase().includes('prioridad') &&
+                        !detalle.toLowerCase().includes('estado')) {
                         mensajeError += 'Verifique la configuración de campos en Airtable.';
                     }
                     
-                    throw new Error(mensajeError);
+                    throw new Error(mensajeError.trim());
                 }
                 
                 throw error;
