@@ -443,11 +443,9 @@ class AirtableAPI {
                     }
                 });
                 
-                // Si encontramos valores, usarlos; de lo contrario, mantener los valores por defecto
+                // Si encontramos valores, usarlos
                 if (servicioValues.size > 0) {
                     this.validSolicitudValues.servicioIngenieria = Array.from(servicioValues);
-                } else {
-                    console.warn('⚠️ No se detectaron valores de servicioIngenieria en los registros, usando valores por defecto');
                 }
                 if (tipoServicioValues.size > 0) {
                     this.validSolicitudValues.tipoServicio = Array.from(tipoServicioValues);
@@ -930,47 +928,31 @@ class AirtableAPI {
 
     mapFieldValue(fieldType, value) {
         if (!value) return value;
-
-        // Normalizar valor limpiando comillas y espacios extras
+        
         const cleanValue = this.cleanFieldValue(value);
+        
         console.log(`🗺️ Mapeando ${fieldType}: "${cleanValue}"`);
-
-        const mapping = this.fieldMappings[fieldType];
-        // Si existe un mapeo para este campo, intentar obtener la coincidencia
-        if (mapping) {
-            // Función auxiliar para eliminar tildes/diacríticos y convertir a minúsculas
-            const normalize = (str) => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-            const normalizedInput = normalize(cleanValue);
-
-            // 1. Coincidencia exacta por clave
+        
+        // Si el valor ya es el esperado, devolverlo tal cual
+        if (this.fieldMappings[fieldType]) {
+            const mapping = this.fieldMappings[fieldType];
+            
+            // Si el valor es una clave directa del mapeo, devolver su valor mapeado
             if (mapping[cleanValue]) {
                 const mappedValue = mapping[cleanValue];
                 console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
                 return mappedValue;
             }
-
-            // 2. Coincidencia exacta por valor mapeado (ya mapeado)
+            
+            // Buscar si el valor es uno de los valores mapeados
             for (const [key, mappedValue] of Object.entries(mapping)) {
                 if (mappedValue === cleanValue) {
                     console.log(`✅ Valor ya mapeado correctamente: "${cleanValue}"`);
                     return mappedValue;
                 }
             }
-
-            // 3. Coincidencia ignorando diacríticos y mayúsculas
-            for (const [key, mappedValue] of Object.entries(mapping)) {
-                if (normalize(key) === normalizedInput) {
-                    console.log(`✅ Mapeado normalizado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
-                    return mappedValue;
-                }
-                if (normalize(mappedValue) === normalizedInput) {
-                    console.log(`✅ Valor normalizado ya mapeado: "${cleanValue}" → "${mappedValue}"`);
-                    return mappedValue;
-                }
-            }
         }
-
-        // Si no encontramos ningún mapeo, devolver el valor limpio
+        
         console.log(`⚠️ No se encontró mapeo para ${fieldType}: "${cleanValue}" - usando valor original`);
         return cleanValue;
     }
@@ -1088,43 +1070,22 @@ class AirtableAPI {
             }
             
             // VERIFICAR QUE EL VALOR MAPEADO SEA VÁLIDO
-            if (mappedData.servicioIngenieria && this.validSolicitudValues.servicioIngenieria.length > 0 &&
+            if (mappedData.servicioIngenieria && 
+                this.validSolicitudValues.servicioIngenieria.length > 0 &&
                 !this.validSolicitudValues.servicioIngenieria.includes(mappedData.servicioIngenieria)) {
-                console.warn(`⚠️ El área "${mappedData.servicioIngenieria}" no coincide exactamente con los valores válidos configurados en Airtable.`);
-                console.log('📋 Valores válidos detectados para áreas:', this.validSolicitudValues.servicioIngenieria);
-
-                // Función auxiliar para eliminar tildes y comparar en minúsculas
-                const normalize = (str) => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
-                const normalizedArea = normalize(mappedData.servicioIngenieria);
-
-                // Intentar encontrar una coincidencia aproximada entre los valores válidos existentes
-                let encontrado = null;
-                for (const validValue of this.validSolicitudValues.servicioIngenieria) {
-                    if (normalize(validValue) === normalizedArea) {
-                        encontrado = validValue;
-                        break;
-                    }
-                    // También considerar palabras clave (biom, mec, infra)
-                    if (normalizedArea.includes('biom') && normalize(validValue).includes('biom')) {
-                        encontrado = validValue;
-                        break;
-                    }
-                    if (normalizedArea.includes('mec') && normalize(validValue).includes('mec')) {
-                        encontrado = validValue;
-                        break;
-                    }
-                    if (normalizedArea.includes('infra') && normalize(validValue).includes('infra')) {
-                        encontrado = validValue;
-                        break;
-                    }
-                }
-
-                // Si encontramos un valor similar, usarlo; de lo contrario, conservar el valor mapeado y registrar advertencia
-                if (encontrado) {
-                    console.log(`✅ Usando valor válido similar: ${encontrado}`);
-                    mappedData.servicioIngenieria = encontrado;
-                } else {
-                    console.warn(`⚠️ No se encontró ningún valor válido similar para "${mappedData.servicioIngenieria}". Se enviará igualmente.`);
+                console.warn(`⚠️ Valor mapeado ${mappedData.servicioIngenieria} no está en la lista de valores válidos`);
+                console.log('📋 Valores válidos detectados:', this.validSolicitudValues.servicioIngenieria);
+                
+                // Intentar encontrar un valor similar
+                const valorSimilar = this.validSolicitudValues.servicioIngenieria.find(v => 
+                    v.toLowerCase().includes('biom') && mappedData.servicioIngenieria.toLowerCase().includes('biom') ||
+                    v.toLowerCase().includes('mec') && mappedData.servicioIngenieria.toLowerCase().includes('mec') ||
+                    v.toLowerCase().includes('infra') && mappedData.servicioIngenieria.toLowerCase().includes('infra')
+                );
+                
+                if (valorSimilar) {
+                    console.log(`✅ Usando valor válido similar: ${valorSimilar}`);
+                    mappedData.servicioIngenieria = valorSimilar;
                 }
             }
             
@@ -1132,10 +1093,19 @@ class AirtableAPI {
             const numero = await this.generateAreaSpecificNumber(solicitudData.servicioIngenieria);
             
             // Preparar datos con valores mapeados
+            // Determinar valor de estado inicial de manera flexible.  Usar la lista detectada o el mapeo
+            let estadoInicial = 'PENDIENTE';
+            if (this.validSolicitudValues.estado && this.validSolicitudValues.estado.length > 0) {
+                // Tomar el primer valor configurado en Airtable como valor por defecto
+                estadoInicial = this.validSolicitudValues.estado[0];
+            }
+            // Mapear estado para obtener el valor correcto (en mayúsculas o con acento) definido en Airtable
+            estadoInicial = this.mapFieldValue('estado', estadoInicial);
+
             const rawData = {
                 numero: numero,
                 descripcion: mappedData.descripcion || 'Solicitud de mantenimiento',
-                estado: 'Pendiente', // Usar valor que sabemos que funciona
+                estado: estadoInicial,
                 fechaCreacion: new Date().toISOString(),
                 servicioIngenieria: mappedData.servicioIngenieria,
                 tipoServicio: mappedData.tipoServicio,
