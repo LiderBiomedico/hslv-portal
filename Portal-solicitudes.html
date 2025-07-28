@@ -1007,6 +1007,14 @@
             const areaValue = document.getElementById('area').value;
             console.log('📋 Área seleccionada:', areaValue);
             
+            // Validación crítica del área ANTES de continuar
+            if (!areaValue) {
+                const alertDiv = document.getElementById('form-alert');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
+                console.error('❌ ERROR: No se seleccionó área');
+                return;
+            }
+            
             const formData = {
                 servicioIngenieria: areaValue, // IMPORTANTE: Usar el valor tal como está
                 tipoServicio: document.getElementById('tipo-servicio').value,
@@ -1022,13 +1030,14 @@
             };
             
             console.log('📋 Datos de solicitud completos:', formData);
+            console.log('🏥 ÁREA A ENVIAR:', formData.servicioIngenieria);
             
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-btn');
             
-            // Validación crítica del área
-            if (!formData.servicioIngenieria) {
-                showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
+            // Validación adicional de campos requeridos
+            if (!formData.tipoServicio || !formData.equipo || !formData.ubicacion || !formData.descripcion) {
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
                 return;
             }
             
@@ -1041,6 +1050,13 @@
                 if (window.airtableAPI && isCloudConnected) {
                     console.log('☁️ Enviando a Airtable con área:', formData.servicioIngenieria);
                     result = await window.airtableAPI.createSolicitud(formData);
+                    
+                    // Verificar que el área se guardó correctamente
+                    if (result.fields && result.fields.servicioIngenieria) {
+                        console.log('✅ ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
+                    } else {
+                        console.warn('⚠️ ÁREA NO CONFIRMADA EN RESPUESTA');
+                    }
                     
                     showAlert(alertDiv, 'success', 
                         `✅ Solicitud enviada exitosamente a Airtable\n\n` +
