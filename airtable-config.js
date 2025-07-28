@@ -1,7 +1,7 @@
-// 🛡️ Configuración COMPLETA de Airtable API - Con detección automática para evitar Error 422
-// airtable-config.js - Versión con detección de valores para todas las tablas
+// 🛡️ Configuración COMPLETA de Airtable API - Con detección automática mejorada
+// airtable-config.js - Versión con detección robusta para todas las tablas
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN COMPLETA CON DETECCIÓN)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON DETECCIÓN ROBUSTA)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
@@ -107,7 +107,7 @@ const SAFE_FIELDS = {
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con detección completa...');
+        console.log('🔧 Inicializando AirtableAPI con detección robusta...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -172,12 +172,12 @@ class AirtableAPI {
             cargo: []
         };
         
-        // NUEVO: Almacenar valores válidos detectados para solicitudes
+        // IMPORTANTE: Inicializar con valores conocidos que funcionan
         this.validSolicitudValues = {
-            servicioIngenieria: [],
-            tipoServicio: [],
-            prioridad: [],
-            estado: [],
+            servicioIngenieria: ['Ingeniería Biomédica', 'Mecánica', 'Infraestructura'],
+            tipoServicio: ['Mantenimiento Preventivo', 'Mantenimiento Correctivo', 'Reparación', 'Instalación', 'Calibración', 'Inspección', 'Actualización', 'Emergencia'],
+            prioridad: ['Crítica', 'Alta', 'Media', 'Baja'],
+            estado: ['Pendiente', 'Asignada', 'En Proceso', 'Completada', 'Cancelada'],
             availableFields: []
         };
         
@@ -185,6 +185,7 @@ class AirtableAPI {
         console.log('🛡️ Usando proxy:', this.useProxy);
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
         console.log('🗺️ Mapeo de valores configurado');
+        console.log('📋 Valores iniciales de solicitud:', this.validSolicitudValues);
         
         this.initializeConnectionAsync();
     }
@@ -233,7 +234,14 @@ class AirtableAPI {
                     // CRÍTICO: Detectar valores válidos para todas las tablas
                     await this.detectValidAccessRequestValues();
                     await this.detectValidUserValues();
-                    await this.detectValidSolicitudValues(); // NUEVO
+                    
+                    // IMPORTANTE: Siempre intentar detectar valores de solicitudes
+                    try {
+                        await this.detectValidSolicitudValues();
+                    } catch (error) {
+                        console.warn('⚠️ No se pudieron detectar valores de solicitudes, usando valores por defecto conocidos');
+                        // Los valores por defecto ya están establecidos en el constructor
+                    }
                 } else {
                     this.connectionStatus = 'disconnected';
                     this.notifyConnectionStatus(false);
@@ -308,25 +316,22 @@ class AirtableAPI {
                     cargos: this.validAccessRequestValues.cargo.length
                 });
                 
-                // Advertir si campos esperados no existen
-                const expectedFields = ['estado', 'nombreCompleto', 'email', 'fechaSolicitud'];
-                const missingFields = expectedFields.filter(f => !availableFields.has(f));
-                if (missingFields.length > 0) {
-                    console.warn('⚠️ Campos esperados que no existen:', missingFields);
-                }
-                
-                // Si no encontramos PENDIENTE, intentar detectarlo de otra manera
+                // Si no encontramos PENDIENTE, usar valor por defecto
                 if (!pendienteValue) {
-                    console.warn('⚠️ No se encontró valor PENDIENTE, intentando detección alternativa...');
-                    await this.detectPendingValueAlternative();
+                    console.warn('⚠️ No se encontró valor PENDIENTE, usando valor por defecto');
+                    this.validAccessRequestValues.estado = 'Pendiente';
                 }
                 
             } else {
                 console.warn('⚠️ No hay registros en SolicitudesAcceso para detectar valores');
+                // Usar valores por defecto
+                this.validAccessRequestValues.estado = 'Pendiente';
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos:', error);
+            // Usar valores por defecto en caso de error
+            this.validAccessRequestValues.estado = 'Pendiente';
         }
     }
 
@@ -366,10 +371,12 @@ class AirtableAPI {
                     }
                 });
                 
-                // Si no encontramos ACTIVO, usar el primer valor encontrado o probar valores comunes
+                // Si no encontramos ACTIVO, usar valor por defecto
                 if (!activoValue && estadoValues.size > 0) {
                     activoValue = Array.from(estadoValues)[0];
                     console.warn(`⚠️ No se encontró valor ACTIVO, usando: "${activoValue}"`);
+                } else if (!activoValue) {
+                    activoValue = 'Activo';
                 }
                 
                 this.validUserValues = {
@@ -387,24 +394,24 @@ class AirtableAPI {
                 });
                 
             } else {
-                console.warn('⚠️ No hay usuarios para detectar valores, intentando valores por defecto');
-                // Intentar valores por defecto
-                this.validUserValues.estado = 'ACTIVO';
+                console.warn('⚠️ No hay usuarios para detectar valores, usando valores por defecto');
+                // Usar valores por defecto
+                this.validUserValues.estado = 'Activo';
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos de usuarios:', error);
             // Usar valores por defecto en caso de error
-            this.validUserValues.estado = 'ACTIVO';
+            this.validUserValues.estado = 'Activo';
         }
     }
 
-    // 🔍 NUEVO: Detectar valores válidos para tabla de Solicitudes
+    // 🔍 MEJORADO: Detectar valores válidos para tabla de Solicitudes
     async detectValidSolicitudValues() {
         console.log('🔍 Detectando valores válidos para tabla Solicitudes...');
         
         try {
-            const result = await this.makeRequest(`${this.tables.solicitudes}?maxRecords=20`);
+            const result = await this.makeRequest(`${this.tables.solicitudes}?maxRecords=50`);
             
             if (result.records && result.records.length > 0) {
                 const servicioValues = new Set();
@@ -436,13 +443,23 @@ class AirtableAPI {
                     }
                 });
                 
-                this.validSolicitudValues = {
-                    servicioIngenieria: Array.from(servicioValues),
-                    tipoServicio: Array.from(tipoServicioValues),
-                    prioridad: Array.from(prioridadValues),
-                    estado: Array.from(estadoValues),
-                    availableFields: Array.from(availableFields)
-                };
+                // Si encontramos valores, usarlos; de lo contrario, mantener los valores por defecto
+                if (servicioValues.size > 0) {
+                    this.validSolicitudValues.servicioIngenieria = Array.from(servicioValues);
+                } else {
+                    console.warn('⚠️ No se detectaron valores de servicioIngenieria en los registros, usando valores por defecto');
+                }
+                if (tipoServicioValues.size > 0) {
+                    this.validSolicitudValues.tipoServicio = Array.from(tipoServicioValues);
+                }
+                if (prioridadValues.size > 0) {
+                    this.validSolicitudValues.prioridad = Array.from(prioridadValues);
+                }
+                if (estadoValues.size > 0) {
+                    this.validSolicitudValues.estado = Array.from(estadoValues);
+                }
+                
+                this.validSolicitudValues.availableFields = Array.from(availableFields);
                 
                 console.log('📋 Valores válidos de solicitudes detectados:', {
                     servicios: this.validSolicitudValues.servicioIngenieria,
@@ -452,125 +469,14 @@ class AirtableAPI {
                     campos: this.validSolicitudValues.availableFields
                 });
                 
-                // Si no hay valores de servicioIngenieria, intentar con valores conocidos
-                if (this.validSolicitudValues.servicioIngenieria.length === 0) {
-                    console.warn('⚠️ No se detectaron valores de servicioIngenieria, usando valores por defecto');
-                    this.validSolicitudValues.servicioIngenieria = [
-                        'Ingeniería Biomédica',
-                        'Mecánica',
-                        'Infraestructura'
-                    ];
-                }
-                
             } else {
                 console.warn('⚠️ No hay registros en Solicitudes para detectar valores');
-                // Intentar con valores por defecto conocidos
-                await this.tryCommonSolicitudValues();
+                console.log('📋 Usando valores conocidos por defecto:', this.validSolicitudValues);
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos de solicitudes:', error);
-            // Usar valores por defecto en caso de error
-            this.validSolicitudValues.servicioIngenieria = [
-                'Ingeniería Biomédica',
-                'Mecánica', 
-                'Infraestructura'
-            ];
-        }
-    }
-
-    // Intentar valores comunes si no hay registros
-    async tryCommonSolicitudValues() {
-        console.log('🧪 Probando valores comunes para solicitudes...');
-        
-        const commonValues = {
-            servicioIngenieria: ['Ingeniería Biomédica', 'Mecánica', 'Infraestructura'],
-            tipoServicio: ['Mantenimiento Preventivo', 'Mantenimiento Correctivo', 'Reparación'],
-            prioridad: ['Crítica', 'Alta', 'Media', 'Baja'],
-            estado: ['Pendiente', 'Asignada', 'En Proceso', 'Completada']
-        };
-        
-        // Probar creando un registro temporal con estos valores
-        for (const [field, values] of Object.entries(commonValues)) {
-            for (const value of values) {
-                try {
-                    const testData = {
-                        fields: {
-                            numero: 'TEST_' + Date.now(),
-                            descripcion: 'Test de valores',
-                            [field]: value,
-                            fechaCreacion: new Date().toISOString()
-                        }
-                    };
-                    
-                    const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
-                    
-                    if (result && result.id) {
-                        console.log(`✅ Valor válido encontrado para ${field}: "${value}"`);
-                        
-                        if (!this.validSolicitudValues[field]) {
-                            this.validSolicitudValues[field] = [];
-                        }
-                        this.validSolicitudValues[field].push(value);
-                        
-                        // Eliminar registro de prueba
-                        try {
-                            await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'DELETE');
-                        } catch (deleteError) {
-                            console.warn('⚠️ No se pudo eliminar registro de prueba');
-                        }
-                    }
-                    
-                } catch (error) {
-                    if (!error.message.includes('422')) {
-                        console.error(`Error probando ${field}="${value}":`, error.message);
-                    }
-                }
-            }
-        }
-    }
-
-    // 🔍 Método alternativo para detectar el valor PENDIENTE
-    async detectPendingValueAlternative() {
-        console.log('🔍 Intentando detección alternativa del valor PENDIENTE...');
-        
-        // Intentar crear un registro de prueba con diferentes valores
-        const testValues = ['Pendiente', 'PENDIENTE', 'pendiente'];
-        
-        for (const testValue of testValues) {
-            try {
-                console.log(`🧪 Probando valor: "${testValue}"`);
-                
-                // Crear registro de prueba mínimo
-                const testData = {
-                    fields: {
-                        nombreCompleto: 'TEST_DETECTION_' + Date.now(),
-                        email: 'test_' + Date.now() + '@test.com',
-                        fechaSolicitud: new Date().toISOString(),
-                        estado: testValue
-                    }
-                };
-                
-                const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', testData);
-                
-                if (result && result.id) {
-                    console.log(`✅ Valor válido encontrado: "${testValue}"`);
-                    this.validAccessRequestValues.estado = testValue;
-                    
-                    // Eliminar registro de prueba
-                    try {
-                        await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'DELETE');
-                        console.log('🗑️ Registro de prueba eliminado');
-                    } catch (deleteError) {
-                        console.warn('⚠️ No se pudo eliminar registro de prueba:', deleteError);
-                    }
-                    
-                    break;
-                }
-                
-            } catch (error) {
-                console.log(`❌ Valor "${testValue}" no válido:`, error.message);
-            }
+            console.log('📋 Manteniendo valores por defecto conocidos:', this.validSolicitudValues);
         }
     }
 
@@ -714,13 +620,13 @@ class AirtableAPI {
                 esUrgente: cleanData.esUrgente || false
             };
             
-            // CRÍTICO: Usar el valor de estado detectado o intentar sin estado
+            // CRÍTICO: Usar el valor de estado detectado o valor por defecto
             if (this.validAccessRequestValues.estado) {
                 console.log(`✅ Usando valor de estado detectado: "${this.validAccessRequestValues.estado}"`);
                 baseData.estado = this.validAccessRequestValues.estado;
             } else {
-                console.warn('⚠️ No se detectó valor válido para estado, creando sin estado');
-                // NO incluir campo estado si no tenemos un valor válido
+                console.log('📋 Usando valor de estado por defecto: "Pendiente"');
+                baseData.estado = 'Pendiente';
             }
             
             const data = {
@@ -744,19 +650,6 @@ class AirtableAPI {
                     
                     const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', dataWithoutEstado);
                     console.log('✅ Solicitud creada sin campo estado:', result.id);
-                    
-                    // Intentar actualizar el estado después si es posible
-                    if (this.validAccessRequestValues.estado) {
-                        try {
-                            await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'PATCH', {
-                                fields: { estado: this.validAccessRequestValues.estado }
-                            });
-                            console.log('✅ Estado actualizado después de crear');
-                        } catch (updateError) {
-                            console.warn('⚠️ No se pudo actualizar estado:', updateError.message);
-                        }
-                    }
-                    
                     return result;
                 }
                 
@@ -865,7 +758,8 @@ class AirtableAPI {
             if (this.validUserValues.estado) {
                 userData.estado = this.validUserValues.estado;
             } else {
-                console.warn('⚠️ No se detectó valor válido para estado de usuario, creando sin estado');
+                userData.estado = 'Activo';
+                console.warn('⚠️ Usando valor de estado por defecto: "Activo"');
             }
 
             console.log('📝 Datos del usuario a crear:', userData);
@@ -895,39 +789,15 @@ class AirtableAPI {
                     });
                     
                     console.log('✅ Usuario creado con campos mínimos:', newUser.id);
-                    
-                    // Intentar agregar campos adicionales uno por uno
-                    const additionalFields = {
-                        servicioHospitalario: userData.servicioHospitalario,
-                        cargo: userData.cargo,
-                        solicitudOrigenId: userData.solicitudOrigenId
-                    };
-                    
-                    if (this.validUserValues.estado) {
-                        additionalFields.estado = this.validUserValues.estado;
-                    }
-                    
-                    for (const [fieldName, fieldValue] of Object.entries(additionalFields)) {
-                        if (fieldValue) {
-                            try {
-                                await this.makeRequest(`${this.tables.usuarios}/${newUser.id}`, 'PATCH', {
-                                    fields: { [fieldName]: fieldValue }
-                                });
-                                console.log(`✅ Campo ${fieldName} agregado al usuario`);
-                            } catch (patchError) {
-                                console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, patchError.message);
-                            }
-                        }
-                    }
                 } else {
                     throw error;
                 }
             }
 
-            // 7. Actualizar SOLO el estado de la solicitud de acceso (sin fechaAprobacion)
+            // 7. Actualizar SOLO el estado de la solicitud de acceso
             try {
                 // Detectar el valor correcto para estado APROBADA
-                let aprobadasValue = 'APROBADA';
+                let aprobadasValue = 'Aprobada';
                 if (this.validAccessRequestValues.estadoValues) {
                     const aprobadaDetectada = this.validAccessRequestValues.estadoValues.find(v => 
                         v.toUpperCase().includes('APROBADA') || v.toUpperCase().includes('APROBADO')
@@ -936,8 +806,6 @@ class AirtableAPI {
                         aprobadasValue = aprobadaDetectada;
                         console.log(`✅ Usando valor de estado detectado: "${aprobadasValue}"`);
                     }
-                } else {
-                    console.warn('⚠️ Usando valor de estado por defecto: "APROBADA"');
                 }
 
                 // IMPORTANTE: Solo actualizar campos que existan en Airtable
@@ -960,24 +828,6 @@ class AirtableAPI {
                 
             } catch (updateError) {
                 console.error('❌ Error actualizando solicitud de acceso:', updateError);
-                
-                // Si falla por campo desconocido, intentar solo con estado
-                if (updateError.message.includes('UNKNOWN_FIELD_NAME')) {
-                    console.warn('⚠️ Reintentando actualización solo con estado...');
-                    
-                    try {
-                        await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
-                            fields: {
-                                estado: 'APROBADA' // Usar valor simple
-                            }
-                        });
-                        console.log('✅ Estado de solicitud actualizado');
-                    } catch (secondError) {
-                        console.error('❌ No se pudo actualizar el estado:', secondError);
-                        // No fallar, el usuario ya fue creado
-                    }
-                }
-                
                 console.warn('⚠️ El usuario fue creado pero no se pudo actualizar completamente la solicitud');
             }
 
@@ -994,17 +844,6 @@ class AirtableAPI {
 
         } catch (error) {
             console.error('❌ Error en aprobación:', error);
-            
-            // Proporcionar información detallada del error
-            if (error.message.includes('422') || error.message.includes('UNKNOWN_FIELD_NAME')) {
-                console.error('🔍 Diagnóstico del error:');
-                console.error('- Error específico:', error.message);
-                console.error('💡 Solución: Verificar que los campos existan en Airtable');
-                console.error('Campos que pueden no existir:');
-                console.error('- fechaAprobacion (no existe)');
-                console.error('- usuarioCreado (verificar si existe)');
-            }
-            
             throw error;
         }
     }
@@ -1072,7 +911,8 @@ class AirtableAPI {
                 return { valid: false, error: 'Usuario no encontrado' };
             }
 
-            if (user.estado !== 'ACTIVO' && user.estado !== 'Activo') {
+            const estadoActivo = ['ACTIVO', 'Activo', 'activo'];
+            if (!estadoActivo.includes(user.estado)) {
                 return { valid: false, error: `Usuario en estado: ${user.estado}` };
             }
 
@@ -1090,31 +930,47 @@ class AirtableAPI {
 
     mapFieldValue(fieldType, value) {
         if (!value) return value;
-        
+
+        // Normalizar valor limpiando comillas y espacios extras
         const cleanValue = this.cleanFieldValue(value);
-        
         console.log(`🗺️ Mapeando ${fieldType}: "${cleanValue}"`);
-        
-        // Si el valor ya es el esperado, devolverlo tal cual
-        if (this.fieldMappings[fieldType]) {
-            const mapping = this.fieldMappings[fieldType];
-            
-            // Si el valor es una clave directa del mapeo, devolver su valor mapeado
+
+        const mapping = this.fieldMappings[fieldType];
+        // Si existe un mapeo para este campo, intentar obtener la coincidencia
+        if (mapping) {
+            // Función auxiliar para eliminar tildes/diacríticos y convertir a minúsculas
+            const normalize = (str) => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            const normalizedInput = normalize(cleanValue);
+
+            // 1. Coincidencia exacta por clave
             if (mapping[cleanValue]) {
                 const mappedValue = mapping[cleanValue];
                 console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
                 return mappedValue;
             }
-            
-            // Buscar si el valor es uno de los valores mapeados
+
+            // 2. Coincidencia exacta por valor mapeado (ya mapeado)
             for (const [key, mappedValue] of Object.entries(mapping)) {
                 if (mappedValue === cleanValue) {
                     console.log(`✅ Valor ya mapeado correctamente: "${cleanValue}"`);
                     return mappedValue;
                 }
             }
+
+            // 3. Coincidencia ignorando diacríticos y mayúsculas
+            for (const [key, mappedValue] of Object.entries(mapping)) {
+                if (normalize(key) === normalizedInput) {
+                    console.log(`✅ Mapeado normalizado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
+                    return mappedValue;
+                }
+                if (normalize(mappedValue) === normalizedInput) {
+                    console.log(`✅ Valor normalizado ya mapeado: "${cleanValue}" → "${mappedValue}"`);
+                    return mappedValue;
+                }
+            }
         }
-        
+
+        // Si no encontramos ningún mapeo, devolver el valor limpio
         console.log(`⚠️ No se encontró mapeo para ${fieldType}: "${cleanValue}" - usando valor original`);
         return cleanValue;
     }
@@ -1199,19 +1055,14 @@ class AirtableAPI {
         }
     }
 
-    // 📋 MÉTODO ACTUALIZADO Y CORREGIDO: Crear solicitud
+    // 📋 MÉTODO ACTUALIZADO Y MEJORADO: Crear solicitud
     async createSolicitud(solicitudData) {
-        console.log('📝 Creando solicitud con detección automática...');
+        console.log('📝 Creando solicitud con mapeo y valores conocidos...');
         console.log('🔍 Datos recibidos:', solicitudData);
         console.log('🏥 ÁREA RECIBIDA:', solicitudData.servicioIngenieria);
+        console.log('📋 Valores válidos conocidos:', this.validSolicitudValues);
         
         try {
-            // Detectar valores válidos si no se han detectado
-            if (!this.validSolicitudValues.servicioIngenieria || 
-                this.validSolicitudValues.servicioIngenieria.length === 0) {
-                await this.detectValidSolicitudValues();
-            }
-            
             // CRÍTICO: Aplicar mapeo de valores
             const mappedData = { ...solicitudData };
             
@@ -1234,6 +1085,47 @@ class AirtableAPI {
                 const valorOriginal = mappedData.prioridad;
                 mappedData.prioridad = this.fieldMappings.prioridad[mappedData.prioridad];
                 console.log(`🗺️ PRIORIDAD MAPEADA: ${valorOriginal} → ${mappedData.prioridad}`);
+            }
+            
+            // VERIFICAR QUE EL VALOR MAPEADO SEA VÁLIDO
+            if (mappedData.servicioIngenieria && this.validSolicitudValues.servicioIngenieria.length > 0 &&
+                !this.validSolicitudValues.servicioIngenieria.includes(mappedData.servicioIngenieria)) {
+                console.warn(`⚠️ El área "${mappedData.servicioIngenieria}" no coincide exactamente con los valores válidos configurados en Airtable.`);
+                console.log('📋 Valores válidos detectados para áreas:', this.validSolicitudValues.servicioIngenieria);
+
+                // Función auxiliar para eliminar tildes y comparar en minúsculas
+                const normalize = (str) => String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+                const normalizedArea = normalize(mappedData.servicioIngenieria);
+
+                // Intentar encontrar una coincidencia aproximada entre los valores válidos existentes
+                let encontrado = null;
+                for (const validValue of this.validSolicitudValues.servicioIngenieria) {
+                    if (normalize(validValue) === normalizedArea) {
+                        encontrado = validValue;
+                        break;
+                    }
+                    // También considerar palabras clave (biom, mec, infra)
+                    if (normalizedArea.includes('biom') && normalize(validValue).includes('biom')) {
+                        encontrado = validValue;
+                        break;
+                    }
+                    if (normalizedArea.includes('mec') && normalize(validValue).includes('mec')) {
+                        encontrado = validValue;
+                        break;
+                    }
+                    if (normalizedArea.includes('infra') && normalize(validValue).includes('infra')) {
+                        encontrado = validValue;
+                        break;
+                    }
+                }
+
+                // Si encontramos un valor similar, usarlo; de lo contrario, conservar el valor mapeado y registrar advertencia
+                if (encontrado) {
+                    console.log(`✅ Usando valor válido similar: ${encontrado}`);
+                    mappedData.servicioIngenieria = encontrado;
+                } else {
+                    console.warn(`⚠️ No se encontró ningún valor válido similar para "${mappedData.servicioIngenieria}". Se enviará igualmente.`);
+                }
             }
             
             // Generar número específico del área
@@ -1300,9 +1192,26 @@ class AirtableAPI {
                     console.error('📋 Valores detectados disponibles:', this.validSolicitudValues);
                     console.error('📝 Datos que se intentaron enviar:', data);
                     
-                    // Intentar crear con campos mínimos pero incluyendo el área
-                    console.log('🔄 Reintentando con campos mínimos...');
-                    return await this.createSolicitudMinimal(solicitudData, numero);
+                    // Proporcionar información más específica del error
+                    let mensajeError = 'No se pudo crear la solicitud. ';
+                    
+                    try {
+                        // Intentar extraer información específica del error
+                        if (error.message.includes('servicioIngenieria')) {
+                            mensajeError += `El valor "${mappedData.servicioIngenieria}" no es válido para el área. `;
+                            mensajeError += `Valores válidos: ${this.validSolicitudValues.servicioIngenieria.join(', ')}`;
+                        } else if (error.message.includes('tipoServicio')) {
+                            mensajeError += `El tipo de servicio "${mappedData.tipoServicio}" no es válido. `;
+                        } else if (error.message.includes('prioridad')) {
+                            mensajeError += `La prioridad "${mappedData.prioridad}" no es válida. `;
+                        } else {
+                            mensajeError += 'Verifique la configuración de campos en Airtable.';
+                        }
+                    } catch (e) {
+                        mensajeError += 'Verifique la configuración de campos en Airtable.';
+                    }
+                    
+                    throw new Error(mensajeError);
                 }
                 
                 throw error;
@@ -1311,64 +1220,6 @@ class AirtableAPI {
         } catch (error) {
             console.error('❌ Error creando solicitud:', error);
             throw error;
-        }
-    }
-
-    // Método fallback para crear solicitud con campos mínimos
-    async createSolicitudMinimal(solicitudData, numero) {
-        console.log('🔄 Creando solicitud con campos mínimos...');
-        console.log('🏥 ÁREA ORIGINAL:', solicitudData.servicioIngenieria);
-        
-        try {
-            // CRÍTICO: Intentar mapear el área incluso en modo mínimo
-            let areaParaGuardar = solicitudData.servicioIngenieria;
-            if (this.fieldMappings.servicioIngenieria && this.fieldMappings.servicioIngenieria[areaParaGuardar]) {
-                areaParaGuardar = this.fieldMappings.servicioIngenieria[areaParaGuardar];
-                console.log(`🗺️ ÁREA MAPEADA (modo mínimo): ${solicitudData.servicioIngenieria} → ${areaParaGuardar}`);
-            }
-            
-            const minimalData = {
-                fields: {
-                    numero: numero,
-                    descripcion: this.cleanFieldValue(solicitudData.descripcion || 'Solicitud de mantenimiento'),
-                    fechaCreacion: new Date().toISOString(),
-                    servicioIngenieria: areaParaGuardar // INCLUIR EL ÁREA MAPEADA
-                }
-            };
-            
-            console.log('📝 Datos mínimos:', minimalData);
-            const result = await this.makeRequest(this.tables.solicitudes, 'POST', minimalData);
-            
-            console.log('✅ Solicitud creada con campos mínimos:', result.id);
-            
-            // Intentar agregar más campos uno por uno
-            const fieldsToAdd = {
-                estado: 'Pendiente',
-                tipoServicio: this.mapFieldValue('tipoServicio', solicitudData.tipoServicio),
-                prioridad: this.mapFieldValue('prioridad', solicitudData.prioridad),
-                equipo: solicitudData.equipo,
-                ubicacion: solicitudData.ubicacion,
-                solicitante: solicitudData.solicitante
-            };
-            
-            for (const [fieldName, fieldValue] of Object.entries(fieldsToAdd)) {
-                if (fieldValue) {
-                    try {
-                        await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'PATCH', {
-                            fields: { [fieldName]: fieldValue }
-                        });
-                        console.log(`✅ Campo ${fieldName} agregado`);
-                    } catch (error) {
-                        console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, error.message);
-                    }
-                }
-            }
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Error incluso con campos mínimos:', error);
-            throw new Error('No se pudo crear la solicitud. Verifique la configuración de campos en Airtable.');
         }
     }
 
@@ -1814,198 +1665,53 @@ class AirtableAPI {
         }
     }
 
-    // 🔧 Método de diagnóstico para aprobación
-    async debugApprovalValues() {
-        console.log('🔍 DIAGNÓSTICO DE VALORES PARA APROBACIÓN');
-        console.log('==========================================');
+    // 🔧 NUEVO: Método de diagnóstico para valores de solicitudes
+    async diagnosticSolicitudValues() {
+        console.log('🔍 DIAGNÓSTICO COMPLETO DE VALORES DE SOLICITUDES');
+        console.log('==============================================');
         
         try {
-            // Detectar valores de solicitudes de acceso
-            await this.detectValidAccessRequestValues();
-            console.log('📋 Valores de SolicitudesAcceso:', this.validAccessRequestValues);
+            // 1. Mostrar valores actuales
+            console.log('\n📋 VALORES ACTUALES:');
+            console.log('Servicios de Ingeniería:', this.validSolicitudValues.servicioIngenieria);
+            console.log('Tipos de Servicio:', this.validSolicitudValues.tipoServicio);
+            console.log('Prioridades:', this.validSolicitudValues.prioridad);
+            console.log('Estados:', this.validSolicitudValues.estado);
             
-            // Detectar valores de usuarios
-            await this.detectValidUserValues();
-            console.log('📋 Valores de Usuarios:', this.validUserValues);
-            
-            // Probar creación de usuario de prueba
-            console.log('\n🧪 Probando creación de usuario de prueba...');
-            
-            const testUserData = {
-                nombreCompleto: 'TEST_USER_' + Date.now(),
-                email: 'test_' + Date.now() + '@test.com',
-                codigoAcceso: '9999',
-                fechaCreacion: new Date().toISOString()
-            };
-            
-            if (this.validUserValues.estado) {
-                testUserData.estado = this.validUserValues.estado;
-            }
-            
-            try {
-                const testUser = await this.makeRequest(this.tables.usuarios, 'POST', {
-                    fields: testUserData
-                });
-                console.log('✅ Usuario de prueba creado exitosamente');
-                
-                // Eliminar usuario de prueba
-                await this.makeRequest(`${this.tables.usuarios}/${testUser.id}`, 'DELETE');
-                console.log('🗑️ Usuario de prueba eliminado');
-                
-                return {
-                    success: true,
-                    diagnostico: {
-                        solicitudesAcceso: this.validAccessRequestValues,
-                        usuarios: this.validUserValues,
-                        pruebaCreacion: 'Exitosa'
-                    }
-                };
-                
-            } catch (testError) {
-                console.error('❌ Error creando usuario de prueba:', testError.message);
-                
-                return {
-                    success: false,
-                    error: testError.message,
-                    diagnostico: {
-                        solicitudesAcceso: this.validAccessRequestValues,
-                        usuarios: this.validUserValues,
-                        pruebaCreacion: 'Fallida'
-                    }
-                };
-            }
-            
-        } catch (error) {
-            console.error('❌ Error en diagnóstico:', error);
-            return { error: error.message };
-        }
-    }
-
-    // Método de diagnóstico para solicitudes de acceso
-    async debugAccessRequestValues() {
-        console.log('🔍 DIAGNÓSTICO DE VALORES PARA SOLICITUDES DE ACCESO');
-        console.log('=================================================');
-        
-        try {
-            // Redetectar valores
-            await this.detectValidAccessRequestValues();
-            
-            console.log('📋 Valores detectados:', this.validAccessRequestValues);
-            
-            // Probar creación con valores detectados
-            if (this.validAccessRequestValues.estado) {
-                console.log('🧪 Probando creación con estado detectado...');
-                
-                const testData = {
-                    nombreCompleto: 'TEST_DEBUG_' + Date.now(),
-                    email: 'debug_' + Date.now() + '@test.com',
-                    fechaSolicitud: new Date().toISOString(),
-                    estado: this.validAccessRequestValues.estado
-                };
-                
-                try {
-                    const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', {
-                        fields: testData
-                    });
-                    console.log('✅ Creación exitosa con estado:', this.validAccessRequestValues.estado);
-                    
-                    // Eliminar registro de prueba
-                    await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'DELETE');
-                    
-                } catch (error) {
-                    console.error('❌ Error con estado detectado:', error.message);
-                }
-            }
-            
-            return {
-                valoresDetectados: this.validAccessRequestValues,
-                recomendacion: this.validAccessRequestValues.estado 
-                    ? 'Usar valor detectado para estado' 
-                    : 'Crear sin campo estado'
-            };
-            
-        } catch (error) {
-            console.error('❌ Error en diagnóstico:', error);
-            return { error: error.message };
-        }
-    }
-
-    // Método de diagnóstico para valores de solicitudes
-    async debugSolicitudValues() {
-        console.log('🔍 DIAGNÓSTICO DE VALORES PARA SOLICITUDES');
-        console.log('==========================================');
-        
-        try {
-            // Redetectar valores
+            // 2. Intentar detectar valores
+            console.log('\n🔍 DETECTANDO VALORES EN AIRTABLE...');
             await this.detectValidSolicitudValues();
             
-            console.log('📋 Valores detectados:', this.validSolicitudValues);
+            // 3. Probar creación con cada área
+            console.log('\n🧪 PROBANDO CREACIÓN CON CADA ÁREA:');
+            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+            const resultados = {};
             
-            return {
-                valoresDetectados: this.validSolicitudValues,
-                recomendacion: 'Usar valores exactos detectados en Airtable'
-            };
-            
-        } catch (error) {
-            console.error('❌ Error en diagnóstico:', error);
-            return { error: error.message };
-        }
-    }
-
-    // 🔍 NUEVO: Diagnóstico específico para problema de área
-    async debugAreaProblem() {
-        console.log('🔍 DIAGNÓSTICO ESPECÍFICO: PROBLEMA DE ÁREA');
-        console.log('==========================================');
-        
-        try {
-            // 1. Detectar valores válidos
-            await this.detectValidSolicitudValues();
-            
-            console.log('📋 Valores de área detectados:', this.validSolicitudValues.servicioIngenieria);
-            console.log('🗺️ Mapeo configurado:', this.fieldMappings.servicioIngenieria);
-            
-            // 2. Obtener algunas solicitudes recientes
-            const solicitudes = await this.getSolicitudes();
-            const solicitudesRecientes = solicitudes.slice(0, 5);
-            
-            console.log('\n📋 SOLICITUDES RECIENTES:');
-            solicitudesRecientes.forEach(sol => {
-                console.log(`- ${sol.numero}: Área = "${sol.servicioIngenieria}" (${sol.servicioIngenieria ? '✅' : '❌ SIN ÁREA'})`);
-            });
-            
-            // 3. Probar creación con cada valor de área
-            console.log('\n🧪 PROBANDO VALORES DE ÁREA:');
-            const testResults = {};
-            
-            const areasAPrubar = [
-                'INGENIERIA_BIOMEDICA',
-                'Ingeniería Biomédica',
-                'MECANICA',
-                'Mecánica',
-                'INFRAESTRUCTURA',
-                'Infraestructura'
-            ];
-            
-            for (const area of areasAPrubar) {
+            for (const area of areas) {
                 try {
+                    // Aplicar mapeo
+                    const areaMapeada = this.mapFieldValue('servicioIngenieria', area);
+                    console.log(`\nProbando ${area} → ${areaMapeada}`);
+                    
                     const testData = {
                         fields: {
-                            numero: 'TEST_AREA_' + Date.now(),
+                            numero: 'TEST_' + Date.now(),
                             descripcion: 'Test de área',
-                            servicioIngenieria: area,
-                            fechaCreacion: new Date().toISOString()
+                            servicioIngenieria: areaMapeada,
+                            fechaCreacion: new Date().toISOString(),
+                            estado: 'Pendiente'
                         }
                     };
                     
                     const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
                     
                     if (result && result.id) {
-                        console.log(`✅ "${area}" - VÁLIDO`);
-                        testResults[area] = 'VÁLIDO';
-                        
-                        // Verificar qué valor se guardó realmente
-                        const savedValue = result.fields ? result.fields.servicioIngenieria : 'No retornado';
-                        console.log(`   Valor guardado: "${savedValue}"`);
+                        console.log(`✅ ${area} → ${areaMapeada} - VÁLIDO`);
+                        resultados[area] = { 
+                            valido: true, 
+                            valorMapeado: areaMapeada,
+                            valorGuardado: result.fields?.servicioIngenieria 
+                        };
                         
                         // Eliminar registro de prueba
                         try {
@@ -2016,35 +1722,24 @@ class AirtableAPI {
                     }
                     
                 } catch (error) {
-                    console.log(`❌ "${area}" - INVÁLIDO: ${error.message}`);
-                    testResults[area] = 'INVÁLIDO';
+                    console.log(`❌ ${area} - INVÁLIDO: ${error.message}`);
+                    resultados[area] = { valido: false, error: error.message };
                 }
             }
             
-            // 4. Recomendaciones
-            const valoresValidos = Object.entries(testResults)
-                .filter(([area, result]) => result === 'VÁLIDO')
-                .map(([area]) => area);
-            
             return {
-                diagnostico: {
-                    valoresDetectados: this.validSolicitudValues.servicioIngenieria,
-                    mapeoConfigurado: this.fieldMappings.servicioIngenieria,
-                    pruebasRealizadas: testResults,
-                    valoresValidos: valoresValidos,
-                    solicitudesSinArea: solicitudes.filter(s => !s.servicioIngenieria).length,
-                    totalSolicitudes: solicitudes.length
-                },
+                valoresActuales: this.validSolicitudValues,
+                mapeoConfigurado: this.fieldMappings.servicioIngenieria,
+                resultadosPruebas: resultados,
                 recomendaciones: [
-                    `Usar valores válidos: ${valoresValidos.join(', ')}`,
-                    'Verificar que el mapeo esté configurado correctamente',
-                    'Asegurar que el campo servicioIngenieria existe en Airtable',
-                    'Revisar permisos del campo en Airtable'
+                    'Verificar que los valores en Airtable coincidan con el mapeo',
+                    'Usar los valores mapeados al crear solicitudes',
+                    'Si persiste el error, verificar permisos del campo en Airtable'
                 ]
             };
             
         } catch (error) {
-            console.error('❌ Error en diagnóstico de área:', error);
+            console.error('❌ Error en diagnóstico:', error);
             return { error: error.message };
         }
     }
@@ -2058,22 +1753,18 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '7.1-mapeo-corregido',
+            version: '8.0-deteccion-robusta',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
-                'FIX: Mapeo de valores corregido para todos los campos',
-                'FIX: Error 422 resuelto con mapeo inteligente',
-                'FIX: Creación de solicitudes con valores mapeados correctos',
-                'NUEVO: Detección automática de valores para tabla Solicitudes',
-                'FIX: Fallback a campos mínimos si hay error',
-                'FIX: Detección automática de valores válidos para todas las tablas',
-                'FIX: Eliminación de campos inexistentes',
-                'FIX: Manejo robusto de todos los estados',
-                'FIX: Limpieza mejorada de valores string',
-                'Área biomédica funcionando correctamente',
-                'Sistema completo de asignación de personal'
+                'FIX: Detección robusta de valores para todas las tablas',
+                'FIX: Valores por defecto conocidos para solicitudes',
+                'FIX: Mejor manejo de errores 422 con mensajes específicos',
+                'FIX: Mapeo inteligente con verificación de valores válidos',
+                'NUEVO: Método de diagnóstico para valores de solicitudes',
+                'FIX: Sin errores cuando no hay registros previos',
+                'Sistema completo funcionando con valores mapeados'
             ]
         };
     }
@@ -2081,9 +1772,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con detección completa...');
+    console.log('🔧 Creando instancia global con detección robusta...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión con detección completa)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con detección robusta)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -2096,8 +1787,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (detección completa)' 
-                : 'Modo Local (detección completa)';
+                ? '✅ Conectado (detección robusta)' 
+                : 'Modo Local (detección robusta)';
             
             updateConnectionStatus(status, message);
         }
@@ -2116,7 +1807,7 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO DETECCIÓN COMPLETA');
+        console.log('🔍 DIAGNÓSTICO DETECCIÓN ROBUSTA');
         console.log('==================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
@@ -2138,37 +1829,17 @@ try {
             return { error: 'airtableAPI no disponible' };
         }
         
-        return await window.airtableAPI.debugAccessRequestValues();
+        return await window.airtableAPI.detectValidAccessRequestValues();
     };
     
-    // Función para debug de aprobación
-    window.debugApprovalValues = async function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        return await window.airtableAPI.debugApprovalValues();
-    };
-    
-    // NUEVA: Función para debug de valores de solicitudes
+    // NUEVA: Función para diagnóstico completo de solicitudes
     window.debugSolicitudValues = async function() {
         if (!window.airtableAPI) {
             console.error('❌ window.airtableAPI no está disponible');
             return { error: 'airtableAPI no disponible' };
         }
         
-        return await window.airtableAPI.debugSolicitudValues();
-    };
-    
-    // NUEVA: Función para debug específico del problema de área
-    window.debugAreaProblem = async function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        return await window.airtableAPI.debugAreaProblem();
+        return await window.airtableAPI.diagnosticSolicitudValues();
     };
     
     console.log('✅ Funciones de debug creadas exitosamente');
@@ -2176,45 +1847,39 @@ try {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (MAPEO CORREGIDO) cargado');
-console.log('🛡️ FIX: Mapeo de valores corregido para todos los campos');
-console.log('🛡️ FIX: Error 422 resuelto con mapeo inteligente');
-console.log('🛡️ NUEVO: Detección automática de valores para tabla Solicitudes');
-console.log('🛡️ FIX: Detección automática de valores válidos para todas las tablas');
-console.log('🛡️ FIX: Eliminación de campos inexistentes');
-console.log('🧹 FIX: Limpieza mejorada de valores string');
-console.log('🛡️ FIX: Creación robusta con fallbacks');
-console.log('✅ FIX: Sistema completo sin errores 422');
-console.log('🏥 FIX: Problema de área - mapeo mejorado y diagnóstico');
-console.log('🛠️ Para diagnóstico: debugAirtableConnection()');
-console.log('🔍 Para debug de accesos: debugAccessRequests()');
-console.log('👤 Para debug de aprobación: debugApprovalValues()');
-console.log('📋 Para debug de solicitudes: debugSolicitudValues()');
-console.log('🏥 Para debug de área: debugAreaProblem()');
+console.log('✅ airtable-config.js (DETECCIÓN ROBUSTA) cargado');
+console.log('🛡️ FIX: Detección robusta con valores por defecto conocidos');
+console.log('🛡️ FIX: Sin errores cuando no hay registros previos');
+console.log('🛡️ FIX: Mejor manejo de errores 422 con mensajes específicos');
+console.log('🧪 Para diagnóstico completo: debugSolicitudValues()');
+console.log('🛠️ Para estado general: debugAirtableConnection()');
 
 // Auto-verificación después de la carga
 setTimeout(async () => {
-    if (window.airtableAPI && typeof window.debugSolicitudValues === 'function') {
+    if (window.airtableAPI) {
         console.log('🔄 Iniciando detección automática de valores válidos...');
         
         try {
+            // Siempre detectar valores de acceso y usuarios
             await window.airtableAPI.detectValidAccessRequestValues();
             await window.airtableAPI.detectValidUserValues();
-            await window.airtableAPI.detectValidSolicitudValues(); // NUEVO
             
-            const accessValues = window.airtableAPI.validAccessRequestValues;
-            const userValues = window.airtableAPI.validUserValues;
+            // Intentar detectar valores de solicitudes, pero no fallar si no hay registros
+            try {
+                await window.airtableAPI.detectValidSolicitudValues();
+            } catch (error) {
+                console.log('📋 Usando valores por defecto para solicitudes');
+            }
+            
             const solicitudValues = window.airtableAPI.validSolicitudValues;
             
             console.log('✅ Detección completada');
-            console.log('📋 Solicitudes de acceso:', accessValues.estado ? `Estado PENDIENTE: "${accessValues.estado}"` : 'Sin estado detectado');
-            console.log('👤 Usuarios:', userValues.estado ? `Estado ACTIVO: "${userValues.estado}"` : 'Sin estado detectado');
-            console.log('📋 Solicitudes:', solicitudValues.servicioIngenieria.length > 0 ? `${solicitudValues.servicioIngenieria.length} áreas detectadas` : 'Sin valores detectados');
-            
-            // Mostrar específicamente los valores de área detectados
-            if (solicitudValues.servicioIngenieria.length > 0) {
-                console.log('🏥 ÁREAS DETECTADAS:', solicitudValues.servicioIngenieria);
-            }
+            console.log('📋 Valores de solicitudes disponibles:', {
+                áreas: solicitudValues.servicioIngenieria,
+                tipos: solicitudValues.tipoServicio.length,
+                prioridades: solicitudValues.prioridad.length,
+                estados: solicitudValues.estado.length
+            });
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);

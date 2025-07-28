@@ -1103,11 +1103,9 @@
                 
             } catch (error) {
                 console.error('❌ Error enviando solicitud:', error);
-                showAlert(alertDiv, 'error', 
-                    `❌ Error al enviar la solicitud\n\n` +
-                    `${error.message}\n\n` +
-                    `Por favor intente nuevamente o contacte al administrador.`
-                );
+                // Unificar el mensaje de error para evitar que se concatene sin salto de línea
+                const mensaje = `❌ Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
+                showAlert(alertDiv, 'error', mensaje);
             } finally {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '📤 Enviar Solicitud';
