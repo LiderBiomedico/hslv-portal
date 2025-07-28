@@ -1,10 +1,11 @@
 <!DOCTYPE html>
+
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
-    <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
+<style>
         * {
             margin: 0;
             padding: 0;
@@ -909,488 +910,463 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content container">
-            <!-- Indicador de conexión Airtable -->
-            <div id="connection-status" class="connection-status disconnected">
-                <span id="connection-icon">🔄</span>
-                <span id="connection-text">Conectando...</span>
-            </div>
-            
-            <!-- Indicador de auto-refresh -->
-            <div id="auto-refresh-indicator" class="auto-refresh-indicator">
-                <span class="refresh-spinner"></span>
-                <span id="refresh-text">Auto-refresh activo</span>
-                <span id="refresh-countdown">(5s)</span>
-            </div>
-            
-            <div class="logo">
-                <div class="hospital-info">
-                    <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-                    <p class="developer-credit">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
-                    <p>Portal de Gestión Cloud - Sistema con Asignación de Personal + Auto-Refresh</p>
-                </div>
-            </div>
-
-            <nav class="nav-tabs">
-                <button class="nav-tab active" onclick="showView('dashboard')" data-view="dashboard">
+<!-- Header -->
+<header class="header">
+<div class="header-content container">
+<!-- Indicador de conexión Airtable -->
+<div class="connection-status disconnected" id="connection-status">
+<span id="connection-icon">🔄</span>
+<span id="connection-text">Conectando...</span>
+</div>
+<!-- Indicador de auto-refresh -->
+<div class="auto-refresh-indicator" id="auto-refresh-indicator">
+<span class="refresh-spinner"></span>
+<span id="refresh-text">Auto-refresh activo</span>
+<span id="refresh-countdown">(5s)</span>
+</div>
+<div class="logo">
+<div class="hospital-info">
+<h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
+<p class="developer-credit" style=";display:none!important">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
+<p>Portal de Gestión Cloud - Sistema con Asignación de Personal + Auto-Refresh</p>
+</div>
+</div>
+<nav class="nav-tabs">
+<button class="nav-tab active" data-view="dashboard" onclick="showView('dashboard')">
                     📊 Dashboard
                 </button>
-                <button class="nav-tab" onclick="showView('solicitudes')" data-view="solicitudes">
+<button class="nav-tab" data-view="solicitudes" onclick="showView('solicitudes')">
                     📋 Solicitudes (<span id="total-count">-</span>)
                 </button>
-                <button class="nav-tab" onclick="showView('personal')" data-view="personal">
+<button class="nav-tab" data-view="personal" onclick="showView('personal')">
                     👥 Personal de Soporte (<span id="total-technicians-nav">-</span>)
                 </button>
-                <button class="nav-tab" onclick="showView('accesos')" data-view="accesos">
+<button class="nav-tab" data-view="accesos" onclick="showView('accesos')">
                     🔐 Accesos (<span id="pending-access-count">-</span>)
                 </button>
-            </nav>
-
-            <div class="user-info">
-                <button class="notification-btn" onclick="showNotifications()">
+</nav>
+<div class="user-info">
+<button class="notification-btn" onclick="showNotifications()">
                     🔔
                     <span class="notification-badge" id="notification-count">-</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main-layout container">
-        <!-- Dashboard View -->
-        <div id="dashboard-view" class="view">
-            <!-- Alert de conexión -->
-            <div id="connection-alert" class="alert alert-info">
-                <h3 style="font-weight: 600; margin-bottom: 0.5rem;">🌐 Sistema Cloud con Auto-Refresh Cada 5 Segundos - ÁREA BIOMÉDICA CORREGIDA - SIN CAMPO solicitudId</h3>
-                <p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube con actualización automática.</p>
-                <ul style="margin: 0.5rem 0 0 1rem;">
-                    <li><strong>✅ CORREGIDO:</strong> Área Biomédica funciona perfectamente (SOLBIO)</li>
-                    <li><strong>✅ CORREGIDO:</strong> Campo solicitudId removido para evitar error 422</li>
-                    <li><strong>✅ CORREGIDO:</strong> Usa ID de Airtable directamente</li>
-                    <li><strong>🔄 NUEVO:</strong> Auto-refresh cada 5 segundos para datos actualizados</li>
-                    <li><strong>🎯 Asignación de Personal:</strong> Sistema automático e inteligente</li>
-                    <li><strong>⏱️ Control de Tiempos:</strong> Cálculo automático de respuesta</li>
-                    <li><strong>🔄 Sincronización:</strong> Cambios reflejados en tiempo real</li>
-                    <li><strong>🌍 Acceso Multi-dispositivo:</strong> Desde cualquier computador</li>
-                </ul>
-                <div style="margin-top: 1rem;">
-                    <button class="btn btn-primary btn-sm" onclick="testCloudConnection()">
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="main-layout container">
+<!-- Dashboard View -->
+<div class="view" id="dashboard-view">
+<!-- Alert de conexión -->
+<div class="alert alert-info" id="connection-alert">
+<h3 style="font-weight: 600; margin-bottom: 0.5rem;;display:none!important">🌐 Sistema Cloud con Auto-Refresh Cada 5 Segundos - ÁREA BIOMÉDICA CORREGIDA - SIN CAMPO solicitudId</h3>
+<p>Portal de Gestión funcionando con <strong>Airtable</strong> como base de datos en la nube con actualización automática.</p>
+<ul style="margin: 0.5rem 0 0 1rem;">
+<li><strong>✅ CORREGIDO:</strong> Área Biomédica funciona perfectamente (SOLBIO)</li>
+<li><strong>✅ CORREGIDO:</strong> Campo solicitudId removido para evitar error 422</li>
+<li><strong>✅ CORREGIDO:</strong> Usa ID de Airtable directamente</li>
+<li><strong>🔄 NUEVO:</strong> Auto-refresh cada 5 segundos para datos actualizados</li>
+<li><strong>🎯 Asignación de Personal:</strong> Sistema automático e inteligente</li>
+<li><strong>⏱️ Control de Tiempos:</strong> Cálculo automático de respuesta</li>
+<li><strong>🔄 Sincronización:</strong> Cambios reflejados en tiempo real</li>
+<li><strong>🌍 Acceso Multi-dispositivo:</strong> Desde cualquier computador</li>
+</ul>
+<div style="margin-top: 1rem;">
+<button class="btn btn-primary btn-sm" onclick="testCloudConnection()">
                         🧪 Probar Conexión
                     </button>
-                    <button class="btn btn-success btn-sm" onclick="autoAssignAllPending()">
+<button class="btn btn-success btn-sm" onclick="autoAssignAllPending()">
                         🤖 Auto-asignar Todo
                     </button>
-                    <button class="btn btn-warning btn-sm" onclick="showAdvancedStatistics()">
+<button class="btn btn-warning btn-sm" onclick="showAdvancedStatistics()">
                         📊 Estadísticas Avanzadas
                     </button>
-                    <button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()">
+<button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()">
                         🏥 Test Área Biomédica
                     </button>
-                    <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()">
-                        <span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Metrics mejorados con asignaciones -->
-            <div class="metrics-grid">
-                <div class="metric-card total" onclick="filterByArea('all')">
-                    <div class="metric-icon">📋</div>
-                    <div class="metric-number" id="metric-total">-</div>
-                    <div class="metric-label">Total Solicitudes</div>
-                </div>
-                <div class="metric-card pendientes" onclick="filterByStatus('PENDIENTE')">
-                    <div class="metric-icon">⏳</div>
-                    <div class="metric-number" id="metric-pendientes">-</div>
-                    <div class="metric-label">Pendientes</div>
-                </div>
-                <div class="metric-card asignadas" onclick="filterByStatus('ASIGNADA')">
-                    <div class="metric-icon">🎯</div>
-                    <div class="metric-number" id="metric-asignadas">-</div>
-                    <div class="metric-label">Asignadas</div>
-                </div>
-                <div class="metric-card biomedica" onclick="filterByArea('INGENIERIA_BIOMEDICA')">
-                    <div class="metric-icon">🏥</div>
-                    <div class="metric-number" id="metric-biomedica">-</div>
-                    <div class="metric-label">Ing. Biomédica</div>
-                </div>
-                <div class="metric-card mecanica" onclick="filterByArea('MECANICA')">
-                    <div class="metric-icon">⚙️</div>
-                    <div class="metric-number" id="metric-mecanica">-</div>
-                    <div class="metric-label">Mecánica</div>
-                </div>
-                <div class="metric-card infraestructura" onclick="filterByArea('INFRAESTRUCTURA')">
-                    <div class="metric-icon">🏗️</div>
-                    <div class="metric-number" id="metric-infraestructura">-</div>
-                    <div class="metric-label">Infraestructura</div>
-                </div>
-            </div>
-
-            <!-- Resumen de Personal por Área -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">🏥 Personal Biomédica</h2>
-                        <span class="status-disponible" id="biomedica-personnel-count">- registrados</span>
-                    </div>
-                    <div class="card-content">
-                        <div id="biomedica-personnel-summary">
-                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">⚙️ Personal Mecánica</h2>
-                        <span class="status-disponible" id="mecanica-personnel-count">- registrados</span>
-                    </div>
-                    <div class="card-content">
-                        <div id="mecanica-personnel-summary">
-                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h2 class="card-title">🏗️ Personal Infraestructura</h2>
-                        <span class="status-disponible" id="infraestructura-personnel-count">- registrados</span>
-                    </div>
-                    <div class="card-content">
-                        <div id="infraestructura-personnel-summary">
-                            <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Solicitudes View - Mejorado con Asignación -->
-        <div id="solicitudes-view" class="view hidden">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">📋 Gestión de Solicitudes con Asignación</h2>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
+<button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()">
+<span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
+</button>
+</div>
+</div>
+<!-- Metrics mejorados con asignaciones -->
+<div class="metrics-grid">
+<div class="metric-card total" onclick="filterByArea('all')">
+<div class="metric-icon">📋</div>
+<div class="metric-number" id="metric-total">-</div>
+<div class="metric-label">Total Solicitudes</div>
+</div>
+<div class="metric-card pendientes" onclick="filterByStatus('PENDIENTE')">
+<div class="metric-icon">⏳</div>
+<div class="metric-number" id="metric-pendientes">-</div>
+<div class="metric-label">Pendientes</div>
+</div>
+<div class="metric-card asignadas" onclick="filterByStatus('ASIGNADA')">
+<div class="metric-icon">🎯</div>
+<div class="metric-number" id="metric-asignadas">-</div>
+<div class="metric-label">Asignadas</div>
+</div>
+<div class="metric-card biomedica" onclick="filterByArea('INGENIERIA_BIOMEDICA')">
+<div class="metric-icon">🏥</div>
+<div class="metric-number" id="metric-biomedica">-</div>
+<div class="metric-label">Ing. Biomédica</div>
+</div>
+<div class="metric-card mecanica" onclick="filterByArea('MECANICA')">
+<div class="metric-icon">⚙️</div>
+<div class="metric-number" id="metric-mecanica">-</div>
+<div class="metric-label">Mecánica</div>
+</div>
+<div class="metric-card infraestructura" onclick="filterByArea('INFRAESTRUCTURA')">
+<div class="metric-icon">🏗️</div>
+<div class="metric-number" id="metric-infraestructura">-</div>
+<div class="metric-label">Infraestructura</div>
+</div>
+</div>
+<!-- Resumen de Personal por Área -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">🏥 Personal Biomédica</h2>
+<span class="status-disponible" id="biomedica-personnel-count">- registrados</span>
+</div>
+<div class="card-content">
+<div id="biomedica-personnel-summary">
+<p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">⚙️ Personal Mecánica</h2>
+<span class="status-disponible" id="mecanica-personnel-count">- registrados</span>
+</div>
+<div class="card-content">
+<div id="mecanica-personnel-summary">
+<p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">🏗️ Personal Infraestructura</h2>
+<span class="status-disponible" id="infraestructura-personnel-count">- registrados</span>
+</div>
+<div class="card-content">
+<div id="infraestructura-personnel-summary">
+<p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Solicitudes View - Mejorado con Asignación -->
+<div class="view hidden" id="solicitudes-view">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">📋 Gestión de Solicitudes con Asignación</h2>
+<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+<button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
                             🔄 Actualizar
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
+<button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
                             🤖 Auto-asignar
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="showRequestsStatistics()">
+<button class="btn btn-warning btn-sm" onclick="showRequestsStatistics()">
                             📊 Estadísticas
                         </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <!-- Filtros de Solicitudes -->
-                    <div class="filters-section">
-                        <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Solicitudes</h4>
-                        <div class="filters-grid">
-                            <div>
-                                <label class="form-label">Estado:</label>
-                                <select id="filter-estado-solicitud" onchange="filterSolicitudes()" class="form-select">
-                                    <option value="">Todos los estados</option>
-                                    <option value="PENDIENTE">⏳ Pendiente</option>
-                                    <option value="ASIGNADA">🎯 Asignada</option>
-                                    <option value="EN_PROCESO">🔄 En Proceso</option>
-                                    <option value="COMPLETADA">✅ Completada</option>
-                                    <option value="CANCELADA">❌ Cancelada</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Área:</label>
-                                <select id="filter-area-solicitud" onchange="filterSolicitudes()" class="form-select">
-                                    <option value="">Todas las áreas</option>
-                                    <option value="INGENIERIA_BIOMEDICA">🏥 Ing. Biomédica</option>
-                                    <option value="MECANICA">⚙️ Mecánica</option>
-                                    <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="form-label">Prioridad:</label>
-                                <select id="filter-prioridad-solicitud" onchange="filterSolicitudes()" class="form-select">
-                                    <option value="">Todas las prioridades</option>
-                                    <option value="CRITICA">🚨 Crítica</option>
-                                    <option value="ALTA">🔴 Alta</option>
-                                    <option value="MEDIA">🟡 Media</option>
-                                    <option value="BAJA">🟢 Baja</option>
-                                </select>
-                            </div>
-                            <div>
-                                <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
+</div>
+</div>
+<div class="card-content">
+<!-- Filtros de Solicitudes -->
+<div class="filters-section">
+<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Solicitudes</h4>
+<div class="filters-grid">
+<div>
+<label class="form-label">Estado:</label>
+<select class="form-select" id="filter-estado-solicitud" onchange="filterSolicitudes()">
+<option value="">Todos los estados</option>
+<option value="PENDIENTE">⏳ Pendiente</option>
+<option value="ASIGNADA">🎯 Asignada</option>
+<option value="EN_PROCESO">🔄 En Proceso</option>
+<option value="COMPLETADA">✅ Completada</option>
+<option value="CANCELADA">❌ Cancelada</option>
+</select>
+</div>
+<div>
+<label class="form-label">Área:</label>
+<select class="form-select" id="filter-area-solicitud" onchange="filterSolicitudes()">
+<option value="">Todas las áreas</option>
+<option value="INGENIERIA_BIOMEDICA">🏥 Ing. Biomédica</option>
+<option value="MECANICA">⚙️ Mecánica</option>
+<option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
+</select>
+</div>
+<div>
+<label class="form-label">Prioridad:</label>
+<select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
+<option value="">Todas las prioridades</option>
+<option value="CRITICA">🚨 Crítica</option>
+<option value="ALTA">🔴 Alta</option>
+<option value="MEDIA">🟡 Media</option>
+<option value="BAJA">🟢 Baja</option>
+</select>
+</div>
+<div>
+<button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
                                     🗑️ Limpiar Filtros
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="solicitudes-list">
-                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes desde Airtable...</h3>
-                            <p>Conectando con la base de datos en la nube</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Personal de Soporte View (mantenido igual) -->
-        <div id="personal-view" class="view hidden">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">👥 Gestión de Personal de Soporte (Cloud)</h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="showAddPersonalModal()">
+</div>
+</div>
+</div>
+<div id="solicitudes-list">
+<div style="text-align: center; padding: 3rem; color: #6b7280;">
+<div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+<h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes desde Airtable...</h3>
+<p>Conectando con la base de datos en la nube</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Personal de Soporte View (mantenido igual) -->
+<div class="view hidden" id="personal-view">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">👥 Gestión de Personal de Soporte (Cloud)</h2>
+<div style="display: flex; gap: 0.5rem;">
+<button class="btn btn-success btn-sm" onclick="showAddPersonalModal()">
                             ➕ Agregar Personal
                         </button>
-                        <button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
+<button class="btn btn-primary btn-sm" onclick="syncTechniciansWithCloud()">
                             🔄 Sincronizar con Airtable
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="showPersonalStatistics()">
+<button class="btn btn-warning btn-sm" onclick="showPersonalStatistics()">
                             📊 Estadísticas
                         </button>
-                        <button class="btn btn-secondary btn-sm" onclick="debugPersonalConnection()">
+<button class="btn btn-secondary btn-sm" onclick="debugPersonalConnection()">
                             🔧 Debug Conexión
                         </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <!-- Filtros de Personal -->
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
-                        <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Personal</h4>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Área:</label>
-                                <select id="filter-area" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                                    <option value="">Todas las áreas</option>
-                                    <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
-                                    <option value="MECANICA">Mecánica</option>
-                                    <option value="INFRAESTRUCTURA">Infraestructura</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Estado:</label>
-                                <select id="filter-estado" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                                    <option value="">Todos los estados</option>
-                                    <option value="disponible">Disponible</option>
-                                    <option value="ocupado">Ocupado</option>
-                                    <option value="inactivo">Inactivo</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Tipo:</label>
-                                <select id="filter-tipo" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                                    <option value="">Todos los tipos</option>
-                                    <option value="ingeniero">Ingeniero</option>
-                                    <option value="tecnico">Técnico</option>
-                                    <option value="auxiliar">Auxiliar</option>
-                                </select>
-                            </div>
-                            <div style="display: flex; align-items: end;">
-                                <button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="width: 100%;">
+</div>
+</div>
+<div class="card-content">
+<!-- Filtros de Personal -->
+<div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border: 1px solid #e5e7eb;">
+<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Personal</h4>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+<div>
+<label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Área:</label>
+<select id="filter-area" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+<option value="">Todas las áreas</option>
+<option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+<option value="MECANICA">Mecánica</option>
+<option value="INFRAESTRUCTURA">Infraestructura</option>
+</select>
+</div>
+<div>
+<label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Estado:</label>
+<select id="filter-estado" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+<option value="">Todos los estados</option>
+<option value="disponible">Disponible</option>
+<option value="ocupado">Ocupado</option>
+<option value="inactivo">Inactivo</option>
+</select>
+</div>
+<div>
+<label style="display: block; font-weight: 600; color: #374151; margin-bottom: 0.5rem;">Tipo:</label>
+<select id="filter-tipo" onchange="filterPersonal()" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+<option value="">Todos los tipos</option>
+<option value="ingeniero">Ingeniero</option>
+<option value="tecnico">Técnico</option>
+<option value="auxiliar">Auxiliar</option>
+</select>
+</div>
+<div style="display: flex; align-items: end;">
+<button class="btn btn-secondary btn-sm" onclick="clearPersonalFilters()" style="width: 100%;">
                                     🗑️ Limpiar Filtros
                                 </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="technicians-container">
-                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal de soporte desde Airtable...</h3>
-                            <p>Conectando con la base de datos en la nube</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Vista de Gestión de Accesos (mantenida igual) -->
-        <div id="accesos-view" class="view hidden">
-            <div class="card">
-                <div class="card-header">
-                    <h2 class="card-title">🔐 Gestión de Accesos al Portal</h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-success btn-sm" onclick="refreshAccessFromCloud()">
+</div>
+</div>
+</div>
+<div id="technicians-container">
+<div style="text-align: center; padding: 3rem; color: #6b7280;">
+<div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+<h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando personal de soporte desde Airtable...</h3>
+<p>Conectando con la base de datos en la nube</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Vista de Gestión de Accesos (mantenida igual) -->
+<div class="view hidden" id="accesos-view">
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">🔐 Gestión de Accesos al Portal</h2>
+<div style="display: flex; gap: 0.5rem;">
+<button class="btn btn-success btn-sm" onclick="refreshAccessFromCloud()">
                             🔄 Actualizar desde Airtable
                         </button>
-                        <button class="btn btn-warning btn-sm" onclick="approveAllPending()">
+<button class="btn btn-warning btn-sm" onclick="approveAllPending()">
                             ✅ Aprobar Todas Pendientes
                         </button>
-                    </div>
-                </div>
-                <div class="card-content">
-                    <div class="alert alert-info">
-                        <h4 style="margin-bottom: 0.5rem;">🔐 Gestión de Accesos al Portal</h4>
-                        <p>Desde aquí puedes aprobar solicitudes de acceso al Portal de Solicitudes. Al aprobar una solicitud:</p>
-                        <ul style="margin: 0.5rem 0 0 1rem;">
-                            <li>✅ Se genera automáticamente un <strong>código de 4 dígitos único</strong></li>
-                            <li>👤 Se crea el usuario en la tabla de usuarios</li>
-                            <li>📧 El usuario podrá ingresar con su <strong>email + código</strong> al Portal de Solicitudes</li>
-                            <li>🌐 Todo se sincroniza automáticamente con Airtable</li>
-                            <li>🔄 <strong>CORREGIDO:</strong> Sin campo solicitudId - Usa ID de Airtable directamente</li>
-                        </ul>
-                    </div>
-
-                    <div id="access-requests-container">
-                        <div style="text-align: center; padding: 3rem; color: #6b7280;">
-                            <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                            <h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes de acceso desde Airtable...</h3>
-                            <p>Conectando con la base de datos en la nube</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Modal de Asignación de Personal -->
-    <div id="assignment-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">🎯 Asignar Personal a Solicitud</h3>
-                <button class="modal-close" onclick="closeAssignmentModal()">&times;</button>
-            </div>
-            <div id="assignment-modal-content">
-                <!-- Contenido dinámico del modal -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Cambio de Estado -->
-    <div id="status-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">🔄 Cambiar Estado de Solicitud</h3>
-                <button class="modal-close" onclick="closeStatusModal()">&times;</button>
-            </div>
-            <div id="status-modal-content">
-                <!-- Contenido dinámico del modal -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmación de Aprobación -->
-    <div id="approval-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">✅ Confirmar Aprobación</h3>
-                <button class="modal-close" onclick="closeApprovalModal()">&times;</button>
-            </div>
-            <div id="approval-modal-content">
-                <!-- Contenido dinámico del modal -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Resultado -->
-    <div id="result-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="result-modal-title">Resultado</h3>
-                <button class="modal-close" onclick="closeResultModal()">&times;</button>
-            </div>
-            <div id="result-modal-content">
-                <!-- Contenido dinámico del modal -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Agregar Personal -->
-    <div id="add-personal-modal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3 class="modal-title">➕ Agregar Personal de Soporte</h3>
-                <button class="modal-close" onclick="closeAddPersonalModal()">&times;</button>
-            </div>
-            <div id="add-personal-content">
-                <form id="add-personal-form">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                        <div>
-                            <label class="form-label">👤 Nombre Completo *</label>
-                            <input type="text" id="personal-nombre" required class="form-input" placeholder="Nombres y apellidos">
-                        </div>
-                        <div>
-                            <label class="form-label">📧 Email *</label>
-                            <input type="email" id="personal-email" required class="form-input" placeholder="correo@hospital.com">
-                        </div>
-                        <div>
-                            <label class="form-label">🏥 Área de Trabajo *</label>
-                            <select id="personal-area" required class="form-select">
-                                <option value="">Seleccione área</option>
-                                <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
-                                <option value="MECANICA">Mecánica</option>
-                                <option value="INFRAESTRUCTURA">Infraestructura</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">👨‍💼 Tipo de Personal *</label>
-                            <select id="personal-tipo" required class="form-select">
-                                <option value="">Seleccione tipo</option>
-                                <option value="ingeniero">🎓 Ingeniero</option>
-                                <option value="tecnico">🔧 Técnico</option>
-                                <option value="auxiliar">🛠️ Auxiliar</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="form-label">⚙️ Especialidad</label>
-                            <input type="text" id="personal-especialidad" class="form-input" placeholder="Especialidad o certificaciones">
-                        </div>
-                        <div>
-                            <label class="form-label">📊 Estado Inicial</label>
-                            <select id="personal-estado" class="form-select">
-                                <option value="disponible">🟢 Disponible</option>
-                                <option value="ocupado">🟡 Ocupado</option>
-                                <option value="inactivo">🔴 Inactivo</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid #3b82f6;">
-                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Información Importante</h5>
-                        <ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
-                            <li>El personal registrado podrá ser asignado a solicitudes de mantenimiento</li>
-                            <li>Los datos se guardan automáticamente en Airtable</li>
-                            <li>El estado puede cambiarse posteriormente</li>
-                            <li>La especialidad ayuda en la asignación adecuada de tareas</li>
-                        </ul>
-                    </div>
-
-                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                        <button type="submit" class="btn btn-success" style="min-width: 150px;">
+</div>
+</div>
+<div class="card-content">
+<div class="alert alert-info">
+<h4 style="margin-bottom: 0.5rem;">🔐 Gestión de Accesos al Portal</h4>
+<p>Desde aquí puedes aprobar solicitudes de acceso al Portal de Solicitudes. Al aprobar una solicitud:</p>
+<ul style="margin: 0.5rem 0 0 1rem;">
+<li>✅ Se genera automáticamente un <strong>código de 4 dígitos único</strong></li>
+<li>👤 Se crea el usuario en la tabla de usuarios</li>
+<li>📧 El usuario podrá ingresar con su <strong>email + código</strong> al Portal de Solicitudes</li>
+<li>🌐 Todo se sincroniza automáticamente con Airtable</li>
+<li>🔄 <strong>CORREGIDO:</strong> Sin campo solicitudId - Usa ID de Airtable directamente</li>
+</ul>
+</div>
+<div id="access-requests-container">
+<div style="text-align: center; padding: 3rem; color: #6b7280;">
+<div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+<h3 style="color: #1f2937; margin-bottom: 0.5rem;">Cargando solicitudes de acceso desde Airtable...</h3>
+<p>Conectando con la base de datos en la nube</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal de Asignación de Personal -->
+<div class="modal" id="assignment-modal">
+<div class="modal-content">
+<div class="modal-header">
+<h3 class="modal-title">🎯 Asignar Personal a Solicitud</h3>
+<button class="modal-close" onclick="closeAssignmentModal()">×</button>
+</div>
+<div id="assignment-modal-content">
+<!-- Contenido dinámico del modal -->
+</div>
+</div>
+</div>
+<!-- Modal de Cambio de Estado -->
+<div class="modal" id="status-modal">
+<div class="modal-content">
+<div class="modal-header">
+<h3 class="modal-title">🔄 Cambiar Estado de Solicitud</h3>
+<button class="modal-close" onclick="closeStatusModal()">×</button>
+</div>
+<div id="status-modal-content">
+<!-- Contenido dinámico del modal -->
+</div>
+</div>
+</div>
+<!-- Modal de Confirmación de Aprobación -->
+<div class="modal" id="approval-modal">
+<div class="modal-content">
+<div class="modal-header">
+<h3 class="modal-title">✅ Confirmar Aprobación</h3>
+<button class="modal-close" onclick="closeApprovalModal()">×</button>
+</div>
+<div id="approval-modal-content">
+<!-- Contenido dinámico del modal -->
+</div>
+</div>
+</div>
+<!-- Modal de Resultado -->
+<div class="modal" id="result-modal">
+<div class="modal-content">
+<div class="modal-header">
+<h3 class="modal-title" id="result-modal-title">Resultado</h3>
+<button class="modal-close" onclick="closeResultModal()">×</button>
+</div>
+<div id="result-modal-content">
+<!-- Contenido dinámico del modal -->
+</div>
+</div>
+</div>
+<!-- Modal para Agregar Personal -->
+<div class="modal" id="add-personal-modal">
+<div class="modal-content" style="max-width: 600px;">
+<div class="modal-header">
+<h3 class="modal-title">➕ Agregar Personal de Soporte</h3>
+<button class="modal-close" onclick="closeAddPersonalModal()">×</button>
+</div>
+<div id="add-personal-content">
+<form id="add-personal-form">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+<div>
+<label class="form-label">👤 Nombre Completo *</label>
+<input class="form-input" id="personal-nombre" placeholder="Nombres y apellidos" required="" type="text"/>
+</div>
+<div>
+<label class="form-label">📧 Email *</label>
+<input class="form-input" id="personal-email" placeholder="correo@hospital.com" required="" type="email"/>
+</div>
+<div>
+<label class="form-label">🏥 Área de Trabajo *</label>
+<select class="form-select" id="personal-area" required="">
+<option value="">Seleccione área</option>
+<option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
+<option value="MECANICA">Mecánica</option>
+<option value="INFRAESTRUCTURA">Infraestructura</option>
+</select>
+</div>
+<div>
+<label class="form-label">👨‍💼 Tipo de Personal *</label>
+<select class="form-select" id="personal-tipo" required="">
+<option value="">Seleccione tipo</option>
+<option value="ingeniero">🎓 Ingeniero</option>
+<option value="tecnico">🔧 Técnico</option>
+<option value="auxiliar">🛠️ Auxiliar</option>
+</select>
+</div>
+<div>
+<label class="form-label">⚙️ Especialidad</label>
+<input class="form-input" id="personal-especialidad" placeholder="Especialidad o certificaciones" type="text"/>
+</div>
+<div>
+<label class="form-label">📊 Estado Inicial</label>
+<select class="form-select" id="personal-estado">
+<option value="disponible">🟢 Disponible</option>
+<option value="ocupado">🟡 Ocupado</option>
+<option value="inactivo">🔴 Inactivo</option>
+</select>
+</div>
+</div>
+<div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem; border-left: 3px solid #3b82f6;">
+<h5 style="color: #1e40af; margin-bottom: 0.5rem;">💡 Información Importante</h5>
+<ul style="color: #1e3a8a; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+<li>El personal registrado podrá ser asignado a solicitudes de mantenimiento</li>
+<li>Los datos se guardan automáticamente en Airtable</li>
+<li>El estado puede cambiarse posteriormente</li>
+<li>La especialidad ayuda en la asignación adecuada de tareas</li>
+</ul>
+</div>
+<div style="display: flex; gap: 0.5rem; justify-content: center;">
+<button class="btn btn-success" style="min-width: 150px;" type="submit">
                             💾 Guardar Personal
                         </button>
-                        <button type="button" class="btn btn-secondary" onclick="closeAddPersonalModal()" style="min-width: 120px;">
+<button class="btn btn-secondary" onclick="closeAddPersonalModal()" style="min-width: 120px;" type="button">
                             ↩️ Cancelar
                         </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal para Editar Personal -->
-    <div id="edit-personal-modal" class="modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
-                <button class="modal-close" onclick="closeEditPersonalModal()">&times;</button>
-            </div>
-            <div id="edit-personal-content">
-                <!-- Contenido dinámico del modal de edición -->
-            </div>
-        </div>
-    </div>
-
-    <!-- Incluir el archivo de configuración de Airtable -->
-    <script src="airtable-config.js"></script>
-
-    <script>
+</div>
+</form>
+</div>
+</div>
+</div>
+<!-- Modal para Editar Personal -->
+<div class="modal" id="edit-personal-modal">
+<div class="modal-content" style="max-width: 500px;">
+<div class="modal-header">
+<h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
+<button class="modal-close" onclick="closeEditPersonalModal()">×</button>
+</div>
+<div id="edit-personal-content">
+<!-- Contenido dinámico del modal de edición -->
+</div>
+</div>
+</div>
+<!-- Incluir el archivo de configuración de Airtable -->
+<script src="airtable-config.js"></script>
+<script>
         // Variables globales para datos de la nube
         let cloudSolicitudes = [];
         let cloudTecnicos = [];
