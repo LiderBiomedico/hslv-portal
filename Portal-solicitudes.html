@@ -151,7 +151,7 @@
             padding: 2rem;
             border-radius: 1rem;
             width: 100%;
-            max-width: 400px;
+            max-width: 700px; /* Aumentado de 400px */
             box-shadow: 0 20px 40px rgba(0,0,0,0.2);
             position: relative;
         }
@@ -468,6 +468,36 @@
             .priority-options {
                 grid-template-columns: 1fr;
             }
+            
+            /* Ajustes para el formulario de solicitud de acceso en móvil */
+            #request-form .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            #request-form div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #request-form div[style*="grid-template-columns: 2fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #request-form div[style*="grid-template-columns: repeat(2, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #login-form div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #login-form div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .auth-content {
+                max-width: 100% !important;
+                margin: 0 1rem;
+            }
         }
 
         /* Loading spinner */
@@ -539,16 +569,19 @@
                 <form onsubmit="handleLoginCloud(event)">
                     <div id="login-alert"></div>
                     
-                    <div class="form-group">
-                        <label class="form-label">📧 Email</label>
-                        <input type="email" id="login-email" class="form-input" required 
-                               placeholder="correo@hospital.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">🔑 Código de Acceso</label>
-                        <input type="text" id="login-code" class="form-input" required 
-                               placeholder="Código de 4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                    <!-- Campos de login en horizontal -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">📧 Email</label>
+                            <input type="email" id="login-email" class="form-input" required 
+                                   placeholder="correo@hospital.com">
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">🔑 Código de Acceso</label>
+                            <input type="text" id="login-code" class="form-input" required 
+                                   placeholder="Código de 4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-primary" id="login-btn">
@@ -557,86 +590,150 @@
                 </form>
 
                 <div class="alert alert-info" style="margin-top: 1rem;">
-                    <strong>ℹ️ Sistema Cloud Protegido</strong><br>
-                    • Necesitas un código de acceso aprobado<br>
-                    • Si no tienes código, solicita acceso<br>
-                    • Sistema sincronizado con Airtable
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; align-items: start;">
+                        <strong>ℹ️</strong>
+                        <div>
+                            <strong>Sistema Cloud Protegido</strong>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
+                                <span>• Código aprobado</span>
+                                <span>• Solicita acceso</span>
+                                <span>• Sincronizado con Airtable</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <!-- Request Access Form -->
+            <!-- Request Access Form - REORGANIZADO -->
             <div id="request-form" class="auth-form" style="display: none;">
                 <form onsubmit="handleAccessRequestCloud(event)">
                     <div id="request-alert"></div>
                     
-                    <div class="form-group">
-                        <label class="form-label">👤 Nombre Completo *</label>
-                        <input type="text" id="req-name" class="form-input" required 
-                               placeholder="Nombres y apellidos completos">
+                    <!-- Diseño horizontal en dos columnas principales -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        
+                        <!-- Columna Izquierda - Información Personal -->
+                        <div style="background: #f0fdf4; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #bbf7d0;">
+                            <h3 style="font-size: 0.875rem; font-weight: 600; color: #059669; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>👤</span> Datos Personales
+                            </h3>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Nombre Completo *</label>
+                                <input type="text" id="req-name" class="form-input" required 
+                                       placeholder="Juan Pérez García" style="font-size: 0.875rem;">
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Email Institucional *</label>
+                                <input type="email" id="req-email" class="form-input" required 
+                                       placeholder="correo@hospital.gov.co" style="font-size: 0.875rem;">
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Teléfono de Contacto</label>
+                                <input type="tel" id="req-phone" class="form-input" 
+                                       placeholder="300 123 4567" style="font-size: 0.875rem;">
+                            </div>
+                        </div>
+                        
+                        <!-- Columna Derecha - Información Laboral -->
+                        <div style="background: #eff6ff; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #bfdbfe;">
+                            <h3 style="font-size: 0.875rem; font-weight: 600; color: #1e40af; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>🏥</span> Información Laboral
+                            </h3>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Servicio/Área *</label>
+                                <select id="req-service" class="form-select" required style="font-size: 0.875rem;">
+                                    <option value="">-- Seleccione --</option>
+                                    <optgroup label="Áreas Asistenciales">
+                                        <option value="URGENCIAS">🚨 Urgencias</option>
+                                        <option value="UCI">🏥 UCI</option>
+                                        <option value="HOSPITALIZACION">🛏️ Hospitalización</option>
+                                        <option value="CIRUGIA">⚕️ Cirugía</option>
+                                        <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
+                                    </optgroup>
+                                    <optgroup label="Servicios de Apoyo">
+                                        <option value="IMAGENOLOGIA">📷 Imagenología</option>
+                                        <option value="LABORATORIO">🔬 Laboratorio</option>
+                                        <option value="FARMACIA">💊 Farmacia</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas Administrativas">
+                                        <option value="ADMINISTRATIVO">📊 Administrativo</option>
+                                        <option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Cargo/Función *</label>
+                                <select id="req-position" class="form-select" required style="font-size: 0.875rem;">
+                                    <option value="">-- Seleccione --</option>
+                                    <optgroup label="Personal Asistencial">
+                                        <option value="MEDICO">👨‍⚕️ Médico</option>
+                                        <option value="ENFERMERO">👩‍⚕️ Enfermero/a</option>
+                                        <option value="AUXILIAR_ENFERMERIA">🏥 Auxiliar Enfermería</option>
+                                    </optgroup>
+                                    <optgroup label="Personal de Apoyo">
+                                        <option value="TECNICO">🔧 Técnico</option>
+                                        <option value="SERVICIOS_GENERALES">🧹 Servicios Generales</option>
+                                    </optgroup>
+                                    <optgroup label="Personal Administrativo">
+                                        <option value="ADMINISTRATIVO">💼 Administrativo</option>
+                                        <option value="DIRECTIVO">👔 Directivo</option>
+                                        <option value="OTRO">📋 Otro</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label class="form-label">📧 Email *</label>
-                        <input type="email" id="req-email" class="form-input" required 
-                               placeholder="correo@hospital.com">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">📱 Teléfono</label>
-                        <input type="tel" id="req-phone" class="form-input" 
-                               placeholder="Número de contacto">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">🏥 Servicio Hospitalario *</label>
-                        <select id="req-service" class="form-select" required>
-                            <option value="">Seleccione su servicio</option>
-                            <option value="URGENCIAS">Urgencias</option>
-                            <option value="UCI">UCI</option>
-                            <option value="HOSPITALIZACION">Hospitalización</option>
-                            <option value="CIRUGIA">Cirugía</option>
-                            <option value="CONSULTA_EXTERNA">Consulta Externa</option>
-                            <option value="IMAGENOLOGIA">Imagenología</option>
-                            <option value="LABORATORIO">Laboratorio</option>
-                            <option value="FARMACIA">Farmacia</option>
-                            <option value="ADMINISTRATIVO">Administrativo</option>
-                            <option value="MANTENIMIENTO">Mantenimiento</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">💼 Cargo *</label>
-                        <select id="req-position" class="form-select" required>
-                            <option value="">Seleccione su cargo</option>
-                            <option value="MEDICO">Médico</option>
-                            <option value="ENFERMERO">Enfermero/a</option>
-                            <option value="AUXILIAR_ENFERMERIA">Auxiliar de Enfermería</option>
-                            <option value="ADMINISTRATIVO">Administrativo</option>
-                            <option value="TECNICO">Técnico</option>
-                            <option value="SERVICIOS_GENERALES">Servicios Generales</option>
-                            <option value="DIRECTIVO">Directivo</option>
-                            <option value="OTRO">Otro</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">📝 Justificación</label>
+                    <!-- Justificación - Ancho completo debajo -->
+                    <div class="form-group" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📝</span> Justificación de la Solicitud
+                            <span style="font-size: 0.75rem; color: #6b7280; font-weight: normal;">(opcional)</span>
+                        </label>
                         <textarea id="req-justification" class="form-textarea" 
-                                  placeholder="¿Por qué necesita acceso al sistema? (opcional)"></textarea>
+                                  style="min-height: 60px; font-size: 0.875rem;"
+                                  placeholder="Breve descripción del motivo por el cual necesita acceso al sistema..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" id="request-btn">
-                        📤 Enviar Solicitud
-                    </button>
+                    <!-- Información del proceso y botón en la misma línea -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: center; margin-top: 1rem;">
+                        
+                        <!-- Información del proceso a la izquierda -->
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                            <h4 style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>📋</span> Proceso de Aprobación
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;">✓</span>
+                                    <span>Revisión por administrador</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;">✓</span>
+                                    <span>Código único de 4 dígitos</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;">✓</span>
+                                    <span>Sistema con mapeo seguro</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;">✓</span>
+                                    <span>Respuesta en 24-48 horas</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botón de envío a la derecha -->
+                        <button type="submit" class="btn btn-primary" id="request-btn" style="font-size: 1rem; padding: 1rem; height: fit-content;">
+                            📤 Enviar Solicitud
+                        </button>
+                    </div>
                 </form>
-
-                <div class="alert alert-info" style="margin-top: 1rem;">
-                    <strong>📋 Proceso de Aprobación</strong><br>
-                    • Tu solicitud será revisada por el administrador<br>
-                    • Recibirás un código de 4 dígitos único<br>
-                    • Sistema protegido con mapeo de valores<br>
-                    • Sin errores 422 - Valores corregidos
-                </div>
             </div>
         </div>
     </div>
