@@ -1,7 +1,7 @@
 // 🛡️ Configuración COMPLETA de Airtable API - Con detección automática mejorada
-// airtable-config.js - Versión con detección robusta para todas las tablas
+// airtable-config.js - Versión con detección robusta e indicadores avanzados
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON DETECCIÓN ROBUSTA)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON INDICADORES AVANZADOS)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
@@ -38,7 +38,9 @@ const AIRTABLE_VALUE_MAPPING = {
         'ACTUALIZACION': 'ACTUALIZACION',
         'Actualización': 'ACTUALIZACION',
         'EMERGENCIA': 'EMERGENCIA',
-        'Emergencia': 'EMERGENCIA'
+        'Emergencia': 'EMERGENCIA',
+        'ERROR_USUARIO': 'ERROR_USUARIO',
+        'Error de Usuario': 'ERROR_USUARIO'
     },
     prioridad: {
         'CRITICA': 'CRITICA',
@@ -107,7 +109,10 @@ const SAFE_FIELDS = {
         'tecnicoAsignado',
         'fechaAsignacion',
         'observacionesAsignacion',
-        'tiempoRespuestaMaximo'
+        'tiempoRespuestaMaximo',
+        'fechaInicioTrabajo',
+        'fechaCompletado',
+        'tiempoTotalRespuesta'
     ],
     tecnicos: [
         'nombre',
@@ -145,7 +150,7 @@ const SAFE_FIELDS = {
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con detección robusta...');
+        console.log('🔧 Inicializando AirtableAPI con detección robusta e indicadores avanzados...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -215,7 +220,7 @@ class AirtableAPI {
         // las etiquetas amigables. Esto evita que se intenten crear nuevas opciones en Airtable.
         this.validSolicitudValues = {
             servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
-            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA'],
+            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
             availableFields: []
@@ -1248,6 +1253,33 @@ class AirtableAPI {
         return fechaMaxima.toISOString();
     }
 
+    // 📊 FUNCIÓN PARA CALCULAR TIEMPO DE RESPUESTA
+    calculateResponseTime(solicitud) {
+        if (!solicitud.fechaCreacion) return null;
+        
+        const fechaCreacion = new Date(solicitud.fechaCreacion);
+        let fechaFin = new Date();
+        
+        if (solicitud.fechaCompletado) {
+            fechaFin = new Date(solicitud.fechaCompletado);
+        } else if (solicitud.estado === 'CANCELADA' || solicitud.estado === 'Cancelada') {
+            // Si está cancelada, usar la fecha actual como fin
+            fechaFin = new Date();
+        }
+        
+        const tiempoMs = fechaFin - fechaCreacion;
+        const horas = Math.floor(tiempoMs / (1000 * 60 * 60));
+        const minutos = Math.floor((tiempoMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        return {
+            totalMs: tiempoMs,
+            horas: horas,
+            minutos: minutos,
+            formato: `${horas}h ${minutos}m`,
+            diasDecimales: (tiempoMs / (1000 * 60 * 60 * 24)).toFixed(2)
+        };
+    }
+
     async createTecnico(tecnicoData) {
         console.log('➕ Creando personal de soporte:', tecnicoData.nombre);
         console.log('🔍 Área recibida:', tecnicoData.area);
@@ -1391,6 +1423,19 @@ class AirtableAPI {
                 updateData.fechaInicioTrabajo = new Date().toISOString();
             } else if (nuevoEstado === 'COMPLETADA') {
                 updateData.fechaCompletado = new Date().toISOString();
+                
+                // Calcular tiempo total de respuesta
+                const solicitudes = await this.getSolicitudes();
+                const solicitud = solicitudes.find(s => s.id === solicitudId);
+                if (solicitud) {
+                    const tiempoRespuesta = this.calculateResponseTime({
+                        ...solicitud,
+                        fechaCompletado: updateData.fechaCompletado
+                    });
+                    if (tiempoRespuesta) {
+                        updateData.tiempoTotalRespuesta = tiempoRespuesta.formato;
+                    }
+                }
             }
             
             await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
@@ -1544,6 +1589,7 @@ class AirtableAPI {
         }
     }
 
+    // 📊 MÉTODO MEJORADO: Estadísticas avanzadas con indicadores solicitados
     async getAdvancedStatistics() {
         try {
             const [solicitudes, tecnicos, usuarios] = await Promise.all([
@@ -1552,14 +1598,94 @@ class AirtableAPI {
                 this.getUsuarios()
             ]);
             
+            // Estadísticas básicas existentes
+            const totalSolicitudes = solicitudes.length;
+            const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente').length;
+            const asignadas = solicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'Asignada').length;
+            const enProceso = solicitudes.filter(s => s.estado === 'EN_PROCESO' || s.estado === 'En Proceso').length;
+            const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length;
+            const canceladas = solicitudes.filter(s => s.estado === 'CANCELADA' || s.estado === 'Cancelada').length;
+            
+            // 1. PORCENTAJE DE GESTIÓN DE SOLICITUDES COMPLETADAS
+            const porcentajeCompletadas = totalSolicitudes > 0 
+                ? ((completadas / totalSolicitudes) * 100).toFixed(2) 
+                : 0;
+            
+            // 2. PORCENTAJE DE MANTENIMIENTOS CORRECTIVOS
+            const mantenimientosCorrectivos = solicitudes.filter(s => 
+                s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || 
+                s.tipoServicio === 'Mantenimiento Correctivo'
+            ).length;
+            const porcentajeCorrectivos = totalSolicitudes > 0 
+                ? ((mantenimientosCorrectivos / totalSolicitudes) * 100).toFixed(2) 
+                : 0;
+            
+            // 3. PORCENTAJE DE ERRORES DE USUARIO
+            const erroresUsuario = solicitudes.filter(s => 
+                s.tipoServicio === 'ERROR_USUARIO' || 
+                s.tipoServicio === 'Error de Usuario' ||
+                (s.observaciones && s.observaciones.toLowerCase().includes('error de usuario')) ||
+                (s.descripcion && s.descripcion.toLowerCase().includes('error de usuario'))
+            ).length;
+            const porcentajeErroresUsuario = totalSolicitudes > 0 
+                ? ((erroresUsuario / totalSolicitudes) * 100).toFixed(2) 
+                : 0;
+            
+            // 4. TIEMPO DE RESPUESTA DE CADA SOLICITUD
+            const tiemposRespuesta = [];
+            let totalTiempoRespuestaMs = 0;
+            let solicitudesConTiempo = 0;
+            
+            solicitudes.forEach(solicitud => {
+                const tiempoRespuesta = this.calculateResponseTime(solicitud);
+                if (tiempoRespuesta) {
+                    tiemposRespuesta.push({
+                        numero: solicitud.numero,
+                        estado: solicitud.estado,
+                        tiempoFormato: tiempoRespuesta.formato,
+                        horas: tiempoRespuesta.horas,
+                        minutos: tiempoRespuesta.minutos,
+                        diasDecimales: tiempoRespuesta.diasDecimales
+                    });
+                    
+                    // Solo contar solicitudes completadas o canceladas para el promedio
+                    if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada' || 
+                        solicitud.estado === 'CANCELADA' || solicitud.estado === 'Cancelada') {
+                        totalTiempoRespuestaMs += tiempoRespuesta.totalMs;
+                        solicitudesConTiempo++;
+                    }
+                }
+            });
+            
+            // Calcular promedio de tiempo de respuesta
+            const promedioTiempoRespuestaMs = solicitudesConTiempo > 0 
+                ? totalTiempoRespuestaMs / solicitudesConTiempo 
+                : 0;
+            const promedioHoras = Math.floor(promedioTiempoRespuestaMs / (1000 * 60 * 60));
+            const promedioMinutos = Math.floor((promedioTiempoRespuestaMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            // Ordenar tiempos de respuesta por duración (mayor a menor)
+            tiemposRespuesta.sort((a, b) => b.horas - a.horas);
+            
+            // Estadísticas por tipo de servicio
+            const estadisticasPorTipo = {};
+            this.validSolicitudValues.tipoServicio.forEach(tipo => {
+                const solicitudesTipo = solicitudes.filter(s => s.tipoServicio === tipo);
+                estadisticasPorTipo[tipo] = {
+                    total: solicitudesTipo.length,
+                    completadas: solicitudesTipo.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length,
+                    porcentaje: totalSolicitudes > 0 ? ((solicitudesTipo.length / totalSolicitudes) * 100).toFixed(2) : 0
+                };
+            });
+            
             return {
                 solicitudes: {
-                    total: solicitudes.length,
-                    pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente').length,
-                    asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'Asignada').length,
-                    enProceso: solicitudes.filter(s => s.estado === 'EN_PROCESO' || s.estado === 'En Proceso').length,
-                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length,
-                    canceladas: solicitudes.filter(s => s.estado === 'CANCELADA' || s.estado === 'Cancelada').length,
+                    total: totalSolicitudes,
+                    pendientes: pendientes,
+                    asignadas: asignadas,
+                    enProceso: enProceso,
+                    completadas: completadas,
+                    canceladas: canceladas,
                     porArea: {
                         INGENIERIA_BIOMEDICA: solicitudes.filter(s => {
                             const area = s.servicioIngenieria || '';
@@ -1599,14 +1725,29 @@ class AirtableAPI {
                     activos: usuarios.filter(u => u.estado === 'ACTIVO' || u.estado === 'Activo').length
                 },
                 tiemposRespuesta: {
-                    promedioRespuesta: 'Calculando...',
+                    promedioRespuesta: `${promedioHoras}h ${promedioMinutos}m`,
                     solicitudesVencidas: solicitudes.filter(s => {
                         if (!s.tiempoRespuestaMaximo || 
                             s.estado === 'COMPLETADA' || s.estado === 'Completada' ||
                             s.estado === 'CANCELADA' || s.estado === 'Cancelada') return false;
                         return new Date() > new Date(s.tiempoRespuestaMaximo);
-                    }).length
+                    }).length,
+                    detalleTiempos: tiemposRespuesta.slice(0, 10), // Top 10 tiempos más largos
+                    totalConTiempoRegistrado: solicitudesConTiempo
                 },
+                // NUEVOS INDICADORES
+                indicadoresGestion: {
+                    porcentajeCompletadas: parseFloat(porcentajeCompletadas),
+                    porcentajeMantenimientosCorrectivos: parseFloat(porcentajeCorrectivos),
+                    porcentajeErroresUsuario: parseFloat(porcentajeErroresUsuario),
+                    efectividad: {
+                        solicitudesGestionadas: completadas + canceladas,
+                        porcentajeGestion: totalSolicitudes > 0 
+                            ? (((completadas + canceladas) / totalSolicitudes) * 100).toFixed(2)
+                            : 0
+                    }
+                },
+                estadisticasPorTipo: estadisticasPorTipo,
                 timestamp: new Date().toISOString()
             };
             
@@ -1759,18 +1900,24 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '8.0-deteccion-robusta',
+            version: '9.0-indicadores-avanzados',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
+                'NUEVO: Indicadores avanzados de gestión',
+                'NUEVO: Porcentaje de solicitudes completadas',
+                'NUEVO: Porcentaje de mantenimientos correctivos',
+                'NUEVO: Porcentaje de errores de usuario',
+                'NUEVO: Cálculo de tiempos de respuesta detallados',
+                'NUEVO: Estadísticas por tipo de servicio',
                 'FIX: Detección robusta de valores para todas las tablas',
                 'FIX: Valores por defecto conocidos para solicitudes',
                 'FIX: Mejor manejo de errores 422 con mensajes específicos',
                 'FIX: Mapeo inteligente con verificación de valores válidos',
                 'NUEVO: Método de diagnóstico para valores de solicitudes',
                 'FIX: Sin errores cuando no hay registros previos',
-                'Sistema completo funcionando con valores mapeados'
+                'Sistema completo funcionando con valores mapeados e indicadores'
             ]
         };
     }
@@ -1778,9 +1925,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con detección robusta...');
+    console.log('🔧 Creando instancia global con indicadores avanzados...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión con detección robusta)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con indicadores avanzados)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -1793,8 +1940,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (detección robusta)' 
-                : 'Modo Local (detección robusta)';
+                ? '✅ Conectado (indicadores avanzados)' 
+                : 'Modo Local (indicadores avanzados)';
             
             updateConnectionStatus(status, message);
         }
@@ -1813,7 +1960,7 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO DETECCIÓN ROBUSTA');
+        console.log('🔍 DIAGNÓSTICO INDICADORES AVANZADOS');
         console.log('==================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
@@ -1824,6 +1971,7 @@ try {
         console.log('🔐 Valores de solicitudes de acceso:', status.validAccessRequestValues);
         console.log('👤 Valores de usuarios:', status.validUserValues);
         console.log('📋 Valores de solicitudes:', status.validSolicitudValues);
+        console.log('📊 Nuevas características:', status.features.filter(f => f.startsWith('NUEVO')));
         
         return status;
     };
@@ -1848,16 +1996,45 @@ try {
         return await window.airtableAPI.diagnosticSolicitudValues();
     };
     
+    // NUEVA: Función para ver estadísticas avanzadas
+    window.debugAdvancedStats = async function() {
+        if (!window.airtableAPI) {
+            console.error('❌ window.airtableAPI no está disponible');
+            return { error: 'airtableAPI no disponible' };
+        }
+        
+        console.log('📊 Obteniendo estadísticas avanzadas...');
+        const stats = await window.airtableAPI.getAdvancedStatistics();
+        
+        console.log('📊 ESTADÍSTICAS AVANZADAS');
+        console.log('========================');
+        console.log('📈 Indicadores de Gestión:');
+        console.log(`  • Completadas: ${stats.indicadoresGestion.porcentajeCompletadas}%`);
+        console.log(`  • Mantenimientos Correctivos: ${stats.indicadoresGestion.porcentajeMantenimientosCorrectivos}%`);
+        console.log(`  • Errores de Usuario: ${stats.indicadoresGestion.porcentajeErroresUsuario}%`);
+        console.log(`  • Efectividad Total: ${stats.indicadoresGestion.efectividad.porcentajeGestion}%`);
+        console.log('\n⏱️ Tiempos de Respuesta:');
+        console.log(`  • Promedio: ${stats.tiemposRespuesta.promedioRespuesta}`);
+        console.log(`  • Vencidas: ${stats.tiemposRespuesta.solicitudesVencidas}`);
+        console.log('\n📋 Por Tipo de Servicio:');
+        Object.entries(stats.estadisticasPorTipo).forEach(([tipo, data]) => {
+            console.log(`  • ${tipo}: ${data.total} (${data.porcentaje}%)`);
+        });
+        
+        return stats;
+    };
+    
     console.log('✅ Funciones de debug creadas exitosamente');
 } catch (error) {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (DETECCIÓN ROBUSTA) cargado');
-console.log('🛡️ FIX: Detección robusta con valores por defecto conocidos');
-console.log('🛡️ FIX: Sin errores cuando no hay registros previos');
-console.log('🛡️ FIX: Mejor manejo de errores 422 con mensajes específicos');
-console.log('🧪 Para diagnóstico completo: debugSolicitudValues()');
+console.log('✅ airtable-config.js (INDICADORES AVANZADOS) cargado');
+console.log('📊 NUEVO: Indicadores de gestión implementados');
+console.log('⏱️ NUEVO: Cálculo de tiempos de respuesta');
+console.log('📈 NUEVO: Estadísticas por tipo de servicio');
+console.log('🧪 Para estadísticas avanzadas: debugAdvancedStats()');
+console.log('🔍 Para diagnóstico completo: debugSolicitudValues()');
 console.log('🛠️ Para estado general: debugAirtableConnection()');
 
 // Auto-verificación después de la carga
@@ -1886,6 +2063,7 @@ setTimeout(async () => {
                 prioridades: solicitudValues.prioridad.length,
                 estados: solicitudValues.estado.length
             });
+            console.log('📊 Sistema listo con indicadores avanzados');
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);
