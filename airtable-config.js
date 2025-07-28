@@ -5,41 +5,77 @@ console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON DETECCIÓN 
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
+    // Para campos de selección en Airtable se utilizan códigos internos como valores. Aquí se
+    // incluyen las variantes de nombres visibles para asegurar que se mapeen al código correcto.
     servicioIngenieria: {
-        'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
-        'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        // Ingeniería Biomédica
+        'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
+        'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
+        'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
+        'Ing. Biomédica': 'INGENIERIA_BIOMEDICA',
+        'BIOMEDICA': 'INGENIERIA_BIOMEDICA',
+        // Mecánica
+        'MECANICA': 'MECANICA',
+        'Mecánica': 'MECANICA',
+        'Mecanica': 'MECANICA',
+        // Infraestructura
+        'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
-    // Para tipoServicio, prioridad y estado se utiliza el mismo código en Airtable.
     tipoServicio: {
         'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
+        'Mantenimiento Preventivo': 'MANTENIMIENTO_PREVENTIVO',
         'MANTENIMIENTO_CORRECTIVO': 'MANTENIMIENTO_CORRECTIVO',
+        'Mantenimiento Correctivo': 'MANTENIMIENTO_CORRECTIVO',
         'REPARACION': 'REPARACION',
+        'Reparación': 'REPARACION',
         'INSTALACION': 'INSTALACION',
+        'Instalación': 'INSTALACION',
         'CALIBRACION': 'CALIBRACION',
+        'Calibración': 'CALIBRACION',
         'INSPECCION': 'INSPECCION',
+        'Inspección': 'INSPECCION',
         'ACTUALIZACION': 'ACTUALIZACION',
-        'EMERGENCIA': 'EMERGENCIA'
+        'Actualización': 'ACTUALIZACION',
+        'EMERGENCIA': 'EMERGENCIA',
+        'Emergencia': 'EMERGENCIA'
     },
     prioridad: {
         'CRITICA': 'CRITICA',
+        'Crítica': 'CRITICA',
         'ALTA': 'ALTA',
+        'Alta': 'ALTA',
         'MEDIA': 'MEDIA',
-        'BAJA': 'BAJA'
+        'Media': 'MEDIA',
+        'BAJA': 'BAJA',
+        'Baja': 'BAJA'
     },
-    // Estados válidos de solicitudes: usar códigos en mayúsculas. Ajusta según tu configuración en Airtable
     estado: {
         'PENDIENTE': 'PENDIENTE',
+        'Pendiente': 'PENDIENTE',
         'ASIGNADA': 'ASIGNADA',
+        'Asignada': 'ASIGNADA',
         'EN_PROCESO': 'EN_PROCESO',
+        'En Proceso': 'EN_PROCESO',
         'COMPLETADA': 'COMPLETADA',
-        'CANCELADA': 'CANCELADA'
+        'Completada': 'COMPLETADA',
+        'CANCELADA': 'CANCELADA',
+        'Cancelada': 'CANCELADA'
     },
     area: {
-        'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
-        'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        // Igual que servicioIngenieria, pero sin tilde en "Ing."
+        'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
+        'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
+        'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
+        'Ing. Biomédica': 'INGENIERIA_BIOMEDICA',
+        'BIOMEDICA': 'INGENIERIA_BIOMEDICA',
+        'MECANICA': 'MECANICA',
+        'Mecánica': 'MECANICA',
+        'Mecanica': 'MECANICA',
+        'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
+    // Para estados de acceso y usuario se mantienen las etiquetas originales
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
         'APROBADA': 'Aprobada',
@@ -175,9 +211,10 @@ class AirtableAPI {
         };
         
         // IMPORTANTE: Inicializar con valores conocidos que funcionan
+        // Inicializar valores válidos de solicitud utilizando los códigos internos en lugar de
+        // las etiquetas amigables. Esto evita que se intenten crear nuevas opciones en Airtable.
         this.validSolicitudValues = {
-            servicioIngenieria: ['Ingeniería Biomédica', 'Mecánica', 'Infraestructura'],
-            // Lista de valores válidos iniciales para tipoServicio, prioridad y estado
+            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
@@ -431,17 +468,22 @@ class AirtableAPI {
                         });
                         
                         if (record.fields.servicioIngenieria) {
-                            servicioValues.add(record.fields.servicioIngenieria);
-                            console.log(`📋 Área detectada: "${record.fields.servicioIngenieria}"`);
+                            // Mapear el valor detectado al código interno para evitar nombres amigables
+                            const mappedServicio = this.mapFieldValue('servicioIngenieria', record.fields.servicioIngenieria);
+                            servicioValues.add(mappedServicio);
+                            console.log(`📋 Área detectada: "${record.fields.servicioIngenieria}" → "${mappedServicio}"`);
                         }
                         if (record.fields.tipoServicio) {
-                            tipoServicioValues.add(record.fields.tipoServicio);
+                            const mappedTipo = this.mapFieldValue('tipoServicio', record.fields.tipoServicio);
+                            tipoServicioValues.add(mappedTipo);
                         }
                         if (record.fields.prioridad) {
-                            prioridadValues.add(record.fields.prioridad);
+                            const mappedPrioridad = this.mapFieldValue('prioridad', record.fields.prioridad);
+                            prioridadValues.add(mappedPrioridad);
                         }
                         if (record.fields.estado) {
-                            estadoValues.add(record.fields.estado);
+                            const mappedEstado = this.mapFieldValue('estado', record.fields.estado);
+                            estadoValues.add(mappedEstado);
                         }
                     }
                 });
@@ -1310,10 +1352,9 @@ class AirtableAPI {
                 }
             });
             
-            // Para el estado del técnico usamos valores de disponibilidad propios de la tabla de técnicos (no usar mapFieldValue)
             await this.makeRequest(`${this.tables.tecnicos}/${tecnicoId}`, 'PATCH', {
                 fields: {
-                    estado: 'ocupado',
+                    estado: this.mapFieldValue('estado', 'ocupado'),
                     solicitudAsignada: solicitud.numero || solicitudId
                 }
             });
@@ -1387,8 +1428,7 @@ class AirtableAPI {
             if (tecnico) {
                 await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
                     fields: {
-                        // Estado de técnico vuelve a disponible
-                        estado: 'disponible',
+                        estado: this.mapFieldValue('estado', 'disponible'),
                         solicitudAsignada: ''
                     }
                 });
@@ -1431,13 +1471,11 @@ class AirtableAPI {
                 this.getTecnicos()
             ]);
             
-            const solicitudesPendientes = solicitudes.filter(s => {
-                const estadoSolicitud = String(s.estado || '').toUpperCase();
-                return estadoSolicitud === 'PENDIENTE' || !s.tecnicoAsignado;
-            });
+            const solicitudesPendientes = solicitudes.filter(s => 
+                s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.tecnicoAsignado
+            );
             
-            // Filtrar técnicos disponibles normalizando el estado a minúsculas para evitar discrepancias
-            const tecnicosDisponibles = tecnicos.filter(t => String(t.estado || '').toLowerCase() === 'disponible');
+            const tecnicosDisponibles = tecnicos.filter(t => t.estado === 'disponible');
             
             let asignadas = 0;
             let fallidas = 0;
