@@ -5,35 +5,35 @@ console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON DETECCIÓN 
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
-    // Para servicioIngenieria se usa identidad: se envían los mismos códigos que están definidos en Airtable.
-    // Ajusta los valores de la derecha si tus opciones en Airtable tienen otra ortografía o capitalización.
     servicioIngenieria: {
-        'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
-        'MECANICA': 'MECANICA',
-        'INFRAESTRUCTURA': 'INFRAESTRUCTURA'
+        'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
+        'MECANICA': 'Mecánica',
+        'INFRAESTRUCTURA': 'Infraestructura'
     },
+    // Para tipoServicio, prioridad y estado se utiliza el mismo código en Airtable.
     tipoServicio: {
-        'MANTENIMIENTO_PREVENTIVO': 'Mantenimiento Preventivo',
-        'MANTENIMIENTO_CORRECTIVO': 'Mantenimiento Correctivo',
-        'REPARACION': 'Reparación',
-        'INSTALACION': 'Instalación',
-        'CALIBRACION': 'Calibración',
-        'INSPECCION': 'Inspección',
-        'ACTUALIZACION': 'Actualización',
-        'EMERGENCIA': 'Emergencia'
+        'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
+        'MANTENIMIENTO_CORRECTIVO': 'MANTENIMIENTO_CORRECTIVO',
+        'REPARACION': 'REPARACION',
+        'INSTALACION': 'INSTALACION',
+        'CALIBRACION': 'CALIBRACION',
+        'INSPECCION': 'INSPECCION',
+        'ACTUALIZACION': 'ACTUALIZACION',
+        'EMERGENCIA': 'EMERGENCIA'
     },
     prioridad: {
-        'CRITICA': 'Crítica',
-        'ALTA': 'Alta',
-        'MEDIA': 'Media',
-        'BAJA': 'Baja'
+        'CRITICA': 'CRITICA',
+        'ALTA': 'ALTA',
+        'MEDIA': 'MEDIA',
+        'BAJA': 'BAJA'
     },
+    // Estados válidos de solicitudes: usar códigos en mayúsculas. Ajusta según tu configuración en Airtable
     estado: {
-        'PENDIENTE': 'Pendiente',
-        'ASIGNADA': 'Asignada',
-        'EN_PROCESO': 'En Proceso',
-        'COMPLETADA': 'Completada',
-        'CANCELADA': 'Cancelada'
+        'PENDIENTE': 'PENDIENTE',
+        'ASIGNADA': 'ASIGNADA',
+        'EN_PROCESO': 'EN_PROCESO',
+        'COMPLETADA': 'COMPLETADA',
+        'CANCELADA': 'CANCELADA'
     },
     area: {
         'INGENIERIA_BIOMEDICA': 'Ingeniería Biomédica',
@@ -176,11 +176,11 @@ class AirtableAPI {
         
         // IMPORTANTE: Inicializar con valores conocidos que funcionan
         this.validSolicitudValues = {
-            // Lista de valores válidos iniciales para área de ingeniería; utilizan los códigos configurados en Airtable.
-            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
-            tipoServicio: ['Mantenimiento Preventivo', 'Mantenimiento Correctivo', 'Reparación', 'Instalación', 'Calibración', 'Inspección', 'Actualización', 'Emergencia'],
-            prioridad: ['Crítica', 'Alta', 'Media', 'Baja'],
-            estado: ['Pendiente', 'Asignada', 'En Proceso', 'Completada', 'Cancelada'],
+            servicioIngenieria: ['Ingeniería Biomédica', 'Mecánica', 'Infraestructura'],
+            // Lista de valores válidos iniciales para tipoServicio, prioridad y estado
+            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA'],
+            prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
+            estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
             availableFields: []
         };
         
@@ -1310,9 +1310,10 @@ class AirtableAPI {
                 }
             });
             
+            // Para el estado del técnico usamos valores de disponibilidad propios de la tabla de técnicos (no usar mapFieldValue)
             await this.makeRequest(`${this.tables.tecnicos}/${tecnicoId}`, 'PATCH', {
                 fields: {
-                    estado: this.mapFieldValue('estado', 'ocupado'),
+                    estado: 'ocupado',
                     solicitudAsignada: solicitud.numero || solicitudId
                 }
             });
@@ -1386,7 +1387,8 @@ class AirtableAPI {
             if (tecnico) {
                 await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
                     fields: {
-                        estado: this.mapFieldValue('estado', 'disponible'),
+                        // Estado de técnico vuelve a disponible
+                        estado: 'disponible',
                         solicitudAsignada: ''
                     }
                 });
@@ -1429,11 +1431,13 @@ class AirtableAPI {
                 this.getTecnicos()
             ]);
             
-            const solicitudesPendientes = solicitudes.filter(s => 
-                s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.tecnicoAsignado
-            );
+            const solicitudesPendientes = solicitudes.filter(s => {
+                const estadoSolicitud = String(s.estado || '').toUpperCase();
+                return estadoSolicitud === 'PENDIENTE' || !s.tecnicoAsignado;
+            });
             
-            const tecnicosDisponibles = tecnicos.filter(t => t.estado === 'disponible');
+            // Filtrar técnicos disponibles normalizando el estado a minúsculas para evitar discrepancias
+            const tecnicosDisponibles = tecnicos.filter(t => String(t.estado || '').toLowerCase() === 'disponible');
             
             let asignadas = 0;
             let fallidas = 0;

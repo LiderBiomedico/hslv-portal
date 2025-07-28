@@ -1786,9 +1786,10 @@
                 if (personnel.length === 0) {
                     summaryContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No hay personal registrado</p>';
                 } else {
-                    const available = personnel.filter(p => p.estado === 'disponible').length;
-                    const busy = personnel.filter(p => p.estado === 'ocupado').length;
-                    const inactive = personnel.filter(p => p.estado === 'inactivo').length;
+                    // Conteo de estados normalizado a minúsculas para evitar errores de mayúsculas
+                    const available = personnel.filter(p => String(p.estado || '').toLowerCase() === 'disponible').length;
+                    const busy = personnel.filter(p => String(p.estado || '').toLowerCase() === 'ocupado').length;
+                    const inactive = personnel.filter(p => String(p.estado || '').toLowerCase() === 'inactivo').length;
                     
                     summaryContainer.innerHTML = `
                         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
@@ -2209,24 +2210,27 @@
 
                 // Filtrar personal disponible con normalización
                 const personalDisponible = cloudTecnicos.filter(t => {
-                    // Verificar disponibilidad
-                    if (t.estado !== 'disponible') {
+                    // Verificar disponibilidad (case-insensitive). Algunos registros pueden tener
+                    // valores como "Disponible", "DISPONIBLE" o incluso null. Normalizamos a minúsculas
+                    // y solo aceptamos aquellos con estado "disponible".
+                    const estadoTecnico = (t.estado || '').toString().toLowerCase();
+                    if (estadoTecnico !== 'disponible') {
                         console.log(`❌ ${t.nombre} no disponible (estado: ${t.estado})`);
                         return false;
                     }
-                    
+
                     // Normalizar área del técnico
                     const areaTecnicoNormalizada = normalizarArea(t.area);
-                    
+
                     // Comparar áreas normalizadas
                     const coincide = areaSolicitudNormalizada === areaTecnicoNormalizada;
-                    
+
                     if (!coincide) {
                         console.log(`❌ ${t.nombre} área no coincide: ${t.area} (${areaTecnicoNormalizada}) !== ${solicitud.servicioIngenieria} (${areaSolicitudNormalizada})`);
                     } else {
                         console.log(`✅ ${t.nombre} área coincide: ${t.area} (${areaTecnicoNormalizada})`);
                     }
-                    
+
                     return coincide;
                 });
 
@@ -2252,7 +2256,7 @@
                                 <h5 style="color: #d97706; margin-bottom: 0.5rem;">📊 Personal del área ${getAreaName(solicitud.servicioIngenieria)} (${personalDelArea.length} total):</h5>
                                 ${personalDelArea.map(p => `
                                     <div style="padding: 0.5rem; margin: 0.25rem 0; background: white; border-radius: 0.25rem;">
-                                        <strong>${p.nombre}</strong> - Estado: <span style="color: ${p.estado === 'disponible' ? '#059669' : '#ef4444'};">${p.estado}</span>
+                                        <strong>${p.nombre}</strong> - Estado: <span style="color: ${String(p.estado || '').toLowerCase() === 'disponible' ? '#059669' : '#ef4444'};">${p.estado}</span>
                                         ${p.solicitudAsignada ? ` - Asignado a: ${p.solicitudAsignada}` : ''}
                                     </div>
                                 `).join('')}
@@ -2327,7 +2331,7 @@
                                 <h5 style="color: #166534; margin-bottom: 0.5rem;">✅ Personal Disponible (${personalDisponible.length})</h5>
                                 <div style="max-height: 150px; overflow-y: auto;">
                                     ${personalDisponible.map(personal => `
-                                        <div style="padding: 0.5rem; margin: 0.25rem 0; background: white; border-radius: 0.25rem; border: 1px solid #d1fae5;">
+                                        <div class="personal-card" data-id="${personal.id}" onclick="selectPersonal('${personal.id}', this)" style="padding: 0.5rem; margin: 0.25rem 0; background: white; border-radius: 0.25rem; border: 1px solid #d1fae5; cursor: pointer;">
                                             <strong>${personal.nombre}</strong> - ${personal.tipo}
                                             ${personal.especialidad ? `<br><small style="color: #6b7280;">Especialidad: ${personal.especialidad}</small>` : ''}
                                             <br><small style="color: #059669;">Área: ${personal.area}</small>
@@ -2405,6 +2409,30 @@
 
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
+        }
+
+        /**
+         * Permite seleccionar un técnico haciendo clic sobre su tarjeta.
+         * Establece el valor del select correspondiente y resalta la tarjeta seleccionada.
+         *
+         * @param {string} personalId - ID del técnico en Airtable.
+         * @param {HTMLElement} cardElement - Elemento clicado.
+         */
+        function selectPersonal(personalId, cardElement) {
+            // Actualiza el select con el ID del técnico
+            const selectElement = document.getElementById('selected-personal');
+            if (selectElement) {
+                selectElement.value = personalId;
+            }
+            // Elimina resaltado previo
+            const cards = document.querySelectorAll('.personal-card');
+            cards.forEach(card => {
+                card.style.backgroundColor = 'white';
+            });
+            // Resalta la tarjeta seleccionada
+            if (cardElement) {
+                cardElement.style.backgroundColor = '#bbf7d0';
+            }
         }
 
         // 🔄 Funciones de cambio de estado
@@ -2826,11 +2854,13 @@
                 }
                 
                 if (estadoFilter) {
-                    filteredTecnicos = filteredTecnicos.filter(t => t.estado === estadoFilter);
+                    const estadoFilterLower = estadoFilter.toString().toLowerCase();
+                    filteredTecnicos = filteredTecnicos.filter(t => String(t.estado || '').toLowerCase() === estadoFilterLower);
                 }
                 
                 if (tipoFilter) {
-                    filteredTecnicos = filteredTecnicos.filter(t => t.tipo === tipoFilter);
+                    const tipoFilterLower = tipoFilter.toString().toLowerCase();
+                    filteredTecnicos = filteredTecnicos.filter(t => String(t.tipo || '').toLowerCase() === tipoFilterLower);
                 }
 
                 container.innerHTML = `
@@ -3158,13 +3188,14 @@
 
         function showPersonalStatistics() {
             const total = cloudTecnicos.length;
-            const disponibles = cloudTecnicos.filter(t => t.estado === 'disponible').length;
-            const ocupados = cloudTecnicos.filter(t => t.estado === 'ocupado').length;
-            const inactivos = cloudTecnicos.filter(t => t.estado === 'inactivo').length;
+            const disponibles = cloudTecnicos.filter(t => String(t.estado || '').toLowerCase() === 'disponible').length;
+            const ocupados = cloudTecnicos.filter(t => String(t.estado || '').toLowerCase() === 'ocupado').length;
+            const inactivos = cloudTecnicos.filter(t => String(t.estado || '').toLowerCase() === 'inactivo').length;
             
-            const ingenieros = cloudTecnicos.filter(t => t.tipo === 'ingeniero').length;
-            const tecnicos = cloudTecnicos.filter(t => t.tipo === 'tecnico').length;
-            const auxiliares = cloudTecnicos.filter(t => t.tipo === 'auxiliar').length;
+            // Normalizar tipo a minúsculas para conteo
+            const ingenieros = cloudTecnicos.filter(t => String(t.tipo || '').toLowerCase() === 'ingeniero').length;
+            const tecnicos = cloudTecnicos.filter(t => String(t.tipo || '').toLowerCase() === 'tecnico').length;
+            const auxiliares = cloudTecnicos.filter(t => String(t.tipo || '').toLowerCase() === 'auxiliar').length;
             
             alert(`📊 ESTADÍSTICAS DE PERSONAL\n\n` +
                 `👥 Total: ${total} personas\n\n` +
