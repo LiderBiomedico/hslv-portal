@@ -634,8 +634,8 @@
                     <strong>📋 Proceso de Aprobación</strong><br>
                     • Tu solicitud será revisada por el administrador<br>
                     • Recibirás un código de 4 dígitos único<br>
-                    • Sistema protegido contra errores 422<br>
-                    • Sin campo solicitudId - Usa ID de Airtable
+                    • Sistema protegido con mapeo de valores<br>
+                    • Sin errores 422 - Valores corregidos
                 </div>
             </div>
         </div>
@@ -773,7 +773,7 @@
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('📋 Sistema con área biomédica corregida y sin campo solicitudId');
+            console.log('📋 Sistema con mapeo de valores corregido - Sin errores 422');
             
             // Verificar sesión
             checkSession();
@@ -934,21 +934,21 @@
             }
             
             requestBtn.disabled = true;
-            requestBtn.innerHTML = '⏳ Enviando a Airtable protegido...';
+            requestBtn.innerHTML = '⏳ Enviando con valores mapeados...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
                     await window.airtableAPI.createSolicitudAcceso(formData);
                     
                     showAlert(alertDiv, 'success', 
-                        `✅ Solicitud enviada exitosamente sin errores\n\n` +
+                        `✅ Solicitud enviada exitosamente\n\n` +
                         `📋 DATOS ENVIADOS:\n` +
                         `• Nombre: ${formData.nombreCompleto}\n` +
                         `• Email: ${formData.email}\n` +
                         `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
-                        `🛡️ SISTEMA PROTEGIDO:\n` +
-                        `1. Su solicitud fue guardada sin errores 422\n` +
-                        `2. Está visible en el Portal de Gestión\n` +
+                        `🛡️ SISTEMA MEJORADO:\n` +
+                        `1. Su solicitud fue guardada con valores correctos\n` +
+                        `2. Sin errores 422 - Mapeo automático aplicado\n` +
                         `3. El administrador la revisará y aprobará\n` +
                         `4. Recibirá un código de 4 dígitos único\n` +
                         `5. Podrá ingresar con email + código\n\n` +
@@ -959,7 +959,7 @@
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente con protección. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
                 // CORRECCIÓN: Resetear el formulario correctamente
@@ -999,7 +999,7 @@
             }
         }
 
-        // CORRECCIÓN CRÍTICA: Manejar solicitud de mantenimiento con área correcta
+        // CORRECCIÓN CRÍTICA: Manejar solicitud de mantenimiento con valores mapeados
         async function handleMaintenanceRequest(e) {
             e.preventDefault();
             
@@ -1016,7 +1016,7 @@
             }
             
             const formData = {
-                servicioIngenieria: areaValue, // IMPORTANTE: Usar el valor tal como está
+                servicioIngenieria: areaValue, // Se enviará tal cual, el mapeo se hace en airtable-config.js
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 equipo: document.getElementById('equipo').value.trim(),
                 ubicacion: document.getElementById('ubicacion').value.trim(),
@@ -1029,8 +1029,9 @@
                 emailSolicitante: currentUser.email
             };
             
-            console.log('📋 Datos de solicitud completos:', formData);
+            console.log('📋 Datos de solicitud preparados:', formData);
             console.log('🏥 ÁREA A ENVIAR:', formData.servicioIngenieria);
+            console.log('🔍 MAPEO: Los valores se mapearán automáticamente en airtable-config.js');
             
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-btn');
@@ -1042,13 +1043,13 @@
             }
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ Enviando...';
+            submitBtn.innerHTML = '⏳ Enviando con mapeo...';
             
             try {
                 let result;
                 
                 if (window.airtableAPI && isCloudConnected) {
-                    console.log('☁️ Enviando a Airtable con área:', formData.servicioIngenieria);
+                    console.log('☁️ Enviando a Airtable con mapeo automático...');
                     result = await window.airtableAPI.createSolicitud(formData);
                     
                     // Verificar que el área se guardó correctamente
@@ -1062,8 +1063,13 @@
                         `✅ Solicitud enviada exitosamente a Airtable\n\n` +
                         `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
                         `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
+                        `🔧 Tipo: ${getTipoServicioDisplayName(formData.tipoServicio)}\n` +
                         `📍 Ubicación: ${formData.ubicacion}\n` +
-                        `⚡ Prioridad: ${formData.prioridad}\n\n` +
+                        `⚡ Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
+                        `🛡️ VALORES MAPEADOS CORRECTAMENTE:\n` +
+                        `• Sin errores 422\n` +
+                        `• Mapeo automático aplicado\n` +
+                        `• Compatible con Airtable\n\n` +
                         `🌐 Su solicitud está visible en el Portal de Gestión\n` +
                         `⏱️ Tiempo estimado de respuesta según prioridad\n` +
                         `🔄 Sistema con asignación automática de personal`
@@ -1118,6 +1124,32 @@
             return areaNames[area] || area;
         }
 
+        // Helper para mostrar nombre de tipo de servicio
+        function getTipoServicioDisplayName(tipo) {
+            const tipoNames = {
+                'MANTENIMIENTO_PREVENTIVO': 'Mantenimiento Preventivo',
+                'MANTENIMIENTO_CORRECTIVO': 'Mantenimiento Correctivo',
+                'REPARACION': 'Reparación',
+                'INSTALACION': 'Instalación',
+                'CALIBRACION': 'Calibración',
+                'INSPECCION': 'Inspección',
+                'ACTUALIZACION': 'Actualización',
+                'EMERGENCIA': 'Emergencia'
+            };
+            return tipoNames[tipo] || tipo;
+        }
+
+        // Helper para mostrar nombre de prioridad
+        function getPrioridadDisplayName(prioridad) {
+            const prioridadNames = {
+                'CRITICA': '🚨 Crítica',
+                'ALTA': '🔴 Alta',
+                'MEDIA': '🟡 Media',
+                'BAJA': '🟢 Baja'
+            };
+            return prioridadNames[prioridad] || prioridad;
+        }
+
         // Resetear formulario
         function resetForm() {
             if (confirm('¿Está seguro que desea limpiar el formulario?')) {
@@ -1133,6 +1165,41 @@
             alertDiv.innerHTML = message.replace(/\n/g, '<br>');
             alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
+
+        // Función de diagnóstico para probar el mapeo
+        async function testValueMapping() {
+            if (!window.airtableAPI) {
+                console.error('❌ API no disponible');
+                return;
+            }
+            
+            console.log('🧪 PROBANDO MAPEO DE VALORES');
+            console.log('============================');
+            
+            // Probar mapeo de área
+            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+            areas.forEach(area => {
+                const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', area);
+                console.log(`Área: ${area} → ${mapped}`);
+            });
+            
+            // Probar mapeo de tipo de servicio
+            const tipos = ['MANTENIMIENTO_PREVENTIVO', 'REPARACION', 'EMERGENCIA'];
+            tipos.forEach(tipo => {
+                const mapped = window.airtableAPI.mapFieldValue('tipoServicio', tipo);
+                console.log(`Tipo: ${tipo} → ${mapped}`);
+            });
+            
+            // Probar mapeo de prioridad
+            const prioridades = ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
+            prioridades.forEach(prioridad => {
+                const mapped = window.airtableAPI.mapFieldValue('prioridad', prioridad);
+                console.log(`Prioridad: ${prioridad} → ${mapped}`);
+            });
+        }
+
+        // Agregar función de test al objeto window para uso en consola
+        window.testValueMapping = testValueMapping;
     </script>
 </body>
 </html>

@@ -1072,7 +1072,7 @@ class AirtableAPI {
                 return { valid: false, error: 'Usuario no encontrado' };
             }
 
-            if (user.estado !== 'ACTIVO') {
+            if (user.estado !== 'ACTIVO' && user.estado !== 'Activo') {
                 return { valid: false, error: `Usuario en estado: ${user.estado}` };
             }
 
@@ -1199,7 +1199,7 @@ class AirtableAPI {
         }
     }
 
-    // 📋 MÉTODO ACTUALIZADO: Crear solicitud con detección automática
+    // 📋 MÉTODO ACTUALIZADO Y CORREGIDO: Crear solicitud
     async createSolicitud(solicitudData) {
         console.log('📝 Creando solicitud con detección automática...');
         console.log('🔍 Datos recibidos:', solicitudData);
@@ -1212,92 +1212,49 @@ class AirtableAPI {
                 await this.detectValidSolicitudValues();
             }
             
-            // CRÍTICO: Mapear el área correctamente
-            let areaParaGuardar = solicitudData.servicioIngenieria;
+            // CRÍTICO: Aplicar mapeo de valores
+            const mappedData = { ...solicitudData };
             
-            // Si tenemos el mapeo, aplicarlo
-            if (this.fieldMappings.servicioIngenieria && this.fieldMappings.servicioIngenieria[areaParaGuardar]) {
-                areaParaGuardar = this.fieldMappings.servicioIngenieria[areaParaGuardar];
-                console.log(`🗺️ ÁREA MAPEADA: ${solicitudData.servicioIngenieria} → ${areaParaGuardar}`);
+            // Mapear servicioIngenieria
+            if (mappedData.servicioIngenieria && this.fieldMappings.servicioIngenieria[mappedData.servicioIngenieria]) {
+                const valorOriginal = mappedData.servicioIngenieria;
+                mappedData.servicioIngenieria = this.fieldMappings.servicioIngenieria[mappedData.servicioIngenieria];
+                console.log(`🗺️ ÁREA MAPEADA: ${valorOriginal} → ${mappedData.servicioIngenieria}`);
             }
             
-            // Verificar si el valor mapeado está en los valores válidos detectados
-            if (this.validSolicitudValues.servicioIngenieria.length > 0) {
-                const areaValida = this.validSolicitudValues.servicioIngenieria.find(v => 
-                    v === areaParaGuardar || v.toLowerCase() === areaParaGuardar.toLowerCase()
-                );
-                
-                if (areaValida) {
-                    areaParaGuardar = areaValida;
-                    console.log(`✅ ÁREA VÁLIDA CONFIRMADA: ${areaParaGuardar}`);
-                } else {
-                    console.warn(`⚠️ ÁREA NO ENCONTRADA EN VALORES VÁLIDOS`);
-                    console.log('📋 Valores válidos disponibles:', this.validSolicitudValues.servicioIngenieria);
-                }
+            // Mapear tipoServicio
+            if (mappedData.tipoServicio && this.fieldMappings.tipoServicio[mappedData.tipoServicio]) {
+                const valorOriginal = mappedData.tipoServicio;
+                mappedData.tipoServicio = this.fieldMappings.tipoServicio[mappedData.tipoServicio];
+                console.log(`🗺️ TIPO SERVICIO MAPEADO: ${valorOriginal} → ${mappedData.tipoServicio}`);
             }
             
-            // Función helper para encontrar valor válido
-            const findValidValue = (field, inputValue) => {
-                if (!inputValue) return inputValue;
-                
-                const validValues = this.validSolicitudValues[field] || [];
-                const cleanInput = this.cleanFieldValue(inputValue);
-                
-                // Buscar coincidencia exacta
-                let match = validValues.find(v => v === cleanInput);
-                
-                // Si no hay coincidencia exacta, buscar por similitud
-                if (!match) {
-                    match = validValues.find(v => {
-                        const cleanValid = this.cleanFieldValue(v);
-                        return cleanValid.toLowerCase() === cleanInput.toLowerCase();
-                    });
-                }
-                
-                // Si aún no hay coincidencia, intentar mapeo
-                if (!match && this.fieldMappings[field]) {
-                    const mappedValue = this.fieldMappings[field][inputValue];
-                    if (mappedValue) {
-                        match = validValues.find(v => v === mappedValue);
-                    }
-                }
-                
-                if (match) {
-                    console.log(`✅ Valor válido encontrado para ${field}: "${inputValue}" → "${match}"`);
-                    return match;
-                } else {
-                    console.warn(`⚠️ No se encontró valor válido para ${field}: "${inputValue}"`);
-                    console.log(`   Valores válidos disponibles:`, validValues);
-                    return inputValue; // Devolver valor original si no hay match
-                }
-            };
+            // Mapear prioridad
+            if (mappedData.prioridad && this.fieldMappings.prioridad[mappedData.prioridad]) {
+                const valorOriginal = mappedData.prioridad;
+                mappedData.prioridad = this.fieldMappings.prioridad[mappedData.prioridad];
+                console.log(`🗺️ PRIORIDAD MAPEADA: ${valorOriginal} → ${mappedData.prioridad}`);
+            }
             
             // Generar número específico del área
-            let normalizedArea = solicitudData.servicioIngenieria;
-            if (solicitudData.servicioIngenieria && 
-                (solicitudData.servicioIngenieria.toLowerCase().includes('biomed') || 
-                 solicitudData.servicioIngenieria.toLowerCase().includes('bioméd'))) {
-                normalizedArea = 'INGENIERIA_BIOMEDICA';
-            }
+            const numero = await this.generateAreaSpecificNumber(solicitudData.servicioIngenieria);
             
-            const numero = await this.generateAreaSpecificNumber(normalizedArea);
-            
-            // Preparar datos con valores válidos
+            // Preparar datos con valores mapeados
             const rawData = {
                 numero: numero,
-                descripcion: solicitudData.descripcion || 'Solicitud de mantenimiento',
-                estado: findValidValue('estado', 'PENDIENTE'),
+                descripcion: mappedData.descripcion || 'Solicitud de mantenimiento',
+                estado: 'Pendiente', // Usar valor que sabemos que funciona
                 fechaCreacion: new Date().toISOString(),
-                servicioIngenieria: areaParaGuardar, // USAR EL ÁREA MAPEADA
-                tipoServicio: findValidValue('tipoServicio', solicitudData.tipoServicio),
-                prioridad: findValidValue('prioridad', solicitudData.prioridad),
-                equipo: solicitudData.equipo,
-                ubicacion: solicitudData.ubicacion,
-                observaciones: solicitudData.observaciones,
-                solicitante: solicitudData.solicitante,
-                servicioHospitalario: solicitudData.servicioHospitalario,
-                emailSolicitante: solicitudData.emailSolicitante,
-                tiempoRespuestaMaximo: this.calculateMaxResponseTime(solicitudData.prioridad || 'MEDIA')
+                servicioIngenieria: mappedData.servicioIngenieria,
+                tipoServicio: mappedData.tipoServicio,
+                prioridad: mappedData.prioridad,
+                equipo: mappedData.equipo,
+                ubicacion: mappedData.ubicacion,
+                observaciones: mappedData.observaciones,
+                solicitante: mappedData.solicitante,
+                servicioHospitalario: mappedData.servicioHospitalario,
+                emailSolicitante: mappedData.emailSolicitante,
+                tiempoRespuestaMaximo: this.calculateMaxResponseTime(mappedData.prioridad || 'Media')
             };
             
             // CRÍTICO: Verificar que el área no sea undefined o null
@@ -1315,12 +1272,11 @@ class AirtableAPI {
                 }
             });
             
-            // NO usar prepareSafeData ya que puede estar alterando los valores
             const data = {
                 fields: cleanData
             };
             
-            console.log('📝 Datos finales a enviar (con valores detectados):', JSON.stringify(data, null, 2));
+            console.log('📝 Datos finales a enviar (con valores mapeados):', JSON.stringify(data, null, 2));
             console.log('🏥 ÁREA FINAL A GUARDAR:', data.fields.servicioIngenieria);
             
             try {
@@ -1387,9 +1343,9 @@ class AirtableAPI {
             
             // Intentar agregar más campos uno por uno
             const fieldsToAdd = {
-                estado: 'PENDIENTE',
-                tipoServicio: solicitudData.tipoServicio,
-                prioridad: solicitudData.prioridad,
+                estado: 'Pendiente',
+                tipoServicio: this.mapFieldValue('tipoServicio', solicitudData.tipoServicio),
+                prioridad: this.mapFieldValue('prioridad', solicitudData.prioridad),
                 equipo: solicitudData.equipo,
                 ubicacion: solicitudData.ubicacion,
                 solicitante: solicitudData.solicitante
@@ -1418,10 +1374,14 @@ class AirtableAPI {
 
     calculateMaxResponseTime(prioridad) {
         const tiemposRespuesta = {
-            'CRITICA': 2, // 2 horas
-            'ALTA': 8,    // 8 horas
-            'MEDIA': 24,  // 24 horas
-            'BAJA': 72    // 72 horas
+            'Crítica': 2,  // 2 horas
+            'Alta': 8,     // 8 horas
+            'Media': 24,   // 24 horas
+            'Baja': 72,    // 72 horas
+            'CRITICA': 2,
+            'ALTA': 8,
+            'MEDIA': 24,
+            'BAJA': 72
         };
         
         const horas = tiemposRespuesta[prioridad] || 24;
@@ -1655,7 +1615,7 @@ class AirtableAPI {
             ]);
             
             const solicitudesPendientes = solicitudes.filter(s => 
-                s.estado === 'PENDIENTE' || !s.tecnicoAsignado
+                s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.tecnicoAsignado
             );
             
             const tecnicosDisponibles = tecnicos.filter(t => t.estado === 'disponible');
@@ -1738,32 +1698,37 @@ class AirtableAPI {
             return {
                 solicitudes: {
                     total: solicitudes.length,
-                    pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
-                    asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA').length,
-                    enProceso: solicitudes.filter(s => s.estado === 'EN_PROCESO').length,
-                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length,
-                    canceladas: solicitudes.filter(s => s.estado === 'CANCELADA').length,
+                    pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente').length,
+                    asignadas: solicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'Asignada').length,
+                    enProceso: solicitudes.filter(s => s.estado === 'EN_PROCESO' || s.estado === 'En Proceso').length,
+                    completadas: solicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length,
+                    canceladas: solicitudes.filter(s => s.estado === 'CANCELADA' || s.estado === 'Cancelada').length,
                     porArea: {
                         INGENIERIA_BIOMEDICA: solicitudes.filter(s => {
                             const area = s.servicioIngenieria || '';
                             return area === 'INGENIERIA_BIOMEDICA' || 
+                                   area === 'Ingeniería Biomédica' ||
                                    area.toLowerCase().includes('biomed') || 
                                    area.toLowerCase().includes('bioméd');
                         }).length,
-                        MECANICA: solicitudes.filter(s => 
-                            s.servicioIngenieria === 'MECANICA' || 
-                            (s.servicioIngenieria && s.servicioIngenieria.toLowerCase().includes('mec'))
-                        ).length,
-                        INFRAESTRUCTURA: solicitudes.filter(s => 
-                            s.servicioIngenieria === 'INFRAESTRUCTURA' || 
-                            (s.servicioIngenieria && s.servicioIngenieria.toLowerCase().includes('infra'))
-                        ).length
+                        MECANICA: solicitudes.filter(s => {
+                            const area = s.servicioIngenieria || '';
+                            return area === 'MECANICA' || 
+                                   area === 'Mecánica' ||
+                                   area.toLowerCase().includes('mec');
+                        }).length,
+                        INFRAESTRUCTURA: solicitudes.filter(s => {
+                            const area = s.servicioIngenieria || '';
+                            return area === 'INFRAESTRUCTURA' || 
+                                   area === 'Infraestructura' ||
+                                   area.toLowerCase().includes('infra');
+                        }).length
                     },
                     porPrioridad: {
-                        CRITICA: solicitudes.filter(s => s.prioridad === 'CRITICA').length,
-                        ALTA: solicitudes.filter(s => s.prioridad === 'ALTA').length,
-                        MEDIA: solicitudes.filter(s => s.prioridad === 'MEDIA').length,
-                        BAJA: solicitudes.filter(s => s.prioridad === 'BAJA').length
+                        CRITICA: solicitudes.filter(s => s.prioridad === 'CRITICA' || s.prioridad === 'Crítica').length,
+                        ALTA: solicitudes.filter(s => s.prioridad === 'ALTA' || s.prioridad === 'Alta').length,
+                        MEDIA: solicitudes.filter(s => s.prioridad === 'MEDIA' || s.prioridad === 'Media').length,
+                        BAJA: solicitudes.filter(s => s.prioridad === 'BAJA' || s.prioridad === 'Baja').length
                     }
                 },
                 tecnicos: {
@@ -1774,12 +1739,14 @@ class AirtableAPI {
                 },
                 usuarios: {
                     total: usuarios.length,
-                    activos: usuarios.filter(u => u.estado === 'ACTIVO').length
+                    activos: usuarios.filter(u => u.estado === 'ACTIVO' || u.estado === 'Activo').length
                 },
                 tiemposRespuesta: {
                     promedioRespuesta: 'Calculando...',
                     solicitudesVencidas: solicitudes.filter(s => {
-                        if (!s.tiempoRespuestaMaximo || s.estado === 'COMPLETADA') return false;
+                        if (!s.tiempoRespuestaMaximo || 
+                            s.estado === 'COMPLETADA' || s.estado === 'Completada' ||
+                            s.estado === 'CANCELADA' || s.estado === 'Cancelada') return false;
                         return new Date() > new Date(s.tiempoRespuestaMaximo);
                     }).length
                 },
@@ -2091,14 +2058,15 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '7.0-deteccion-completa',
+            version: '7.1-mapeo-corregido',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
+                'FIX: Mapeo de valores corregido para todos los campos',
+                'FIX: Error 422 resuelto con mapeo inteligente',
+                'FIX: Creación de solicitudes con valores mapeados correctos',
                 'NUEVO: Detección automática de valores para tabla Solicitudes',
-                'FIX: Error 422 resuelto con detección inteligente',
-                'FIX: Creación de solicitudes con valores válidos de Airtable',
                 'FIX: Fallback a campos mínimos si hay error',
                 'FIX: Detección automática de valores válidos para todas las tablas',
                 'FIX: Eliminación de campos inexistentes',
@@ -2208,9 +2176,10 @@ try {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (DETECCIÓN COMPLETA) cargado');
+console.log('✅ airtable-config.js (MAPEO CORREGIDO) cargado');
+console.log('🛡️ FIX: Mapeo de valores corregido para todos los campos');
+console.log('🛡️ FIX: Error 422 resuelto con mapeo inteligente');
 console.log('🛡️ NUEVO: Detección automática de valores para tabla Solicitudes');
-console.log('🛡️ FIX: Error 422 resuelto con detección inteligente');
 console.log('🛡️ FIX: Detección automática de valores válidos para todas las tablas');
 console.log('🛡️ FIX: Eliminación de campos inexistentes');
 console.log('🧹 FIX: Limpieza mejorada de valores string');
