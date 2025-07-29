@@ -4865,15 +4865,16 @@
 async function completarSolicitud(solicitud) {
     const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
     const fechaCompletado = new Date();
-    const tiempoTotal = Math.round((fechaCompletado - fechaAsignacion) / 1000); // en segundos
+    const tiempoTotalSegundos = Math.round((fechaCompletado - fechaAsignacion) / 1000);
+    const tiempoTotalMinutos = Math.round(tiempoTotalSegundos / 60); // convertimos a minutos para campo tipo Número
 
     const fields = {
         estado: "COMPLETADA",
         fechaCompletado: fechaCompletado.toISOString()
     };
 
-    if (!isNaN(tiempoTotal) && tiempoTotal >= 0 && isFinite(tiempoTotal)) {
-        fields.tiempoTotalRespuesta = tiempoTotal;
+    if (!isNaN(tiempoTotalMinutos) && tiempoTotalMinutos >= 0 && isFinite(tiempoTotalMinutos)) {
+        fields.tiempoTotalMinutos = tiempoTotalMinutos;
     }
 
     const endpoint = `Solicitudes/${solicitud.id}`;
@@ -4881,9 +4882,9 @@ async function completarSolicitud(solicitud) {
     try {
         await airtable.makeRequest(endpoint, "PATCH", { fields });
     } catch (error) {
-        if (error.message.includes("tiempoTotalRespuesta")) {
-            console.warn("❗ Reintentando sin tiempoTotalRespuesta");
-            delete fields.tiempoTotalRespuesta;
+        if (error.message.includes("tiempoTotalMinutos")) {
+            console.warn("❗ Reintentando sin tiempoTotalMinutos");
+            delete fields.tiempoTotalMinutos;
             await airtable.makeRequest(endpoint, "PATCH", { fields });
         } else {
             console.error("❌ Error inesperado:", error);
