@@ -1103,8 +1103,6 @@
 <button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
                         📊 Estadísticas Avanzadas
                     </button>
-<button class="btn btn-info btn-sm" onclick="testChangeStatusSystem()">
-                        🔄 Test Cambio Estado
                     </button>
 <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()" style="display:none;">
 <span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
@@ -4833,66 +4831,5 @@
             }, 1000);
         });
     </script>
-<script>
-
-function renderizarAccionesSolicitud(solicitud) {
-    const accionesDiv = document.createElement('div');
-    accionesDiv.className = 'request-actions';
-
-    if (solicitud.estado === 'COMPLETADA') {
-        const estadoLabel = document.createElement('span');
-        estadoLabel.textContent = '✅ Solicitud completada';
-        estadoLabel.className = 'status-completada';
-        accionesDiv.appendChild(estadoLabel);
-        return accionesDiv;
-    }
-
-    const asignarBtn = document.createElement('button');
-    asignarBtn.className = 'btn btn-primary btn-sm';
-    asignarBtn.textContent = '👷 Asignar Técnico';
-    asignarBtn.onclick = () => mostrarModalAsignacion(solicitud);
-    accionesDiv.appendChild(asignarBtn);
-
-    const completarBtn = document.createElement('button');
-    completarBtn.className = 'btn btn-success btn-sm';
-    completarBtn.textContent = '✅ Marcar como Completada';
-    completarBtn.onclick = () => marcarSolicitudComoCompletada(solicitud);
-    accionesDiv.appendChild(completarBtn);
-
-    return accionesDiv;
-}
-
-function renderizarSolicitudHTML(solicitud) {
-    const card = document.createElement('div');
-    card.className = `request-card ${solicitud.estado.toLowerCase()}`;
-
-    const encabezado = document.createElement('div');
-    encabezado.className = 'request-header';
-    encabezado.innerHTML = `<div class="request-number">🔧 ${solicitud.numero}</div>`;
-    card.appendChild(encabezado);
-
-    const detalles = document.createElement('div');
-    detalles.className = 'request-details';
-    detalles.innerHTML = `
-        <div class="request-detail">
-            <span class="request-detail-label">Servicio:</span>
-            <span class="request-detail-value">${solicitud.servicioIngenieria}</span>
-        </div>
-        <div class="request-detail">
-            <span class="request-detail-label">Estado:</span>
-            <span class="request-detail-value">${solicitud.estado}</span>
-        </div>
-        <div class="request-detail">
-            <span class="request-detail-label">Equipo:</span>
-            <span class="request-detail-value">${solicitud.equipo || 'No especificado'}</span>
-        </div>
-    `;
-    card.appendChild(detalles);
-
-    const acciones = renderizarAccionesSolicitud(solicitud);
-    card.appendChild(acciones);
-
-    return card;
-}
-</script></body>
+</body>
 </html>
