@@ -1058,7 +1058,7 @@
 <div class="logo">
 <div class="hospital-info">
 <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-<p class="developer-credit" style=";display:none!important">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
+<p class="developer-credit" style="display:none!important">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
 <p>Portal de Gestión Cloud - Sistema con Análisis Mensual y Trimestral</p>
 </div>
 </div>
@@ -1090,7 +1090,7 @@
 <div class="view" id="dashboard-view">
 <!-- Alert de conexión -->
 <div class="alert alert-info" id="connection-alert">
-<h3 style="font-weight: 600; margin-bottom: 0.5rem;;display:none!important">🌐 Sistema Cloud con Análisis Mensual y Trimestral</h3>
+<h3 style="font-weight: 600; margin-bottom: 0.5rem;display:none!important">🌐 Sistema Cloud con Análisis Mensual y Trimestral</h3>
 <ul style="margin: 0.5rem 0 0 1rem;">
 </ul>
 <div style="margin-top: 1rem;">
@@ -1103,8 +1103,8 @@
 <button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
                         📊 Estadísticas Avanzadas
                     </button>
-<button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()" style="display:none;">
-                        🏥 Test Área Biomédica
+<button class="btn btn-info btn-sm" onclick="testChangeStatusSystem()">
+                        🔄 Test Cambio Estado
                     </button>
 <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()" style="display:none;">
 <span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
@@ -1646,76 +1646,39 @@
             }
         }
 
-        // 🏥 NUEVA FUNCIÓN: Test específico para área biomédica
-        async function testBiomedicalAreaMapping() {
-            console.log('🏥 Iniciando test específico para área biomédica...');
+        // 🔄 Test del sistema de cambio de estado
+        async function testChangeStatusSystem() {
+            console.log('🔧 Probando sistema de cambio de estado...');
             
             try {
-                if (!window.airtableAPI) {
-                    alert('❌ API de Airtable no disponible');
+                const solicitudesAsignadas = cloudSolicitudes.filter(s => 
+                    s.tecnicoAsignado && 
+                    (s.estado === 'ASIGNADA' || s.estado === 'Asignada')
+                );
+                
+                if (solicitudesAsignadas.length === 0) {
+                    alert('⚠️ No hay solicitudes asignadas para probar el cambio de estado.\n\nPrimero asigne personal a una solicitud.');
                     return;
                 }
-
-                const status = window.airtableAPI.getStatus();
                 
-                // Test de mapeo de área
-                const testValues = [
-                    'INGENIERIA_BIOMEDICA',
-                    'Ingeniería Biomédica',
-                    'Biomedica',
-                    'Biomédica'
-                ];
-
-                let mappingResults = '';
-                testValues.forEach(value => {
-                    const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', value);
-                    mappingResults += `• "${value}" → "${mapped}"\n`;
-                    console.log(`🗺️ Test mapeo: "${value}" → "${mapped}"`);
-                });
-
-                // Test de generación de número
-                const testNumber = await window.airtableAPI.generateAreaSpecificNumber('INGENIERIA_BIOMEDICA');
-                console.log(`🔢 Número generado para biomédica: ${testNumber}`);
-
-                // Obtener estadísticas de biomédica
-                const solicitudes = await window.airtableAPI.getSolicitudes();
-                const biomedSolicitudes = solicitudes.filter(s => {
-                    const area = s.servicioIngenieria || '';
-                    return area === 'INGENIERIA_BIOMEDICA' || 
-                           area === 'Ingeniería Biomédica' ||
-                           area.toLowerCase().includes('biomed') || 
-                           area.toLowerCase().includes('bioméd');
-                });
-
-                const tecnicos = await window.airtableAPI.getTecnicos();
-                const biomedTecnicos = tecnicos.filter(t => {
-                    const area = t.area || '';
-                    return area === 'INGENIERIA_BIOMEDICA' || 
-                           area === 'Ingeniería Biomédica' ||
-                           area.toLowerCase().includes('biomed') || 
-                           area.toLowerCase().includes('bioméd');
-                });
-
-                alert(`🏥 TEST ÁREA BIOMÉDICA - RESULTADOS\n\n` +
-                    `🔗 Estado Conexión: ${status.isConnected ? '✅ Conectado' : '❌ Desconectado'}\n` +
-                    `📋 Versión API: ${status.version}\n` +
-                    `🔄 Auto-refresh: ${isAutoRefreshActive ? '✅ Activo' : '⏸️ Pausado'}\n\n` +
-                    `🗺️ MAPEO DE VALORES:\n${mappingResults}\n` +
-                    `🔢 Número generado: ${testNumber}\n` +
-                    `📊 Solicitudes biomédica: ${biomedSolicitudes.length}\n` +
-                    `👥 Personal biomédica: ${biomedTecnicos.length}\n\n` +
-                    `✅ Correcciones implementadas:\n` +
-                    `• Mapeo automático de variaciones\n` +
-                    `• Numeración SOLBIO específica\n` +
-                    `• Compatibilidad con asignación\n` +
-                    `• Sin campo solicitudId (error 422 corregido)\n` +
-                    `• Usa ID de Airtable directamente\n\n` +
-                    `🕐 ${new Date().toLocaleTimeString('es-CO')}`
+                const solicitudTest = solicitudesAsignadas[0];
+                
+                const resultado = await window.airtableAPI.diagnosticEstadoChange(solicitudTest.id);
+                
+                alert(`🔧 TEST DE CAMBIO DE ESTADO\n\n` +
+                    `📋 Solicitud: ${solicitudTest.numero}\n` +
+                    `📊 Estado actual: ${solicitudTest.estado}\n` +
+                    `👤 Técnico: ${solicitudTest.tecnicoAsignado}\n\n` +
+                    `✅ Estados válidos detectados:\n${resultado.valoresValidosDetectados.join(', ')}\n\n` +
+                    `🔍 Resultados de pruebas:\n` +
+                    `• EN_PROCESO: ${resultado.resultadosPruebas.EN_PROCESO?.valido ? '✅' : '❌'}\n` +
+                    `• COMPLETADA: ${resultado.resultadosPruebas.COMPLETADA?.valido ? '✅' : '❌'}\n\n` +
+                    `Para cambiar estado use los botones en cada solicitud.`
                 );
-
+                
             } catch (error) {
-                console.error('❌ Error en test biomédica:', error);
-                alert(`❌ Error en test biomédica: ${error.message}\n\nRevise la consola para más detalles.`);
+                console.error('❌ Error en test:', error);
+                alert('❌ Error al probar sistema de cambio de estado: ' + error.message);
             }
         }
 
@@ -2034,7 +1997,7 @@
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">✅ ${filteredSolicitudes.length} Solicitudes Cargadas desde Airtable</h4>
                         <p style="color: #047857; font-size: 0.875rem;">
-                            Sistema con asignación de personal, auto-refresh y control de tiempos - 
+                            Sistema con cambio de estado mejorado - 
                             🏥 Biomédica: ${biomedSolicitudes.length} | 
                             🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'} | 
                             Última actualización: ${new Date().toLocaleTimeString('es-CO')}
@@ -2242,7 +2205,7 @@
 
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
-                        <span style="color: #1e3a8a;">Sincronizado con Airtable - Área biomédica corregida - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
+                        <span style="color: #1e3a8a;">Sincronizado - Cambio de estado mejorado - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
                     </div>
                 </div>
             `;
@@ -2549,7 +2512,7 @@
             }
         }
 
-        // 🔄 Funciones de cambio de estado
+        // 🔄 Funciones de cambio de estado CORREGIDAS
         async function showChangeStatusModal(solicitudId) {
             console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
             
@@ -2667,14 +2630,8 @@
             return badges[normalizedStatus] || 'status-pendiente';
         }
 
+        // FUNCIÓN CRÍTICA CORREGIDA: handleChangeStatus
         async function handleChangeStatus(event, solicitudId) {
-    const fecha1 = new Date(fechaAsignacion);
-    const fecha2 = new Date(fechaCompletado);
-    const tiempoTotalMinutos = Math.round((fecha2 - fecha1) / 60000);
-    if (!isNaN(tiempoTotalMinutos) && tiempoTotalMinutos >= 0 && isFinite(tiempoTotalMinutos)) {
-        fields.tiempoTotalMinutos = tiempoTotalMinutos;
-    }
-
             event.preventDefault();
             
             const nuevoEstado = document.getElementById('new-status').value;
@@ -2694,17 +2651,26 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Cambiando estado...';
 
-                await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
+                console.log('🔄 Cambiando estado:', { solicitudId, nuevoEstado, observaciones });
+
+                // Usar el método updateRequestStatus del API
+                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
                 
-                // Actualizar datos locales
-                await refreshFromCloud();
-                if (nuevoEstado === 'COMPLETADA') {
-                    await syncTechniciansWithCloud(); // Actualizar estado del personal
+                if (result.success) {
+                    // Actualizar datos locales
+                    await refreshFromCloud();
+                    
+                    // Si se completó, actualizar también el personal
+                    if (nuevoEstado === 'COMPLETADA') {
+                        await syncTechniciansWithCloud();
+                    }
+                    
+                    closeStatusModal();
+                    
+                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n📝 Observaciones: ${observaciones || 'Ninguna'}\n${result.mensaje || ''}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                } else {
+                    throw new Error(result.mensaje || 'Error al cambiar estado');
                 }
-                
-                closeStatusModal();
-                
-                alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n📝 Observaciones: ${observaciones || 'Ninguna'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
 
             } catch (error) {
                 console.error('❌ Error cambiando estado:', error);
@@ -4867,40 +4833,5 @@
             }, 1000);
         });
     </script>
-<script>
-async function completarSolicitud(solicitud) {
-    const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
-    const fechaCompletado = new Date();
-    const tiempoTotalSegundos = Math.round((fechaCompletado - fechaAsignacion) / 1000);
-    const tiempoTotalMinutos = Math.round(tiempoTotalSegundos / 60); // convertimos a minutos para campo tipo Número
-
-    const fields = {
-        estado: "COMPLETADA",
-        fechaCompletado: fechaCompletado.toISOString()
-    };
-
-    if (!isNaN(tiempoTotalMinutos) && tiempoTotalMinutos >= 0 && isFinite(tiempoTotalMinutos)) {
-        fields.tiempoTotalMinutos = tiempoTotalMinutos;
-    }
-
-    const endpoint = `Solicitudes/${solicitud.id}`;
-
-    try {
-        await airtable.makeRequest(endpoint, "PATCH", { fields });
-    } catch (error) {
-        if (error.message.includes("tiempoTotalMinutos")) {
-            console.warn("❗ Reintentando sin tiempoTotalMinutos");
-            delete fields.tiempoTotalMinutos;
-            await airtable.makeRequest(endpoint, "PATCH", { fields });
-        } else {
-            console.error("❌ Error inesperado:", error);
-            alert("❌ Error al completar: " + error.message);
-        }
-    }
-
-    alert("✅ Solicitud completada correctamente");
-    refreshFromCloud();
-}
-</script>
 </body>
 </html>
