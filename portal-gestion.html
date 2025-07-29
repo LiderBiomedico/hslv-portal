@@ -3696,6 +3696,11 @@ async function showAdvancedStatistics() {
   const solicitudes = result.records.map(r => r.fields);
   const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA');
   const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
+
+  const correctivos = solicitudes.filter(s => s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO').length;
+  const totalSolicitudes = solicitudes.length;
+  const porcentajeAtencion = totalSolicitudes > 0 ? (correctivos / totalSolicitudes) * 100 : 0;
+
   const tiempoPromedio = completadas.reduce((acc, s) => acc + (parseFloat(s.tiempoTotalRespuesta) || 0), 0) / completadas.length || 0;
   const porServicio = solicitudes.reduce((acc, s) => {
     const servicio = s.servicioIngenieria || 'Desconocido';
@@ -3708,12 +3713,9 @@ async function showAdvancedStatistics() {
     return acc;
   }, {});
 
-  // Guardar backup del dashboard para regresar
-  const dashboard = document.getElementById('dashboard-view');
-  backupDashboardHTML = dashboard.innerHTML;
+  backupDashboardHTML = document.getElementById('dashboard-view').innerHTML;
 
-  // Mostrar panel de estadísticas
-  dashboard.innerHTML = `
+  document.getElementById('dashboard-view').innerHTML = `
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">📊 Análisis Avanzado de Solicitudes</h2>
@@ -3724,17 +3726,17 @@ async function showAdvancedStatistics() {
       </div>
       <div class="card-content" id="stats-summary">
         <ul>
-          <li><strong>Total solicitudes:</strong> ${solicitudes.length}</li>
+          <li><strong>Total solicitudes:</strong> ${totalSolicitudes}</li>
           <li><strong>Completadas:</strong> ${completadas.length}</li>
           <li><strong>Pendientes:</strong> ${pendientes.length}</li>
           <li><strong>Tiempo Promedio de Respuesta:</strong> ${tiempoPromedio.toFixed(2)} horas</li>
+          <li><strong>% de Atención Correctiva:</strong> ${porcentajeAtencion.toFixed(2)}%</li>
         </ul>
         <canvas id="servicioChart" style="max-height:300px;"></canvas>
         <canvas id="tecnicoChart" style="max-height:300px;margin-top:2rem;"></canvas>
       </div>
     </div>`;
 
-  // Dibujar gráficos
   setTimeout(() => {
     new Chart(document.getElementById('servicioChart'), {
       type: 'bar',
@@ -3763,8 +3765,7 @@ async function showAdvancedStatistics() {
 }
 
 function restoreDashboard() {
-  const dashboard = document.getElementById('dashboard-view');
-  dashboard.innerHTML = backupDashboardHTML;
+  document.getElementById('dashboard-view').innerHTML = backupDashboardHTML;
 }
 
 function exportAdvancedStatsToPDF() {
