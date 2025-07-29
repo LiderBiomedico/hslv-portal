@@ -5,6 +5,11 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
+<!-- Agregar Chart.js para gráficos -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Agregar jsPDF para exportar a PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
         * {
             margin: 0;
@@ -810,6 +815,12 @@
             color: #1f2937;
         }
 
+        /* Modal grande para estadísticas */
+        .modal-content.modal-lg {
+            max-width: 1200px;
+            width: 95%;
+        }
+
         /* Formularios en modales */
         .form-group {
             margin-bottom: 1.5rem;
@@ -873,6 +884,81 @@
             display: none !important;
         }
 
+        /* Estilos para estadísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e5e7eb;
+        }
+
+        .stat-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .stat-card-title {
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .stat-card-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .stat-card-description {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.5rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-bottom: 1.5rem;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stats-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .stats-table tr:hover {
+            background: #f8fafc;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .connection-status {
@@ -905,6 +991,22 @@
                 position: static;
                 margin-top: 1rem;
                 width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .header, .nav-tabs, .btn, .modal-close, .filters-section {
+                display: none !important;
+            }
+            
+            .card {
+                box-shadow: none;
+                border: 1px solid #e5e7eb;
+                break-inside: avoid;
             }
         }
     </style>
@@ -970,7 +1072,7 @@
 <button class="btn btn-success btn-sm" onclick="autoAssignAllPending()">
                         🤖 Auto-asignar Todo
                     </button>
-<button class="btn btn-warning btn-sm" onclick="showAdvancedStatistics()">
+<button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
                         📊 Estadísticas Avanzadas
                     </button>
 <button class="btn btn-info btn-sm" onclick="testBiomedicalAreaMapping()">
@@ -1354,6 +1456,18 @@
 </div>
 </div>
 </div>
+<!-- Modal de Estadísticas Avanzadas -->
+<div class="modal" id="stats-modal">
+<div class="modal-content modal-lg">
+<div class="modal-header">
+<h3 class="modal-title">📊 Estadísticas Avanzadas del Sistema</h3>
+<button class="modal-close" onclick="closeStatsModal()">×</button>
+</div>
+<div id="stats-modal-content">
+<!-- Contenido dinámico de estadísticas -->
+</div>
+</div>
+</div>
 <!-- Incluir el archivo de configuración de Airtable -->
 <script src="airtable-config.js"></script>
 <script>
@@ -1370,6 +1484,9 @@
         let autoRefreshCountdown = null;
         let isAutoRefreshActive = true;
         let refreshCountdownValue = 5;
+
+        // Variables para gráficos
+        let chartInstances = {};
 
         // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
@@ -2653,40 +2770,592 @@
             await autoAssignPending();
         }
 
-        // 📊 Estadísticas avanzadas
-        async function showAdvancedStatistics() {
+        // 📊 FUNCIÓN MEJORADA: Mostrar estadísticas avanzadas en modal
+        async function showAdvancedStatisticsModal() {
             try {
+                const modal = document.getElementById('stats-modal');
+                const content = document.getElementById('stats-modal-content');
+                
+                // Mostrar spinner mientras carga
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 3rem;">
+                        <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                        <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas...</p>
+                    </div>
+                `;
+                
+                modal.classList.add('show');
+                
+                // Obtener estadísticas
                 const stats = await window.airtableAPI.getAdvancedStatistics();
                 
-                alert(`📊 ESTADÍSTICAS AVANZADAS DEL SISTEMA\n\n` +
-                    `📋 SOLICITUDES (${stats.solicitudes.total}):\n` +
-                    `• Pendientes: ${stats.solicitudes.pendientes}\n` +
-                    `• Asignadas: ${stats.solicitudes.asignadas}\n` +
-                    `• En Proceso: ${stats.solicitudes.enProceso}\n` +
-                    `• Completadas: ${stats.solicitudes.completadas}\n` +
-                    `• Canceladas: ${stats.solicitudes.canceladas}\n\n` +
-                    `🏥 POR ÁREA:\n` +
-                    `• Biomédica: ${stats.solicitudes.porArea.INGENIERIA_BIOMEDICA}\n` +
-                    `• Mecánica: ${stats.solicitudes.porArea.MECANICA}\n` +
-                    `• Infraestructura: ${stats.solicitudes.porArea.INFRAESTRUCTURA}\n\n` +
-                    `⚡ POR PRIORIDAD:\n` +
-                    `• Crítica: ${stats.solicitudes.porPrioridad.CRITICA}\n` +
-                    `• Alta: ${stats.solicitudes.porPrioridad.ALTA}\n` +
-                    `• Media: ${stats.solicitudes.porPrioridad.MEDIA}\n` +
-                    `• Baja: ${stats.solicitudes.porPrioridad.BAJA}\n\n` +
-                    `👥 PERSONAL (${stats.tecnicos.total}):\n` +
-                    `• Disponibles: ${stats.tecnicos.disponibles}\n` +
-                    `• Ocupados: ${stats.tecnicos.ocupados}\n` +
-                    `• Inactivos: ${stats.tecnicos.inactivos}\n\n` +
-                    `👤 USUARIOS: ${stats.usuarios.total} (${stats.usuarios.activos} activos)\n` +
-                    `⏰ VENCIDAS: ${stats.tiemposRespuesta.solicitudesVencidas}\n\n` +
-                    `🕐 Generado: ${new Date(stats.timestamp).toLocaleString('es-CO')}`
-                );
-
+                // Preparar datos adicionales para análisis
+                const solicitudesPorServicio = {};
+                const solicitudesPorTecnico = {};
+                const tiemposRespuestaPorArea = {
+                    'INGENIERIA_BIOMEDICA': [],
+                    'MECANICA': [],
+                    'INFRAESTRUCTURA': []
+                };
+                
+                cloudSolicitudes.forEach(sol => {
+                    // Contar por servicio hospitalario
+                    const servicio = sol.servicioHospitalario || 'No especificado';
+                    solicitudesPorServicio[servicio] = (solicitudesPorServicio[servicio] || 0) + 1;
+                    
+                    // Contar por técnico asignado
+                    if (sol.tecnicoAsignado) {
+                        solicitudesPorTecnico[sol.tecnicoAsignado] = (solicitudesPorTecnico[sol.tecnicoAsignado] || 0) + 1;
+                    }
+                    
+                    // Calcular tiempos por área
+                    if (sol.tiempoTotalRespuesta && sol.servicioIngenieria) {
+                        const area = normalizarAreaParaEstadisticas(sol.servicioIngenieria);
+                        if (tiemposRespuestaPorArea[area]) {
+                            tiemposRespuestaPorArea[area].push(sol.tiempoTotalRespuesta);
+                        }
+                    }
+                });
+                
+                // Ordenar técnicos por cantidad de solicitudes
+                const topTecnicos = Object.entries(solicitudesPorTecnico)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                // Generar HTML con estadísticas completas
+                content.innerHTML = `
+                    <div style="padding: 1rem;">
+                        <!-- Encabezado con botones de acción -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                            <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema</h2>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
+                                    📄 Exportar a PDF
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
+                                    🔄 Actualizar
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Indicadores principales -->
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">✅ Tasa de Completado</span>
+                                    <span style="font-size: 1.5rem;">📈</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #059669;">
+                                    ${stats.indicadoresGestion.porcentajeCompletadas}%
+                                </div>
+                                <div class="stat-card-description">
+                                    ${stats.solicitudes.completadas} de ${stats.solicitudes.total} solicitudes
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">🔧 Mantenimientos Correctivos</span>
+                                    <span style="font-size: 1.5rem;">⚙️</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #f59e0b;">
+                                    ${stats.indicadoresGestion.porcentajeMantenimientosCorrectivos}%
+                                </div>
+                                <div class="stat-card-description">
+                                    Del total de solicitudes
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">❌ Errores de Usuario</span>
+                                    <span style="font-size: 1.5rem;">👤</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #ef4444;">
+                                    ${stats.indicadoresGestion.porcentajeErroresUsuario}%
+                                </div>
+                                <div class="stat-card-description">
+                                    Solicitudes por mal uso
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">⏱️ Tiempo Promedio</span>
+                                    <span style="font-size: 1.5rem;">⏰</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #2563eb;">
+                                    ${stats.tiemposRespuesta.promedioRespuesta}
+                                </div>
+                                <div class="stat-card-description">
+                                    Respuesta promedio
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">⚠️ Vencidas</span>
+                                    <span style="font-size: 1.5rem;">🚨</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #dc2626;">
+                                    ${stats.tiemposRespuesta.solicitudesVencidas}
+                                </div>
+                                <div class="stat-card-description">
+                                    Fuera de tiempo límite
+                                </div>
+                            </div>
+                            
+                            <div class="stat-card">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">🏆 Efectividad</span>
+                                    <span style="font-size: 1.5rem;">💯</span>
+                                </div>
+                                <div class="stat-card-value" style="color: #059669;">
+                                    ${stats.indicadoresGestion.efectividad.porcentajeGestion}%
+                                </div>
+                                <div class="stat-card-description">
+                                    Solicitudes gestionadas
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de distribución por estado -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">📊 Distribución por Estado</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="chart-container">
+                                    <canvas id="estadoChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de solicitudes por área -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">🏥 Distribución por Área</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="chart-container">
+                                    <canvas id="areaChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de servicios que más solicitan -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">🏥 Servicios Hospitalarios con Más Solicitudes</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="table-responsive">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Servicio</th>
+                                                <th>Solicitudes</th>
+                                                <th>Porcentaje</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${Object.entries(solicitudesPorServicio)
+                                                .sort((a, b) => b[1] - a[1])
+                                                .slice(0, 10)
+                                                .map(([servicio, cantidad]) => `
+                                                    <tr>
+                                                        <td>${servicio}</td>
+                                                        <td style="text-align: center;">${cantidad}</td>
+                                                        <td style="text-align: center;">${((cantidad / stats.solicitudes.total) * 100).toFixed(1)}%</td>
+                                                    </tr>
+                                                `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tabla de técnicos con más asignaciones -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">👨‍🔧 Personal con Más Asignaciones</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="table-responsive">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Técnico</th>
+                                                <th>Asignaciones</th>
+                                                <th>Porcentaje</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${topTecnicos.map(([tecnico, cantidad]) => `
+                                                <tr>
+                                                    <td>${tecnico}</td>
+                                                    <td style="text-align: center;">${cantidad}</td>
+                                                    <td style="text-align: center;">${((cantidad / stats.solicitudes.total) * 100).toFixed(1)}%</td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Gráfico de tipos de servicio -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">🔧 Distribución por Tipo de Servicio</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="chart-container">
+                                    <canvas id="tipoServicioChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas detalladas por tipo -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">📋 Análisis Detallado por Tipo de Servicio</h3>
+                            </div>
+                            <div class="card-content">
+                                <div class="table-responsive">
+                                    <table class="stats-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Tipo de Servicio</th>
+                                                <th>Total</th>
+                                                <th>Completadas</th>
+                                                <th>Tasa de Completado</th>
+                                                <th>% del Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${Object.entries(stats.estadisticasPorTipo)
+                                                .sort((a, b) => b[1].total - a[1].total)
+                                                .map(([tipo, data]) => `
+                                                    <tr>
+                                                        <td>${tipo.replace(/_/g, ' ')}</td>
+                                                        <td style="text-align: center;">${data.total}</td>
+                                                        <td style="text-align: center;">${data.completadas}</td>
+                                                        <td style="text-align: center;">
+                                                            ${data.total > 0 ? ((data.completadas / data.total) * 100).toFixed(1) : 0}%
+                                                        </td>
+                                                        <td style="text-align: center;">${data.porcentaje}%</td>
+                                                    </tr>
+                                                `).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Resumen de personal -->
+                        <div class="card" style="margin-top: 2rem;">
+                            <div class="card-header">
+                                <h3 class="card-title">👥 Estado del Personal de Soporte</h3>
+                            </div>
+                            <div class="card-content">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                    <div style="text-align: center; padding: 1rem; background: #f0fdf4; border-radius: 0.5rem;">
+                                        <div style="font-size: 2rem; font-weight: bold; color: #059669;">${stats.tecnicos.disponibles}</div>
+                                        <div style="color: #047857; font-weight: 500;">Disponibles</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
+                                        <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">${stats.tecnicos.ocupados}</div>
+                                        <div style="color: #d97706; font-weight: 500;">Ocupados</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem;">
+                                        <div style="font-size: 2rem; font-weight: bold; color: #ef4444;">${stats.tecnicos.inactivos}</div>
+                                        <div style="color: #dc2626; font-weight: 500;">Inactivos</div>
+                                    </div>
+                                    <div style="text-align: center; padding: 1rem; background: #e0f2fe; border-radius: 0.5rem;">
+                                        <div style="font-size: 2rem; font-weight: bold; color: #0284c7;">${stats.tecnicos.total}</div>
+                                        <div style="color: #0369a1; font-weight: 500;">Total</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Información adicional -->
+                        <div class="alert alert-info" style="margin-top: 2rem;">
+                            <h4 style="margin-bottom: 0.5rem;">ℹ️ Información del Reporte</h4>
+                            <p style="margin: 0;">
+                                <strong>Fecha de generación:</strong> ${new Date(stats.timestamp).toLocaleString('es-CO')}<br>
+                                <strong>Total de registros analizados:</strong> ${stats.solicitudes.total} solicitudes<br>
+                                <strong>Período:</strong> Todos los registros disponibles en el sistema
+                            </p>
+                        </div>
+                    </div>
+                `;
+                
+                // Crear gráficos después de que el HTML esté listo
+                setTimeout(() => {
+                    createEstadoChart(stats);
+                    createAreaChart(stats);
+                    createTipoServicioChart(stats);
+                }, 100);
+                
             } catch (error) {
-                console.error('❌ Error obteniendo estadísticas:', error);
-                alert('❌ Error al obtener estadísticas: ' + error.message);
+                console.error('❌ Error mostrando estadísticas:', error);
+                const content = document.getElementById('stats-modal-content');
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>❌ Error al cargar estadísticas</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
+        }
+
+        // Función para normalizar áreas en estadísticas
+        function normalizarAreaParaEstadisticas(area) {
+            if (!area) return 'OTRO';
+            
+            const areaLower = area.toLowerCase();
+            if (area === 'INGENIERIA_BIOMEDICA' || 
+                area === 'Ingeniería Biomédica' ||
+                areaLower.includes('biomed') || 
+                areaLower.includes('bioméd')) {
+                return 'INGENIERIA_BIOMEDICA';
+            } else if (area === 'MECANICA' || area === 'Mecánica' || areaLower.includes('mec')) {
+                return 'MECANICA';
+            } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || areaLower.includes('infra')) {
+                return 'INFRAESTRUCTURA';
+            }
+            
+            return 'OTRO';
+        }
+
+        // Crear gráfico de estados
+        function createEstadoChart(stats) {
+            const ctx = document.getElementById('estadoChart').getContext('2d');
+            
+            // Destruir gráfico anterior si existe
+            if (chartInstances.estadoChart) {
+                chartInstances.estadoChart.destroy();
+            }
+            
+            chartInstances.estadoChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Pendientes', 'Asignadas', 'En Proceso', 'Completadas', 'Canceladas'],
+                    datasets: [{
+                        data: [
+                            stats.solicitudes.pendientes,
+                            stats.solicitudes.asignadas,
+                            stats.solicitudes.enProceso,
+                            stats.solicitudes.completadas,
+                            stats.solicitudes.canceladas
+                        ],
+                        backgroundColor: [
+                            '#f59e0b',
+                            '#0ea5e9',
+                            '#8b5cf6',
+                            '#059669',
+                            '#ef4444'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de áreas
+        function createAreaChart(stats) {
+            const ctx = document.getElementById('areaChart').getContext('2d');
+            
+            // Destruir gráfico anterior si existe
+            if (chartInstances.areaChart) {
+                chartInstances.areaChart.destroy();
+            }
+            
+            chartInstances.areaChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura'],
+                    datasets: [{
+                        label: 'Solicitudes por Área',
+                        data: [
+                            stats.solicitudes.porArea.INGENIERIA_BIOMEDICA,
+                            stats.solicitudes.porArea.MECANICA,
+                            stats.solicitudes.porArea.INFRAESTRUCTURA
+                        ],
+                        backgroundColor: [
+                            '#059669',
+                            '#f59e0b',
+                            '#8b5cf6'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Crear gráfico de tipos de servicio
+        function createTipoServicioChart(stats) {
+            const ctx = document.getElementById('tipoServicioChart').getContext('2d');
+            
+            // Destruir gráfico anterior si existe
+            if (chartInstances.tipoServicioChart) {
+                chartInstances.tipoServicioChart.destroy();
+            }
+            
+            const labels = Object.keys(stats.estadisticasPorTipo).map(tipo => tipo.replace(/_/g, ' '));
+            const data = Object.values(stats.estadisticasPorTipo).map(stat => stat.total);
+            
+            chartInstances.tipoServicioChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cantidad de Solicitudes',
+                        data: data,
+                        backgroundColor: '#2563eb'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        // Cerrar modal de estadísticas
+        function closeStatsModal() {
+            document.getElementById('stats-modal').classList.remove('show');
+        }
+
+        // Actualizar datos de estadísticas
+        async function refreshStatsData() {
+            await loadAllDataFromCloud();
+            await showAdvancedStatisticsModal();
+        }
+
+        // Exportar estadísticas a PDF
+        async function exportStatsToPDF() {
+            try {
+                // Obtener el contenido del modal
+                const content = document.getElementById('stats-modal-content');
+                
+                // Crear un elemento temporal para el PDF
+                const pdfContent = document.createElement('div');
+                pdfContent.style.width = '210mm';
+                pdfContent.style.padding = '20px';
+                pdfContent.style.background = 'white';
+                pdfContent.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <h1 style="color: #1f2937; font-size: 24px;">HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.</h1>
+                        <h2 style="color: #4b5563; font-size: 18px;">Reporte de Estadísticas del Sistema de Gestión</h2>
+                        <p style="color: #6b7280;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
+                    </div>
+                    ${content.innerHTML}
+                `;
+                
+                // Agregar el contenido temporalmente al body
+                document.body.appendChild(pdfContent);
+                
+                // Generar el PDF usando html2canvas y jsPDF
+                const canvas = await html2canvas(pdfContent, {
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+                
+                // Remover el contenido temporal
+                document.body.removeChild(pdfContent);
+                
+                // Crear el PDF
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jspdf.jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: 'a4'
+                });
+                
+                const imgWidth = 210;
+                const pageHeight = 295;
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                let heightLeft = imgHeight;
+                let position = 0;
+                
+                // Agregar las páginas necesarias
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+                
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
+                
+                // Guardar el PDF
+                pdf.save(`Estadisticas_Hospital_${new Date().toISOString().split('T')[0]}.pdf`);
+                
+                alert('✅ PDF generado exitosamente');
+                
+            } catch (error) {
+                console.error('❌ Error generando PDF:', error);
+                alert('❌ Error al generar el PDF: ' + error.message);
+            }
+        }
+
+        // 📊 Estadísticas simples (mantenida para compatibilidad)
+        async function showAdvancedStatistics() {
+            await showAdvancedStatisticsModal();
         }
 
         function showRequestsStatistics() {
@@ -3679,122 +4348,5 @@
             }, 1000);
         });
     </script>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-let backupDashboardHTML = '';
-
-async function showAdvancedStatistics() {
-  if (!window.airtableInstance) {
-    window.airtableInstance = new AirtableAPI();
-    await new Promise(resolve => setTimeout(resolve, 2000));
-  }
-  const api = window.airtableInstance;
-  const result = await api.makeRequest(`${api.tables.solicitudes}?pageSize=100`);
-
-  const solicitudes = result.records.map(r => r.fields);
-
-  const groupedByMonth = {};
-  const monthNames = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
-  solicitudes.forEach(s => {
-    const fecha = s.fechaCreacion || s.fechaAsignacion || s.fechaInicioTrabajo || s.fechaCompletado;
-    if (fecha) {
-      const date = new Date(fecha);
-      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      if (!groupedByMonth[key]) groupedByMonth[key] = { total: 0, correctivos: 0 };
-      groupedByMonth[key].total += 1;
-      if (s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO') groupedByMonth[key].correctivos += 1;
-    }
-  });
-
-  const meses = Object.keys(groupedByMonth).sort();
-  const porcentajes = meses.map(m => {
-    const g = groupedByMonth[m];
-    return g.total > 0 ? (g.correctivos / g.total) * 100 : 0;
-  });
-  const etiquetasMes = meses.map(k => {
-    const [y, m] = k.split("-");
-    return monthNames[parseInt(m)-1] + ' ' + y;
-  });
-
-  const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA');
-  const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
-  const tiempoPromedio = completadas.reduce((acc, s) => acc + (parseFloat(s.tiempoTotalRespuesta) || 0), 0) / completadas.length || 0;
-
-  backupDashboardHTML = document.getElementById('dashboard-view').innerHTML;
-
-  document.getElementById('dashboard-view').innerHTML = `
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-title">📊 Análisis Trimestral de Solicitudes</h2>
-        <div>
-          <button class="btn btn-info btn-sm" onclick="exportAdvancedStatsToPDF()">📄 Exportar a PDF</button>
-          <button class="btn btn-secondary btn-sm" onclick="restoreDashboard()">🔙 Regresar</button>
-        </div>
-      </div>
-      <div class="card-content" id="stats-summary">
-        <ul>
-          <li><strong>Total solicitudes:</strong> ${solicitudes.length}</li>
-          <li><strong>Completadas:</strong> ${completadas.length}</li>
-          <li><strong>Pendientes:</strong> ${pendientes.length}</li>
-          <li><strong>Tiempo Promedio de Respuesta:</strong> ${tiempoPromedio.toFixed(2)} horas</li>
-        </ul>
-        <canvas id="porcentajeChart" style="max-height:300px;"></canvas>
-      </div>
-    </div>`;
-
-  setTimeout(() => {
-    new Chart(document.getElementById('porcentajeChart'), {
-      type: 'line',
-      data: {
-        labels: etiquetasMes,
-        datasets: [{
-          label: '% Atención Correctiva por Mes',
-          data: porcentajes,
-          backgroundColor: 'rgba(59, 130, 246, 0.4)',
-          borderColor: 'rgba(59, 130, 246, 1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3
-        }]
-      },
-      options: {
-        scales: {
-          y: {
-            min: 0,
-            max: 100,
-            ticks: {
-              callback: value => value + '%'
-            },
-            title: {
-              display: true,
-              text: 'Porcentaje (%)'
-            }
-          },
-          x: {
-            title: {
-              display: true,
-              text: 'Mes'
-            }
-          }
-        }
-      }
-    });
-  }, 200);
-}
-
-function restoreDashboard() {
-  document.getElementById('dashboard-view').innerHTML = backupDashboardHTML;
-}
-
-function exportAdvancedStatsToPDF() {
-  const doc = new jsPDF();
-  doc.setFontSize(10);
-  doc.text(document.getElementById('stats-summary').innerText, 10, 10);
-  doc.save('EstadisticasTrimestrales.pdf');
-}
-</script>
-
 </body>
 </html>
