@@ -4863,45 +4863,36 @@
 
 <script>
 async function completarSolicitud(solicitud) {
-    try {
-        const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
-        const fechaCompletado = new Date();
+    const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
+    const fechaCompletado = new Date();
+    const tiempoTotal = Math.round((fechaCompletado - fechaAsignacion) / 1000); // en segundos
 
-        const tiempoTotal = Math.round((fechaCompletado - fechaAsignacion) / 1000);
+    const fields = {
+        estado: "COMPLETADA",
+        fechaCompletado: fechaCompletado.toISOString()
+    };
 
-        const fields = {
-            estado: "COMPLETADA",
-            fechaCompletado: fechaCompletado.toISOString()
-        };
-
-        if (!isNaN(tiempoTotal) && isFinite(tiempoTotal) && tiempoTotal >= 0) {
-            fields.tiempoTotalRespuesta = tiempoTotal;
-        } else {
-            console.warn("⚠️ tiempoTotalRespuesta inválido. Se omitirá.");
-        }
-
-        const data = { fields };
-        const endpoint = `Solicitudes/${solicitud.id}`;
-
-        try {
-            await airtable.makeRequest(endpoint, "PATCH", data);
-        } catch (error) {
-            if (error.message.includes("tiempoTotalRespuesta")) {
-                console.warn("🔁 Reintentando sin campo tiempoTotalRespuesta");
-                delete fields.tiempoTotalRespuesta;
-                await airtable.makeRequest(endpoint, "PATCH", { fields });
-            } else {
-                throw error;
-            }
-        }
-
-        alert("✅ Solicitud completada correctamente.");
-        refreshFromCloud();
-
-    } catch (error) {
-        console.error("❌ Error cambiando estado:", error);
-        alert("❌ Error cambiando estado: " + error.message);
+    if (!isNaN(tiempoTotal) && tiempoTotal >= 0 && isFinite(tiempoTotal)) {
+        fields.tiempoTotalRespuesta = tiempoTotal;
     }
+
+    const endpoint = `Solicitudes/${solicitud.id}`;
+
+    try {
+        await airtable.makeRequest(endpoint, "PATCH", { fields });
+    } catch (error) {
+        if (error.message.includes("tiempoTotalRespuesta")) {
+            console.warn("❗ Reintentando sin tiempoTotalRespuesta");
+            delete fields.tiempoTotalRespuesta;
+            await airtable.makeRequest(endpoint, "PATCH", { fields });
+        } else {
+            console.error("❌ Error inesperado:", error);
+            alert("❌ Error al completar: " + error.message);
+        }
+    }
+
+    alert("✅ Solicitud completada correctamente");
+    refreshFromCloud();
 }
 </script>
 
