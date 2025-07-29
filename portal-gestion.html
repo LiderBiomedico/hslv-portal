@@ -4862,55 +4862,36 @@
     </script>
 
 <script>
-async function guardarTecnico() {
-    const nombre = document.getElementById('nombreTecnico').value.trim();
-    const email = document.getElementById('emailTecnico').value.trim();
-    const area = document.getElementById('areaTecnico').value.trim().toUpperCase().replace(/Á/g, "A").replace(/É/g, "E").replace(/Í/g, "I").replace(/Ó/g, "O").replace(/Ú/g, "U");
-    const tipo = document.getElementById('tipoTecnico').value.trim().toLowerCase();
-    const especialidad = document.getElementById('especialidadTecnico').value.trim();
-    const estado = document.getElementById('estadoTecnico').value.trim().toLowerCase();
-
-    const tecnicoData = {
-        nombre,
-        email,
-        area,
-        tipo,
-        especialidad,
-        estado,
-        fechaCreacion: new Date().toISOString()
-    };
-
-    const areaValida = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-    const tipoValido = ['ingeniero', 'tecnico', 'auxiliar'];
-    const estadoValido = ['disponible', 'ocupado', 'inactivo'];
-
-    if (!areaValida.includes(area)) {
-        alert(`❌ Área inválida: "${area}". Debe ser una de: ${areaValida.join(', ')}`);
-        return;
-    }
-
-    if (!tipoValido.includes(tipo)) {
-        alert(`❌ Tipo inválido: "${tipo}". Debe ser: ingeniero, tecnico o auxiliar`);
-        return;
-    }
-
-    if (!estadoValido.includes(estado)) {
-        alert(`❌ Estado inválido: "${estado}". Debe ser: disponible, ocupado o inactivo`);
-        return;
-    }
-
+async function completarSolicitud(solicitud) {
     try {
-        const data = {
-            fields: tecnicoData
+        const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
+        const fechaCompletado = new Date();
+
+        // Calcular diferencia en segundos (para Duration)
+        const tiempoTotalRespuesta = Math.round((fechaCompletado - fechaAsignacion) / 1000);
+
+        const fields = {
+            estado: "COMPLETADA",
+            fechaCompletado: fechaCompletado.toISOString(),
+            tiempoTotalRespuesta: tiempoTotalRespuesta
         };
 
-        const response = await airtable.makeRequest('Tecnicos', 'POST', data);
-        alert('✅ Técnico guardado exitosamente');
-        limpiarFormularioTecnico();
-        cargarTecnicos();
+        // Validación de tiempo válido
+        if (isNaN(tiempoTotalRespuesta) || tiempoTotalRespuesta < 0) {
+            console.warn("⚠️ tiempoTotalRespuesta inválido. Se omitirá.");
+            delete fields.tiempoTotalRespuesta;
+        }
+
+        const data = { fields };
+        const endpoint = `Solicitudes/${solicitud.id}`;
+
+        await airtable.makeRequest(endpoint, "PATCH", data);
+
+        alert("✅ Solicitud completada correctamente.");
+        refreshFromCloud(); // Actualizar solicitudes en la vista
     } catch (error) {
-        console.error('❌ Error al guardar técnico:', error);
-        alert('❌ Error al guardar técnico. Verifica la consola para más detalles.');
+        console.error("❌ Error al cambiar estado:", error);
+        alert("❌ Error al cambiar estado: " + error.message);
     }
 }
 </script>
