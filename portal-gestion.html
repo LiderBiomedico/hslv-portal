@@ -4867,31 +4867,30 @@ async function completarSolicitud(solicitud) {
         const fechaAsignacion = new Date(solicitud.fields.fechaAsignacion);
         const fechaCompletado = new Date();
 
-        // Calcular diferencia en segundos (para Duration)
-        const tiempoTotalRespuesta = Math.round((fechaCompletado - fechaAsignacion) / 1000);
+        const tiempoTotal = Math.round((fechaCompletado - fechaAsignacion) / 1000); // segundos
 
         const fields = {
             estado: "COMPLETADA",
-            fechaCompletado: fechaCompletado.toISOString(),
-            tiempoTotalRespuesta: tiempoTotalRespuesta
+            fechaCompletado: fechaCompletado.toISOString()
         };
 
-        // Validación de tiempo válido
-        if (isNaN(tiempoTotalRespuesta) || tiempoTotalRespuesta < 0) {
-            console.warn("⚠️ tiempoTotalRespuesta inválido. Se omitirá.");
-            delete fields.tiempoTotalRespuesta;
+        // Solo enviar si es número válido y positivo
+        if (!isNaN(tiempoTotal) && isFinite(tiempoTotal) && tiempoTotal >= 0) {
+            fields.tiempoTotalRespuesta = tiempoTotal;
+        } else {
+            console.warn("⚠️ tiempoTotalRespuesta no válido, se omitirá.");
         }
 
-        const data = { fields };
         const endpoint = `Solicitudes/${solicitud.id}`;
+        const data = { fields };
 
         await airtable.makeRequest(endpoint, "PATCH", data);
 
         alert("✅ Solicitud completada correctamente.");
-        refreshFromCloud(); // Actualizar solicitudes en la vista
+        refreshFromCloud();
     } catch (error) {
-        console.error("❌ Error al cambiar estado:", error);
-        alert("❌ Error al cambiar estado: " + error.message);
+        console.error("❌ Error cambiando estado:", error);
+        alert("❌ Error cambiando estado: " + error.message);
     }
 }
 </script>
