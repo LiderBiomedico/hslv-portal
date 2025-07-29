@@ -3679,5 +3679,62 @@
             }, 1000);
         });
     </script>
+
+<script>
+async function showAdvancedStatistics() {
+  const api = new AirtableAPI();
+  const result = await api.makeRequest(`${api.tables.solicitudes}?pageSize=100`);
+
+  const solicitudes = result.records.map(r => r.fields);
+
+  const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA');
+  const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
+
+  const tiempoPromedio = completadas.reduce((acc, s) => acc + (parseFloat(s.tiempoTotalRespuesta) || 0), 0) / completadas.length || 0;
+  const porServicio = solicitudes.reduce((acc, s) => {
+    const servicio = s.servicioIngenieria || 'Desconocido';
+    acc[servicio] = (acc[servicio] || 0) + 1;
+    return acc;
+  }, {});
+  const asignados = solicitudes.reduce((acc, s) => {
+    const tecnico = s.tecnicoAsignado || 'Sin asignar';
+    acc[tecnico] = (acc[tecnico] || 0) + 1;
+    return acc;
+  }, {});
+
+  const resumenHTML = `
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">📊 Análisis Avanzado de Solicitudes</h2>
+        <button class="btn btn-info btn-sm" onclick="exportAdvancedStatsToPDF()">📄 Exportar a PDF</button>
+      </div>
+      <div class="card-content">
+        <ul>
+          <li><strong>🔢 Total solicitudes:</strong> ${solicitudes.length}</li>
+          <li><strong>✅ Completadas:</strong> ${completadas.length}</li>
+          <li><strong>⏳ Pendientes:</strong> ${pendientes.length}</li>
+          <li><strong>⏱️ Tiempo Promedio de Respuesta (completadas):</strong> ${tiempoPromedio.toFixed(2)} horas</li>
+        </ul>
+        <h3>📍 Solicitudes por Servicio</h3>
+        <ul>${Object.entries(porServicio).map(([k,v]) => `<li>${k}: ${v}</li>`).join('')}</ul>
+        <h3>👨‍🔧 Solicitudes Asignadas por Técnico</h3>
+        <ul>${Object.entries(asignados).map(([k,v]) => `<li>${k}: ${v}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('dashboard-view').innerHTML = resumenHTML;
+}
+
+function exportAdvancedStatsToPDF() {
+  const doc = new jsPDF();
+  doc.setFontSize(12);
+  const html = document.querySelector('#dashboard-view').innerText;
+  doc.text(html, 10, 10);
+  doc.save('EstadisticasAvanzadas.pdf');
+}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
 </body>
 </html>
