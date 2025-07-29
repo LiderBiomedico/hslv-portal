@@ -3680,16 +3680,22 @@
         });
     </script>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
+let backupDashboardHTML = '';
+
 async function showAdvancedStatistics() {
-  const api = new AirtableAPI();
+  if (!window.airtableInstance) {
+    window.airtableInstance = new AirtableAPI();
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+  const api = window.airtableInstance;
   const result = await api.makeRequest(`${api.tables.solicitudes}?pageSize=100`);
 
   const solicitudes = result.records.map(r => r.fields);
-
   const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA');
   const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE');
-
   const tiempoPromedio = completadas.reduce((acc, s) => acc + (parseFloat(s.tiempoTotalRespuesta) || 0), 0) / completadas.length || 0;
   const porServicio = solicitudes.reduce((acc, s) => {
     const servicio = s.servicioIngenieria || 'Desconocido';
@@ -3702,39 +3708,72 @@ async function showAdvancedStatistics() {
     return acc;
   }, {});
 
-  const resumenHTML = `
+  // Guardar backup del dashboard para regresar
+  const dashboard = document.getElementById('dashboard-view');
+  backupDashboardHTML = dashboard.innerHTML;
+
+  // Mostrar panel de estadísticas
+  dashboard.innerHTML = `
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">📊 Análisis Avanzado de Solicitudes</h2>
-        <button class="btn btn-info btn-sm" onclick="exportAdvancedStatsToPDF()">📄 Exportar a PDF</button>
+        <div>
+          <button class="btn btn-info btn-sm" onclick="exportAdvancedStatsToPDF()">📄 Exportar a PDF</button>
+          <button class="btn btn-secondary btn-sm" onclick="restoreDashboard()">🔙 Regresar</button>
+        </div>
       </div>
-      <div class="card-content">
+      <div class="card-content" id="stats-summary">
         <ul>
-          <li><strong>🔢 Total solicitudes:</strong> ${solicitudes.length}</li>
-          <li><strong>✅ Completadas:</strong> ${completadas.length}</li>
-          <li><strong>⏳ Pendientes:</strong> ${pendientes.length}</li>
-          <li><strong>⏱️ Tiempo Promedio de Respuesta (completadas):</strong> ${tiempoPromedio.toFixed(2)} horas</li>
+          <li><strong>Total solicitudes:</strong> ${solicitudes.length}</li>
+          <li><strong>Completadas:</strong> ${completadas.length}</li>
+          <li><strong>Pendientes:</strong> ${pendientes.length}</li>
+          <li><strong>Tiempo Promedio de Respuesta:</strong> ${tiempoPromedio.toFixed(2)} horas</li>
         </ul>
-        <h3>📍 Solicitudes por Servicio</h3>
-        <ul>${Object.entries(porServicio).map(([k,v]) => `<li>${k}: ${v}</li>`).join('')}</ul>
-        <h3>👨‍🔧 Solicitudes Asignadas por Técnico</h3>
-        <ul>${Object.entries(asignados).map(([k,v]) => `<li>${k}: ${v}</li>`).join('')}</ul>
+        <canvas id="servicioChart" style="max-height:300px;"></canvas>
+        <canvas id="tecnicoChart" style="max-height:300px;margin-top:2rem;"></canvas>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  document.getElementById('dashboard-view').innerHTML = resumenHTML;
+  // Dibujar gráficos
+  setTimeout(() => {
+    new Chart(document.getElementById('servicioChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(porServicio),
+        datasets: [{
+          label: 'Solicitudes por Servicio',
+          data: Object.values(porServicio),
+          backgroundColor: 'rgba(37, 99, 235, 0.7)'
+        }]
+      }
+    });
+
+    new Chart(document.getElementById('tecnicoChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(asignados),
+        datasets: [{
+          label: 'Solicitudes por Técnico',
+          data: Object.values(asignados),
+          backgroundColor: 'rgba(5, 150, 105, 0.7)'
+        }]
+      }
+    });
+  }, 200);
+}
+
+function restoreDashboard() {
+  const dashboard = document.getElementById('dashboard-view');
+  dashboard.innerHTML = backupDashboardHTML;
 }
 
 function exportAdvancedStatsToPDF() {
   const doc = new jsPDF();
-  doc.setFontSize(12);
-  const html = document.querySelector('#dashboard-view').innerText;
-  doc.text(html, 10, 10);
+  doc.setFontSize(10);
+  doc.text(document.getElementById('stats-summary').innerText, 10, 10);
   doc.save('EstadisticasAvanzadas.pdf');
 }
 </script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 </body>
 </html>
