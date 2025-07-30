@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
@@ -2114,6 +2113,11 @@
 
             const cardClass = `request-card ${getStatusClass(solicitud.estado)} ${timeIndicatorClass === 'overdue' ? 'overdue' : ''}`;
 
+            // Mostrar si es error de usuario
+            const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
+            const tipoServicioBadge = isErrorUsuario ? 
+                '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
+
             return `
                 <div class="${cardClass}">
                     <div class="time-indicator ${timeIndicatorClass}">
@@ -2129,6 +2133,7 @@
                             <span class="request-area-badge ${getAreaBadge(solicitud.servicioIngenieria)}">
                                 ${getAreaName(solicitud.servicioIngenieria)}
                             </span>
+                            ${tipoServicioBadge}
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                             <span class="${getStatusBadge(solicitud.estado)}">${solicitud.estado || 'PENDIENTE'}</span>
@@ -2139,7 +2144,9 @@
                     <div class="request-details">
                         <div class="request-detail">
                             <div class="request-detail-label">🔨 Tipo de Servicio</div>
-                            <div class="request-detail-value">${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</div>
+                            <div class="request-detail-value" ${isErrorUsuario ? 'style="color: #dc2626; font-weight: 600;"' : ''}>
+                                ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}
+                            </div>
                         </div>
                         <div class="request-detail">
                             <div class="request-detail-label">🖥️ Equipo</div>
@@ -2510,7 +2517,7 @@
             }
         }
 
-        // 🔄 Funciones de cambio de estado CORREGIDAS
+        // 🔄 Funciones de cambio de estado MEJORADAS CON OPCIÓN DE ERROR DE USUARIO
         async function showChangeStatusModal(solicitudId) {
             console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
             
@@ -2538,6 +2545,7 @@
                         <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
                             <p><strong>Número:</strong> ${solicitud.numero}</p>
                             <p><strong>Estado Actual:</strong> <span class="${getStatusBadge(solicitud.estado)}">${solicitud.estado || 'PENDIENTE'}</span></p>
+                            <p><strong>Tipo de Servicio Actual:</strong> ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</p>
                             <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
                             <p><strong>Área:</strong> ${getAreaName(solicitud.servicioIngenieria)}</p>
                         </div>
@@ -2546,7 +2554,7 @@
                     <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
                         <div class="form-group">
                             <label class="form-label">🔄 Nuevo Estado</label>
-                            <select id="new-status" required class="form-select">
+                            <select id="new-status" required class="form-select" onchange="onStatusChange(this.value)">
                                 <option value="">Seleccione nuevo estado...</option>
                                 ${estadosDisponibles.map(estado => `
                                     <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
@@ -2558,6 +2566,19 @@
 
                         <div id="status-description" style="margin-bottom: 1rem; padding: 0.75rem; background: #f0f9ff; border-radius: 0.5rem; border-left: 3px solid #3b82f6; display: none;">
                             <p id="status-description-text"></p>
+                        </div>
+
+                        <!-- NUEVA SECCIÓN: Opción de cambiar a Error de Usuario -->
+                        <div id="error-usuario-section" style="display: none; background: #fee2e2; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border-left: 3px solid #ef4444;">
+                            <h5 style="color: #dc2626; margin-bottom: 0.5rem;">👤 ¿Fue un Error de Usuario?</h5>
+                            <p style="color: #991b1b; font-size: 0.875rem; margin-bottom: 0.75rem;">
+                                Si el problema fue causado por un error del usuario (mal uso del equipo, configuración incorrecta, etc.), 
+                                puede marcarlo para las estadísticas.
+                            </p>
+                            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                <input type="checkbox" id="mark-as-user-error" style="width: 1.25rem; height: 1.25rem;">
+                                <span style="color: #dc2626; font-weight: 500;">Marcar como Error de Usuario</span>
+                            </label>
                         </div>
 
                         <div class="form-group">
@@ -2591,21 +2612,29 @@
                 `;
                 
                 // Agregar listener para mostrar descripción del estado
-                document.getElementById('new-status').addEventListener('change', function() {
-                    const selectedValue = this.value;
+                window.onStatusChange = function(value) {
                     const descripcionDiv = document.getElementById('status-description');
                     const descripcionText = document.getElementById('status-description-text');
+                    const errorUsuarioSection = document.getElementById('error-usuario-section');
                     
-                    if (selectedValue) {
-                        const estado = estadosDisponibles.find(e => e.value === selectedValue);
+                    if (value) {
+                        const estado = estadosDisponibles.find(e => e.value === value);
                         if (estado) {
                             descripcionText.textContent = estado.description;
                             descripcionDiv.style.display = 'block';
                         }
+                        
+                        // Mostrar opción de error de usuario solo cuando se marca como completada
+                        if (value === 'COMPLETADA') {
+                            errorUsuarioSection.style.display = 'block';
+                        } else {
+                            errorUsuarioSection.style.display = 'none';
+                        }
                     } else {
                         descripcionDiv.style.display = 'none';
+                        errorUsuarioSection.style.display = 'none';
                     }
-                });
+                };
                 
                 modal.classList.add('show');
 
@@ -2628,19 +2657,20 @@
             return badges[normalizedStatus] || 'status-pendiente';
         }
 
-        // FUNCIÓN CRÍTICA CORREGIDA: handleChangeStatus
+        // FUNCIÓN MEJORADA: handleChangeStatus con opción de cambiar tipo de servicio
         async function handleChangeStatus(event, solicitudId) {
             event.preventDefault();
             
             const nuevoEstado = document.getElementById('new-status').value;
             const observaciones = document.getElementById('status-notes').value.trim();
+            const marcarErrorUsuario = document.getElementById('mark-as-user-error')?.checked || false;
             
             if (!nuevoEstado) {
                 alert('❌ Por favor seleccione un nuevo estado');
                 return;
             }
 
-            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?\n\nEsta acción se registrará en el sistema.`);
+            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?${marcarErrorUsuario ? '\n\n⚠️ También se marcará como ERROR DE USUARIO' : ''}\n\nEsta acción se registrará en el sistema.`);
             if (!confirmed) return;
 
             try {
@@ -2649,12 +2679,44 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Cambiando estado...';
 
-                console.log('🔄 Cambiando estado:', { solicitudId, nuevoEstado, observaciones });
+                console.log('🔄 Cambiando estado:', { solicitudId, nuevoEstado, observaciones, marcarErrorUsuario });
 
-                // Usar el método updateRequestStatus del API
+                // Primero cambiar el estado
                 const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
                 
                 if (result.success) {
+                    // Si se marca como error de usuario y el estado es COMPLETADA, actualizar el tipo de servicio
+                    if (marcarErrorUsuario && nuevoEstado === 'COMPLETADA') {
+                        console.log('👤 Marcando como Error de Usuario...');
+                        
+                        try {
+                            // Actualizar el tipo de servicio a ERROR_USUARIO
+                            await window.airtableAPI.makeRequest(
+                                `Solicitudes/${solicitudId}`, 
+                                'PATCH',
+                                { fields: { tipoServicio: 'ERROR_USUARIO' } }
+                            );
+                            
+                            console.log('✅ Tipo de servicio actualizado a ERROR_USUARIO');
+                            
+                            // Agregar nota adicional en observaciones
+                            const notaErrorUsuario = `\n[${new Date().toLocaleString('es-CO')}] MARCADO COMO ERROR DE USUARIO al completar`;
+                            await window.airtableAPI.makeRequest(
+                                `Solicitudes/${solicitudId}`, 
+                                'PATCH',
+                                { 
+                                    fields: { 
+                                        observaciones: (result.solicitud.observaciones || '') + notaErrorUsuario
+                                    } 
+                                }
+                            );
+                            
+                        } catch (errorUsuarioError) {
+                            console.error('❌ Error marcando como error de usuario:', errorUsuarioError);
+                            alert('⚠️ La solicitud se completó pero no se pudo marcar como Error de Usuario');
+                        }
+                    }
+                    
                     // Actualizar datos locales
                     await refreshFromCloud();
                     
@@ -2665,7 +2727,7 @@
                     
                     closeStatusModal();
                     
-                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n📝 Observaciones: ${observaciones || 'Ninguna'}\n${result.mensaje || ''}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n${marcarErrorUsuario ? '👤 Marcado como: ERROR DE USUARIO\n' : ''}📝 Observaciones: ${observaciones || 'Ninguna'}\n${result.mensaje || ''}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 } else {
                     throw new Error(result.mensaje || 'Error al cambiar estado');
                 }
@@ -2706,7 +2768,7 @@
             }
         }
 
-        // 👁️ Ver detalles de solicitud
+        // 👁️ Ver detalles de solicitud MEJORADO
         function viewRequestDetails(solicitudId) {
             const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
             if (!solicitud) {
@@ -2718,14 +2780,18 @@
             const fechaAsignacion = solicitud.fechaAsignacion ? new Date(solicitud.fechaAsignacion).toLocaleString('es-CO') : 'No asignada';
             const fechaInicio = solicitud.fechaInicioTrabajo ? new Date(solicitud.fechaInicioTrabajo).toLocaleString('es-CO') : 'No iniciada';
             const fechaCompletado = solicitud.fechaCompletado ? new Date(solicitud.fechaCompletado).toLocaleString('es-CO') : 'No completada';
+            
+            // Verificar si es error de usuario
+            const esErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
 
             alert(`📋 DETALLES COMPLETOS DE LA SOLICITUD\n\n` +
                 `🔢 Número: ${solicitud.numero}\n` +
                 `🏥 Área: ${getAreaName(solicitud.servicioIngenieria)}\n` +
-                `🔨 Tipo: ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}\n` +
+                `🔨 Tipo: ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}${esErrorUsuario ? ' ⚠️' : ''}\n` +
                 `⚡ Prioridad: ${solicitud.prioridad || 'MEDIA'}\n` +
-                `📊 Estado: ${solicitud.estado || 'PENDIENTE'}\n\n` +
-                `🖥️ Equipo: ${solicitud.equipo || 'No especificado'}\n` +
+                `📊 Estado: ${solicitud.estado || 'PENDIENTE'}\n` +
+                `${esErrorUsuario ? '👤 MARCADO COMO ERROR DE USUARIO\n' : ''}` +
+                `\n🖥️ Equipo: ${solicitud.equipo || 'No especificado'}\n` +
                 `📍 Ubicación: ${solicitud.ubicacion || 'No especificado'}\n` +
                 `👤 Solicitante: ${solicitud.solicitante || 'No especificado'}\n` +
                 `🏥 Servicio: ${solicitud.servicioHospitalario || 'No especificado'}\n\n` +
@@ -2887,16 +2953,16 @@
                                     </div>
                                 </div>
                                 
-                                <div class="stat-card">
+                                <div class="stat-card" style="border: 2px solid #ef4444;">
                                     <div class="stat-card-header">
-                                        <span class="stat-card-title">❌ Errores de Usuario</span>
-                                        <span style="font-size: 1.5rem;">👤</span>
+                                        <span class="stat-card-title">👤 Errores de Usuario</span>
+                                        <span style="font-size: 1.5rem;">⚠️</span>
                                     </div>
                                     <div class="stat-card-value" style="color: #ef4444;">
                                         ${stats.indicadoresGestion.porcentajeErroresUsuario}%
                                     </div>
                                     <div class="stat-card-description">
-                                        Solicitudes por mal uso
+                                        Solicitudes por mal uso del equipo
                                     </div>
                                 </div>
                                 
@@ -2939,6 +3005,20 @@
                                     </div>
                                 </div>
                             </div>
+                            
+                            <!-- Alerta sobre errores de usuario -->
+                            ${stats.indicadoresGestion.porcentajeErroresUsuario > 10 ? `
+                                <div class="alert alert-warning" style="margin-top: 2rem;">
+                                    <h4 style="margin-bottom: 0.5rem;">⚠️ Alto Porcentaje de Errores de Usuario</h4>
+                                    <p>Se detectó un ${stats.indicadoresGestion.porcentajeErroresUsuario}% de solicitudes por errores de usuario.</p>
+                                    <p style="margin-top: 0.5rem;"><strong>Recomendaciones:</strong></p>
+                                    <ul style="margin: 0.5rem 0 0 1rem;">
+                                        <li>Implementar capacitaciones sobre el uso correcto de equipos</li>
+                                        <li>Crear guías visuales de uso común</li>
+                                        <li>Establecer un programa de formación continua</li>
+                                    </ul>
+                                </div>
+                            ` : ''}
                             
                             <!-- Gráfico de distribución por estado -->
                             <div class="card" style="margin-top: 2rem;">
@@ -3057,17 +3137,23 @@
                                             <tbody>
                                                 ${Object.entries(stats.estadisticasPorTipo)
                                                     .sort((a, b) => b[1].total - a[1].total)
-                                                    .map(([tipo, data]) => `
-                                                        <tr>
-                                                            <td>${tipo.replace(/_/g, ' ')}</td>
-                                                            <td style="text-align: center;">${data.total}</td>
-                                                            <td style="text-align: center;">${data.completadas}</td>
-                                                            <td style="text-align: center;">
-                                                                ${data.total > 0 ? ((data.completadas / data.total) * 100).toFixed(1) : 0}%
-                                                            </td>
-                                                            <td style="text-align: center;">${data.porcentaje}%</td>
-                                                        </tr>
-                                                    `).join('')}
+                                                    .map(([tipo, data]) => {
+                                                        const isErrorUsuario = tipo === 'ERROR_USUARIO';
+                                                        return `
+                                                            <tr ${isErrorUsuario ? 'style="background: #fee2e2;"' : ''}>
+                                                                <td ${isErrorUsuario ? 'style="color: #dc2626; font-weight: 600;"' : ''}>
+                                                                    ${tipo.replace(/_/g, ' ')}
+                                                                    ${isErrorUsuario ? '⚠️' : ''}
+                                                                </td>
+                                                                <td style="text-align: center;">${data.total}</td>
+                                                                <td style="text-align: center;">${data.completadas}</td>
+                                                                <td style="text-align: center;">
+                                                                    ${data.total > 0 ? ((data.completadas / data.total) * 100).toFixed(1) : 0}%
+                                                                </td>
+                                                                <td style="text-align: center;">${data.porcentaje}%</td>
+                                                            </tr>
+                                                        `;
+                                                    }).join('')}
                                             </tbody>
                                         </table>
                                     </div>
@@ -3119,7 +3205,7 @@
                                                 </div>
                                                 <div class="stat-card-value">${datos.total}</div>
                                                 <div class="stat-card-description">
-                                                    ✅ ${datos.completadas} | ⏳ ${datos.pendientes}
+                                                    ✅ ${datos.completadas} | ⏳ ${datos.pendientes} | 👤 ${datos.erroresUsuario || 0}
                                                 </div>
                                             </div>
                                         `).join('')}
@@ -3141,6 +3227,7 @@
                                                     <th>Total</th>
                                                     <th>Completadas</th>
                                                     <th>Pendientes</th>
+                                                    <th>Errores Usuario</th>
                                                     <th>Tasa Completado</th>
                                                     <th>Tiempo Promedio</th>
                                                 </tr>
@@ -3152,6 +3239,7 @@
                                                         <td style="text-align: center;">${datos.total}</td>
                                                         <td style="text-align: center; color: #059669;">${datos.completadas}</td>
                                                         <td style="text-align: center; color: #f59e0b;">${datos.pendientes}</td>
+                                                        <td style="text-align: center; color: #ef4444;">${datos.erroresUsuario || 0}</td>
                                                         <td style="text-align: center;">
                                                             ${datos.total > 0 ? Math.round((datos.completadas / datos.total) * 100) : 0}%
                                                         </td>
@@ -3190,7 +3278,7 @@
                                                 </div>
                                                 <div class="stat-card-value">${datos.total}</div>
                                                 <div class="stat-card-description">
-                                                    Eficiencia: ${datos.eficiencia}%
+                                                    Eficiencia: ${datos.eficiencia}% | Errores: ${datos.erroresUsuario || 0}
                                                 </div>
                                             </div>
                                         `).join('')}
@@ -3213,6 +3301,7 @@
                                                         <th>Trimestre</th>
                                                         <th>Solicitudes</th>
                                                         <th>Completadas</th>
+                                                        <th>Errores Usuario</th>
                                                         <th>Eficiencia</th>
                                                         <th>Tiempo Respuesta</th>
                                                         <th>Satisfacción</th>
@@ -3224,6 +3313,7 @@
                                                             <td>${trimestre}</td>
                                                             <td style="text-align: center;">${datos.total}</td>
                                                             <td style="text-align: center;">${datos.completadas}</td>
+                                                            <td style="text-align: center; color: #ef4444;">${datos.erroresUsuario || 0}</td>
                                                             <td style="text-align: center;">
                                                                 <span style="color: ${datos.eficiencia >= 80 ? '#059669' : datos.eficiencia >= 60 ? '#f59e0b' : '#ef4444'};">
                                                                     ${datos.eficiencia}%
@@ -3263,7 +3353,8 @@
                                 <strong>Fecha de generación:</strong> ${new Date(stats.timestamp).toLocaleString('es-CO')}<br>
                                 <strong>Total de registros analizados:</strong> ${stats.solicitudes.total} solicitudes<br>
                                 <strong>Período:</strong> Todos los registros disponibles en el sistema<br>
-                                <strong>Análisis temporal:</strong> Incluye análisis mensual y trimestral
+                                <strong>Análisis temporal:</strong> Incluye análisis mensual y trimestral<br>
+                                <strong>⚠️ Errores de Usuario:</strong> ${stats.indicadoresGestion.porcentajeErroresUsuario}% del total
                             </p>
                         </div>
                     </div>
@@ -3327,7 +3418,7 @@
             }
         }
 
-        // Calcular análisis mensual
+        // Calcular análisis mensual MEJORADO con errores de usuario
         function calcularAnalisisMensual() {
             const meses = {};
             const mesNombres = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
@@ -3343,6 +3434,7 @@
                             total: 0,
                             completadas: 0,
                             pendientes: 0,
+                            erroresUsuario: 0,
                             tiempos: [],
                             porArea: {
                                 'INGENIERIA_BIOMEDICA': 0,
@@ -3361,6 +3453,11 @@
                         }
                     } else if (sol.estado === 'PENDIENTE' || sol.estado === 'Pendiente') {
                         meses[mesKey].pendientes++;
+                    }
+                    
+                    // Contar errores de usuario
+                    if (sol.tipoServicio === 'ERROR_USUARIO' || sol.tipoServicio === 'Error de Usuario') {
+                        meses[mesKey].erroresUsuario++;
                     }
                     
                     const area = normalizarAreaParaEstadisticas(sol.servicioIngenieria);
@@ -3382,7 +3479,7 @@
             return { porMes: meses };
         }
 
-        // Calcular análisis trimestral
+        // Calcular análisis trimestral MEJORADO con errores de usuario
         function calcularAnalisisTrimestral() {
             const trimestres = {};
             const getQuarter = (date) => {
@@ -3401,6 +3498,7 @@
                         trimestres[trimestre] = {
                             total: 0,
                             completadas: 0,
+                            erroresUsuario: 0,
                             tiempos: [],
                             eficiencia: 0,
                             satisfaccion: null
@@ -3415,6 +3513,11 @@
                             trimestres[trimestre].tiempos.push(sol.tiempoTotalRespuesta);
                         }
                     }
+                    
+                    // Contar errores de usuario
+                    if (sol.tipoServicio === 'ERROR_USUARIO' || sol.tipoServicio === 'Error de Usuario') {
+                        trimestres[trimestre].erroresUsuario++;
+                    }
                 }
             });
             
@@ -3428,8 +3531,10 @@
                     data.tiempoPromedio = formatearTiempo(promedio);
                 }
                 
-                // Simular satisfacción basada en eficiencia (en producción vendría de encuestas)
-                data.satisfaccion = data.eficiencia >= 80 ? 95 : data.eficiencia >= 60 ? 85 : 75;
+                // Simular satisfacción basada en eficiencia y errores de usuario
+                const porcentajeErrores = data.total > 0 ? (data.erroresUsuario / data.total) * 100 : 0;
+                data.satisfaccion = data.eficiencia >= 80 && porcentajeErrores < 10 ? 95 : 
+                                   data.eficiencia >= 60 && porcentajeErrores < 20 ? 85 : 75;
             });
             
             // Calcular tendencia y proyección
@@ -3445,6 +3550,15 @@
                 'Implementar mantenimiento preventivo para reducir solicitudes correctivas',
                 'Mejorar los tiempos de respuesta en áreas críticas'
             ];
+            
+            // Agregar recomendación si hay muchos errores de usuario
+            const ultimoTrimestre = Object.values(trimestres)[Object.values(trimestres).length - 1];
+            if (ultimoTrimestre && ultimoTrimestre.erroresUsuario > 0) {
+                const porcentajeErrores = (ultimoTrimestre.erroresUsuario / ultimoTrimestre.total) * 100;
+                if (porcentajeErrores > 10) {
+                    recomendaciones.unshift('🚨 Implementar urgentemente capacitaciones para reducir errores de usuario');
+                }
+            }
             
             return {
                 porTrimestre: trimestres,
@@ -3471,6 +3585,7 @@
             const labels = Object.keys(analisisMensual.porMes);
             const totales = labels.map(mes => analisisMensual.porMes[mes].total);
             const completadas = labels.map(mes => analisisMensual.porMes[mes].completadas);
+            const erroresUsuario = labels.map(mes => analisisMensual.porMes[mes].erroresUsuario);
             
             if (chartInstances.monthlyTrendChart) {
                 chartInstances.monthlyTrendChart.destroy();
@@ -3492,6 +3607,13 @@
                         borderColor: '#059669',
                         backgroundColor: 'rgba(5, 150, 105, 0.1)',
                         tension: 0.3
+                    }, {
+                        label: 'Errores de Usuario',
+                        data: erroresUsuario,
+                        borderColor: '#ef4444',
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        tension: 0.3,
+                        borderDash: [5, 5]
                     }]
                 },
                 options: {
@@ -3548,6 +3670,7 @@
             const labels = Object.keys(analisisTrimestral.porTrimestre);
             const eficiencias = labels.map(trim => analisisTrimestral.porTrimestre[trim].eficiencia);
             const totales = labels.map(trim => analisisTrimestral.porTrimestre[trim].total);
+            const erroresUsuario = labels.map(trim => analisisTrimestral.porTrimestre[trim].erroresUsuario);
             
             if (chartInstances.quarterlyComparisonChart) {
                 chartInstances.quarterlyComparisonChart.destroy();
@@ -3561,6 +3684,11 @@
                         label: 'Total Solicitudes',
                         data: totales,
                         backgroundColor: '#2563eb',
+                        yAxisID: 'y'
+                    }, {
+                        label: 'Errores de Usuario',
+                        data: erroresUsuario,
+                        backgroundColor: '#ef4444',
                         yAxisID: 'y'
                     }, {
                         label: 'Eficiencia (%)',
@@ -3713,7 +3841,7 @@
             });
         }
 
-        // Crear gráfico de tipos de servicio
+        // Crear gráfico de tipos de servicio MEJORADO
         function createTipoServicioChart(stats) {
             const ctx = document.getElementById('tipoServicioChart').getContext('2d');
             
@@ -3722,8 +3850,16 @@
                 chartInstances.tipoServicioChart.destroy();
             }
             
-            const labels = Object.keys(stats.estadisticasPorTipo).map(tipo => tipo.replace(/_/g, ' '));
+            const labels = Object.keys(stats.estadisticasPorTipo).map(tipo => {
+                const label = tipo.replace(/_/g, ' ');
+                return tipo === 'ERROR_USUARIO' ? `${label} ⚠️` : label;
+            });
             const data = Object.values(stats.estadisticasPorTipo).map(stat => stat.total);
+            
+            // Colores personalizados para resaltar errores de usuario
+            const backgroundColors = Object.keys(stats.estadisticasPorTipo).map(tipo => 
+                tipo === 'ERROR_USUARIO' ? '#ef4444' : '#2563eb'
+            );
             
             chartInstances.tipoServicioChart = new Chart(ctx, {
                 type: 'bar',
@@ -3732,7 +3868,7 @@
                     datasets: [{
                         label: 'Cantidad de Solicitudes',
                         data: data,
-                        backgroundColor: '#2563eb'
+                        backgroundColor: backgroundColors
                     }]
                 },
                 options: {
@@ -3859,13 +3995,17 @@
                 const estado = s.estado ? s.estado.toUpperCase() : '';
                 return estado === 'COMPLETADA';
             }).length;
+            const erroresUsuario = cloudSolicitudes.filter(s => 
+                s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+            ).length;
             
             alert(`📊 ESTADÍSTICAS DE SOLICITUDES\n\n` +
                 `📋 Total: ${total}\n` +
                 `⏳ Pendientes: ${pendientes}\n` +
                 `🎯 Asignadas: ${asignadas}\n` +
                 `🔄 En Proceso: ${enProceso}\n` +
-                `✅ Completadas: ${completadas}\n\n` +
+                `✅ Completadas: ${completadas}\n` +
+                `👤 Errores de Usuario: ${erroresUsuario} (${total > 0 ? ((erroresUsuario / total) * 100).toFixed(1) : 0}%)\n\n` +
                 `🕐 ${new Date().toLocaleTimeString('es-CO')}`
             );
         }
@@ -4286,6 +4426,9 @@
                 const estado = s.estado ? s.estado.toUpperCase() : '';
                 return estado === 'EN_PROCESO' || estado === 'EN PROCESO' || estado === 'ASIGNADA';
             }).length;
+            const erroresUsuario = solicitudesAsignadas.filter(s => 
+                s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+            ).length;
 
             alert(`📊 HISTORIAL DE ${personal.nombre.toUpperCase()}\n\n` +
                 `👤 Información Personal:\n` +
@@ -4298,6 +4441,7 @@
                 `• Total asignaciones: ${solicitudesAsignadas.length}\n` +
                 `• Completadas: ${completadas}\n` +
                 `• En proceso/asignadas: ${enProceso}\n` +
+                `• Errores de usuario resueltos: ${erroresUsuario}\n` +
                 `• Tasa de completado: ${solicitudesAsignadas.length > 0 ? Math.round((completadas / solicitudesAsignadas.length) * 100) : 0}%\n\n` +
                 `${personal.solicitudAsignada ? `📌 Asignación actual: ${personal.solicitudAsignada}\n` : '📌 Sin asignación actual\n'}` +
                 `🕐 ${new Date().toLocaleTimeString('es-CO')}`
@@ -4792,7 +4936,14 @@
                 return estado === 'PENDIENTE' || !s.tecnicoAsignado;
             }).length;
             
-            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
+            const erroresUsuario = cloudSolicitudes.filter(s => 
+                s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+            ).length;
+            
+            const totalSolicitudes = cloudSolicitudes.length;
+            const porcentajeErrores = totalSolicitudes > 0 ? ((erroresUsuario / totalSolicitudes) * 100).toFixed(1) : 0;
+            
+            alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n⚠️ ERRORES DE USUARIO:\n• ${erroresUsuario} solicitudes marcadas\n• ${porcentajeErrores}% del total\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
         }
 
         function filterByArea(area) {
