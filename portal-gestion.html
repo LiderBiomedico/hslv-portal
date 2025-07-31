@@ -1747,7 +1747,7 @@
             }
         }
 
-        // 📊 Actualizar contadores y displays - CORREGIDO PARA ÁREA BIOMÉDICA
+        // 📊 FUNCIÓN CORREGIDA: Actualizar contadores con lógica mejorada de pendientes
         function updateAllCounters() {
             // CORRECCIÓN: Contadores con detección mejorada de área biomédica
             const total = cloudSolicitudes.length;
@@ -1774,9 +1774,33 @@
                 (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('infra'))
             ).length;
             
-            const pendientes = cloudSolicitudes.filter(r => r.estado === 'PENDIENTE' || r.estado === 'Pendiente' || !r.tecnicoAsignado).length;
-            const asignadas = cloudSolicitudes.filter(r => r.estado === 'ASIGNADA' || r.estado === 'Asignada').length;
+            // CORRECCIÓN CRÍTICA: Contador de pendientes mejorado
+            // Solo contar como pendientes las solicitudes que NO estén completadas o canceladas
+            const pendientes = cloudSolicitudes.filter(r => {
+                // Normalizar el estado para comparación
+                const estadoUpper = (r.estado || 'PENDIENTE').toUpperCase();
+                
+                // Si está completada o cancelada, NO es pendiente
+                if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
+                    return false;
+                }
+                
+                // Es pendiente si:
+                // 1. El estado es PENDIENTE
+                // 2. El estado es ASIGNADA (aún no completada)
+                // 3. No tiene técnico asignado (y no está completada/cancelada)
+                return estadoUpper === 'PENDIENTE' || 
+                       estadoUpper === 'ASIGNADA' || 
+                       !r.tecnicoAsignado;
+            }).length;
+            
+            // Contador de asignadas (solo las que están específicamente en estado ASIGNADA)
+            const asignadas = cloudSolicitudes.filter(r => {
+                const estadoUpper = (r.estado || '').toUpperCase();
+                return estadoUpper === 'ASIGNADA';
+            }).length;
 
+            // Actualizar todos los elementos del DOM
             document.getElementById('metric-total').textContent = total;
             document.getElementById('metric-biomedica').textContent = biomedica;
             document.getElementById('metric-mecanica').textContent = mecanica;
@@ -1807,9 +1831,11 @@
             // Contadores de accesos
             const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado).length;
             document.getElementById('pending-access-count').textContent = pendingAccess;
+            
+            // CORRECCIÓN: Actualizar el contador de notificaciones para que solo muestre pendientes reales
             document.getElementById('notification-count').textContent = pendingAccess + pendientes;
 
-            console.log(`📊 Contadores actualizados (biomédica corregida): ${total} solicitudes, ${biomedicaTecnicos} personal biomédica, ${pendingAccess} accesos pendientes`);
+            console.log(`📊 Contadores actualizados: ${total} solicitudes, ${pendientes} pendientes reales (excluyendo completadas/canceladas), ${biomedicaTecnicos} personal biomédica, ${pendingAccess} accesos pendientes`);
         }
 
         function updateAllDisplays() {
@@ -3977,35 +4003,52 @@
             await showAdvancedStatisticsModal();
         }
 
+        // FUNCIÓN CORREGIDA: showRequestsStatistics con lógica mejorada de pendientes
         function showRequestsStatistics() {
             const total = cloudSolicitudes.length;
+            
+            // Usar la misma lógica mejorada para contar pendientes
             const pendientes = cloudSolicitudes.filter(s => {
-                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
-                return estado === 'PENDIENTE';
+                const estadoUpper = (s.estado || 'PENDIENTE').toUpperCase();
+                if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
+                    return false;
+                }
+                return estadoUpper === 'PENDIENTE' || estadoUpper === 'ASIGNADA' || !s.tecnicoAsignado;
             }).length;
+            
             const asignadas = cloudSolicitudes.filter(s => {
                 const estado = s.estado ? s.estado.toUpperCase() : '';
                 return estado === 'ASIGNADA';
             }).length;
+            
             const enProceso = cloudSolicitudes.filter(s => {
                 const estado = s.estado ? s.estado.toUpperCase() : '';
                 return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
             }).length;
+            
             const completadas = cloudSolicitudes.filter(s => {
                 const estado = s.estado ? s.estado.toUpperCase() : '';
                 return estado === 'COMPLETADA';
             }).length;
+            
+            const canceladas = cloudSolicitudes.filter(s => {
+                const estado = s.estado ? s.estado.toUpperCase() : '';
+                return estado === 'CANCELADA';
+            }).length;
+            
             const erroresUsuario = cloudSolicitudes.filter(s => 
                 s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
             ).length;
             
             alert(`📊 ESTADÍSTICAS DE SOLICITUDES\n\n` +
                 `📋 Total: ${total}\n` +
-                `⏳ Pendientes: ${pendientes}\n` +
-                `🎯 Asignadas: ${asignadas}\n` +
+                `⏳ Pendientes (incluye asignadas): ${pendientes}\n` +
+                `🎯 Solo Asignadas: ${asignadas}\n` +
                 `🔄 En Proceso: ${enProceso}\n` +
                 `✅ Completadas: ${completadas}\n` +
+                `❌ Canceladas: ${canceladas}\n` +
                 `👤 Errores de Usuario: ${erroresUsuario} (${total > 0 ? ((erroresUsuario / total) * 100).toFixed(1) : 0}%)\n\n` +
+                `📌 Nota: Las solicitudes completadas/canceladas NO cuentan como pendientes\n` +
                 `🕐 ${new Date().toLocaleTimeString('es-CO')}`
             );
         }
@@ -4946,12 +4989,47 @@
             alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n📊 PENDIENTES:\n• ${pendingAccess} Solicitudes de acceso por aprobar\n• ${pendingSolicitudes} Solicitudes de mantenimiento sin asignar\n\n⚠️ ERRORES DE USUARIO:\n• ${erroresUsuario} solicitudes marcadas\n• ${porcentajeErrores}% del total\n\n🌐 ESTADO DEL SISTEMA:\n• Conexión: ${isConnectedToAirtable ? '🟢 Conectado a Airtable' : '🔴 Modo local'}\n• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo cada 5s' : '🔴 Pausado'}\n• Última sync: ${new Date().toLocaleTimeString('es-CO')}\n• Total usuarios: ${cloudUsuarios.length}\n• Total personal de soporte: ${cloudTecnicos.length}`);
         }
 
+        // FUNCIÓN CORREGIDA: filterByArea
         function filterByArea(area) {
             console.log('Filtrar por área:', area);
+            // Implementar filtrado por área si es necesario
+            // Por ahora solo muestra en consola
         }
 
+        // FUNCIÓN CORREGIDA: filterByStatus con lógica mejorada de pendientes
         function filterByStatus(status) {
-            console.log('Filtrar por estado:', status);
+            console.log('🔍 Filtrar por estado:', status);
+            
+            if (status === 'PENDIENTE') {
+                // Aplicar la misma lógica del contador de pendientes
+                filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
+                    const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
+                    
+                    // Si está completada o cancelada, NO mostrar
+                    if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
+                        return false;
+                    }
+                    
+                    // Mostrar si es pendiente, asignada o sin técnico asignado
+                    return estadoUpper === 'PENDIENTE' || 
+                           estadoUpper === 'ASIGNADA' || 
+                           !solicitud.tecnicoAsignado;
+                });
+            } else if (status === 'ASIGNADA') {
+                filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
+                    const estadoUpper = (solicitud.estado || '').toUpperCase();
+                    return estadoUpper === 'ASIGNADA';
+                });
+            } else {
+                // Para otros estados, mantener la lógica original
+                filteredSolicitudes = [...cloudSolicitudes];
+            }
+            
+            // Cambiar a la vista de solicitudes para mostrar los resultados filtrados
+            showView('solicitudes');
+            updateSolicitudesList();
+            
+            console.log(`✅ Filtrado por estado ${status}: ${filteredSolicitudes.length} solicitudes`);
         }
 
         // 🚀 Inicialización
