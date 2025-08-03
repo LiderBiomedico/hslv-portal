@@ -1485,7 +1485,29 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Gestión Cloud Iniciado');
             console.log('📊 Versión con Historial de Asignaciones');
-            initializePortal();
+            
+            // Verificar carga de airtable-config.js
+            if (!window.airtableAPI) {
+                console.warn('⚠️ Esperando carga de airtable-config.js...');
+                
+                // Intentar múltiples veces
+                let attempts = 0;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (window.airtableAPI) {
+                        console.log('✅ airtableAPI detectado después de ' + attempts + ' intentos');
+                        clearInterval(checkInterval);
+                        initializePortal();
+                    } else if (attempts > 10) {
+                        console.error('❌ No se pudo cargar airtableAPI después de 10 intentos');
+                        clearInterval(checkInterval);
+                        showNotification('Error: No se pudo cargar la API. Recargue la página.', 'error');
+                    }
+                }, 500);
+            } else {
+                console.log('✅ airtableAPI ya cargado');
+                initializePortal();
+            }
         });
 
         // Funciones de inicialización
@@ -1495,12 +1517,37 @@
             // Configurar listeners de conexión
             window.addEventListener('airtableConnectionUpdate', handleConnectionUpdate);
             
-            // Verificar conexión inicial
+            // Verificar API después de un delay para asegurar que se cargó
             setTimeout(async () => {
+                // Debug: Verificar métodos disponibles
+                if (window.airtableAPI) {
+                    console.log('✅ AirtableAPI cargado');
+                    console.log('📋 Métodos disponibles:');
+                    const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(window.airtableAPI));
+                    console.log(methods.filter(m => typeof window.airtableAPI[m] === 'function'));
+                    
+                    // Verificar métodos críticos
+                    const criticalMethods = [
+                        'getAdvancedStatistics',
+                        'getMonthlyTechnicianStats',
+                        'getTechnicianHistory'
+                    ];
+                    
+                    criticalMethods.forEach(method => {
+                        if (typeof window.airtableAPI[method] === 'function') {
+                            console.log(`✅ ${method} disponible`);
+                        } else {
+                            console.error(`❌ ${method} NO disponible`);
+                        }
+                    });
+                } else {
+                    console.error('❌ AirtableAPI no cargado');
+                }
+                
                 await checkCloudConnection();
                 await loadAllData();
                 startAutoRefresh();
-            }, 1000);
+            }, 2000); // Aumentar delay para asegurar carga completa
         }
 
         function handleConnectionUpdate(event) {
@@ -1924,16 +1971,35 @@
             openModal('advanced-stats-modal');
             
             try {
-                if (window.airtableAPI && cloudConnected) {
+                // Verificar que el API existe y tiene el método
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
+                }
+                
+                if (!window.airtableAPI.getAdvancedStatistics) {
+                    throw new Error('Método getAdvancedStatistics no disponible');
+                }
+                
+                if (cloudConnected) {
+                    console.log('📊 Obteniendo estadísticas avanzadas...');
                     const stats = await window.airtableAPI.getAdvancedStatistics();
                     displayAdvancedStats(stats);
                 } else {
-                    showNotification('Estadísticas solo disponibles en modo cloud', 'warning');
-                    closeModal('advanced-stats-modal');
+                    // Generar estadísticas locales como fallback
+                    const localStats = generateLocalStatistics();
+                    displayAdvancedStats(localStats);
                 }
             } catch (error) {
                 console.error('❌ Error obteniendo estadísticas:', error);
-                modalContent.innerHTML = '<p style="color: red;">Error cargando estadísticas</p>';
+                modalContent.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <p style="color: red; margin-bottom: 1rem;">Error cargando estadísticas</p>
+                        <p style="color: #6b7280;">${error.message}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="closeModal('advanced-stats-modal')">
+                            Cerrar
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -2053,15 +2119,42 @@
             modalContent.innerHTML = '<p style="text-align: center;">⏳ Cargando estadísticas mensuales...</p>';
             
             try {
-                if (window.airtableAPI && cloudConnected) {
+                // Verificar que el API existe y tiene el método
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
+                }
+                
+                // Verificar si el método existe
+                if (typeof window.airtableAPI.getMonthlyTechnicianStats !== 'function') {
+                    console.error('❌ Método getMonthlyTechnicianStats no está definido');
+                    console.log('Métodos disponibles:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.airtableAPI)));
+                    
+                    // Usar estadísticas locales como fallback
+                    const localStats = generateLocalMonthlyStats(month, year);
+                    displayMonthlyStats(localStats);
+                    return;
+                }
+                
+                if (cloudConnected) {
+                    console.log(`📊 Obteniendo estadísticas de ${month}/${year}...`);
                     const stats = await window.airtableAPI.getMonthlyTechnicianStats(month, year);
                     displayMonthlyStats(stats);
                 } else {
-                    modalContent.innerHTML = '<p style="color: #f59e0b;">Estadísticas mensuales solo disponibles en modo cloud</p>';
+                    // Generar estadísticas locales
+                    const localStats = generateLocalMonthlyStats(month, year);
+                    displayMonthlyStats(localStats);
                 }
             } catch (error) {
                 console.error('❌ Error obteniendo estadísticas mensuales:', error);
-                modalContent.innerHTML = '<p style="color: red;">Error cargando estadísticas</p>';
+                modalContent.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <p style="color: red; margin-bottom: 1rem;">Error cargando estadísticas</p>
+                        <p style="color: #6b7280;">${error.message}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="closeModal('monthly-stats-modal')">
+                            Cerrar
+                        </button>
+                    </div>
+                `;
             }
         }
 
@@ -2144,23 +2237,210 @@
             openModal('technician-performance-modal');
             
             try {
-                if (window.airtableAPI && cloudConnected) {
+                // Verificar que el API existe
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
+                }
+                
+                // Verificar si el método existe
+                if (typeof window.airtableAPI.getTechnicianHistory !== 'function') {
+                    console.error('❌ Método getTechnicianHistory no está definido');
+                    
+                    // Usar estadísticas locales como fallback
+                    const localStats = generateLocalTechnicianStats();
+                    displayTechnicianPerformance(localStats);
+                    return;
+                }
+                
+                if (cloudConnected) {
+                    console.log('📊 Obteniendo historial de técnicos...');
                     // Obtener estadísticas de todos los técnicos
                     const allTechStats = await Promise.all(
                         tecnicos.map(async (tecnico) => {
-                            const history = await window.airtableAPI.getTechnicianHistory(tecnico.nombre);
-                            return { tecnico, history };
+                            try {
+                                const history = await window.airtableAPI.getTechnicianHistory(tecnico.nombre);
+                                return { tecnico, history };
+                            } catch (error) {
+                                console.error(`Error obteniendo historial de ${tecnico.nombre}:`, error);
+                                // Generar estadísticas locales para este técnico
+                                return { 
+                                    tecnico, 
+                                    history: generateLocalTechnicianHistory(tecnico) 
+                                };
+                            }
                         })
                     );
                     
                     displayTechnicianPerformance(allTechStats);
                 } else {
-                    modalContent.innerHTML = '<p style="color: #f59e0b;">Rendimiento de personal solo disponible en modo cloud</p>';
+                    // Generar estadísticas locales
+                    const localStats = generateLocalTechnicianStats();
+                    displayTechnicianPerformance(localStats);
                 }
             } catch (error) {
                 console.error('❌ Error obteniendo rendimiento:', error);
-                modalContent.innerHTML = '<p style="color: red;">Error cargando rendimiento</p>';
+                modalContent.innerHTML = `
+                    <div style="text-align: center; padding: 2rem;">
+                        <p style="color: red; margin-bottom: 1rem;">Error cargando rendimiento</p>
+                        <p style="color: #6b7280;">${error.message}</p>
+                        <button class="btn btn-secondary btn-sm" onclick="closeModal('technician-performance-modal')">
+                            Cerrar
+                        </button>
+                    </div>
+                `;
             }
+        }
+
+        // Funciones de generación de estadísticas locales
+        function generateLocalStatistics() {
+            console.log('📊 Generando estadísticas locales...');
+            
+            const totalSolicitudes = solicitudes.length;
+            const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length;
+            const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente').length;
+            const asignadas = solicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'Asignada').length;
+            const enProceso = solicitudes.filter(s => s.estado === 'EN_PROCESO' || s.estado === 'En Proceso').length;
+            const canceladas = solicitudes.filter(s => s.estado === 'CANCELADA' || s.estado === 'Cancelada').length;
+            
+            // Calcular estadísticas por técnico
+            const estadisticasPorTecnico = {};
+            tecnicos.forEach(tecnico => {
+                const solicitudesTecnico = solicitudes.filter(s => s.tecnicoAsignado === tecnico.nombre);
+                const completadasTecnico = solicitudesTecnico.filter(s => 
+                    s.estado === 'COMPLETADA' || s.estado === 'Completada'
+                ).length;
+                
+                estadisticasPorTecnico[tecnico.nombre] = {
+                    area: tecnico.area,
+                    totalAsignaciones: solicitudesTecnico.length,
+                    completadas: completadasTecnico,
+                    enProceso: solicitudesTecnico.filter(s => 
+                        s.estado === 'EN_PROCESO' || s.estado === 'En Proceso' || 
+                        s.estado === 'ASIGNADA' || s.estado === 'Asignada'
+                    ).length,
+                    tiempoPromedio: 'N/A',
+                    tasaCompletado: solicitudesTecnico.length > 0 
+                        ? ((completadasTecnico / solicitudesTecnico.length) * 100).toFixed(1) 
+                        : 0,
+                    estado: tecnico.estado
+                };
+            });
+            
+            return {
+                solicitudes: {
+                    total: totalSolicitudes,
+                    pendientes: pendientes,
+                    asignadas: asignadas,
+                    enProceso: enProceso,
+                    completadas: completadas,
+                    canceladas: canceladas,
+                    porArea: {
+                        INGENIERIA_BIOMEDICA: solicitudes.filter(s => {
+                            const area = s.servicioIngenieria || '';
+                            return area.toLowerCase().includes('biomed') || area === 'INGENIERIA_BIOMEDICA';
+                        }).length,
+                        MECANICA: solicitudes.filter(s => {
+                            const area = s.servicioIngenieria || '';
+                            return area === 'MECANICA' || area.toLowerCase().includes('mec');
+                        }).length,
+                        INFRAESTRUCTURA: solicitudes.filter(s => {
+                            const area = s.servicioIngenieria || '';
+                            return area === 'INFRAESTRUCTURA' || area.toLowerCase().includes('infra');
+                        }).length
+                    }
+                },
+                indicadoresGestion: {
+                    porcentajeCompletadas: totalSolicitudes > 0 ? ((completadas / totalSolicitudes) * 100).toFixed(2) : 0,
+                    porcentajeMantenimientosCorrectivos: 0,
+                    porcentajeErroresUsuario: 0
+                },
+                tiemposRespuesta: {
+                    promedioRespuesta: 'N/A',
+                    solicitudesVencidas: 0
+                },
+                estadisticasPorTipo: {},
+                estadisticasPorTecnico: estadisticasPorTecnico
+            };
+        }
+
+        function generateLocalMonthlyStats(month, year) {
+            console.log(`📊 Generando estadísticas locales para ${month}/${year}...`);
+            
+            // Filtrar solicitudes del mes
+            const solicitudesMes = solicitudes.filter(s => {
+                if (!s.fechaCreacion) return false;
+                const fecha = new Date(s.fechaCreacion);
+                return fecha.getMonth() === month - 1 && fecha.getFullYear() === year;
+            });
+            
+            const statsPorTecnico = {};
+            tecnicos.forEach(tecnico => {
+                const solicitudesTecnico = solicitudesMes.filter(s => 
+                    s.tecnicoAsignado === tecnico.nombre
+                );
+                const completadas = solicitudesTecnico.filter(s => 
+                    s.estado === 'COMPLETADA' || s.estado === 'Completada'
+                ).length;
+                
+                if (solicitudesTecnico.length > 0) {
+                    statsPorTecnico[tecnico.nombre] = {
+                        area: tecnico.area,
+                        totalAsignaciones: solicitudesTecnico.length,
+                        completadas: completadas,
+                        tiempoPromedio: 'N/A',
+                        tasaCompletado: ((completadas / solicitudesTecnico.length) * 100).toFixed(1)
+                    };
+                }
+            });
+            
+            const ranking = Object.entries(statsPorTecnico)
+                .sort((a, b) => b[1].totalAsignaciones - a[1].totalAsignaciones);
+            
+            return {
+                mes: month,
+                año: year,
+                totalSolicitudesMes: solicitudesMes.length,
+                tecnicosActivos: ranking.length,
+                statsPorTecnico: statsPorTecnico,
+                ranking: ranking
+            };
+        }
+
+        function generateLocalTechnicianStats() {
+            console.log('📊 Generando estadísticas locales de técnicos...');
+            
+            return tecnicos.map(tecnico => {
+                const history = generateLocalTechnicianHistory(tecnico);
+                return { tecnico, history };
+            });
+        }
+
+        function generateLocalTechnicianHistory(tecnico) {
+            const solicitudesTecnico = solicitudes.filter(s => 
+                s.tecnicoAsignado === tecnico.nombre
+            );
+            
+            const completadas = solicitudesTecnico.filter(s => 
+                s.estado === 'COMPLETADA' || s.estado === 'Completada'
+            );
+            
+            const enProceso = solicitudesTecnico.filter(s => 
+                s.estado === 'EN_PROCESO' || s.estado === 'En Proceso' || 
+                s.estado === 'ASIGNADA' || s.estado === 'Asignada'
+            );
+            
+            return {
+                tecnico: tecnico.nombre,
+                totalAsignaciones: solicitudesTecnico.length,
+                completadas: completadas.length,
+                enProceso: enProceso.length,
+                erroresUsuarioResueltos: 0,
+                tiempoPromedioRespuesta: 'N/A',
+                tasaCompletado: solicitudesTecnico.length > 0 
+                    ? ((completadas.length / solicitudesTecnico.length) * 100).toFixed(1) 
+                    : '0',
+                solicitudes: solicitudesTecnico
+            };
         }
 
         function displayTechnicianPerformance(techStats) {
@@ -2628,7 +2908,28 @@
 
         async function viewTechnicianHistory(technicianName) {
             try {
-                if (window.airtableAPI && cloudConnected) {
+                if (!window.airtableAPI) {
+                    throw new Error('API de Airtable no disponible');
+                }
+                
+                if (typeof window.airtableAPI.getTechnicianHistory !== 'function') {
+                    // Usar estadísticas locales
+                    const tecnico = tecnicos.find(t => t.nombre === technicianName);
+                    if (tecnico) {
+                        const history = generateLocalTechnicianHistory(tecnico);
+                        
+                        alert(`
+Historial de ${technicianName} (Local):
+- Total asignaciones: ${history.totalAsignaciones}
+- Completadas: ${history.completadas}
+- En proceso: ${history.enProceso}
+- Tasa de éxito: ${history.tasaCompletado}%
+                        `);
+                    }
+                    return;
+                }
+                
+                if (cloudConnected) {
                     const history = await window.airtableAPI.getTechnicianHistory(technicianName);
                     
                     alert(`
@@ -2641,7 +2942,19 @@ Historial de ${technicianName}:
 - Errores de usuario resueltos: ${history.erroresUsuarioResueltos}
                     `);
                 } else {
-                    showNotification('Historial solo disponible en modo cloud', 'warning');
+                    // Generar estadísticas locales
+                    const tecnico = tecnicos.find(t => t.nombre === technicianName);
+                    if (tecnico) {
+                        const history = generateLocalTechnicianHistory(tecnico);
+                        
+                        alert(`
+Historial de ${technicianName} (Modo Local):
+- Total asignaciones: ${history.totalAsignaciones}
+- Completadas: ${history.completadas}
+- En proceso: ${history.enProceso}
+- Tasa de éxito: ${history.tasaCompletado}%
+                        `);
+                    }
                 }
             } catch (error) {
                 console.error('❌ Error obteniendo historial:', error);
