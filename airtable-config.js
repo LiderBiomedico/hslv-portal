@@ -1,20 +1,24 @@
-// 🛡️ Configuración COMPLETA de Airtable API - Con historial de asignaciones
-// airtable-config.js - Versión con estadísticas por técnico mejoradas
+// 🛡️ Configuración COMPLETA de Airtable API - Con detección automática mejorada
+// airtable-config.js - Versión con detección robusta e indicadores avanzados
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN CON HISTORIAL DE ASIGNACIONES)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON INDICADORES AVANZADOS)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
-    // Para campos de selección en Airtable se utilizan códigos internos como valores
+    // Para campos de selección en Airtable se utilizan códigos internos como valores. Aquí se
+    // incluyen las variantes de nombres visibles para asegurar que se mapeen al código correcto.
     servicioIngenieria: {
+        // Ingeniería Biomédica
         'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
         'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
         'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
         'Ing. Biomédica': 'INGENIERIA_BIOMEDICA',
         'BIOMEDICA': 'INGENIERIA_BIOMEDICA',
+        // Mecánica
         'MECANICA': 'MECANICA',
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
+        // Infraestructura
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
         'Infraestructura': 'INFRAESTRUCTURA'
     },
@@ -62,6 +66,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Cancelada': 'CANCELADA'
     },
     area: {
+        // Igual que servicioIngenieria, pero sin tilde en "Ing."
         'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
         'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
         'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
@@ -73,6 +78,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
         'Infraestructura': 'INFRAESTRUCTURA'
     },
+    // Para estados de acceso y usuario se mantienen las etiquetas originales
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
         'APROBADA': 'Aprobada',
@@ -145,7 +151,7 @@ const SAFE_FIELDS = {
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con historial de asignaciones...');
+        console.log('🔧 Inicializando AirtableAPI con detección robusta e indicadores avanzados...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -195,7 +201,7 @@ class AirtableAPI {
         
         this.connectionStatus = 'connecting';
         
-        // Almacenar valores válidos detectados
+        // Almacenar valores válidos detectados para solicitudes de acceso
         this.validAccessRequestValues = {
             estado: null,
             servicioHospitalario: [],
@@ -203,12 +209,16 @@ class AirtableAPI {
             availableFields: []
         };
         
+        // Almacenar valores válidos detectados para usuarios
         this.validUserValues = {
             estado: null,
             servicioHospitalario: [],
             cargo: []
         };
         
+        // IMPORTANTE: Inicializar con valores conocidos que funcionan
+        // Inicializar valores válidos de solicitud utilizando los códigos internos en lugar de
+        // las etiquetas amigables. Esto evita que se intenten crear nuevas opciones en Airtable.
         this.validSolicitudValues = {
             servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
@@ -276,6 +286,7 @@ class AirtableAPI {
                         await this.detectValidSolicitudValues();
                     } catch (error) {
                         console.warn('⚠️ No se pudieron detectar valores de solicitudes, usando valores por defecto conocidos');
+                        // Los valores por defecto ya están establecidos en el constructor
                     }
                 } else {
                     this.connectionStatus = 'disconnected';
@@ -463,6 +474,7 @@ class AirtableAPI {
                         });
                         
                         if (record.fields.servicioIngenieria) {
+                            // Mapear el valor detectado al código interno para evitar nombres amigables
                             const mappedServicio = this.mapFieldValue('servicioIngenieria', record.fields.servicioIngenieria);
                             servicioValues.add(mappedServicio);
                             console.log(`📋 Área detectada: "${record.fields.servicioIngenieria}" → "${mappedServicio}"`);
@@ -1396,7 +1408,7 @@ class AirtableAPI {
         }
     }
 
-    // 🔄 MÉTODO ACTUALIZADO: Actualizar estado de solicitud (SIN BORRAR tecnicoAsignado)
+    // 🔄 MÉTODO CORREGIDO: Actualizar estado de solicitud
     async updateRequestStatus(solicitudId, nuevoEstado, observaciones = '') {
         console.log('🔄 Actualizando estado de solicitud:', { solicitudId, nuevoEstado });
         
@@ -1457,10 +1469,10 @@ class AirtableAPI {
                 
                 console.log('✅ Estado actualizado exitosamente');
                 
-                // 🔄 CAMBIO CRÍTICO: Si se completó la solicitud, liberar el técnico PERO NO BORRAR LA ASIGNACIÓN
+                // Si se completó la solicitud, liberar el técnico
                 if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                    console.log('🔓 Liberando técnico asignado MANTENIENDO HISTORIAL...');
-                    await this.liberarTecnicoMantenidoHistorial(solicitudId);
+                    console.log('🔓 Liberando técnico asignado...');
+                    await this.liberarTecnicoAsignado(solicitudId);
                 }
                 
                 return { 
@@ -1500,7 +1512,7 @@ class AirtableAPI {
                             
                             // Si se completó la solicitud, liberar el técnico
                             if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                                await this.liberarTecnicoMantenidoHistorial(solicitudId);
+                                await this.liberarTecnicoAsignado(solicitudId);
                             }
                             
                             return { 
@@ -1525,9 +1537,9 @@ class AirtableAPI {
         }
     }
 
-    // 🔓 NUEVO MÉTODO: Liberar técnico manteniendo el historial de asignación
-    async liberarTecnicoMantenidoHistorial(solicitudId) {
-        console.log('🔓 Liberando técnico MANTENIENDO HISTORIAL para solicitud:', solicitudId);
+    // 🔓 MÉTODO MEJORADO: Liberar técnico asignado
+    async liberarTecnicoAsignado(solicitudId) {
+        console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
         
         try {
             const solicitudes = await this.getSolicitudes();
@@ -1547,16 +1559,14 @@ class AirtableAPI {
                 console.log('🔄 Actualizando estado del técnico a disponible...');
                 
                 try {
-                    // IMPORTANTE: Solo actualizar estado y quitar solicitudAsignada
-                    // NO modificar el campo tecnicoAsignado de la solicitud
                     await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
                         fields: {
                             estado: 'disponible',
-                            solicitudAsignada: ''  // Limpiar asignación actual
+                            solicitudAsignada: ''
                         }
                     });
                     
-                    console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente (historial mantenido)`);
+                    console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
                     
                 } catch (tecnicoError) {
                     console.error('❌ Error actualizando técnico:', tecnicoError);
@@ -1566,12 +1576,21 @@ class AirtableAPI {
                 console.warn('⚠️ No se encontró el técnico en la base de datos');
             }
             
-            // NO actualizar la solicitud para quitar el técnico asignado
-            // Esto mantiene el historial de quién trabajó en la solicitud
+            // Actualizar la solicitud para quitar el técnico asignado
+            try {
+                await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                    fields: {
+                        tecnicoAsignado: ''
+                    }
+                });
+                console.log('✅ Técnico removido de la solicitud');
+            } catch (solicitudError) {
+                console.error('❌ Error actualizando solicitud:', solicitudError);
+            }
             
             return { 
                 success: true, 
-                mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado (historial mantenido)`,
+                mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
                 tecnico: tecnico
             };
             
@@ -1584,12 +1603,6 @@ class AirtableAPI {
                 error: error.message 
             };
         }
-    }
-
-    // 🔓 MÉTODO ANTIGUO: Mantener para compatibilidad
-    async liberarTecnicoAsignado(solicitudId) {
-        console.log('⚠️ DEPRECATED: Usar liberarTecnicoMantenidoHistorial en su lugar');
-        return await this.liberarTecnicoMantenidoHistorial(solicitudId);
     }
 
     async updateSolicitudAcceso(requestId, updateData) {
@@ -1690,140 +1703,7 @@ class AirtableAPI {
         }
     }
 
-    // 📊 NUEVO MÉTODO: Obtener historial completo de un técnico
-    async getTechnicianHistory(tecnicoNombre) {
-        console.log('📊 Obteniendo historial de técnico:', tecnicoNombre);
-        
-        try {
-            const solicitudes = await this.getSolicitudes();
-            
-            // Filtrar todas las solicitudes asignadas a este técnico
-            const solicitudesTecnico = solicitudes.filter(s => 
-                s.tecnicoAsignado === tecnicoNombre
-            );
-            
-            // Calcular estadísticas
-            const completadas = solicitudesTecnico.filter(s => 
-                s.estado === 'COMPLETADA' || s.estado === 'Completada'
-            );
-            
-            const enProceso = solicitudesTecnico.filter(s => 
-                s.estado === 'EN_PROCESO' || s.estado === 'En Proceso' || 
-                s.estado === 'ASIGNADA' || s.estado === 'Asignada'
-            );
-            
-            const erroresUsuario = solicitudesTecnico.filter(s => 
-                s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
-            );
-            
-            // Calcular tiempos promedio de las solicitudes completadas
-            let tiempoTotalMs = 0;
-            let solicitudesConTiempo = 0;
-            
-            completadas.forEach(solicitud => {
-                const tiempoRespuesta = this.calculateResponseTime(solicitud);
-                if (tiempoRespuesta) {
-                    tiempoTotalMs += tiempoRespuesta.totalMs;
-                    solicitudesConTiempo++;
-                }
-            });
-            
-            const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-            const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-            const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-            
-            return {
-                tecnico: tecnicoNombre,
-                totalAsignaciones: solicitudesTecnico.length,
-                completadas: completadas.length,
-                enProceso: enProceso.length,
-                erroresUsuarioResueltos: erroresUsuario.length,
-                tiempoPromedioRespuesta: `${horasPromedio}h ${minutosPromedio}m`,
-                tasaCompletado: solicitudesTecnico.length > 0 ? 
-                    ((completadas.length / solicitudesTecnico.length) * 100).toFixed(1) : 0,
-                solicitudes: solicitudesTecnico
-            };
-            
-        } catch (error) {
-            console.error('❌ Error obteniendo historial de técnico:', error);
-            throw error;
-        }
-    }
-
-    // 📊 NUEVO MÉTODO: Estadísticas mensuales por técnico
-    async getMonthlyTechnicianStats(mes, año) {
-        console.log(`📊 Obteniendo estadísticas mensuales: ${mes}/${año}`);
-        
-        try {
-            const solicitudes = await this.getSolicitudes();
-            const tecnicos = await this.getTecnicos();
-            
-            // Filtrar solicitudes del mes específico
-            const solicitudesMes = solicitudes.filter(s => {
-                if (!s.fechaCreacion) return false;
-                const fecha = new Date(s.fechaCreacion);
-                return fecha.getMonth() === mes - 1 && fecha.getFullYear() === año;
-            });
-            
-            // Estadísticas por técnico
-            const statsPorTecnico = {};
-            
-            tecnicos.forEach(tecnico => {
-                const solicitudesTecnico = solicitudesMes.filter(s => 
-                    s.tecnicoAsignado === tecnico.nombre
-                );
-                
-                const completadas = solicitudesTecnico.filter(s => 
-                    s.estado === 'COMPLETADA' || s.estado === 'Completada'
-                );
-                
-                // Calcular tiempo promedio
-                let tiempoTotalMs = 0;
-                let solicitudesConTiempo = 0;
-                
-                completadas.forEach(solicitud => {
-                    const tiempoRespuesta = this.calculateResponseTime(solicitud);
-                    if (tiempoRespuesta) {
-                        tiempoTotalMs += tiempoRespuesta.totalMs;
-                        solicitudesConTiempo++;
-                    }
-                });
-                
-                const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-                const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-                const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                statsPorTecnico[tecnico.nombre] = {
-                    area: tecnico.area,
-                    totalAsignaciones: solicitudesTecnico.length,
-                    completadas: completadas.length,
-                    tiempoPromedio: solicitudesConTiempo > 0 ? `${horasPromedio}h ${minutosPromedio}m` : 'N/A',
-                    tasaCompletado: solicitudesTecnico.length > 0 ? 
-                        ((completadas.length / solicitudesTecnico.length) * 100).toFixed(1) : 0
-                };
-            });
-            
-            // Ordenar por total de asignaciones
-            const ranking = Object.entries(statsPorTecnico)
-                .filter(([_, stats]) => stats.totalAsignaciones > 0)
-                .sort((a, b) => b[1].totalAsignaciones - a[1].totalAsignaciones);
-            
-            return {
-                mes: mes,
-                año: año,
-                totalSolicitudesMes: solicitudesMes.length,
-                tecnicosActivos: ranking.length,
-                statsPorTecnico: statsPorTecnico,
-                ranking: ranking
-            };
-            
-        } catch (error) {
-            console.error('❌ Error obteniendo estadísticas mensuales:', error);
-            throw error;
-        }
-    }
-
-    // 📊 MÉTODO MEJORADO: Estadísticas avanzadas con historial de técnicos
+    // 📊 MÉTODO MEJORADO: Estadísticas avanzadas con indicadores solicitados
     async getAdvancedStatistics() {
         try {
             const [solicitudes, tecnicos, usuarios] = await Promise.all([
@@ -1912,48 +1792,6 @@ class AirtableAPI {
                 };
             });
             
-            // NUEVO: Estadísticas por técnico
-            const estadisticasPorTecnico = {};
-            tecnicos.forEach(tecnico => {
-                const solicitudesTecnico = solicitudes.filter(s => s.tecnicoAsignado === tecnico.nombre);
-                const completadasTecnico = solicitudesTecnico.filter(s => 
-                    s.estado === 'COMPLETADA' || s.estado === 'Completada'
-                );
-                
-                // Calcular tiempo promedio del técnico
-                let tiempoTotalTecnicoMs = 0;
-                let solicitudesConTiempoTecnico = 0;
-                
-                completadasTecnico.forEach(solicitud => {
-                    const tiempoRespuesta = this.calculateResponseTime(solicitud);
-                    if (tiempoRespuesta) {
-                        tiempoTotalTecnicoMs += tiempoRespuesta.totalMs;
-                        solicitudesConTiempoTecnico++;
-                    }
-                });
-                
-                const tiempoPromedioTecnicoMs = solicitudesConTiempoTecnico > 0 
-                    ? tiempoTotalTecnicoMs / solicitudesConTiempoTecnico 
-                    : 0;
-                const horasTecnico = Math.floor(tiempoPromedioTecnicoMs / (1000 * 60 * 60));
-                const minutosTecnico = Math.floor((tiempoPromedioTecnicoMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                estadisticasPorTecnico[tecnico.nombre] = {
-                    area: tecnico.area,
-                    totalAsignaciones: solicitudesTecnico.length,
-                    completadas: completadasTecnico.length,
-                    enProceso: solicitudesTecnico.filter(s => 
-                        s.estado === 'EN_PROCESO' || s.estado === 'En Proceso' || 
-                        s.estado === 'ASIGNADA' || s.estado === 'Asignada'
-                    ).length,
-                    tiempoPromedio: solicitudesConTiempoTecnico > 0 ? `${horasTecnico}h ${minutosTecnico}m` : 'N/A',
-                    tasaCompletado: solicitudesTecnico.length > 0 
-                        ? ((completadasTecnico.length / solicitudesTecnico.length) * 100).toFixed(1) 
-                        : 0,
-                    estado: tecnico.estado
-                };
-            });
-            
             return {
                 solicitudes: {
                     total: totalSolicitudes,
@@ -2024,8 +1862,6 @@ class AirtableAPI {
                     }
                 },
                 estadisticasPorTipo: estadisticasPorTipo,
-                // NUEVO: Estadísticas por técnico
-                estadisticasPorTecnico: estadisticasPorTecnico,
                 timestamp: new Date().toISOString()
             };
             
@@ -2267,21 +2103,22 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '10.0-historial-asignaciones',
+            version: '9.1-cambio-estado-mejorado',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
-                'NUEVO: Historial de asignaciones mantenido al completar',
-                'NUEVO: Técnico liberado pero historial preservado',
-                'NUEVO: Método getTechnicianHistory para estadísticas',
-                'NUEVO: Método getMonthlyTechnicianStats para análisis mensual',
-                'NUEVO: Estadísticas por técnico en getAdvancedStatistics',
                 'FIX: Cambio de estado mejorado con múltiples intentos',
-                'FIX: Liberación de técnico sin borrar historial',
+                'FIX: Liberación de técnico al completar solicitud',
                 'NUEVO: Diagnóstico específico para cambios de estado',
                 'NUEVO: Indicadores avanzados de gestión',
-                'Sistema completo con historial de asignaciones'
+                'NUEVO: Porcentaje de solicitudes completadas',
+                'NUEVO: Porcentaje de mantenimientos correctivos',
+                'NUEVO: Porcentaje de errores de usuario',
+                'NUEVO: Cálculo de tiempos de respuesta detallados',
+                'FIX: Detección robusta de valores para todas las tablas',
+                'FIX: Mejor manejo de errores 422 con mensajes específicos',
+                'Sistema completo funcionando con valores mapeados e indicadores'
             ]
         };
     }
@@ -2289,9 +2126,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con historial de asignaciones...');
+    console.log('🔧 Creando instancia global con indicadores avanzados...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión con historial)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con cambio de estado mejorado)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -2304,8 +2141,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (historial asignaciones)' 
-                : 'Modo Local (historial asignaciones)';
+                ? '✅ Conectado (cambio estado mejorado)' 
+                : 'Modo Local (cambio estado mejorado)';
             
             updateConnectionStatus(status, message);
         }
@@ -2324,8 +2161,8 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO HISTORIAL ASIGNACIONES');
-        console.log('====================================');
+        console.log('🔍 DIAGNÓSTICO INDICADORES AVANZADOS');
+        console.log('==================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
@@ -2382,7 +2219,7 @@ try {
             return { error: 'airtableAPI no disponible' };
         }
         
-        console.log('📊 Obteniendo estadísticas avanzadas con historial de técnicos...');
+        console.log('📊 Obteniendo estadísticas avanzadas...');
         const stats = await window.airtableAPI.getAdvancedStatistics();
         
         console.log('📊 ESTADÍSTICAS AVANZADAS');
@@ -2399,63 +2236,6 @@ try {
         Object.entries(stats.estadisticasPorTipo).forEach(([tipo, data]) => {
             console.log(`  • ${tipo}: ${data.total} (${data.porcentaje}%)`);
         });
-        console.log('\n👨‍🔧 Por Técnico:');
-        Object.entries(stats.estadisticasPorTecnico)
-            .filter(([_, data]) => data.totalAsignaciones > 0)
-            .sort((a, b) => b[1].totalAsignaciones - a[1].totalAsignaciones)
-            .forEach(([tecnico, data]) => {
-                console.log(`  • ${tecnico}: ${data.totalAsignaciones} asignaciones (${data.completadas} completadas, ${data.tiempoPromedio} promedio)`);
-            });
-        
-        return stats;
-    };
-    
-    // NUEVA: Función para ver historial de un técnico
-    window.debugTechnicianHistory = async function(nombreTecnico) {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        if (!nombreTecnico) {
-            console.error('❌ Debe proporcionar el nombre del técnico');
-            return { error: 'Nombre del técnico requerido' };
-        }
-        
-        const historial = await window.airtableAPI.getTechnicianHistory(nombreTecnico);
-        
-        console.log(`📊 HISTORIAL DE ${nombreTecnico}`);
-        console.log('===============================');
-        console.log(`Total asignaciones: ${historial.totalAsignaciones}`);
-        console.log(`Completadas: ${historial.completadas}`);
-        console.log(`En proceso: ${historial.enProceso}`);
-        console.log(`Errores de usuario resueltos: ${historial.erroresUsuarioResueltos}`);
-        console.log(`Tiempo promedio: ${historial.tiempoPromedioRespuesta}`);
-        console.log(`Tasa de completado: ${historial.tasaCompletado}%`);
-        
-        return historial;
-    };
-    
-    // NUEVA: Función para estadísticas mensuales
-    window.debugMonthlyStats = async function(mes, año) {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        mes = mes || new Date().getMonth() + 1;
-        año = año || new Date().getFullYear();
-        
-        const stats = await window.airtableAPI.getMonthlyTechnicianStats(mes, año);
-        
-        console.log(`📊 ESTADÍSTICAS MENSUALES ${mes}/${año}`);
-        console.log('=====================================');
-        console.log(`Total solicitudes del mes: ${stats.totalSolicitudesMes}`);
-        console.log(`Técnicos activos: ${stats.tecnicosActivos}`);
-        console.log('\nRANKING:');
-        stats.ranking.forEach(([tecnico, data], index) => {
-            console.log(`${index + 1}. ${tecnico}: ${data.totalAsignaciones} asignaciones (${data.completadas} completadas)`);
-        });
         
         return stats;
     };
@@ -2465,13 +2245,11 @@ try {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (HISTORIAL ASIGNACIONES) cargado');
-console.log('🔄 NUEVO: Historial de técnicos mantenido al completar');
-console.log('📊 NUEVO: Estadísticas por técnico disponibles');
-console.log('👨‍🔧 Para ver historial de técnico: debugTechnicianHistory("Nombre del Técnico")');
-console.log('📅 Para estadísticas mensuales: debugMonthlyStats(mes, año)');
+console.log('✅ airtable-config.js (CAMBIO ESTADO MEJORADO) cargado');
+console.log('🔄 FIX: Cambio de estado con múltiples intentos');
+console.log('🔓 FIX: Liberación de técnico al completar');
+console.log('🧪 NUEVO: Para diagnosticar cambio de estado: debugEstadoChange("ID_SOLICITUD")');
 console.log('📊 Para estadísticas avanzadas: debugAdvancedStats()');
-console.log('🧪 Para diagnóstico cambio estado: debugEstadoChange("ID_SOLICITUD")');
 console.log('🔍 Para diagnóstico completo: debugSolicitudValues()');
 console.log('🛠️ Para estado general: debugAirtableConnection()');
 
@@ -2501,7 +2279,7 @@ setTimeout(async () => {
                 prioridades: solicitudValues.prioridad.length,
                 estados: solicitudValues.estado.length
             });
-            console.log('📊 Sistema listo con historial de asignaciones');
+            console.log('📊 Sistema listo con cambio de estado mejorado');
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);
