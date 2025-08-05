@@ -808,6 +808,7 @@
                             <option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
                             <option value="REPARACION">Reparación</option>
                             <option value="INSTALACION">Instalación</option>
+                            <option value="DESINSTALACION">Desinstalación</option>
                             <option value="CALIBRACION">Calibración</option>
                             <option value="INSPECCION">Inspección</option>
                             <option value="ACTUALIZACION">Actualización</option>
@@ -1032,7 +1033,7 @@
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('✨ ACTUALIZACIÓN: Campo ubicación ahora es lista desplegable');
+            console.log('✨ ACTUALIZACIÓN: Se agregó opción DESINSTALACIÓN en tipo de servicio');
             console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
             
             // Verificar sesión
@@ -1402,7 +1403,7 @@
                 'MANTENIMIENTO_CORRECTIVO': 'Mantenimiento Correctivo',
                 'REPARACION': 'Reparación',
                 'INSTALACION': 'Instalación',
-		'DESINSTALACION': 'DesInstalación',
+                'DESINSTALACION': 'Desinstalación',
                 'CALIBRACION': 'Calibración',
                 'INSPECCION': 'Inspección',
                 'ACTUALIZACION': 'Actualización',
@@ -1456,7 +1457,7 @@
             });
             
             // Probar mapeo de tipo de servicio
-            const tipos = ['MANTENIMIENTO_PREVENTIVO', 'REPARACION', 'EMERGENCIA'];
+            const tipos = ['MANTENIMIENTO_PREVENTIVO', 'REPARACION', 'EMERGENCIA', 'DESINSTALACION'];
             tipos.forEach(tipo => {
                 const mapped = window.airtableAPI.mapFieldValue('tipoServicio', tipo);
                 console.log(`Tipo: ${tipo} → ${mapped}`);
