@@ -822,9 +822,65 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">📍 Ubicación *</label>
-                        <input type="text" id="ubicacion" class="form-input" required 
-                               placeholder="Ej: UCI 3er piso, Quirófano 2, etc.">
+                        <label class="form-label">📍 Ubicación del Servicio *</label>
+                        <select id="ubicacion" class="form-select" required>
+                            <option value="">Seleccione la ubicación</option>
+                            <optgroup label="Áreas de Urgencias">
+                                <option value="URGENCIAS_ADULTO">🚨 Urgencias Adulto</option>
+                                <option value="URGENCIAS_PEDIATRIA">🚨 Urgencias Pediatría</option>
+                                <option value="URGENCIAS_GINECOLOGIA">🚨 Urgencias Ginecología</option>
+                            </optgroup>
+                            <optgroup label="Unidades de Cuidados Intensivos">
+                                <option value="UCI_ADULTO">🏥 UCI Adulto</option>
+                                <option value="UCI_INTERMEDIOS">🏥 UCI Intermedios</option>
+                                <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
+                                <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
+                            </optgroup>
+                            <optgroup label="Áreas de Hospitalización">
+                                <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
+                            </optgroup>
+                            <optgroup label="Áreas Quirúrgicas">
+                                <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
+                                <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Consulta">
+                                <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
+                            </optgroup>
+                            <optgroup label="Servicios Especializados">
+                                <option value="SALA_PARTOS">👶 Sala de Partos</option>
+                                <option value="ENDOSCOPIA">🔍 Endoscopia</option>
+                                <option value="IMAGENES_DIAGNOSTICAS">📷 Imágenes Diagnósticas</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Apoyo Diagnóstico">
+                                <option value="LABORATORIO_CLINICO">🔬 Laboratorio Clínico</option>
+                            </optgroup>
+                            <optgroup label="Servicios Farmacéuticos">
+                                <option value="FARMACIA_CENTRAL">💊 Farmacia Central</option>
+                                <option value="FARMACIA_ADULTO">💊 Farmacia Adulto</option>
+                                <option value="FARMACIA_UMI">💊 Farmacia UMI</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Apoyo Terapéutico">
+                                <option value="FISIOTERAPIA">🏃 Fisioterapia</option>
+                                <option value="VACUNACION">💉 Vacunación</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Transporte">
+                                <option value="TRANSPORTE_ASISTENCIAL">🚑 Transporte Asistencial</option>
+                            </optgroup>
+                            <optgroup label="Centrales de Esterilización">
+                                <option value="CENTRAL_ESTERILIZACION_UMI">🧪 Central de Esterilización UMI</option>
+                                <option value="CENTRAL_ESTERILIZACION_ADULTO">🧪 Central de Esterilización Adulto</option>
+                            </optgroup>
+                            <optgroup label="Áreas por Tramos">
+                                <option value="TRAMO_1">📍 Tramo 1</option>
+                                <option value="TRAMO_2">📍 Tramo 2</option>
+                                <option value="TRAMO_3">📍 Tramo 3</option>
+                                <option value="TRAMO_4">📍 Tramo 4</option>
+                                <option value="TRAMO_5">📍 Tramo 5</option>
+                            </optgroup>
+                            <optgroup label="Áreas Administrativas">
+                                <option value="TRAILER">🚛 Trailer</option>
+                            </optgroup>
+                        </select>
                     </div>
                 </div>
 
@@ -885,6 +941,53 @@
         // Variables globales
         let currentUser = null;
         let isCloudConnected = false;
+        
+        // ACTUALIZADO: Mapa completo de servicios hospitalarios para ubicaciones
+        const ubicacionesHospitalarias = {
+            // Urgencias
+            'URGENCIAS_ADULTO': 'Urgencias Adulto',
+            'URGENCIAS_PEDIATRIA': 'Urgencias Pediatría',
+            'URGENCIAS_GINECOLOGIA': 'Urgencias Ginecología',
+            // UCI
+            'UCI_ADULTO': 'UCI Adulto',
+            'UCI_INTERMEDIOS': 'UCI Intermedios',
+            'UCI_NEONATAL': 'UCI Neonatal',
+            'UCI_PEDIATRICA': 'UCI Pediátrica',
+            // Hospitalización
+            'HOSPITALIZACION_PEDIATRIA': 'Hospitalización Pediatría',
+            // Cirugía
+            'CIRUGIA_ADULTO': 'Cirugía Adulto',
+            'CIRUGIA_PEDIATRICA': 'Cirugía Pediátrica',
+            // Consulta
+            'CONSULTA_EXTERNA': 'Consulta Externa',
+            // Servicios especializados
+            'SALA_PARTOS': 'Sala de Partos',
+            'ENDOSCOPIA': 'Endoscopia',
+            'IMAGENES_DIAGNOSTICAS': 'Imágenes Diagnósticas',
+            // Laboratorio
+            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+            // Farmacia
+            'FARMACIA_CENTRAL': 'Farmacia Central',
+            'FARMACIA_ADULTO': 'Farmacia Adulto',
+            'FARMACIA_UMI': 'Farmacia UMI',
+            // Apoyo terapéutico
+            'FISIOTERAPIA': 'Fisioterapia',
+            'VACUNACION': 'Vacunación',
+            // Transporte
+            'TRANSPORTE_ASISTENCIAL': 'Transporte Asistencial',
+            // Esterilización
+            'CENTRAL_ESTERILIZACION_UMI': 'Central de Esterilización UMI',
+            'CENTRAL_ESTERILIZACION_ADULTO': 'Central de Esterilización Adulto',
+            // Tramos
+            'TRAMO_1': 'Tramo 1',
+            'TRAMO_2': 'Tramo 2',
+            'TRAMO_3': 'Tramo 3',
+            'TRAMO_4': 'Tramo 4',
+            'TRAMO_5': 'Tramo 5',
+            // Administrativo
+            'TRAILER': 'Trailer'
+        };
+        
         const serviciosHospitalarios = {
             'URGENCIAS': 'Urgencias',
             'URGENCIAS_ADULTO': 'Urgencias Adulto',
@@ -929,8 +1032,8 @@
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('📋 Sistema actualizado con todos los campos obligatorios');
-            console.log('🏥 Servicios hospitalarios ampliados');
+            console.log('✨ ACTUALIZACIÓN: Campo ubicación ahora es lista desplegable');
+            console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
             
             // Verificar sesión
             checkSession();
@@ -1159,7 +1262,7 @@
             }
         }
 
-        // CORRECCIÓN CRÍTICA: Manejar solicitud de mantenimiento con valores mapeados
+        // ACTUALIZADO: Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
         async function handleMaintenanceRequest(e) {
             e.preventDefault();
             
@@ -1175,11 +1278,19 @@
                 return;
             }
             
+            // ACTUALIZADO: Obtener el valor de ubicación del select
+            const ubicacionValue = document.getElementById('ubicacion').value;
+            if (!ubicacionValue) {
+                const alertDiv = document.getElementById('form-alert');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione la ubicación del servicio');
+                return;
+            }
+            
             const formData = {
                 servicioIngenieria: areaValue, // Se enviará tal cual, el mapeo se hace en airtable-config.js
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 equipo: document.getElementById('equipo').value.trim(),
-                ubicacion: document.getElementById('ubicacion').value.trim(),
+                ubicacion: ubicacionValue, // ACTUALIZADO: Ahora es el valor del select
                 prioridad: document.querySelector('input[name="prioridad"]:checked').value,
                 descripcion: document.getElementById('descripcion').value.trim(),
                 observaciones: document.getElementById('observaciones').value.trim(),
@@ -1191,6 +1302,7 @@
             
             console.log('📋 Datos de solicitud preparados:', formData);
             console.log('🏥 ÁREA A ENVIAR:', formData.servicioIngenieria);
+            console.log('📍 UBICACIÓN SELECCIONADA:', formData.ubicacion, '-', ubicacionesHospitalarias[formData.ubicacion]);
             console.log('🔍 MAPEO: Los valores se mapearán automáticamente en airtable-config.js');
             
             const alertDiv = document.getElementById('form-alert');
@@ -1224,11 +1336,11 @@
                         `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
                         `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
                         `🔧 Tipo: ${getTipoServicioDisplayName(formData.tipoServicio)}\n` +
-                        `📍 Ubicación: ${formData.ubicacion}\n` +
+                        `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
                         `⚡ Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
-                        `🛡️ VALORES MAPEADOS CORRECTAMENTE:\n` +
-                        `• Sin errores 422\n` +
-                        `• Mapeo automático aplicado\n` +
+                        `🛡️ SISTEMA ACTUALIZADO:\n` +
+                        `• Ubicación seleccionada de lista predefinida\n` +
+                        `• Valores mapeados correctamente\n` +
                         `• Compatible con Airtable\n\n` +
                         `🌐 Su solicitud está visible en el Portal de Gestión\n` +
                         `⏱️ Tiempo estimado de respuesta según prioridad\n` +
@@ -1251,6 +1363,7 @@
                     showAlert(alertDiv, 'success', 
                         `✅ Solicitud guardada localmente (Modo sin conexión)\n\n` +
                         `📋 Número temporal: ${localRequest.numero}\n` +
+                        `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
                         `🔄 Se sincronizará cuando se restablezca la conexión`
                     );
                 }
