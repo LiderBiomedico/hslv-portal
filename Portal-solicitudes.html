@@ -604,7 +604,7 @@
                 </div>
             </div>
 
-            <!-- Request Access Form - REORGANIZADO -->
+            <!-- Request Access Form - ACTUALIZADO CON TODOS LOS CAMPOS OBLIGATORIOS -->
             <div id="request-form" class="auth-form" style="display: none;">
                 <form onsubmit="handleAccessRequestCloud(event)">
                     <div id="request-alert"></div>
@@ -631,8 +631,8 @@
                             </div>
                             
                             <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label" style="font-size: 0.75rem;">Teléfono de Contacto</label>
-                                <input type="tel" id="req-phone" class="form-input" 
+                                <label class="form-label" style="font-size: 0.75rem;">Teléfono de Contacto *</label>
+                                <input type="tel" id="req-phone" class="form-input" required 
                                        placeholder="300 123 4567" style="font-size: 0.875rem;">
                             </div>
                         </div>
@@ -648,20 +648,52 @@
                                 <select id="req-service" class="form-select" required style="font-size: 0.875rem;">
                                     <option value="">-- Seleccione --</option>
                                     <optgroup label="Áreas Asistenciales">
-                                        <option value="URGENCIAS">🚨 Urgencias</option>
-                                        <option value="UCI">🏥 UCI</option>
-                                        <option value="HOSPITALIZACION">🛏️ Hospitalización</option>
+                                       
+                                        <option value="URGENCIAS_ADULTO">🚨 Urgencias Adulto</option>
+                                        <option value="URGENCIAS_PEDIATRIA">🚨 Urgencias Pediatría</option>
+                                        <option value="URGENCIAS_GINECOLOGIA">🚨 Urgencias Ginecología</option>
+                                       
+                                        <option value="UCI_ADULTO">🏥 UCI Adulto</option>
+                                        <option value="UCI_INTERMEDIOS">🏥 UCI Intermedios</option>
+                                        <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
+                                        <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
+                                       
+                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
                                         <option value="CIRUGIA">⚕️ Cirugía</option>
+                                        <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
+                                        <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
                                         <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
+                                        <option value="SALA_PARTOS">👶 Sala de Partos</option>
+                                        <option value="ENDOSCOPIA">🔍 Endoscopia</option>
                                     </optgroup>
                                     <optgroup label="Servicios de Apoyo">
-                                        <option value="IMAGENOLOGIA">📷 Imagenología</option>
-                                        <option value="LABORATORIO">🔬 Laboratorio</option>
-                                        <option value="FARMACIA">💊 Farmacia</option>
+                                       
+                                        <option value="IMAGENES_DIAGNOSTICAS">📷 Imágenes Diagnósticas</option>
+                                        
+                                        <option value="LABORATORIO_CLINICO">🔬 Laboratorio Clínico</option>
+                                       
+                                        <option value="FARMACIA_CENTRAL">💊 Farmacia Central</option>
+                                        <option value="FARMACIA_ADULTO">💊 Farmacia Adulto</option>
+                                        <option value="FARMACIA_UMI">💊 Farmacia UMI</option>
+                                        <option value="FISIOTERAPIA">🏃 Fisioterapia</option>
+                                        <option value="VACUNACION">💉 Vacunación</option>
+                                        <option value="TRANSPORTE_ASISTENCIAL">🚑 Transporte Asistencial</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas de Esterilización">
+                                        <option value="CENTRAL_ESTERILIZACION_UMI">🧪 Central Esterilización UMI</option>
+                                        <option value="CENTRAL_ESTERILIZACION_ADULTO">🧪 Central Esterilización Adulto</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas de Tramos">
+                                        <option value="TRAMO_1">📍 Tramo 1</option>
+                                        <option value="TRAMO_2">📍 Tramo 2</option>
+                                        <option value="TRAMO_3">📍 Tramo 3</option>
+                                        <option value="TRAMO_4">📍 Tramo 4</option>
+                                        <option value="TRAMO_5">📍 Tramo 5</option>
                                     </optgroup>
                                     <optgroup label="Áreas Administrativas">
                                         <option value="ADMINISTRATIVO">📊 Administrativo</option>
                                         <option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+                                        <option value="TRAILER">🚛 Trailer</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -689,13 +721,12 @@
                         </div>
                     </div>
                     
-                    <!-- Justificación - Ancho completo debajo -->
+                    <!-- Justificación - Ancho completo debajo (ahora obligatoria) -->
                     <div class="form-group" style="margin-top: 1rem; margin-bottom: 0.5rem;">
                         <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
-                            <span>📝</span> Justificación de la Solicitud
-                            <span style="font-size: 0.75rem; color: #6b7280; font-weight: normal;">(opcional)</span>
+                            <span>📝</span> Justificación de la Solicitud *
                         </label>
-                        <textarea id="req-justification" class="form-textarea" 
+                        <textarea id="req-justification" class="form-textarea" required
                                   style="min-height: 60px; font-size: 0.875rem;"
                                   placeholder="Breve descripción del motivo por el cual necesita acceso al sistema..."></textarea>
                     </div>
@@ -856,21 +887,50 @@
         let isCloudConnected = false;
         const serviciosHospitalarios = {
             'URGENCIAS': 'Urgencias',
+            'URGENCIAS_ADULTO': 'Urgencias Adulto',
+            'URGENCIAS_PEDIATRIA': 'Urgencias Pediatría',
+            'URGENCIAS_GINECOLOGIA': 'Urgencias Ginecología',
             'UCI': 'UCI',
+            'UCI_ADULTO': 'UCI Adulto',
+            'UCI_INTERMEDIOS': 'UCI Intermedios',
+            'UCI_NEONATAL': 'UCI Neonatal',
+            'UCI_PEDIATRICA': 'UCI Pediátrica',
             'HOSPITALIZACION': 'Hospitalización',
+            'HOSPITALIZACION_PEDIATRIA': 'Hospitalización Pediatría',
             'CIRUGIA': 'Cirugía',
+            'CIRUGIA_ADULTO': 'Cirugía Adulto',
+            'CIRUGIA_PEDIATRICA': 'Cirugía Pediátrica',
             'CONSULTA_EXTERNA': 'Consulta Externa',
+            'SALA_PARTOS': 'Sala de Partos',
+            'ENDOSCOPIA': 'Endoscopia',
             'IMAGENOLOGIA': 'Imagenología',
+            'IMAGENES_DIAGNOSTICAS': 'Imágenes Diagnósticas',
             'LABORATORIO': 'Laboratorio',
+            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
             'FARMACIA': 'Farmacia',
+            'FARMACIA_CENTRAL': 'Farmacia Central',
+            'FARMACIA_ADULTO': 'Farmacia Adulto',
+            'FARMACIA_UMI': 'Farmacia UMI',
+            'FISIOTERAPIA': 'Fisioterapia',
+            'VACUNACION': 'Vacunación',
+            'TRANSPORTE_ASISTENCIAL': 'Transporte Asistencial',
+            'CENTRAL_ESTERILIZACION_UMI': 'Central Esterilización UMI',
+            'CENTRAL_ESTERILIZACION_ADULTO': 'Central Esterilización Adulto',
+            'TRAMO_1': 'Tramo 1',
+            'TRAMO_2': 'Tramo 2',
+            'TRAMO_3': 'Tramo 3',
+            'TRAMO_4': 'Tramo 4',
+            'TRAMO_5': 'Tramo 5',
             'ADMINISTRATIVO': 'Administrativo',
-            'MANTENIMIENTO': 'Mantenimiento'
+            'MANTENIMIENTO': 'Mantenimiento',
+            'TRAILER': 'Trailer'
         };
 
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('📋 Sistema con mapeo de valores corregido - Sin errores 422');
+            console.log('📋 Sistema actualizado con todos los campos obligatorios');
+            console.log('🏥 Servicios hospitalarios ampliados');
             
             // Verificar sesión
             checkSession();
@@ -1003,7 +1063,7 @@
             }
         }
 
-        // CORRECCIÓN CRÍTICA: Solicitud de acceso sin campo solicitudId
+        // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
         async function handleAccessRequestCloud(e) {
             e.preventDefault();
             
@@ -1016,7 +1076,7 @@
                 telefono: document.getElementById('req-phone').value.trim(),
                 servicioHospitalario: document.getElementById('req-service').value,
                 cargo: document.getElementById('req-position').value,
-                justificacion: document.getElementById('req-justification').value.trim() || 'Solicitud de acceso al Portal de Solicitudes',
+                justificacion: document.getElementById('req-justification').value.trim(),
                 fechaSolicitud: new Date().toISOString(),
                 estado: 'PENDIENTE',
                 esUrgente: false
@@ -1025,7 +1085,9 @@
             const alertDiv = document.getElementById('request-alert');
             const requestBtn = document.getElementById('request-btn');
             
-            if (!formData.nombreCompleto || !formData.email || !formData.servicioHospitalario || !formData.cargo) {
+            // Validación actualizada incluyendo teléfono y justificación
+            if (!formData.nombreCompleto || !formData.email || !formData.telefono || 
+                !formData.servicioHospitalario || !formData.cargo || !formData.justificacion) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
                 return;
             }
@@ -1042,6 +1104,7 @@
                         `📋 DATOS ENVIADOS:\n` +
                         `• Nombre: ${formData.nombreCompleto}\n` +
                         `• Email: ${formData.email}\n` +
+                        `• Teléfono: ${formData.telefono}\n` +
                         `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
                         `🛡️ SISTEMA MEJORADO:\n` +
                         `1. Su solicitud fue guardada con valores correctos\n` +
