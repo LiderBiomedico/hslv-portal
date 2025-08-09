@@ -3500,10 +3500,60 @@
         }
 
         // Funciones de gestión de accesos, estadísticas, etc. (se mantienen igual)
-        function updateAccessRequestsList() {
-            // Implementación completa como en el original
-            console.log('Actualizando lista de accesos...');
-        }
+        function updateAccessRequestsListRender(items) {
+  const container = document.getElementById('access-requests-container');
+  if (!container) return;
+  const safe = v => (v === undefined || v === null) ? '' : String(v);
+  const isPending = (estado) => String(estado || 'Pendiente').toLowerCase().includes('pend');
+  const toDate = (v) => {
+    try { return v ? new Date(v).toLocaleString('es-CO') : ''; } catch(e){ return ''; }
+  };
+  container.innerHTML = items.map(r => `
+    <div class="access-request-card ${isPending(r.estado) ? 'pending' : ''}" style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:10px">
+      <div class="request-name" style="font-weight:600">${safe(r.nombreCompleto) || 'Sin nombre'}</div>
+      <div style="margin-top:.5rem;color:#6b7280;font-size:.9rem">
+        <div>📧 ${safe(r.email)}</div>
+        <div>📱 ${safe(r.telefono) || ''}</div>
+        <div>🏥 ${safe(r.servicioHospitalario)} — 💼 ${safe(r.cargo)}</div>
+        <div>📅 ${toDate(r.fechaSolicitud)}</div>
+        <div>🔖 Estado: ${safe(r.estado) || 'Pendiente'}</div>
+      </div>
+      <div class="request-actions" style="margin-top:.75rem;display:flex;gap:8px">
+        <button class="btn btn-success btn-sm" onclick="approveAccessRequest && approveAccessRequest('${safe(r.id)}')">✅ Aprobar</button>
+        <button class="btn btn-danger btn-sm" onclick="rejectAccessRequest && rejectAccessRequest('${safe(r.id)}')">✖️ Rechazar</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function updateAccessRequestsList() {
+  try {
+    const container = document.getElementById('access-requests-container');
+    const counterEl = document.getElementById('pending-access-count');
+    if (!container) return;
+
+    // Cargar desde caché global si existe; si no, traer de Airtable
+    if (!window.cloudSolicitudesAcceso || !Array.isArray(window.cloudSolicitudesAcceso)) {
+      if (window.airtableAPI && typeof window.airtableAPI.getSolicitudesAcceso === 'function') {
+        window.cloudSolicitudesAcceso = await window.airtableAPI.getSolicitudesAcceso();
+      } else {
+        console.warn('airtableAPI.getSolicitudesAcceso no está disponible');
+        window.cloudSolicitudesAcceso = [];
+      }
+    }
+
+    const items = window.cloudSolicitudesAcceso || [];
+
+    // Actualizar contador de pendientes
+    const pendientes = items.filter(r => String((r.estado || 'Pendiente')).toLowerCase().includes('pend')).length;
+    if (counterEl) counterEl.textContent = pendientes;
+
+    // Renderizar
+    updateAccessRequestsListRender(items);
+  } catch (err) {
+    console.error('Error en updateAccessRequestsList:', err);
+  }
+}
 
         async function showAdvancedStatisticsModal() {
             // Implementación completa de estadísticas
