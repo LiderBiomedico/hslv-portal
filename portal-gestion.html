@@ -1950,6 +1950,324 @@
 <!-- Incluir el archivo de configuración de Airtable -->
 <script src="airtable-config.js"></script>
 <script>
+        // 🔧 VERIFICACIÓN DE CONEXIÓN AIRTABLE
+        console.log('🔍 Verificando configuración de Airtable...');
+        
+        // Verificar si el archivo airtable-config.js se cargó
+        setTimeout(() => {
+            if (typeof window.airtableAPI === 'undefined') {
+                console.error('❌ ERROR CRÍTICO: airtable-config.js no se cargó correctamente');
+                console.error('Asegúrate de que el archivo airtable-config.js esté en la misma carpeta que portal-gestion.html');
+                
+                // Intentar crear una configuración de emergencia
+                console.log('🔧 Intentando configuración de emergencia...');
+                
+                // Configuración directa de Airtable (sin archivo externo)
+                class EmergencyAirtableAPI {
+                    constructor() {
+                        console.log('🚨 Usando configuración de emergencia de Airtable');
+                        this.baseUrl = 'https://api.airtable.com/v0/appFyEBCedQGOeJyV';
+                        this.apiKey = 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
+                        this.tables = {
+                            solicitudes: 'Solicitudes',
+                            tecnicos: 'Tecnicos',
+                            usuarios: 'Usuarios',
+                            solicitudesAcceso: 'SolicitudesAcceso'
+                        };
+                    }
+                    
+                    async makeRequest(endpoint, method = 'GET', data = null) {
+                        const url = `${this.baseUrl}/${endpoint}`;
+                        const options = {
+                            method: method,
+                            headers: {
+                                'Authorization': `Bearer ${this.apiKey}`,
+                                'Content-Type': 'application/json'
+                            },
+                            mode: 'cors'
+                        };
+                        
+                        if (data && (method === 'POST' || method === 'PATCH')) {
+                            options.body = JSON.stringify(data);
+                        }
+                        
+                        try {
+                            const response = await fetch(url, options);
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status}`);
+                            }
+                            return await response.json();
+                        } catch (error) {
+                            console.error('Request failed:', error);
+                            throw error;
+                        }
+                    }
+                    
+                    async testConnection() {
+                        try {
+                            await this.makeRequest(`${this.tables.solicitudes}?maxRecords=1`);
+                            return true;
+                        } catch (error) {
+                            console.error('Connection test failed:', error);
+                            return false;
+                        }
+                    }
+                    
+                    async getSolicitudes() {
+                        try {
+                            const result = await this.makeRequest(this.tables.solicitudes);
+                            return result.records.map(record => ({
+                                id: record.id,
+                                ...record.fields
+                            }));
+                        } catch (error) {
+                            console.error('Error getting solicitudes:', error);
+                            return [];
+                        }
+                    }
+                    
+                    async getTecnicos() {
+                        try {
+                            const result = await this.makeRequest(this.tables.tecnicos);
+                            return result.records.map(record => ({
+                                id: record.id,
+                                ...record.fields
+                            }));
+                        } catch (error) {
+                            console.error('Error getting tecnicos:', error);
+                            return [];
+                        }
+                    }
+                    
+                    async getUsuarios() {
+                        try {
+                            const result = await this.makeRequest(this.tables.usuarios);
+                            return result.records.map(record => ({
+                                id: record.id,
+                                ...record.fields
+                            }));
+                        } catch (error) {
+                            console.error('Error getting usuarios:', error);
+                            return [];
+                        }
+                    }
+                    
+                    async getSolicitudesAcceso() {
+                        try {
+                            const result = await this.makeRequest(this.tables.solicitudesAcceso);
+                            return result.records.map(record => ({
+                                id: record.id,
+                                ...record.fields
+                            }));
+                        } catch (error) {
+                            console.error('Error getting solicitudes acceso:', error);
+                            return [];
+                        }
+                    }
+                    
+                    async createTecnico(tecnicoData) {
+                        const data = { fields: tecnicoData };
+                        const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
+                        return result;
+                    }
+                    
+                    async updateTecnico(technicianId, updateData) {
+                        const data = { fields: updateData };
+                        const result = await this.makeRequest(`${this.tables.tecnicos}/${technicianId}`, 'PATCH', data);
+                        return result;
+                    }
+                    
+                    async updateSolicitudAcceso(requestId, updateData) {
+                        const data = { fields: updateData };
+                        const result = await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', data);
+                        return result;
+                    }
+                    
+                    async approveAccessRequestAndCreateUser(requestId) {
+                        try {
+                            // Obtener solicitud
+                            const solicitudes = await this.getSolicitudesAcceso();
+                            const solicitud = solicitudes.find(s => s.id === requestId);
+                            
+                            if (!solicitud) {
+                                throw new Error('Solicitud no encontrada');
+                            }
+                            
+                            // Generar código
+                            const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
+                            
+                            // Crear usuario
+                            const userData = {
+                                nombreCompleto: solicitud.nombreCompleto || 'Sin nombre',
+                                email: solicitud.email || 'no-email@temp.com',
+                                servicioHospitalario: solicitud.servicioHospitalario || '',
+                                cargo: solicitud.cargo || '',
+                                codigoAcceso: codigoAcceso,
+                                fechaCreacion: new Date().toISOString(),
+                                estado: 'Activo'
+                            };
+                            
+                            const newUser = await this.makeRequest(this.tables.usuarios, 'POST', { fields: userData });
+                            
+                            // Actualizar solicitud
+                            await this.updateSolicitudAcceso(requestId, { estado: 'Aprobada' });
+                            
+                            return {
+                                success: true,
+                                user: { id: newUser.id, ...newUser.fields },
+                                accessCode: codigoAcceso,
+                                requestId: requestId
+                            };
+                        } catch (error) {
+                            console.error('Error in approval:', error);
+                            throw error;
+                        }
+                    }
+                    
+                    async assignTechnicianToRequest(solicitudId, tecnicoId, observaciones = '') {
+                        const tecnicos = await this.getTecnicos();
+                        const tecnico = tecnicos.find(t => t.id === tecnicoId);
+                        
+                        if (!tecnico) throw new Error('Técnico no encontrado');
+                        
+                        // Actualizar solicitud
+                        await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                            fields: {
+                                tecnicoAsignado: tecnico.nombre,
+                                estado: 'ASIGNADA',
+                                fechaAsignacion: new Date().toISOString(),
+                                observacionesAsignacion: observaciones
+                            }
+                        });
+                        
+                        // Actualizar técnico
+                        await this.updateTecnico(tecnicoId, {
+                            estado: 'ocupado',
+                            solicitudAsignada: solicitudId
+                        });
+                        
+                        return { success: true };
+                    }
+                    
+                    async updateRequestStatus(solicitudId, nuevoEstado, observaciones = '') {
+                        const updateData = {
+                            estado: nuevoEstado
+                        };
+                        
+                        if (observaciones) {
+                            updateData.observaciones = observaciones;
+                        }
+                        
+                        if (nuevoEstado === 'EN_PROCESO') {
+                            updateData.fechaInicioTrabajo = new Date().toISOString();
+                        } else if (nuevoEstado === 'COMPLETADA') {
+                            updateData.fechaCompletado = new Date().toISOString();
+                        }
+                        
+                        await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', { fields: updateData });
+                        
+                        return { success: true };
+                    }
+                    
+                    async liberarTecnicoAsignado(solicitudId) {
+                        const solicitudes = await this.getSolicitudes();
+                        const solicitud = solicitudes.find(s => s.id === solicitudId);
+                        
+                        if (solicitud && solicitud.tecnicoAsignado) {
+                            const tecnicos = await this.getTecnicos();
+                            const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+                            
+                            if (tecnico) {
+                                await this.updateTecnico(tecnico.id, {
+                                    estado: 'disponible',
+                                    solicitudAsignada: ''
+                                });
+                            }
+                            
+                            await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                                fields: { tecnicoAsignado: '' }
+                            });
+                        }
+                        
+                        return { success: true };
+                    }
+                    
+                    async autoAssignPendingRequests() {
+                        const [solicitudes, tecnicos] = await Promise.all([
+                            this.getSolicitudes(),
+                            this.getTecnicos()
+                        ]);
+                        
+                        const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE' || !s.tecnicoAsignado);
+                        const disponibles = tecnicos.filter(t => t.estado === 'disponible');
+                        
+                        let asignadas = 0;
+                        
+                        for (const solicitud of pendientes) {
+                            const tecnico = disponibles.find(t => t.area === solicitud.servicioIngenieria);
+                            if (tecnico) {
+                                try {
+                                    await this.assignTechnicianToRequest(solicitud.id, tecnico.id, 'Auto-asignación');
+                                    asignadas++;
+                                    disponibles.splice(disponibles.indexOf(tecnico), 1);
+                                } catch (error) {
+                                    console.error('Error auto-assigning:', error);
+                                }
+                            }
+                        }
+                        
+                        return { asignadas, total: pendientes.length };
+                    }
+                    
+                    async getAdvancedStatistics() {
+                        const [solicitudes, tecnicos, usuarios] = await Promise.all([
+                            this.getSolicitudes(),
+                            this.getTecnicos(),
+                            this.getUsuarios()
+                        ]);
+                        
+                        return {
+                            solicitudes: {
+                                total: solicitudes.length,
+                                pendientes: solicitudes.filter(s => s.estado === 'PENDIENTE').length,
+                                completadas: solicitudes.filter(s => s.estado === 'COMPLETADA').length
+                            },
+                            tecnicos: {
+                                total: tecnicos.length,
+                                disponibles: tecnicos.filter(t => t.estado === 'disponible').length
+                            },
+                            usuarios: {
+                                total: usuarios.length,
+                                activos: usuarios.filter(u => u.estado === 'Activo').length
+                            }
+                        };
+                    }
+                }
+                
+                // Crear instancia de emergencia
+                window.airtableAPI = new EmergencyAirtableAPI();
+                console.log('✅ API de emergencia creada');
+                
+                // Notificar al usuario
+                setTimeout(() => {
+                    const alertDiv = document.getElementById('connection-alert');
+                    if (alertDiv) {
+                        alertDiv.innerHTML += `
+                            <div style="background: #fef2f2; color: #dc2626; padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+                                <strong>⚠️ Usando configuración de emergencia</strong><br>
+                                El archivo airtable-config.js no se cargó. Usando configuración integrada.<br>
+                                <small>Si persiste el problema, verifica que airtable-config.js esté en la misma carpeta.</small>
+                            </div>
+                        `;
+                    }
+                }, 1000);
+            } else {
+                console.log('✅ airtable-config.js cargado correctamente');
+                console.log('📊 Estado de la API:', window.airtableAPI.getStatus ? window.airtableAPI.getStatus() : 'getStatus no disponible');
+            }
+        }, 1000);
+    </script>
+<script>
         // Variables globales para datos de la nube
         let cloudSolicitudes = [];
         let cloudTecnicos = [];
