@@ -2379,6 +2379,25 @@
             return names[area] || area;
         }
 
+        // Función helper para obtener nombre de área
+        function getAreaName(area) {
+            if (!area) return 'Sin área';
+            
+            const lowerArea = area.toLowerCase();
+            if (area === 'INGENIERIA_BIOMEDICA' || 
+                area === 'Ingeniería Biomédica' ||
+                lowerArea.includes('biomed') || 
+                lowerArea.includes('bioméd')) {
+                return '🏥 Biomédica';
+            } else if (area === 'MECANICA' || area === 'Mecánica' || lowerArea.includes('mec')) {
+                return '⚙️ Mecánica';
+            } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
+                return '🏗️ Infraestructura';
+            }
+            
+            return area;
+        }
+
         // Mostrar vista de área
         function showAreaView(area) {
             currentAreaView = area;
