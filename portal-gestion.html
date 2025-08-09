@@ -240,6 +240,92 @@
             color: #059669;
         }
 
+        /* Sub-filtros de estado */
+        .status-filters {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: #f0f9ff;
+            border-radius: 0.5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .status-filter-btn {
+            padding: 0.5rem 1rem;
+            background: white;
+            border: 2px solid #e0e7ff;
+            border-radius: 0.375rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .status-filter-btn.active {
+            background: #4f46e5;
+            color: white;
+            border-color: #4f46e5;
+        }
+
+        .status-filter-btn:hover:not(.active) {
+            background: #f8fafc;
+            border-color: #a5b4fc;
+        }
+
+        .status-filter-btn .count {
+            background: rgba(0,0,0,0.1);
+            padding: 0.125rem 0.375rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .status-filter-btn.active .count {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Resumen de estados por área */
+        .area-status-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-radius: 0.5rem;
+        }
+
+        .status-summary-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .status-summary-card .number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .status-summary-card .label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .status-summary-card.sin-asignar .number { color: #dc2626; }
+        .status-summary-card.pendientes .number { color: #f59e0b; }
+        .status-summary-card.en-proceso .number { color: #3b82f6; }
+        .status-summary-card.no-completas .number { color: #8b5cf6; }
+
         .user-info {
             position: absolute;
             top: 4rem;
@@ -1240,7 +1326,7 @@
 </div>
 </div>
 </div>
-<!-- Solicitudes View - Con pestañas por área -->
+<!-- Solicitudes View - MEJORADO CON FILTROS POR ESTADO -->
 <div class="view hidden" id="solicitudes-view">
 <div class="card">
 <div class="card-header">
@@ -1278,9 +1364,62 @@
 </button>
 </div>
 
-<!-- Filtros de Solicitudes -->
+<!-- NUEVO: Resumen de estados por área -->
+<div class="area-status-summary" id="area-status-summary">
+<div class="status-summary-card sin-asignar">
+<div class="number" id="summary-sin-asignar">0</div>
+<div class="label">Sin Asignar</div>
+</div>
+<div class="status-summary-card pendientes">
+<div class="number" id="summary-pendientes">0</div>
+<div class="label">Pendientes</div>
+</div>
+<div class="status-summary-card en-proceso">
+<div class="number" id="summary-en-proceso">0</div>
+<div class="label">En Proceso</div>
+</div>
+<div class="status-summary-card no-completas">
+<div class="number" id="summary-no-completas">0</div>
+<div class="label">No Completas</div>
+</div>
+</div>
+
+<!-- NUEVO: Filtros de estado para vista detallada -->
+<div class="status-filters">
+<span style="font-weight: 600; color: #4b5563; margin-right: 1rem;">Ver:</span>
+<button class="status-filter-btn active" data-status-filter="TODAS" onclick="filterByDetailedStatus('TODAS')">
+📋 Todas
+<span class="count" id="count-todas">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="SIN_ASIGNAR" onclick="filterByDetailedStatus('SIN_ASIGNAR')">
+🚨 Sin Asignar
+<span class="count" id="count-sin-asignar">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="PENDIENTE" onclick="filterByDetailedStatus('PENDIENTE')">
+⏳ Pendientes
+<span class="count" id="count-pendiente">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="NO_COMPLETAS" onclick="filterByDetailedStatus('NO_COMPLETAS')">
+🔄 No Completas
+<span class="count" id="count-no-completas">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="ASIGNADA" onclick="filterByDetailedStatus('ASIGNADA')">
+🎯 Asignadas
+<span class="count" id="count-asignada">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="EN_PROCESO" onclick="filterByDetailedStatus('EN_PROCESO')">
+🔧 En Proceso
+<span class="count" id="count-en-proceso">0</span>
+</button>
+<button class="status-filter-btn" data-status-filter="COMPLETADA" onclick="filterByDetailedStatus('COMPLETADA')">
+✅ Completadas
+<span class="count" id="count-completada">0</span>
+</button>
+</div>
+
+<!-- Filtros de Solicitudes existentes -->
 <div class="filters-section">
-<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros de Solicitudes</h4>
+<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
 <div class="filters-grid">
 <div>
 <label class="form-label">Estado:</label>
@@ -1583,6 +1722,7 @@
         let isConnectedToAirtable = false;
         let filteredSolicitudes = [];
         let currentAreaFilter = 'TODAS';
+        let currentStatusFilter = 'TODAS';
         let solicitudesPorArea = {
             BIOMEDICA: [],
             MECANICA: [],
@@ -1801,7 +1941,7 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Clasificar solicitudes por área
+        // FUNCIÓN MEJORADA: Clasificar solicitudes por área con contadores de estado
         function clasificarSolicitudesPorArea() {
             solicitudesPorArea = {
                 BIOMEDICA: [],
@@ -1818,9 +1958,123 @@
             
             // Actualizar badges con contadores
             updateAreaBadges();
+            // Actualizar contadores de estado
+            updateStatusCounters();
         }
 
-        // NUEVA FUNCIÓN: Normalizar área
+        // NUEVA FUNCIÓN: Actualizar contadores de estado
+        function updateStatusCounters() {
+            let solicitudesParaContar = [];
+            
+            // Determinar qué solicitudes contar según el área actual
+            if (currentAreaFilter === 'TODAS') {
+                solicitudesParaContar = cloudSolicitudes;
+            } else {
+                solicitudesParaContar = solicitudesPorArea[currentAreaFilter] || [];
+            }
+            
+            // Calcular contadores
+            const sinAsignar = solicitudesParaContar.filter(s => !s.tecnicoAsignado).length;
+            const pendientes = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || 'PENDIENTE').toUpperCase();
+                return estado === 'PENDIENTE';
+            }).length;
+            const asignadas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'ASIGNADA';
+            }).length;
+            const enProceso = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+            }).length;
+            const completadas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'COMPLETADA';
+            }).length;
+            const noCompletas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
+            }).length;
+            
+            // Actualizar resumen de estado
+            document.getElementById('summary-sin-asignar').textContent = sinAsignar;
+            document.getElementById('summary-pendientes').textContent = pendientes;
+            document.getElementById('summary-en-proceso').textContent = enProceso;
+            document.getElementById('summary-no-completas').textContent = noCompletas;
+            
+            // Actualizar contadores en botones de filtro
+            document.getElementById('count-todas').textContent = solicitudesParaContar.length;
+            document.getElementById('count-sin-asignar').textContent = sinAsignar;
+            document.getElementById('count-pendiente').textContent = pendientes;
+            document.getElementById('count-asignada').textContent = asignadas;
+            document.getElementById('count-en-proceso').textContent = enProceso;
+            document.getElementById('count-completada').textContent = completadas;
+            document.getElementById('count-no-completas').textContent = noCompletas;
+        }
+
+        // NUEVA FUNCIÓN: Filtrar por estado detallado
+        function filterByDetailedStatus(status) {
+            currentStatusFilter = status;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.statusFilter === status) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Obtener solicitudes base según el área
+            let baseSolicitudes = [];
+            if (currentAreaFilter === 'TODAS') {
+                baseSolicitudes = [...cloudSolicitudes];
+            } else {
+                baseSolicitudes = [...(solicitudesPorArea[currentAreaFilter] || [])];
+            }
+            
+            // Aplicar filtro de estado
+            switch(status) {
+                case 'SIN_ASIGNAR':
+                    filteredSolicitudes = baseSolicitudes.filter(s => !s.tecnicoAsignado);
+                    break;
+                case 'PENDIENTE':
+                    filteredSolicitudes = baseSolicitudes.filter(s => {
+                        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+                        return estado === 'PENDIENTE';
+                    });
+                    break;
+                case 'ASIGNADA':
+                    filteredSolicitudes = baseSolicitudes.filter(s => {
+                        const estado = (s.estado || '').toUpperCase();
+                        return estado === 'ASIGNADA';
+                    });
+                    break;
+                case 'EN_PROCESO':
+                    filteredSolicitudes = baseSolicitudes.filter(s => {
+                        const estado = (s.estado || '').toUpperCase();
+                        return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+                    });
+                    break;
+                case 'COMPLETADA':
+                    filteredSolicitudes = baseSolicitudes.filter(s => {
+                        const estado = (s.estado || '').toUpperCase();
+                        return estado === 'COMPLETADA';
+                    });
+                    break;
+                case 'NO_COMPLETAS':
+                    filteredSolicitudes = baseSolicitudes.filter(s => {
+                        const estado = (s.estado || '').toUpperCase();
+                        return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
+                    });
+                    break;
+                default:
+                    filteredSolicitudes = baseSolicitudes;
+            }
+            
+            updateSolicitudesList();
+        }
+
+        // FUNCIÓN: Normalizar área
         function normalizarArea(area) {
             if (!area) return 'BIOMEDICA'; // Default
             const lowerArea = area.toLowerCase();
@@ -1835,7 +2089,7 @@
             return 'BIOMEDICA'; // Default
         }
 
-        // NUEVA FUNCIÓN: Actualizar badges de áreas
+        // FUNCIÓN: Actualizar badges de áreas
         function updateAreaBadges() {
             document.getElementById('badge-todas').textContent = cloudSolicitudes.length;
             document.getElementById('badge-biomedica').textContent = solicitudesPorArea.BIOMEDICA.length;
@@ -1843,15 +2097,24 @@
             document.getElementById('badge-infraestructura').textContent = solicitudesPorArea.INFRAESTRUCTURA.length;
         }
 
-        // NUEVA FUNCIÓN: Filtrar solicitudes por área
+        // FUNCIÓN MEJORADA: Filtrar solicitudes por área
         function filterSolicitudesByArea(area) {
             currentAreaFilter = area;
+            currentStatusFilter = 'TODAS'; // Resetear filtro de estado
             
             // Actualizar pestañas activas
             document.querySelectorAll('.area-tab').forEach(tab => {
                 tab.classList.remove('active');
                 if (tab.dataset.area === area) {
                     tab.classList.add('active');
+                }
+            });
+            
+            // Resetear botones de estado
+            document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.statusFilter === 'TODAS') {
+                    btn.classList.add('active');
                 }
             });
             
@@ -1862,12 +2125,15 @@
                 filteredSolicitudes = [...solicitudesPorArea[area]];
             }
             
+            // Actualizar contadores de estado para el área seleccionada
+            updateStatusCounters();
+            
             // Aplicar otros filtros si existen
             applyCurrentFilters();
             updateSolicitudesList();
         }
 
-        // NUEVA FUNCIÓN: Aplicar filtros actuales
+        // FUNCIÓN: Aplicar filtros actuales
         function applyCurrentFilters() {
             const estadoFilter = document.getElementById('filter-estado-solicitud').value;
             const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
@@ -1892,7 +2158,7 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Mostrar solicitudes de un área específica
+        // FUNCIÓN: Mostrar solicitudes de un área específica
         function showAreaSolicitudes(area) {
             showView('solicitudes');
             filterSolicitudesByArea(area);
@@ -2091,15 +2357,24 @@
             }
         }
 
-        // 📋 Funciones de actualización de listas
+        // 📋 FUNCIÓN MEJORADA: Actualizar lista de solicitudes
         function updateSolicitudesList() {
             const container = document.getElementById('solicitudes-list');
             
             if (filteredSolicitudes.length === 0) {
+                let emptyMessage = '';
+                if (currentStatusFilter !== 'TODAS') {
+                    emptyMessage = `No hay solicitudes ${currentStatusFilter.toLowerCase().replace('_', ' ')}`;
+                } else if (currentAreaFilter !== 'TODAS') {
+                    emptyMessage = `No hay solicitudes para ${currentAreaFilter}`;
+                } else {
+                    emptyMessage = 'No hay solicitudes';
+                }
+                
                 container.innerHTML = `
                     <div style="text-align: center; padding: 3rem; color: #6b7280;">
                         <div style="font-size: 4rem; margin-bottom: 1rem;">📋</div>
-                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No hay solicitudes ${currentAreaFilter !== 'TODAS' ? `para ${currentAreaFilter}` : ''}</h3>
+                        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">${emptyMessage}</h3>
                         <p>Las solicitudes aparecerán aquí cuando se creen desde el Portal de Solicitudes</p>
                     </div>
                 `;
@@ -2114,11 +2389,18 @@
                     return new Date(b.fechaCreacion || 0) - new Date(a.fechaCreacion || 0);
                 });
 
+                let headerText = `${filteredSolicitudes.length} Solicitudes`;
+                if (currentAreaFilter !== 'TODAS') {
+                    headerText += ` de ${currentAreaFilter}`;
+                }
+                if (currentStatusFilter !== 'TODAS') {
+                    headerText += ` - ${currentStatusFilter.toLowerCase().replace('_', ' ')}`;
+                }
+
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">
-                            ✅ ${filteredSolicitudes.length} Solicitudes 
-                            ${currentAreaFilter !== 'TODAS' ? `de ${currentAreaFilter}` : 'Totales'}
+                            ✅ ${headerText}
                         </h4>
                         <p style="color: #047857; font-size: 0.875rem;">
                             Sistema con análisis por áreas - 
@@ -2238,6 +2520,10 @@
             const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
             const tipoServicioBadge = isErrorUsuario ? 
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
+            
+            // Indicador de sin asignar
+            const sinAsignarBadge = !solicitud.tecnicoAsignado ? 
+                '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
 
             return `
                 <div class="${cardClass}">
@@ -2255,6 +2541,7 @@
                                 ${getAreaName(solicitud.servicioIngenieria)}
                             </span>
                             ${tipoServicioBadge}
+                            ${sinAsignarBadge}
                         </div>
                         <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
                             <span class="${getStatusBadge(solicitud.estado)}">${solicitud.estado || 'PENDIENTE'}</span>
@@ -2290,7 +2577,7 @@
                             <div class="request-detail-value">
                                 ${solicitud.tecnicoAsignado ? 
                                     `<span style="color: #059669; font-weight: 600;">${solicitud.tecnicoAsignado}</span>` : 
-                                    '<span style="color: #f59e0b;">Sin asignar</span>'
+                                    '<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
                                 }
                             </div>
                         </div>
@@ -2453,7 +2740,7 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Calcular estadísticas por área
+        // FUNCIÓN: Calcular estadísticas por área
         function calcularEstadisticasPorArea() {
             const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
             const statsPorArea = {};
@@ -2534,7 +2821,7 @@
             return statsPorArea;
         }
 
-        // NUEVA FUNCIÓN: Generar HTML de estadísticas generales
+        // FUNCIÓN: Generar HTML de estadísticas generales
         function generateGeneralStats(stats) {
             return `
                 <!-- Indicadores principales -->
@@ -2618,7 +2905,7 @@
             `;
         }
 
-        // NUEVA FUNCIÓN: Generar HTML de estadísticas específicas por área
+        // FUNCIÓN: Generar HTML de estadísticas específicas por área
         function generateAreaSpecificStats(area, stats) {
             const areaNames = {
                 'BIOMEDICA': 'Ingeniería Biomédica',
@@ -2769,7 +3056,7 @@
             `;
         }
 
-        // NUEVA FUNCIÓN: Mostrar estadísticas de área específica
+        // FUNCIÓN: Mostrar estadísticas de área específica
         function showAreaStats(area) {
             currentAreaStats = area;
             
@@ -3020,6 +3307,12 @@
                 filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
             }
             
+            // Aplicar filtro de estado actual
+            if (currentStatusFilter !== 'TODAS') {
+                filterByDetailedStatus(currentStatusFilter);
+                return;
+            }
+            
             // Aplicar filtros
             if (estadoFilter) {
                 filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
@@ -3050,12 +3343,18 @@
             document.getElementById('filter-prioridad-solicitud').value = '';
             document.getElementById('filter-tipo-servicio').value = '';
             
+            currentStatusFilter = 'TODAS';
+            document.querySelectorAll('.status-filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.statusFilter === 'TODAS') {
+                    btn.classList.add('active');
+                }
+            });
+            
             filterSolicitudesByArea(currentAreaFilter);
         }
 
         // Las siguientes funciones permanecen sin cambios (personal, accesos, modales, etc.)
-        // Se mantienen exactamente igual que en el archivo original
-
         async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
