@@ -677,6 +677,7 @@
             flex-wrap: wrap;
         }
 
+        /* Status badges */
         .status-pendiente {
             background: #fef3c7;
             color: #d97706;
@@ -714,6 +715,33 @@
         }
 
         .status-cancelada {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-disponible {
+            background: #dcfce7;
+            color: #166534;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-ocupado {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-inactivo {
             background: #fee2e2;
             color: #dc2626;
             padding: 0.25rem 0.75rem;
@@ -827,6 +855,54 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        /* Personal Cards */
+        .technician-card {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
+        }
+
+        .technician-card:hover {
+            border-color: #2563eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .technician-card.disponible {
+            border-left: 4px solid #059669;
+        }
+
+        .technician-card.ocupado {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .technician-card.inactivo {
+            border-left: 4px solid #ef4444;
+            opacity: 0.7;
+        }
+
+        .technician-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .technician-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 1.125rem;
+        }
+
+        .technician-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            font-size: 0.875rem;
         }
 
         /* Solicitudes de Acceso */
@@ -1624,7 +1700,7 @@
 </div>
 </div>
 </div>
-<!-- Personal de Soporte View (mantenido igual) -->
+<!-- Personal de Soporte View COMPLETO -->
 <div class="view hidden" id="personal-view">
 <div class="card">
 <div class="card-header">
@@ -1693,7 +1769,7 @@
 </div>
 </div>
 </div>
-<!-- Vista de Gestión de Accesos (mantenida igual) -->
+<!-- Vista de Gestión de Accesos COMPLETA -->
 <div class="view hidden" id="accesos-view">
 <div class="card">
 <div class="card-header">
@@ -1728,7 +1804,7 @@
 </div>
 </div>
 </main>
-<!-- Todos los modales se mantienen igual -->
+<!-- Todos los modales -->
 <!-- Modal de Asignación de Personal -->
 <div class="modal" id="assignment-modal">
 <div class="modal-content">
@@ -1882,6 +1958,7 @@
         let isConnectedToAirtable = false;
         let filteredSolicitudes = [];
         let currentAreaView = 'todas'; // Vista de área actual
+        let currentEditingTechnician = null; // Técnico que se está editando
 
         // Variables para auto-refresh
         let autoRefreshInterval = null;
@@ -1895,7 +1972,7 @@
         // Variables para análisis temporal
         let currentAnalysisView = 'general';
 
-        // 🔗 Funciones de conexión y estado (se mantienen igual)
+        // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
             const statusDiv = document.getElementById('connection-status');
             const iconSpan = document.getElementById('connection-icon');
@@ -1925,7 +2002,7 @@
             }
         }
 
-        // 🔄 Funciones de auto-refresh (se mantienen igual)
+        // 🔄 Funciones de auto-refresh
         function startAutoRefresh() {
             if (autoRefreshInterval) {
                 clearInterval(autoRefreshInterval);
@@ -2090,7 +2167,7 @@
             }
         }
 
-        // 📊 FUNCIÓN ACTUALIZADA: Actualizar contadores con separación por área
+        // 📊 Actualizar contadores con separación por área
         function updateAllCounters() {
             const total = cloudSolicitudes.length;
             
@@ -2140,7 +2217,7 @@
             document.getElementById('metric-asignadas').textContent = asignadas;
             document.getElementById('total-count').textContent = total;
 
-            // NUEVO: Actualizar badges de las pestañas
+            // Actualizar badges de las pestañas
             document.getElementById('badge-todas').textContent = total;
             document.getElementById('badge-biomedica').textContent = biomedica;
             document.getElementById('badge-mecanica').textContent = mecanica;
@@ -2175,12 +2252,12 @@
 
         function updateAllDisplays() {
             updatePersonnelSummaries();
-            updateAreaSolicitudes();  // NUEVO: Actualizar solicitudes por área
+            updateAreaSolicitudes();
             updateTechniciansList();
             updateAccessRequestsList();
         }
 
-        // NUEVA FUNCIÓN: Actualizar solicitudes separadas por área
+        // Actualizar solicitudes separadas por área
         function updateAreaSolicitudes() {
             const areas = ['todas', 'biomedica', 'mecanica', 'infraestructura'];
             
@@ -2302,7 +2379,7 @@
             return names[area] || area;
         }
 
-        // NUEVA FUNCIÓN: Mostrar vista de área
+        // Mostrar vista de área
         function showAreaView(area) {
             currentAreaView = area;
             
@@ -2326,12 +2403,12 @@
             console.log(`📋 Vista cambiada a: ${area}`);
         }
 
-        // NUEVA FUNCIÓN: Filtrar solicitudes por área
+        // Filtrar solicitudes por área
         function filterAreaSolicitudes(area) {
             updateAreaSolicitudes();
         }
 
-        // NUEVA FUNCIÓN: Limpiar filtros de área
+        // Limpiar filtros de área
         function clearAreaFilters(area) {
             const estadoFilter = document.getElementById(`filter-estado-${area}`);
             const prioridadFilter = document.getElementById(`filter-prioridad-${area}`);
@@ -2342,7 +2419,7 @@
             updateAreaSolicitudes();
         }
 
-        // NUEVA FUNCIÓN: Mostrar pestaña de área desde el dashboard
+        // Mostrar pestaña de área desde el dashboard
         function showAreaTab(area) {
             showView('solicitudes');
             setTimeout(() => {
@@ -2350,7 +2427,7 @@
             }, 100);
         }
 
-        // Función updatePersonnelSummaries (se mantiene igual)
+        // Función updatePersonnelSummaries
         function updatePersonnelSummaries() {
             const areas = [
                 { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
@@ -2416,7 +2493,7 @@
             });
         }
 
-        // Función actualizada para crear tarjeta de solicitud con indicador de nueva
+        // Función para crear tarjeta de solicitud
         function createSolicitudCard(solicitud, esNueva = false) {
             const getStatusClass = (status) => {
                 const normalizedStatus = status ? status.toUpperCase() : 'PENDIENTE';
@@ -2626,801 +2703,797 @@
             `;
         }
 
-        // Función helper para obtener nombre de área
-        function getAreaName(area) {
-            if (!area) return 'Sin área';
+        // 👥 FUNCIONES DE PERSONAL DE SOPORTE COMPLETAS
+        function updateTechniciansList() {
+            const container = document.getElementById('technicians-container');
+            if (!container) return;
+
+            // Aplicar filtros
+            let filteredTecnicos = [...cloudTecnicos];
             
-            const lowerArea = area.toLowerCase();
-            if (area === 'INGENIERIA_BIOMEDICA' || 
-                area === 'Ingeniería Biomédica' ||
-                lowerArea.includes('biomed') || 
-                lowerArea.includes('bioméd')) {
-                return 'Ing. Biomédica';
-            } else if (area === 'MECANICA' || area === 'Mecánica' || lowerArea.includes('mec')) {
-                return 'Mecánica';
-            } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
-                return 'Infraestructura';
+            const areaFilter = document.getElementById('filter-area')?.value;
+            const estadoFilter = document.getElementById('filter-estado')?.value;
+            const tipoFilter = document.getElementById('filter-tipo')?.value;
+            
+            if (areaFilter) {
+                filteredTecnicos = filteredTecnicos.filter(t => t.area === areaFilter);
             }
             
-            return area;
+            if (estadoFilter) {
+                filteredTecnicos = filteredTecnicos.filter(t => t.estado === estadoFilter);
+            }
+            
+            if (tipoFilter) {
+                filteredTecnicos = filteredTecnicos.filter(t => t.tipo === tipoFilter);
+            }
+
+            if (filteredTecnicos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">👥</div>
+                        <p>No hay personal de soporte registrado</p>
+                        <button class="btn btn-success" onclick="showAddPersonalModal()">
+                            ➕ Agregar Personal
+                        </button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = filteredTecnicos.map(tecnico => createTechnicianCard(tecnico)).join('');
+            }
         }
 
-        // 📊 FUNCIÓN COMPLETAMENTE RESTAURADA Y MEJORADA: Estadísticas Avanzadas con separación por área
-        async function showAdvancedStatisticsModal() {
-            const modal = document.getElementById('stats-modal');
-            const content = document.getElementById('stats-modal-content');
-            
-            // Obtener estadísticas desde la API
-            let advancedStats = null;
-            try {
-                if (window.airtableAPI && typeof window.airtableAPI.getAdvancedStatistics === 'function') {
-                    advancedStats = await window.airtableAPI.getAdvancedStatistics();
-                }
-            } catch (error) {
-                console.error('Error obteniendo estadísticas avanzadas:', error);
-            }
-            
-            // Preparar datos por área
-            const areaStats = {
-                biomedica: {
-                    solicitudes: cloudSolicitudes.filter(s => {
-                        const area = s.servicioIngenieria || '';
-                        const lowerArea = area.toLowerCase();
-                        return area === 'INGENIERIA_BIOMEDICA' || 
-                               area === 'Ingeniería Biomédica' ||
-                               lowerArea.includes('biomed') || 
-                               lowerArea.includes('bioméd');
-                    }),
-                    color: '#059669',
-                    bgColor: 'rgba(5, 150, 105, 0.1)',
-                    nombre: 'Ingeniería Biomédica',
-                    icon: '🏥'
-                },
-                mecanica: {
-                    solicitudes: cloudSolicitudes.filter(s => {
-                        const area = s.servicioIngenieria || '';
-                        return area === 'MECANICA' || 
-                               area === 'Mecánica' ||
-                               area.toLowerCase().includes('mec');
-                    }),
-                    color: '#f59e0b',
-                    bgColor: 'rgba(245, 158, 11, 0.1)',
-                    nombre: 'Mecánica',
-                    icon: '⚙️'
-                },
-                infraestructura: {
-                    solicitudes: cloudSolicitudes.filter(s => {
-                        const area = s.servicioIngenieria || '';
-                        return area === 'INFRAESTRUCTURA' || 
-                               area === 'Infraestructura' ||
-                               area.toLowerCase().includes('infra');
-                    }),
-                    color: '#8b5cf6',
-                    bgColor: 'rgba(139, 92, 246, 0.1)',
-                    nombre: 'Infraestructura',
-                    icon: '🏗️'
-                }
-            };
-
-            // Calcular estadísticas detalladas por área
-            const calculateAreaStatistics = (solicitudesArea) => {
-                const total = solicitudesArea.length;
-                
-                const pendientes = solicitudesArea.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
-                    return estado === 'PENDIENTE';
-                }).length;
-                
-                const asignadas = solicitudesArea.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'ASIGNADA';
-                }).length;
-                
-                const enProceso = solicitudesArea.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-                }).length;
-                
-                const completadas = solicitudesArea.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'COMPLETADA';
-                }).length;
-                
-                const canceladas = solicitudesArea.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'CANCELADA';
-                }).length;
-                
-                // Errores de usuario
-                const erroresUsuario = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'ERROR_USUARIO' || 
-                    s.tipoServicio === 'Error de Usuario'
-                ).length;
-                
-                // Mantenimientos correctivos
-                const correctivos = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || 
-                    s.tipoServicio === 'Mantenimiento Correctivo'
-                ).length;
-                
-                // Mantenimientos preventivos
-                const preventivos = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'MANTENIMIENTO_PREVENTIVO' || 
-                    s.tipoServicio === 'Mantenimiento Preventivo'
-                ).length;
-                
-                // Calcular tiempos de respuesta
-                let tiemposTotales = [];
-                let tiempoPromedio = 0;
-                let tiempoMinimo = Infinity;
-                let tiempoMaximo = 0;
-                
-                solicitudesArea.forEach(s => {
-                    if ((s.estado === 'COMPLETADA' || s.estado === 'Completada') && s.fechaCreacion) {
-                        const inicio = new Date(s.fechaCreacion);
-                        const fin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
-                        const duracion = (fin - inicio) / (1000 * 60 * 60); // En horas
-                        
-                        tiemposTotales.push(duracion);
-                        if (duracion < tiempoMinimo) tiempoMinimo = duracion;
-                        if (duracion > tiempoMaximo) tiempoMaximo = duracion;
-                    }
-                });
-                
-                if (tiemposTotales.length > 0) {
-                    tiempoPromedio = tiemposTotales.reduce((a, b) => a + b, 0) / tiemposTotales.length;
-                } else {
-                    tiempoMinimo = 0;
-                }
-                
-                // Calcular eficiencia
-                const eficiencia = total > 0 ? ((completadas / total) * 100).toFixed(1) : 0;
-                
-                // Calcular porcentajes
-                const porcentajeErrores = total > 0 ? ((erroresUsuario / total) * 100).toFixed(1) : 0;
-                const porcentajeCorrectivos = total > 0 ? ((correctivos / total) * 100).toFixed(1) : 0;
-                const porcentajePreventivos = total > 0 ? ((preventivos / total) * 100).toFixed(1) : 0;
-                
-                return {
-                    total,
-                    pendientes,
-                    asignadas,
-                    enProceso,
-                    completadas,
-                    canceladas,
-                    erroresUsuario,
-                    correctivos,
-                    preventivos,
-                    tiempoPromedio: tiempoPromedio.toFixed(1),
-                    tiempoMinimo: tiempoMinimo === Infinity ? 0 : tiempoMinimo.toFixed(1),
-                    tiempoMaximo: tiempoMaximo.toFixed(1),
-                    eficiencia,
-                    porcentajeErrores,
-                    porcentajeCorrectivos,
-                    porcentajePreventivos
+        function createTechnicianCard(tecnico) {
+            const getAreaName = (area) => {
+                const areaMap = {
+                    'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
+                    'MECANICA': '⚙️ Mecánica',
+                    'INFRAESTRUCTURA': '🏗️ Infraestructura'
                 };
+                return areaMap[area] || area;
             };
 
-            // Generar HTML de estadísticas mejorado
+            const getTipoIcon = (tipo) => {
+                const tipoMap = {
+                    'ingeniero': '🎓',
+                    'tecnico': '🔧',
+                    'auxiliar': '🛠️'
+                };
+                return tipoMap[tipo] || '👤';
+            };
+
+            const statusClass = tecnico.estado || 'disponible';
+            const statusBadge = `status-${statusClass}`;
+
+            return `
+                <div class="technician-card ${statusClass}">
+                    <div class="technician-header">
+                        <div class="technician-name">
+                            ${getTipoIcon(tecnico.tipo)} ${tecnico.nombre}
+                        </div>
+                        <span class="${statusBadge}">${tecnico.estado || 'disponible'}</span>
+                    </div>
+                    
+                    <div class="technician-details">
+                        <div class="request-detail">
+                            <div class="request-detail-label">📧 Email</div>
+                            <div class="request-detail-value">${tecnico.email || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🏥 Área</div>
+                            <div class="request-detail-value">${getAreaName(tecnico.area)}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">👨‍💼 Tipo</div>
+                            <div class="request-detail-value">${tecnico.tipo || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">⚙️ Especialidad</div>
+                            <div class="request-detail-value">${tecnico.especialidad || 'No especificada'}</div>
+                        </div>
+                        ${tecnico.solicitudAsignada ? `
+                            <div class="request-detail">
+                                <div class="request-detail-label">📋 Solicitud Asignada</div>
+                                <div class="request-detail-value" style="color: #059669; font-weight: 600;">
+                                    ${tecnico.solicitudAsignada}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="request-actions">
+                        <button class="btn btn-primary btn-sm" onclick="editTechnician('${tecnico.id}')">
+                            ✏️ Editar
+                        </button>
+                        ${tecnico.estado === 'inactivo' ? `
+                            <button class="btn btn-success btn-sm" onclick="activateTechnician('${tecnico.id}')">
+                                ✅ Activar
+                            </button>
+                        ` : `
+                            <button class="btn btn-warning btn-sm" onclick="deactivateTechnician('${tecnico.id}')">
+                                ⏸️ Desactivar
+                            </button>
+                        `}
+                        <button class="btn btn-danger btn-sm" onclick="deleteTechnician('${tecnico.id}')">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function showAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.add('show');
+            // Limpiar formulario
+            document.getElementById('add-personal-form').reset();
+        }
+
+        function closeAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.remove('show');
+        }
+
+        async function editTechnician(technicianId) {
+            const tecnico = cloudTecnicos.find(t => t.id === technicianId);
+            if (!tecnico) {
+                alert('❌ Técnico no encontrado');
+                return;
+            }
+
+            currentEditingTechnician = technicianId;
+            
+            const modal = document.getElementById('edit-personal-modal');
+            const content = document.getElementById('edit-personal-content');
+            
             content.innerHTML = `
-                <!-- Pestañas de análisis temporal -->
-                <div class="analysis-tabs">
-                    <button class="analysis-tab active" onclick="showAnalysisView('general')">
-                        📊 Vista General
-                    </button>
-                    <button class="analysis-tab" onclick="showAnalysisView('por-area')">
-                        🏥 Por Área
-                    </button>
-                    <button class="analysis-tab" onclick="showAnalysisView('indicadores')">
-                        📈 Indicadores KPI
-                    </button>
-                    <button class="analysis-tab" onclick="showAnalysisView('tiempos')">
-                        ⏱️ Tiempos de Respuesta
-                    </button>
-                </div>
-
-                <!-- Vista General -->
-                <div id="analysis-general" class="analysis-view">
-                    <h3 style="margin-bottom: 1.5rem; color: #1f2937;">📊 Estadísticas Generales del Sistema</h3>
-                    
-                    <!-- Métricas generales con indicadores de la API -->
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <span class="stat-card-title">Total Solicitudes</span>
-                                <span style="color: #2563eb;">📋</span>
-                            </div>
-                            <div class="stat-card-value">${cloudSolicitudes.length}</div>
-                            <div class="stat-card-description">En todo el sistema</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <span class="stat-card-title">% Completadas</span>
-                                <span style="color: #059669;">✅</span>
-                            </div>
-                            <div class="stat-card-value">${advancedStats?.indicadoresGestion?.porcentajeCompletadas || 0}%</div>
-                            <div class="stat-card-description">Tasa de resolución</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <span class="stat-card-title">% Correctivos</span>
-                                <span style="color: #f59e0b;">🔧</span>
-                            </div>
-                            <div class="stat-card-value">${advancedStats?.indicadoresGestion?.porcentajeMantenimientosCorrectivos || 0}%</div>
-                            <div class="stat-card-description">Mantenimientos correctivos</div>
-                        </div>
-                        
-                        <div class="stat-card">
-                            <div class="stat-card-header">
-                                <span class="stat-card-title">% Errores Usuario</span>
-                                <span style="color: #ef4444;">👤</span>
-                            </div>
-                            <div class="stat-card-value">${advancedStats?.indicadoresGestion?.porcentajeErroresUsuario || 0}%</div>
-                            <div class="stat-card-description">Errores de usuario detectados</div>
-                        </div>
+                <form id="edit-personal-form">
+                    <div class="form-group">
+                        <label class="form-label">👤 Nombre Completo</label>
+                        <input type="text" class="form-input" id="edit-personal-nombre" value="${tecnico.nombre}" required>
                     </div>
-
-                    <!-- Gráfico de distribución por áreas -->
-                    <h4 style="margin-top: 2rem; margin-bottom: 1rem; color: #1f2937;">📈 Distribución por Áreas</h4>
-                    <div class="chart-container">
-                        <canvas id="area-distribution-chart"></canvas>
+                    <div class="form-group">
+                        <label class="form-label">📧 Email</label>
+                        <input type="email" class="form-input" id="edit-personal-email" value="${tecnico.email}" required>
                     </div>
-                </div>
-
-                <!-- Vista Por Área -->
-                <div id="analysis-por-area" class="analysis-view" style="display: none;">
-                    <h3 style="margin-bottom: 1.5rem; color: #1f2937;">🏥 Análisis Detallado por Área</h3>
-                    
-                    ${Object.entries(areaStats).map(([key, area]) => {
-                        const stats = calculateAreaStatistics(area.solicitudes);
-                        return `
-                            <div class="area-stats-section">
-                                <div class="area-stats-header">
-                                    <div class="area-stats-title" style="color: ${area.color};">
-                                        ${area.icon} ${area.nombre}
-                                    </div>
-                                </div>
-                                
-                                <div class="stats-grid">
-                                    <div class="stat-card">
-                                        <div class="stat-card-title">Total Solicitudes</div>
-                                        <div class="stat-card-value">${stats.total}</div>
-                                        <div class="stat-card-description">${((stats.total / cloudSolicitudes.length) * 100).toFixed(1)}% del total</div>
-                                    </div>
-                                    
-                                    <div class="stat-card">
-                                        <div class="stat-card-title">Completadas</div>
-                                        <div class="stat-card-value">${stats.completadas}</div>
-                                        <div class="stat-card-description">${stats.eficiencia}% eficiencia</div>
-                                    </div>
-                                    
-                                    <div class="stat-card">
-                                        <div class="stat-card-title">Errores Usuario</div>
-                                        <div class="stat-card-value">${stats.erroresUsuario}</div>
-                                        <div class="stat-card-description">${stats.porcentajeErrores}% del área</div>
-                                    </div>
-                                    
-                                    <div class="stat-card">
-                                        <div class="stat-card-title">Tiempo Promedio</div>
-                                        <div class="stat-card-value">${stats.tiempoPromedio}h</div>
-                                        <div class="stat-card-description">Min: ${stats.tiempoMinimo}h | Max: ${stats.tiempoMaximo}h</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="kpi-grid">
-                                    <div class="kpi-item">
-                                        <div class="kpi-value">${stats.pendientes}</div>
-                                        <div class="kpi-label">Pendientes</div>
-                                    </div>
-                                    <div class="kpi-item">
-                                        <div class="kpi-value">${stats.asignadas}</div>
-                                        <div class="kpi-label">Asignadas</div>
-                                    </div>
-                                    <div class="kpi-item">
-                                        <div class="kpi-value">${stats.enProceso}</div>
-                                        <div class="kpi-label">En Proceso</div>
-                                    </div>
-                                    <div class="kpi-item">
-                                        <div class="kpi-value">${stats.correctivos}</div>
-                                        <div class="kpi-label">Correctivos</div>
-                                    </div>
-                                    <div class="kpi-item">
-                                        <div class="kpi-value">${stats.preventivos}</div>
-                                        <div class="kpi-label">Preventivos</div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Barra de progreso de eficiencia -->
-                                <div style="margin-top: 1rem;">
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                        <span style="font-weight: 600;">Eficiencia del Área</span>
-                                        <span style="color: ${area.color}; font-weight: bold;">${stats.eficiencia}%</span>
-                                    </div>
-                                    <div class="progress-bar-container">
-                                        <div class="progress-bar" style="width: ${stats.eficiencia}%; background: ${area.color};">
-                                            ${stats.eficiencia > 10 ? stats.eficiencia + '%' : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-
-                <!-- Vista Indicadores KPI -->
-                <div id="analysis-indicadores" class="analysis-view" style="display: none;">
-                    <h3 style="margin-bottom: 1.5rem; color: #1f2937;">📈 Indicadores Clave de Rendimiento (KPI)</h3>
-                    
-                    <!-- Tabla comparativa por área -->
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Área</th>
-                                    <th>Total</th>
-                                    <th>Completadas</th>
-                                    <th>Eficiencia</th>
-                                    <th>Errores Usuario</th>
-                                    <th>Correctivos</th>
-                                    <th>Tiempo Promedio</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${Object.entries(areaStats).map(([key, area]) => {
-                                    const stats = calculateAreaStatistics(area.solicitudes);
-                                    return `
-                                        <tr>
-                                            <td style="font-weight: 600; color: ${area.color};">
-                                                ${area.icon} ${area.nombre}
-                                            </td>
-                                            <td>${stats.total}</td>
-                                            <td>${stats.completadas}</td>
-                                            <td>
-                                                <span style="color: ${stats.eficiencia > 80 ? '#059669' : stats.eficiencia > 50 ? '#f59e0b' : '#ef4444'};">
-                                                    ${stats.eficiencia}%
-                                                </span>
-                                            </td>
-                                            <td>${stats.erroresUsuario} (${stats.porcentajeErrores}%)</td>
-                                            <td>${stats.correctivos} (${stats.porcentajeCorrectivos}%)</td>
-                                            <td>${stats.tiempoPromedio}h</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                                <tr style="font-weight: bold; background: #f8fafc;">
-                                    <td>TOTAL GENERAL</td>
-                                    <td>${cloudSolicitudes.length}</td>
-                                    <td>${cloudSolicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length}</td>
-                                    <td>${advancedStats?.indicadoresGestion?.porcentajeCompletadas || 0}%</td>
-                                    <td colspan="3">-</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="form-group">
+                        <label class="form-label">🏥 Área de Trabajo</label>
+                        <select class="form-select" id="edit-personal-area" required>
+                            <option value="INGENIERIA_BIOMEDICA" ${tecnico.area === 'INGENIERIA_BIOMEDICA' ? 'selected' : ''}>Ingeniería Biomédica</option>
+                            <option value="MECANICA" ${tecnico.area === 'MECANICA' ? 'selected' : ''}>Mecánica</option>
+                            <option value="INFRAESTRUCTURA" ${tecnico.area === 'INFRAESTRUCTURA' ? 'selected' : ''}>Infraestructura</option>
+                        </select>
                     </div>
-                    
-                    <!-- Gráficos comparativos -->
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
-                        <div>
-                            <h4 style="margin-bottom: 1rem; color: #1f2937;">📊 Eficiencia por Área</h4>
-                            <div class="chart-container">
-                                <canvas id="efficiency-chart"></canvas>
-                            </div>
-                        </div>
-                        <div>
-                            <h4 style="margin-bottom: 1rem; color: #1f2937;">👤 Errores de Usuario por Área</h4>
-                            <div class="chart-container">
-                                <canvas id="errors-chart"></canvas>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">👨‍💼 Tipo</label>
+                        <select class="form-select" id="edit-personal-tipo" required>
+                            <option value="ingeniero" ${tecnico.tipo === 'ingeniero' ? 'selected' : ''}>🎓 Ingeniero</option>
+                            <option value="tecnico" ${tecnico.tipo === 'tecnico' ? 'selected' : ''}>🔧 Técnico</option>
+                            <option value="auxiliar" ${tecnico.tipo === 'auxiliar' ? 'selected' : ''}>🛠️ Auxiliar</option>
+                        </select>
                     </div>
-                </div>
-
-                <!-- Vista Tiempos de Respuesta -->
-                <div id="analysis-tiempos" class="analysis-view" style="display: none;">
-                    <h3 style="margin-bottom: 1.5rem; color: #1f2937;">⏱️ Análisis de Tiempos de Respuesta</h3>
-                    
-                    ${advancedStats?.tiemposRespuesta ? `
-                        <div class="stats-grid">
-                            <div class="stat-card">
-                                <div class="stat-card-title">Tiempo Promedio General</div>
-                                <div class="stat-card-value">${advancedStats.tiemposRespuesta.promedioRespuesta}</div>
-                                <div class="stat-card-description">Todas las solicitudes</div>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-card-title">Solicitudes Vencidas</div>
-                                <div class="stat-card-value" style="color: #ef4444;">${advancedStats.tiemposRespuesta.solicitudesVencidas}</div>
-                                <div class="stat-card-description">Fuera de tiempo límite</div>
-                            </div>
-                            
-                            <div class="stat-card">
-                                <div class="stat-card-title">Con Tiempo Registrado</div>
-                                <div class="stat-card-value">${advancedStats.tiemposRespuesta.totalConTiempoRegistrado}</div>
-                                <div class="stat-card-description">Solicitudes con métricas</div>
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Comparación de tiempos por área -->
-                    <h4 style="margin-top: 2rem; margin-bottom: 1rem; color: #1f2937;">⏰ Comparación de Tiempos por Área</h4>
-                    <div class="chart-container">
-                        <canvas id="time-comparison-chart"></canvas>
+                    <div class="form-group">
+                        <label class="form-label">⚙️ Especialidad</label>
+                        <input type="text" class="form-input" id="edit-personal-especialidad" value="${tecnico.especialidad || ''}" placeholder="Especialidad o certificaciones">
                     </div>
-                    
-                    <!-- Top 10 solicitudes con mayor tiempo -->
-                    ${advancedStats?.tiemposRespuesta?.detalleTiempos && advancedStats.tiemposRespuesta.detalleTiempos.length > 0 ? `
-                        <h4 style="margin-top: 2rem; margin-bottom: 1rem; color: #1f2937;">🔝 Top 10 Solicitudes con Mayor Tiempo</h4>
-                        <div class="table-responsive">
-                            <table class="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Número</th>
-                                        <th>Estado</th>
-                                        <th>Tiempo</th>
-                                        <th>Días</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${advancedStats.tiemposRespuesta.detalleTiempos.map(item => `
-                                        <tr>
-                                            <td>${item.numero}</td>
-                                            <td>${item.estado}</td>
-                                            <td>${item.tiempoFormato}</td>
-                                            <td>${item.diasDecimales} días</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    ` : ''}
-                </div>
-
-                <!-- Botones de acción -->
-                <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: center; gap: 1rem;">
-                    <button class="btn btn-primary" onclick="exportStatsToPDF()">
-                        📄 Exportar a PDF
-                    </button>
-                    <button class="btn btn-success" onclick="downloadStatsCSV()">
-                        📊 Descargar CSV
-                    </button>
-                    <button class="btn btn-secondary" onclick="closeStatsModal()">
-                        ↩️ Cerrar
-                    </button>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">📊 Estado</label>
+                        <select class="form-select" id="edit-personal-estado">
+                            <option value="disponible" ${tecnico.estado === 'disponible' ? 'selected' : ''}>🟢 Disponible</option>
+                            <option value="ocupado" ${tecnico.estado === 'ocupado' ? 'selected' : ''}>🟡 Ocupado</option>
+                            <option value="inactivo" ${tecnico.estado === 'inactivo' ? 'selected' : ''}>🔴 Inactivo</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button type="submit" class="btn btn-success">💾 Guardar Cambios</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeEditPersonalModal()">↩️ Cancelar</button>
+                    </div>
+                </form>
             `;
             
             modal.classList.add('show');
             
-            // Renderizar gráficos después de un pequeño delay
-            setTimeout(() => {
-                renderStatisticsCharts(areaStats);
-            }, 100);
+            // Agregar evento de submit
+            document.getElementById('edit-personal-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await updateTechnician();
+            });
         }
 
-        // Función para renderizar gráficos de estadísticas
-        function renderStatisticsCharts(areaStats) {
-            // Destruir gráficos previos si existen
-            Object.values(chartInstances).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            chartInstances = {};
+        function closeEditPersonalModal() {
+            document.getElementById('edit-personal-modal').classList.remove('show');
+            currentEditingTechnician = null;
+        }
 
-            // Gráfico de distribución por áreas
-            const areaDistCtx = document.getElementById('area-distribution-chart');
-            if (areaDistCtx) {
-                chartInstances.areaDist = new Chart(areaDistCtx.getContext('2d'), {
-                    type: 'pie',
-                    data: {
-                        labels: Object.values(areaStats).map(a => a.nombre),
-                        datasets: [{
-                            data: Object.values(areaStats).map(a => a.solicitudes.length),
-                            backgroundColor: Object.values(areaStats).map(a => a.color),
-                            borderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed || 0;
-                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                        const percentage = ((value / total) * 100).toFixed(1);
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                });
+        async function updateTechnician() {
+            if (!currentEditingTechnician) return;
+            
+            const updateData = {
+                nombre: document.getElementById('edit-personal-nombre').value,
+                email: document.getElementById('edit-personal-email').value,
+                area: document.getElementById('edit-personal-area').value,
+                tipo: document.getElementById('edit-personal-tipo').value,
+                especialidad: document.getElementById('edit-personal-especialidad').value,
+                estado: document.getElementById('edit-personal-estado').value
+            };
+            
+            try {
+                await window.airtableAPI.updateTecnico(currentEditingTechnician, updateData);
+                alert('✅ Personal actualizado exitosamente');
+                closeEditPersonalModal();
+                await loadAllDataFromCloud();
+            } catch (error) {
+                console.error('Error actualizando técnico:', error);
+                alert('❌ Error actualizando personal: ' + error.message);
             }
+        }
 
-            // Gráfico de eficiencia por área
-            const efficiencyCtx = document.getElementById('efficiency-chart');
-            if (efficiencyCtx) {
-                const labels = Object.values(areaStats).map(a => a.nombre);
-                const data = Object.values(areaStats).map(area => {
-                    const completadas = area.solicitudes.filter(s => 
-                        s.estado === 'COMPLETADA' || s.estado === 'Completada'
-                    ).length;
-                    return area.solicitudes.length > 0 ? 
-                        (completadas / area.solicitudes.length) * 100 : 0;
-                });
-
-                chartInstances.efficiency = new Chart(efficiencyCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Eficiencia (%)',
-                            data: data,
-                            backgroundColor: Object.values(areaStats).map(a => a.color)
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100,
-                                title: {
-                                    display: true,
-                                    text: 'Porcentaje (%)'
-                                }
-                            }
-                        }
-                    }
-                });
+        async function activateTechnician(technicianId) {
+            if (confirm('¿Desea activar este técnico?')) {
+                try {
+                    await window.airtableAPI.updateTecnico(technicianId, { estado: 'disponible' });
+                    alert('✅ Técnico activado');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error activando técnico: ' + error.message);
+                }
             }
+        }
 
-            // Gráfico de errores de usuario por área
-            const errorsCtx = document.getElementById('errors-chart');
-            if (errorsCtx) {
-                const labels = Object.values(areaStats).map(a => a.nombre);
-                const data = Object.values(areaStats).map(area => {
-                    return area.solicitudes.filter(s => 
-                        s.tipoServicio === 'ERROR_USUARIO' || 
-                        s.tipoServicio === 'Error de Usuario'
-                    ).length;
-                });
-
-                chartInstances.errors = new Chart(errorsCtx.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Errores de Usuario',
-                            data: data,
-                            backgroundColor: Object.values(areaStats).map(a => a.color)
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
-                });
+        async function deactivateTechnician(technicianId) {
+            if (confirm('¿Desea desactivar este técnico?')) {
+                try {
+                    await window.airtableAPI.updateTecnico(technicianId, { estado: 'inactivo' });
+                    alert('✅ Técnico desactivado');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error desactivando técnico: ' + error.message);
+                }
             }
+        }
 
-            // Gráfico de comparación de tiempos
-            const timeCtx = document.getElementById('time-comparison-chart');
-            if (timeCtx) {
-                const labels = Object.values(areaStats).map(a => a.nombre);
-                const avgTimes = Object.values(areaStats).map(area => {
-                    const completed = area.solicitudes.filter(s => 
-                        s.estado === 'COMPLETADA' || s.estado === 'Completada'
-                    );
+        async function deleteTechnician(technicianId) {
+            if (confirm('⚠️ ¿Está seguro de eliminar este técnico? Esta acción no se puede deshacer.')) {
+                try {
+                    // Por ahora, solo desactivar en lugar de eliminar
+                    await window.airtableAPI.updateTecnico(technicianId, { estado: 'inactivo' });
+                    alert('✅ Técnico eliminado (desactivado)');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error eliminando técnico: ' + error.message);
+                }
+            }
+        }
+
+        function filterPersonal() {
+            updateTechniciansList();
+        }
+
+        function clearPersonalFilters() {
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-tipo').value = '';
+            updateTechniciansList();
+        }
+
+        // Agregar evento de submit para el formulario de agregar personal
+        document.addEventListener('DOMContentLoaded', function() {
+            const addPersonalForm = document.getElementById('add-personal-form');
+            if (addPersonalForm) {
+                addPersonalForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
                     
-                    if (completed.length === 0) return 0;
+                    const tecnicoData = {
+                        nombre: document.getElementById('personal-nombre').value,
+                        email: document.getElementById('personal-email').value,
+                        area: document.getElementById('personal-area').value,
+                        tipo: document.getElementById('personal-tipo').value,
+                        especialidad: document.getElementById('personal-especialidad').value,
+                        estado: document.getElementById('personal-estado').value
+                    };
                     
-                    const tiempos = completed.map(s => {
-                        if (s.fechaCreacion && s.fechaCompletado) {
-                            const inicio = new Date(s.fechaCreacion);
-                            const fin = new Date(s.fechaCompletado);
-                            return (fin - inicio) / (1000 * 60 * 60);
-                        }
-                        return 0;
-                    }).filter(t => t > 0);
-                    
-                    return tiempos.length > 0 ? 
-                        tiempos.reduce((a, b) => a + b, 0) / tiempos.length : 0;
-                });
-
-                chartInstances.timeComparison = new Chart(timeCtx.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Tiempo Promedio (horas)',
-                            data: avgTimes,
-                            backgroundColor: Object.values(areaStats).map(a => a.color)
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Horas'
-                                }
-                            }
-                        }
+                    try {
+                        await window.airtableAPI.createTecnico(tecnicoData);
+                        alert('✅ Personal de soporte agregado exitosamente');
+                        closeAddPersonalModal();
+                        await loadAllDataFromCloud();
+                    } catch (error) {
+                        console.error('Error agregando personal:', error);
+                        alert('❌ Error agregando personal: ' + error.message);
                     }
                 });
             }
-        }
+        });
 
-        // Función para cambiar vista de análisis
-        window.showAnalysisView = function(view) {
-            currentAnalysisView = view;
-            
-            // Actualizar pestañas
-            document.querySelectorAll('.analysis-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Ocultar todas las vistas
-            document.querySelectorAll('.analysis-view').forEach(v => {
-                v.style.display = 'none';
-            });
-            
-            // Mostrar vista seleccionada
-            document.getElementById(`analysis-${view}`).style.display = 'block';
-        };
-
-        function closeStatsModal() {
-            document.getElementById('stats-modal').classList.remove('show');
-            
-            // Destruir gráficos al cerrar
-            Object.values(chartInstances).forEach(chart => {
-                if (chart) chart.destroy();
-            });
-            chartInstances = {};
-        }
-
-        // Función para exportar estadísticas a PDF
-        function exportStatsToPDF() {
-            alert('📄 Función de exportación a PDF en desarrollo...');
-        }
-
-        // Función para descargar estadísticas en CSV
-        function downloadStatsCSV() {
-            alert('📊 Función de descarga CSV en desarrollo...');
-        }
-
-        // Función para cambiar vista principal
-        function showView(viewName) {
-            // Ocultar todas las vistas
-            document.querySelectorAll('.view').forEach(view => {
-                view.classList.add('hidden');
-            });
-            
-            // Mostrar vista seleccionada
-            document.getElementById(`${viewName}-view`).classList.remove('hidden');
-            
-            // Actualizar pestañas activas
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-            
-            console.log(`Vista cambiada a: ${viewName}`);
-        }
-
-        // Función placeholder para notificaciones
-        function showNotifications() {
-            alert('🔔 Sistema de notificaciones en desarrollo...');
-        }
-
-        // Funciones placeholder para filtros del dashboard
-        function filterByArea(area) {
-            console.log('Filtrar por área:', area);
-            showView('solicitudes');
-            if (area !== 'all') {
-                setTimeout(() => {
-                    showAreaView(area);
-                }, 100);
-            }
-        }
-
-        function filterByStatus(status) {
-            console.log('Filtrar por estado:', status);
-            showView('solicitudes');
-        }
-
-        // Función para actualizar lista de técnicos (placeholder)
-        function updateTechniciansList() {
-            const container = document.getElementById('technicians-container');
-            if (container) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 2rem;">
-                        <p>Total de técnicos: ${cloudTecnicos.length}</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Función para actualizar lista de solicitudes de acceso (placeholder)
+        // 🔐 FUNCIONES DE GESTIÓN DE ACCESOS COMPLETAS
         function updateAccessRequestsList() {
             const container = document.getElementById('access-requests-container');
-            if (container) {
-                container.innerHTML = `
-                    <div style="text-align: center; padding: 2rem;">
-                        <p>Solicitudes de acceso pendientes: ${cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || !s.estado).length}</p>
+            if (!container) return;
+
+            const pendingRequests = cloudSolicitudesAcceso.filter(s => 
+                s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado
+            );
+
+            const approvedRequests = cloudSolicitudesAcceso.filter(s => 
+                s.estado === 'APROBADA' || s.estado === 'Aprobada'
+            );
+
+            const rejectedRequests = cloudSolicitudesAcceso.filter(s => 
+                s.estado === 'RECHAZADA' || s.estado === 'Rechazada'
+            );
+
+            let html = '';
+
+            // Solicitudes pendientes
+            if (pendingRequests.length > 0) {
+                html += `
+                    <h3 style="color: #f59e0b; margin-bottom: 1rem;">⏳ Solicitudes Pendientes (${pendingRequests.length})</h3>
+                    ${pendingRequests.map(request => createAccessRequestCard(request, 'pending')).join('')}
+                `;
+            }
+
+            // Solicitudes aprobadas
+            if (approvedRequests.length > 0) {
+                html += `
+                    <h3 style="color: #059669; margin-top: 2rem; margin-bottom: 1rem;">✅ Solicitudes Aprobadas (${approvedRequests.length})</h3>
+                    ${approvedRequests.map(request => createAccessRequestCard(request, 'approved')).join('')}
+                `;
+            }
+
+            // Solicitudes rechazadas
+            if (rejectedRequests.length > 0) {
+                html += `
+                    <h3 style="color: #ef4444; margin-top: 2rem; margin-bottom: 1rem;">❌ Solicitudes Rechazadas (${rejectedRequests.length})</h3>
+                    ${rejectedRequests.map(request => createAccessRequestCard(request, 'rejected')).join('')}
+                `;
+            }
+
+            if (cloudSolicitudesAcceso.length === 0) {
+                html = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+                        <p>No hay solicitudes de acceso</p>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function createAccessRequestCard(request, status) {
+            const statusClass = `access-request-card ${status}`;
+            
+            // Buscar si existe un usuario creado para esta solicitud
+            const userCreated = cloudUsuarios.find(u => u.email === request.email);
+            
+            return `
+                <div class="${statusClass}">
+                    <div class="request-header">
+                        <div class="request-name">
+                            👤 ${request.nombreCompleto || 'Sin nombre'}
+                        </div>
+                        <span class="status-${status === 'pending' ? 'pendiente' : status === 'approved' ? 'aprobada' : 'rechazada'}">
+                            ${status === 'pending' ? 'PENDIENTE' : status === 'approved' ? 'APROBADA' : 'RECHAZADA'}
+                        </span>
+                    </div>
+                    
+                    <div class="request-details">
+                        <div class="request-detail">
+                            <div class="request-detail-label">📧 Email</div>
+                            <div class="request-detail-value">${request.email || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📱 Teléfono</div>
+                            <div class="request-detail-value">${request.telefono || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">🏥 Servicio</div>
+                            <div class="request-detail-value">${request.servicioHospitalario || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">💼 Cargo</div>
+                            <div class="request-detail-value">${request.cargo || 'No especificado'}</div>
+                        </div>
+                        <div class="request-detail">
+                            <div class="request-detail-label">📅 Fecha Solicitud</div>
+                            <div class="request-detail-value">
+                                ${request.fechaSolicitud ? new Date(request.fechaSolicitud).toLocaleDateString('es-CO') : 'No disponible'}
+                            </div>
+                        </div>
+                        ${request.esUrgente ? `
+                            <div class="request-detail">
+                                <div class="request-detail-label">🚨 Urgencia</div>
+                                <div class="request-detail-value" style="color: #ef4444; font-weight: 600;">URGENTE</div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${request.justificacion ? `
+                        <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
+                            <div class="request-detail-label">📝 Justificación</div>
+                            <div style="margin-top: 0.5rem; color: #1f2937;">${request.justificacion}</div>
+                        </div>
+                    ` : ''}
+
+                    ${userCreated ? `
+                        <div style="margin: 1rem 0; padding: 1rem; background: #dcfce7; border-radius: 0.5rem; border-left: 3px solid #059669;">
+                            <div style="color: #166534; font-weight: 600;">✅ Usuario Creado</div>
+                            <div style="margin-top: 0.5rem; color: #166534;">
+                                Código de acceso: <strong>${userCreated.codigoAcceso}</strong>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="request-actions">
+                        ${status === 'pending' ? `
+                            <button class="btn btn-success btn-sm" onclick="approveAccessRequest('${request.id}')">
+                                ✅ Aprobar Acceso
+                            </button>
+                            <button class="btn btn-danger btn-sm" onclick="rejectAccessRequest('${request.id}')">
+                                ❌ Rechazar
+                            </button>
+                        ` : ''}
+                        
+                        ${status === 'approved' && userCreated ? `
+                            <button class="btn btn-info btn-sm" onclick="viewUserDetails('${userCreated.id}')">
+                                👁️ Ver Usuario
+                            </button>
+                            <button class="btn btn-warning btn-sm" onclick="resendAccessCode('${userCreated.id}')">
+                                📧 Reenviar Código
+                            </button>
+                        ` : ''}
+                        
+                        ${status === 'rejected' ? `
+                            <button class="btn btn-primary btn-sm" onclick="reconsiderRequest('${request.id}')">
+                                🔄 Reconsiderar
+                            </button>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        async function approveAccessRequest(requestId) {
+            const request = cloudSolicitudesAcceso.find(s => s.id === requestId);
+            if (!request) {
+                alert('❌ Solicitud no encontrada');
+                return;
+            }
+
+            const modal = document.getElementById('approval-modal');
+            const content = document.getElementById('approval-modal-content');
+            
+            content.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                    <h4 style="margin-bottom: 1rem;">Aprobar Solicitud de Acceso</h4>
+                    <p>Se creará un usuario para:</p>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;">
+                        <strong>${request.nombreCompleto}</strong><br>
+                        ${request.email}<br>
+                        ${request.servicioHospitalario || ''} - ${request.cargo || ''}
+                    </div>
+                    <div class="alert alert-info">
+                        <p>Se generará automáticamente un código de 4 dígitos para el acceso.</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem;">
+                        <button class="btn btn-success" onclick="confirmApproval('${requestId}')">
+                            ✅ Confirmar Aprobación
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeApprovalModal()">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeApprovalModal() {
+            document.getElementById('approval-modal').classList.remove('show');
+        }
+
+        async function confirmApproval(requestId) {
+            try {
+                closeApprovalModal();
+                
+                // Mostrar loading
+                const resultModal = document.getElementById('result-modal');
+                const resultTitle = document.getElementById('result-modal-title');
+                const resultContent = document.getElementById('result-modal-content');
+                
+                resultTitle.textContent = 'Procesando...';
+                resultContent.innerHTML = `
+                    <div style="text-align: center;">
+                        <div class="loading-spinner" style="margin: 2rem auto;"></div>
+                        <p>Creando usuario y generando código de acceso...</p>
+                    </div>
+                `;
+                resultModal.classList.add('show');
+                
+                // Aprobar solicitud y crear usuario
+                const result = await window.airtableAPI.approveAccessRequestAndCreateUser(requestId);
+                
+                // Mostrar resultado exitoso
+                resultTitle.textContent = '✅ Aprobación Exitosa';
+                resultContent.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">🎉</div>
+                        <h4 style="color: #059669; margin-bottom: 1rem;">Usuario Creado Exitosamente</h4>
+                        <div style="background: #dcfce7; padding: 1.5rem; border-radius: 0.5rem; margin: 1rem 0;">
+                            <p style="font-size: 1.125rem; color: #166534; margin-bottom: 1rem;">
+                                <strong>Código de Acceso:</strong>
+                            </p>
+                            <div style="font-size: 2rem; font-weight: bold; color: #059669; letter-spacing: 0.5rem;">
+                                ${result.accessCode}
+                            </div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem; text-align: left;">
+                            <p><strong>Usuario:</strong> ${result.user.nombreCompleto}</p>
+                            <p><strong>Email:</strong> ${result.user.email}</p>
+                            <p><strong>Estado:</strong> Activo</p>
+                        </div>
+                        <div class="alert alert-info" style="margin-top: 1rem;">
+                            <p>El usuario puede ahora acceder al Portal de Solicitudes con su email y código.</p>
+                        </div>
+                        <button class="btn btn-primary" onclick="closeResultModal()" style="margin-top: 1rem;">
+                            ✅ Entendido
+                        </button>
+                    </div>
+                `;
+                
+                // Recargar datos
+                await loadAllDataFromCloud();
+                
+            } catch (error) {
+                console.error('Error aprobando solicitud:', error);
+                
+                const resultModal = document.getElementById('result-modal');
+                const resultTitle = document.getElementById('result-modal-title');
+                const resultContent = document.getElementById('result-modal-content');
+                
+                resultTitle.textContent = '❌ Error';
+                resultContent.innerHTML = `
+                    <div style="text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem; color: #ef4444;">⚠️</div>
+                        <h4 style="color: #dc2626;">Error al aprobar solicitud</h4>
+                        <p style="margin: 1rem 0;">${error.message}</p>
+                        <button class="btn btn-secondary" onclick="closeResultModal()">
+                            ↩️ Cerrar
+                        </button>
                     </div>
                 `;
             }
         }
 
-        // Funciones placeholder para solicitudes
-        function refreshFromCloud() {
-            loadAllDataFromCloud();
-        }
-
-        function autoAssignPending() {
-            alert('🤖 Auto-asignación en desarrollo...');
-        }
-
-        function showRequestsStatistics() {
-            showAdvancedStatisticsModal();
-        }
-
-        // Funciones placeholder para personal
-        function showAddPersonalModal() {
-            alert('➕ Agregar personal en desarrollo...');
-        }
-
-        function syncTechniciansWithCloud() {
-            loadAllDataFromCloud();
-        }
-
-        function showPersonalStatistics() {
-            showAdvancedStatisticsModal();
-        }
-
-        function debugPersonalConnection() {
-            if (window.debugAirtableConnection) {
-                window.debugAirtableConnection();
+        async function rejectAccessRequest(requestId) {
+            if (confirm('¿Está seguro de rechazar esta solicitud de acceso?')) {
+                try {
+                    await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                        estado: 'Rechazada'
+                    });
+                    alert('✅ Solicitud rechazada');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error rechazando solicitud: ' + error.message);
+                }
             }
         }
 
-        // Funciones placeholder para accesos
-        function refreshAccessFromCloud() {
-            loadAllDataFromCloud();
+        async function reconsiderRequest(requestId) {
+            if (confirm('¿Desea reconsiderar esta solicitud y cambiarla a pendiente?')) {
+                try {
+                    await window.airtableAPI.updateSolicitudAcceso(requestId, {
+                        estado: 'Pendiente'
+                    });
+                    alert('✅ Solicitud movida a pendientes');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error actualizando solicitud: ' + error.message);
+                }
+            }
         }
 
-        function approveAllPending() {
-            alert('✅ Aprobación masiva en desarrollo...');
+        async function approveAllPending() {
+            const pendingRequests = cloudSolicitudesAcceso.filter(s => 
+                s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado
+            );
+            
+            if (pendingRequests.length === 0) {
+                alert('No hay solicitudes pendientes para aprobar');
+                return;
+            }
+            
+            if (confirm(`¿Desea aprobar todas las ${pendingRequests.length} solicitudes pendientes?`)) {
+                let approved = 0;
+                let failed = 0;
+                
+                for (const request of pendingRequests) {
+                    try {
+                        await window.airtableAPI.approveAccessRequestAndCreateUser(request.id);
+                        approved++;
+                    } catch (error) {
+                        console.error(`Error aprobando ${request.email}:`, error);
+                        failed++;
+                    }
+                }
+                
+                alert(`✅ Proceso completado\n\nAprobadas: ${approved}\nFallidas: ${failed}`);
+                await loadAllDataFromCloud();
+            }
         }
 
-        // Inicialización al cargar la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 Iniciando Portal de Gestión Cloud...');
+        function viewUserDetails(userId) {
+            const user = cloudUsuarios.find(u => u.id === userId);
+            if (!user) {
+                alert('Usuario no encontrado');
+                return;
+            }
             
-            // Cargar datos iniciales
-            await loadAllDataFromCloud();
+            alert(`👤 Detalles del Usuario\n\nNombre: ${user.nombreCompleto}\nEmail: ${user.email}\nCódigo: ${user.codigoAcceso}\nEstado: ${user.estado}\nServicio: ${user.servicioHospitalario}\nCargo: ${user.cargo}`);
+        }
+
+        function resendAccessCode(userId) {
+            const user = cloudUsuarios.find(u => u.id === userId);
+            if (!user) {
+                alert('Usuario no encontrado');
+                return;
+            }
             
-            // Iniciar auto-refresh
-            startAutoRefresh();
+            alert(`📧 Código de Acceso\n\nUsuario: ${user.nombreCompleto}\nEmail: ${user.email}\nCódigo: ${user.codigoAcceso}\n\nEste código debe ser enviado al usuario por email.`);
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.remove('show');
+        }
+
+        // Funciones para modales de solicitudes
+        async function showAssignPersonalModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('Solicitud no encontrada');
+                return;
+            }
             
-            console.log('✅ Portal de Gestión Cloud iniciado correctamente');
-        });
-    </script>
-</body>
-</html>
+            // Filtrar técnicos disponibles del área correspondiente
+            const tecnicosArea = cloudTecnicos.filter(t => {
+                const areaCompatible = t.area === solicitud.servicioIngenieria || 
+                                      (t.area && solicitud.servicioIngenieria && 
+                                       t.area.toLowerCase().includes(solicitud.servicioIngenieria.toLowerCase().replace('ingenieria_', '').replace('_', '')));
+                return areaCompatible && t.estado === 'disponible';
+            });
+            
+            const modal = document.getElementById('assignment-modal');
+            const content = document.getElementById('assignment-modal-content');
+            
+            content.innerHTML = `
+                <div>
+                    <h4>Solicitud: ${solicitud.numero}</h4>
+                    <p>Área: ${solicitud.servicioIngenieria}</p>
+                    <div class="form-group">
+                        <label class="form-label">Seleccionar Técnico:</label>
+                        <select class="form-select" id="technician-select">
+                            <option value="">Seleccione un técnico</option>
+                            ${tecnicosArea.map(t => `
+                                <option value="${t.id}">${t.nombre} - ${t.tipo}</option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Observaciones:</label>
+                        <textarea class="form-textarea" id="assignment-observations" placeholder="Observaciones de la asignación"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button class="btn btn-success" onclick="confirmAssignment('${solicitudId}')">
+                            ✅ Asignar
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeAssignmentModal()">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeAssignmentModal() {
+            document.getElementById('assignment-modal').classList.remove('show');
+        }
+
+        async function confirmAssignment(solicitudId) {
+            const technicianId = document.getElementById('technician-select').value;
+            const observations = document.getElementById('assignment-observations').value;
+            
+            if (!technicianId) {
+                alert('Por favor seleccione un técnico');
+                return;
+            }
+            
+            try {
+                await window.airtableAPI.assignTechnicianToRequest(solicitudId, technicianId, observations);
+                alert('✅ Técnico asignado exitosamente');
+                closeAssignmentModal();
+                await loadAllDataFromCloud();
+            } catch (error) {
+                alert('❌ Error asignando técnico: ' + error.message);
+            }
+        }
+
+        async function showChangeStatusModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('Solicitud no encontrada');
+                return;
+            }
+            
+            const modal = document.getElementById('status-modal');
+            const content = document.getElementById('status-modal-content');
+            
+            content.innerHTML = `
+                <div>
+                    <h4>Solicitud: ${solicitud.numero}</h4>
+                    <p>Estado actual: ${solicitud.estado}</p>
+                    <div class="form-group">
+                        <label class="form-label">Nuevo Estado:</label>
+                        <select class="form-select" id="new-status-select">
+                            <option value="EN_PROCESO">🔄 En Proceso</option>
+                            <option value="COMPLETADA">✅ Completada</option>
+                            <option value="CANCELADA">❌ Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Observaciones:</label>
+                        <textarea class="form-textarea" id="status-observations" placeholder="Observaciones del cambio de estado"></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button class="btn btn-success" onclick="confirmStatusChange('${solicitudId}')">
+                            ✅ Cambiar Estado
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeStatusModal()">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+
+        function closeStatusModal() {
+            document.getElementById('status-modal').classList.remove('show');
+        }
+
+        async function confirmStatusChange(solicitudId) {
+            const newStatus = document.getElementById('new-status-select').value;
+            const observations = document.getElementById('status-observations').value;
+            
+            try {
+                await window.airtableAPI.updateRequestStatus(solicitudId, newStatus, observations);
+                alert('✅ Estado actualizado exitosamente');
+                closeStatusModal();
+                await loadAllDataFromCloud();
+            } catch (error) {
+                alert('❌ Error actualizando estado: ' + error.message);
+            }
+        }
+
+        async function viewRequestDetails(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) {
+                alert('Solicitud no encontrada');
+                return;
+            }
+            
+            alert(`📋 Detalles de la Solicitud\n\nNúmero: ${solicitud.numero}\nEstado: ${solicitud.estado}\nÁrea: ${solicitud.servicioIngenieria}\nTipo: ${solicitud.tipoServicio}\nPrioridad: ${solicitud.prioridad}\nSolicitante: ${solicitud.solicitante}\nDescripción: ${solicitud.descripcion}`);
+        }
+
+        async function unassignPersonal(solicitudId) {
+            if (confirm('¿Desea liberar el personal asignado a esta solicitud?')) {
+                try {
+                    await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
+                    alert('✅ Personal liberado');
+                    await loadAllDataFromCloud();
+                } catch (error) {
+                    alert('❌ Error liberando personal: ' + error.message);
+                }
+            }
+        }
