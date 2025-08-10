@@ -4174,6 +4174,37 @@
             }
         }
 
+async function notifyTechnician(technicianId, requestNumber) {
+    try {
+        await fetch('/.netlify/functions/push-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                technicianId: technicianId,
+                message: `Nueva solicitud asignada: ${requestNumber}`,
+                requestNumber: requestNumber
+            })
+        });
+    } catch (error) {
+        console.error('Error enviando notificación:', error);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function createAccessRequestCard(solicitud, status) {
             const statusMap = {
                 'pending': { class: 'pending', label: 'PENDIENTE', style: 'status-pendiente' },
