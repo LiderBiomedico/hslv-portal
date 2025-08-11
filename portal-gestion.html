@@ -2524,7 +2524,7 @@
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
 
-            const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
+            const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
             if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
                 if (ahora > fechaMaxima) {
@@ -2619,14 +2619,13 @@
                     </div>
 
                     <div class="request-actions">
-                        ${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
+                        ${(!isCompleted && (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado)) ? `
                             <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
                                 🎯 Asignar Personal
                             </button>
                         ` : ''}
                         
-                        ${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
-                           solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
+                        ${!isCompleted ? `
                             <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
                                 🔄 Cambiar Estado
                             </button>
@@ -2636,8 +2635,7 @@
                             👁️ Ver Detalles
                         </button>
                         
-                        ${solicitud.tecnicoAsignado && 
-                          solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
+                        ${solicitud.tecnicoAsignado && !isCompleted ? `
                             <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
                                 🔓 Liberar Personal
                             </button>
