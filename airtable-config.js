@@ -31,6 +31,8 @@ const AIRTABLE_VALUE_MAPPING = {
         'Reparación': 'REPARACION',
         'INSTALACION': 'INSTALACION',
         'Instalación': 'INSTALACION',
+        'DESINSTALACION': 'DESINSTALACION',
+        'Desinstalación': 'DESINSTALACION',
         'CALIBRACION': 'CALIBRACION',
         'Calibración': 'CALIBRACION',
         'INSPECCION': 'INSPECCION',
@@ -221,7 +223,7 @@ class AirtableAPI {
         // las etiquetas amigables. Esto evita que se intenten crear nuevas opciones en Airtable.
         this.validSolicitudValues = {
             servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
-            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
+            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
             availableFields: []
@@ -232,6 +234,7 @@ class AirtableAPI {
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
         console.log('🗺️ Mapeo de valores configurado');
         console.log('📋 Valores iniciales de solicitud:', this.validSolicitudValues);
+        console.log('✨ NUEVO: Tipo de servicio DESINSTALACION agregado');
         
         this.initializeConnectionAsync();
     }
@@ -499,7 +502,13 @@ class AirtableAPI {
                     this.validSolicitudValues.servicioIngenieria = Array.from(servicioValues);
                 }
                 if (tipoServicioValues.size > 0) {
-                    this.validSolicitudValues.tipoServicio = Array.from(tipoServicioValues);
+                    // Asegurar que DESINSTALACION esté incluido si no fue detectado
+                    const tiposDetectados = Array.from(tipoServicioValues);
+                    if (!tiposDetectados.includes('DESINSTALACION')) {
+                        tiposDetectados.push('DESINSTALACION');
+                        console.log('✨ Agregando DESINSTALACION a tipos válidos');
+                    }
+                    this.validSolicitudValues.tipoServicio = tiposDetectados;
                 }
                 if (prioridadValues.size > 0) {
                     this.validSolicitudValues.prioridad = Array.from(prioridadValues);
@@ -1182,11 +1191,13 @@ class AirtableAPI {
             
             console.log('📝 Datos finales a enviar (con valores mapeados):', JSON.stringify(data, null, 2));
             console.log('🏥 ÁREA FINAL A GUARDAR:', data.fields.servicioIngenieria);
+            console.log('🔧 TIPO SERVICIO FINAL:', data.fields.tipoServicio);
             
             try {
                 const result = await this.makeRequest(this.tables.solicitudes, 'POST', data);
                 console.log(`✅ Solicitud creada correctamente: ${numero}`);
                 console.log(`🏥 Área guardada: ${data.fields.servicioIngenieria}`);
+                console.log(`🔧 Tipo servicio guardado: ${data.fields.tipoServicio}`);
                 
                 // Verificar que el área se guardó
                 if (result.fields && result.fields.servicioIngenieria) {
@@ -1214,6 +1225,7 @@ class AirtableAPI {
                             mensajeError += `Valores válidos: ${this.validSolicitudValues.servicioIngenieria.join(', ')}`;
                         } else if (error.message.includes('tipoServicio')) {
                             mensajeError += `El tipo de servicio "${mappedData.tipoServicio}" no es válido. `;
+                            mensajeError += `Valores válidos: ${this.validSolicitudValues.tipoServicio.join(', ')}`;
                         } else if (error.message.includes('prioridad')) {
                             mensajeError += `La prioridad "${mappedData.prioridad}" no es válida. `;
                         } else {
@@ -1781,7 +1793,7 @@ class AirtableAPI {
             // Ordenar tiempos de respuesta por duración (mayor a menor)
             tiemposRespuesta.sort((a, b) => b.horas - a.horas);
             
-            // Estadísticas por tipo de servicio
+            // Estadísticas por tipo de servicio (incluyendo DESINSTALACION)
             const estadisticasPorTipo = {};
             this.validSolicitudValues.tipoServicio.forEach(tipo => {
                 const solicitudesTipo = solicitudes.filter(s => s.tipoServicio === tipo);
@@ -1988,14 +2000,48 @@ class AirtableAPI {
                 }
             }
             
+            // 4. Probar DESINSTALACION
+            console.log('\n🧪 PROBANDO TIPO DE SERVICIO DESINSTALACION:');
+            try {
+                const testData = {
+                    fields: {
+                        numero: 'TEST_DESINST_' + Date.now(),
+                        descripcion: 'Test de desinstalación',
+                        servicioIngenieria: 'MECANICA',
+                        tipoServicio: 'DESINSTALACION',
+                        fechaCreacion: new Date().toISOString(),
+                        estado: 'Pendiente'
+                    }
+                };
+                
+                const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
+                
+                if (result && result.id) {
+                    console.log(`✅ DESINSTALACION - VÁLIDO`);
+                    
+                    // Eliminar registro de prueba
+                    try {
+                        await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'DELETE');
+                    } catch (deleteError) {
+                        console.warn('⚠️ No se pudo eliminar registro de prueba');
+                    }
+                } else {
+                    console.log(`❌ DESINSTALACION - No se pudo crear`);
+                }
+            } catch (error) {
+                console.log(`❌ DESINSTALACION - INVÁLIDO: ${error.message}`);
+            }
+            
             return {
                 valoresActuales: this.validSolicitudValues,
                 mapeoConfigurado: this.fieldMappings.servicioIngenieria,
+                tipoServicioMapeo: this.fieldMappings.tipoServicio,
                 resultadosPruebas: resultados,
                 recomendaciones: [
                     'Verificar que los valores en Airtable coincidan con el mapeo',
                     'Usar los valores mapeados al crear solicitudes',
-                    'Si persiste el error, verificar permisos del campo en Airtable'
+                    'Si persiste el error, verificar permisos del campo en Airtable',
+                    'DESINSTALACION ya está agregado al mapeo y valores válidos'
                 ]
             };
             
@@ -2103,11 +2149,12 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '9.1-cambio-estado-mejorado',
+            version: '9.2-desinstalacion-agregado',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
+                'NUEVO: Tipo de servicio DESINSTALACION agregado',
                 'FIX: Cambio de estado mejorado con múltiples intentos',
                 'FIX: Liberación de técnico al completar solicitud',
                 'NUEVO: Diagnóstico específico para cambios de estado',
@@ -2128,7 +2175,7 @@ class AirtableAPI {
 try {
     console.log('🔧 Creando instancia global con indicadores avanzados...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión con cambio de estado mejorado)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con DESINSTALACION)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -2141,8 +2188,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (cambio estado mejorado)' 
-                : 'Modo Local (cambio estado mejorado)';
+                ? '✅ Conectado (con DESINSTALACION)' 
+                : 'Modo Local (con DESINSTALACION)';
             
             updateConnectionStatus(status, message);
         }
@@ -2172,6 +2219,7 @@ try {
         console.log('🔐 Valores de solicitudes de acceso:', status.validAccessRequestValues);
         console.log('👤 Valores de usuarios:', status.validUserValues);
         console.log('📋 Valores de solicitudes:', status.validSolicitudValues);
+        console.log('✨ NUEVO: Tipo de servicio DESINSTALACION incluido');
         console.log('📊 Nuevas características:', status.features.filter(f => f.startsWith('NUEVO') || f.startsWith('FIX')));
         
         return status;
@@ -2245,7 +2293,8 @@ try {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (CAMBIO ESTADO MEJORADO) cargado');
+console.log('✅ airtable-config.js (CON DESINSTALACION) cargado');
+console.log('✨ NUEVO: Tipo de servicio DESINSTALACION agregado');
 console.log('🔄 FIX: Cambio de estado con múltiples intentos');
 console.log('🔓 FIX: Liberación de técnico al completar');
 console.log('🧪 NUEVO: Para diagnosticar cambio de estado: debugEstadoChange("ID_SOLICITUD")');
@@ -2279,7 +2328,9 @@ setTimeout(async () => {
                 prioridades: solicitudValues.prioridad.length,
                 estados: solicitudValues.estado.length
             });
-            console.log('📊 Sistema listo con cambio de estado mejorado');
+            console.log('✨ Verificando DESINSTALACION en tipos:', 
+                solicitudValues.tipoServicio.includes('DESINSTALACION') ? '✅ Incluido' : '❌ No incluido');
+            console.log('📊 Sistema listo con cambio de estado mejorado y DESINSTALACION');
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);
