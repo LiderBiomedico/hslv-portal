@@ -991,6 +991,30 @@
             min-height: 100px;
         }
 
+        /* NUEVO: Alerta de información para cambio de tipo de servicio */
+        .service-type-alert {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-type-alert-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .service-type-alert-description {
+            color: #3730a3;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
         /* Filtros */
         .filters-section {
             background: #f8fafc;
@@ -1586,6 +1610,8 @@
 </div>
 </div>
 </div>
+
+<!-- MODAL MODIFICADO PARA CAMBIO DE ESTADO -->
 <div class="modal" id="status-modal">
 <div class="modal-content">
 <div class="modal-header">
@@ -1597,6 +1623,7 @@
 </div>
 </div>
 </div>
+
 <div class="modal" id="approval-modal">
 <div class="modal-content">
 <div class="modal-header">
@@ -3354,7 +3381,7 @@
             filterSolicitudesByArea(currentAreaFilter);
         }
 
-        // Las siguientes funciones permanecen sin cambios (personal, accesos, modales, etc.)
+        // FUNCIONES DE ASIGNACIÓN Y CAMBIO DE ESTADO
         async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
@@ -3527,6 +3554,7 @@
             document.getElementById('assignment-modal').classList.remove('show');
         }
 
+        // FUNCIÓN MODIFICADA: Mostrar modal de cambio de estado con opción de cambiar tipo de servicio
         async function showChangeStatusModal(solicitudId) {
             console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
             
@@ -3554,6 +3582,7 @@
                         <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
                             <p><strong>Número:</strong> ${solicitud.numero}</p>
                             <p><strong>Estado Actual:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
+                            <p><strong>Tipo de Servicio Actual:</strong> ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</p>
                             <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
                         </div>
                     </div>
@@ -3561,7 +3590,7 @@
                     <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
                         <div class="form-group">
                             <label class="form-label">🔄 Nuevo Estado</label>
-                            <select id="new-status" required class="form-select">
+                            <select id="new-status" required class="form-select" onchange="toggleServiceTypeSelection()">
                                 <option value="">Seleccione nuevo estado...</option>
                                 ${estadosDisponibles.map(estado => `
                                     <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
@@ -3569,6 +3598,35 @@
                                     </option>
                                 `).join('')}
                             </select>
+                        </div>
+
+                        <!-- NUEVO: Sección para cambiar tipo de servicio cuando se marca como completada -->
+                        <div id="service-type-section" style="display: none;">
+                            <div class="service-type-alert">
+                                <div class="service-type-alert-title">
+                                    <span>ℹ️</span>
+                                    <span>Actualización del Tipo de Servicio</span>
+                                </div>
+                                <div class="service-type-alert-description">
+                                    Al marcar como completada, puede actualizar el tipo de servicio real que se realizó.
+                                    Esto es especialmente útil si se determinó que era un error de usuario o si el tipo de servicio cambió durante la atención.
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">🔨 Tipo de Servicio Final (Opcional)</label>
+                                <select id="new-service-type" class="form-select">
+                                    <option value="">Mantener tipo actual (${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'})</option>
+                                    <option value="ERROR_USUARIO" style="background: #fee2e2; color: #dc2626; font-weight: 600;">👤 Error de Usuario</option>
+                                    <option value="MANTENIMIENTO_PREVENTIVO">🔧 Mantenimiento Preventivo</option>
+                                    <option value="MANTENIMIENTO_CORRECTIVO">🔧 Mantenimiento Correctivo</option>
+                                    <option value="INSTALACION">📦 Instalación</option>
+                                    <option value="CALIBRACION">📏 Calibración</option>
+                                    <option value="ACTUALIZACION">🔄 Actualización</option>
+                                    <option value="EMERGENCIA">🚨 Emergencia</option>
+                                    <option value="INSPECCION">🔍 Inspección</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -3596,10 +3654,24 @@
             }
         }
 
+        // NUEVA FUNCIÓN: Mostrar/ocultar selección de tipo de servicio
+        function toggleServiceTypeSelection() {
+            const newStatus = document.getElementById('new-status').value;
+            const serviceTypeSection = document.getElementById('service-type-section');
+            
+            if (newStatus === 'COMPLETADA') {
+                serviceTypeSection.style.display = 'block';
+            } else {
+                serviceTypeSection.style.display = 'none';
+            }
+        }
+
+        // FUNCIÓN MODIFICADA: Manejar cambio de estado con actualización de tipo de servicio
         async function handleChangeStatus(event, solicitudId) {
             event.preventDefault();
             
             const nuevoEstado = document.getElementById('new-status').value;
+            const nuevoTipoServicio = document.getElementById('new-service-type')?.value;
             const observaciones = document.getElementById('status-notes').value.trim();
             
             if (!nuevoEstado) {
@@ -3607,7 +3679,7 @@
                 return;
             }
 
-            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`);
+            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"${nuevoTipoServicio ? ` y el tipo de servicio a "${nuevoTipoServicio.replace('_', ' ')}"` : ''}?`);
             if (!confirmed) return;
 
             try {
@@ -3616,7 +3688,13 @@
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Cambiando estado...';
 
-                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
+                // Llamar a la función actualizada que maneja tanto el estado como el tipo de servicio
+                const result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                    solicitudId, 
+                    nuevoEstado, 
+                    nuevoTipoServicio,
+                    observaciones
+                );
                 
                 if (result.success) {
                     await refreshFromCloud();
@@ -3627,7 +3705,11 @@
                     
                     closeStatusModal();
                     
-                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`);
+                    let mensaje = `✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`;
+                    if (nuevoTipoServicio) {
+                        mensaje += `\n🔨 Tipo de servicio actualizado a: ${nuevoTipoServicio.replace('_', ' ')}`;
+                    }
+                    alert(mensaje);
                 } else {
                     throw new Error(result.mensaje || 'Error al cambiar estado');
                 }

@@ -1,24 +1,19 @@
-// 🛡️ Configuración COMPLETA de Airtable API - Con detección automática mejorada
-// airtable-config.js - Versión con detección robusta e indicadores avanzados
+// 🛡️ Configuración COMPLETA de Airtable API - Con cambio de tipo de servicio al completar
+// airtable-config.js - Versión con actualización de tipo de servicio
 
-console.log('🚀 Cargando airtable-config.js (VERSIÓN MEJORADA CON INDICADORES AVANZADOS)...');
+console.log('🚀 Cargando airtable-config.js (VERSIÓN CON CAMBIO DE TIPO DE SERVICIO)...');
 
 // 🗺️ MAPEO DE VALORES CORREGIDO PARA COMPATIBILIDAD CON AIRTABLE
 const AIRTABLE_VALUE_MAPPING = {
-    // Para campos de selección en Airtable se utilizan códigos internos como valores. Aquí se
-    // incluyen las variantes de nombres visibles para asegurar que se mapeen al código correcto.
     servicioIngenieria: {
-        // Ingeniería Biomédica
         'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
         'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
         'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
         'Ing. Biomédica': 'INGENIERIA_BIOMEDICA',
         'BIOMEDICA': 'INGENIERIA_BIOMEDICA',
-        // Mecánica
         'MECANICA': 'MECANICA',
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
-        // Infraestructura
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
         'Infraestructura': 'INFRAESTRUCTURA'
     },
@@ -68,7 +63,6 @@ const AIRTABLE_VALUE_MAPPING = {
         'Cancelada': 'CANCELADA'
     },
     area: {
-        // Igual que servicioIngenieria, pero sin tilde en "Ing."
         'INGENIERIA_BIOMEDICA': 'INGENIERIA_BIOMEDICA',
         'Ingeniería Biomédica': 'INGENIERIA_BIOMEDICA',
         'Ingenieria Biomedica': 'INGENIERIA_BIOMEDICA',
@@ -80,7 +74,6 @@ const AIRTABLE_VALUE_MAPPING = {
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
         'Infraestructura': 'INFRAESTRUCTURA'
     },
-    // Para estados de acceso y usuario se mantienen las etiquetas originales
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
         'APROBADA': 'Aprobada',
@@ -153,7 +146,7 @@ const SAFE_FIELDS = {
 
 class AirtableAPI {
     constructor() {
-        console.log('🔧 Inicializando AirtableAPI con detección robusta e indicadores avanzados...');
+        console.log('🔧 Inicializando AirtableAPI con cambio de tipo de servicio...');
         
         this.hostname = window.location.hostname;
         this.isLocalDevelopment = this.hostname === 'localhost' || 
@@ -203,7 +196,7 @@ class AirtableAPI {
         
         this.connectionStatus = 'connecting';
         
-        // Almacenar valores válidos detectados para solicitudes de acceso
+        // Almacenar valores válidos detectados
         this.validAccessRequestValues = {
             estado: null,
             servicioHospitalario: [],
@@ -211,16 +204,13 @@ class AirtableAPI {
             availableFields: []
         };
         
-        // Almacenar valores válidos detectados para usuarios
         this.validUserValues = {
             estado: null,
             servicioHospitalario: [],
             cargo: []
         };
         
-        // IMPORTANTE: Inicializar con valores conocidos que funcionan
-        // Inicializar valores válidos de solicitud utilizando los códigos internos en lugar de
-        // las etiquetas amigables. Esto evita que se intenten crear nuevas opciones en Airtable.
+        // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
             servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
@@ -234,7 +224,7 @@ class AirtableAPI {
         console.log('✅ Tablas configuradas:', Object.keys(this.tables));
         console.log('🗺️ Mapeo de valores configurado');
         console.log('📋 Valores iniciales de solicitud:', this.validSolicitudValues);
-        console.log('✨ NUEVO: Tipo de servicio DESINSTALACION agregado');
+        console.log('✨ NUEVO: Cambio de tipo de servicio al completar');
         
         this.initializeConnectionAsync();
     }
@@ -243,26 +233,19 @@ class AirtableAPI {
     cleanFieldValue(value) {
         if (typeof value !== 'string') return value;
         
-        // Remover comillas dobles extras al principio y final
         let cleanValue = value.trim();
-        
-        // Remover múltiples comillas dobles consecutivas
         cleanValue = cleanValue.replace(/"+/g, '"');
         
-        // Si el valor empieza y termina con comillas, removerlas
         if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
             cleanValue = cleanValue.slice(1, -1);
         }
         
-        // Remover comillas dobles escapadas
         cleanValue = cleanValue.replace(/\\"/g, '');
         
-        // Si aún tiene comillas dobles al principio y final, removerlas otra vez
         if (cleanValue.startsWith('"') && cleanValue.endsWith('"')) {
             cleanValue = cleanValue.slice(1, -1);
         }
         
-        // Limpiar espacios extras
         cleanValue = cleanValue.trim();
         
         console.log(`🧹 Limpieza de valor: "${value}" → "${cleanValue}"`);
@@ -280,16 +263,13 @@ class AirtableAPI {
                     this.notifyConnectionStatus(true);
                     console.log('✅ Conectado exitosamente a Airtable');
                     
-                    // CRÍTICO: Detectar valores válidos para todas las tablas
                     await this.detectValidAccessRequestValues();
                     await this.detectValidUserValues();
                     
-                    // IMPORTANTE: Siempre intentar detectar valores de solicitudes
                     try {
                         await this.detectValidSolicitudValues();
                     } catch (error) {
                         console.warn('⚠️ No se pudieron detectar valores de solicitudes, usando valores por defecto conocidos');
-                        // Los valores por defecto ya están establecidos en el constructor
                     }
                 } else {
                     this.connectionStatus = 'disconnected';
@@ -304,7 +284,7 @@ class AirtableAPI {
         }, 2000);
     }
 
-    // 🔍 FUNCIÓN: Detectar valores válidos específicamente para solicitudes de acceso
+    // 🔍 FUNCIÓN: Detectar valores válidos para solicitudes de acceso
     async detectValidAccessRequestValues() {
         console.log('🔍 Detectando valores y campos válidos para SolicitudesAcceso...');
         
@@ -312,7 +292,6 @@ class AirtableAPI {
             const result = await this.makeRequest(`${this.tables.solicitudesAcceso}?maxRecords=20`);
             
             if (result.records && result.records.length > 0) {
-                // Detectar valores únicos de estado
                 const estadoValues = new Set();
                 const servicioValues = new Set();
                 const cargoValues = new Set();
@@ -320,7 +299,6 @@ class AirtableAPI {
                 
                 result.records.forEach(record => {
                     if (record.fields) {
-                        // Recopilar todos los campos disponibles
                         Object.keys(record.fields).forEach(field => {
                             availableFields.add(field);
                         });
@@ -339,7 +317,6 @@ class AirtableAPI {
                 
                 console.log('📋 Campos disponibles en SolicitudesAcceso:', Array.from(availableFields));
                 
-                // Buscar el valor correcto para PENDIENTE
                 let pendienteValue = null;
                 estadoValues.forEach(value => {
                     const cleanValue = this.cleanFieldValue(value);
@@ -365,7 +342,6 @@ class AirtableAPI {
                     cargos: this.validAccessRequestValues.cargo.length
                 });
                 
-                // Si no encontramos PENDIENTE, usar valor por defecto
                 if (!pendienteValue) {
                     console.warn('⚠️ No se encontró valor PENDIENTE, usando valor por defecto');
                     this.validAccessRequestValues.estado = 'Pendiente';
@@ -373,18 +349,16 @@ class AirtableAPI {
                 
             } else {
                 console.warn('⚠️ No hay registros en SolicitudesAcceso para detectar valores');
-                // Usar valores por defecto
                 this.validAccessRequestValues.estado = 'Pendiente';
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos:', error);
-            // Usar valores por defecto en caso de error
             this.validAccessRequestValues.estado = 'Pendiente';
         }
     }
 
-    // 🔍 NUEVO: Detectar valores válidos para tabla de usuarios
+    // 🔍 Detectar valores válidos para tabla de usuarios
     async detectValidUserValues() {
         console.log('🔍 Detectando valores válidos para tabla Usuarios...');
         
@@ -410,7 +384,6 @@ class AirtableAPI {
                     }
                 });
                 
-                // Buscar el valor correcto para ACTIVO
                 let activoValue = null;
                 estadoValues.forEach(value => {
                     const cleanValue = this.cleanFieldValue(value);
@@ -420,7 +393,6 @@ class AirtableAPI {
                     }
                 });
                 
-                // Si no encontramos ACTIVO, usar valor por defecto
                 if (!activoValue && estadoValues.size > 0) {
                     activoValue = Array.from(estadoValues)[0];
                     console.warn(`⚠️ No se encontró valor ACTIVO, usando: "${activoValue}"`);
@@ -444,13 +416,11 @@ class AirtableAPI {
                 
             } else {
                 console.warn('⚠️ No hay usuarios para detectar valores, usando valores por defecto');
-                // Usar valores por defecto
                 this.validUserValues.estado = 'Activo';
             }
             
         } catch (error) {
             console.error('❌ Error detectando valores válidos de usuarios:', error);
-            // Usar valores por defecto en caso de error
             this.validUserValues.estado = 'Activo';
         }
     }
@@ -471,13 +441,11 @@ class AirtableAPI {
                 
                 result.records.forEach(record => {
                     if (record.fields) {
-                        // Recopilar todos los campos disponibles
                         Object.keys(record.fields).forEach(field => {
                             availableFields.add(field);
                         });
                         
                         if (record.fields.servicioIngenieria) {
-                            // Mapear el valor detectado al código interno para evitar nombres amigables
                             const mappedServicio = this.mapFieldValue('servicioIngenieria', record.fields.servicioIngenieria);
                             servicioValues.add(mappedServicio);
                             console.log(`📋 Área detectada: "${record.fields.servicioIngenieria}" → "${mappedServicio}"`);
@@ -497,18 +465,14 @@ class AirtableAPI {
                     }
                 });
                 
-                // Si encontramos valores, usarlos
                 if (servicioValues.size > 0) {
                     this.validSolicitudValues.servicioIngenieria = Array.from(servicioValues);
                 }
                 if (tipoServicioValues.size > 0) {
-                    // Asegurar que DESINSTALACION esté incluido si no fue detectado
                     const tiposDetectados = Array.from(tipoServicioValues);
-                    if (!tiposDetectados.includes('DESINSTALACION')) {
-                        tiposDetectados.push('DESINSTALACION');
-                        console.log('✨ Agregando DESINSTALACION a tipos válidos');
-                    }
-                    this.validSolicitudValues.tipoServicio = tiposDetectados;
+                    // Asegurar que todos los tipos estén incluidos
+                    const tiposCompletos = new Set([...tiposDetectados, 'ERROR_USUARIO', 'DESINSTALACION', 'CALIBRACION', 'ACTUALIZACION', 'EMERGENCIA', 'INSPECCION']);
+                    this.validSolicitudValues.tipoServicio = Array.from(tiposCompletos);
                 }
                 if (prioridadValues.size > 0) {
                     this.validSolicitudValues.prioridad = Array.from(prioridadValues);
@@ -611,7 +575,6 @@ class AirtableAPI {
                                 const invalidValue = valueMatch[1];
                                 console.error(`🎯 Campo: ${fieldName}, Valor inválido: "${invalidValue}"`);
                                 
-                                // Sugerir solución
                                 console.log('💡 SOLUCIÓN: Verificar valores válidos en Airtable para el campo', fieldName);
                                 console.log('💡 Valores detectados:', this.validSolicitudValues);
                             }
@@ -649,13 +612,12 @@ class AirtableAPI {
         }
     }
 
-    // 🔐 MÉTODO CRÍTICO CORREGIDO: Crear solicitud de acceso
+    // 🔐 MÉTODO: Crear solicitud de acceso
     async createSolicitudAcceso(solicitudData) {
         console.log('📝 Creando solicitud de acceso con detección automática de valores...');
         console.log('🔍 Datos recibidos:', solicitudData);
         
         try {
-            // Limpiar todos los valores de string
             const cleanData = {};
             Object.keys(solicitudData).forEach(key => {
                 const value = solicitudData[key];
@@ -666,7 +628,6 @@ class AirtableAPI {
                 }
             });
             
-            // Preparar datos base
             const baseData = {
                 nombreCompleto: cleanData.nombreCompleto || '',
                 email: cleanData.email || '',
@@ -678,7 +639,6 @@ class AirtableAPI {
                 esUrgente: cleanData.esUrgente || false
             };
             
-            // CRÍTICO: Usar el valor de estado detectado o valor por defecto
             if (this.validAccessRequestValues.estado) {
                 console.log(`✅ Usando valor de estado detectado: "${this.validAccessRequestValues.estado}"`);
                 baseData.estado = this.validAccessRequestValues.estado;
@@ -702,7 +662,6 @@ class AirtableAPI {
                 if (error.message.includes('422') && error.message.includes('estado')) {
                     console.warn('⚠️ Error con campo estado, reintentando sin estado...');
                     
-                    // Reintentar sin campo estado
                     delete baseData.estado;
                     const dataWithoutEstado = { fields: baseData };
                     
@@ -717,7 +676,6 @@ class AirtableAPI {
         } catch (error) {
             console.error('❌ Error creando solicitud de acceso:', error);
             
-            // Si todo falla, intentar con campos absolutamente mínimos
             if (error.message.includes('422')) {
                 console.log('🔄 Último intento con campos mínimos...');
                 return await this.createSolicitudAccesoMinimal(solicitudData);
@@ -745,7 +703,6 @@ class AirtableAPI {
             
             console.log('✅ Solicitud creada con campos mínimos:', result.id);
             
-            // Intentar agregar más campos uno por uno
             const fieldsToAdd = [
                 { telefono: solicitudData.telefono },
                 { servicioHospitalario: solicitudData.servicioHospitalario },
@@ -775,12 +732,11 @@ class AirtableAPI {
         }
     }
 
-    // 🔐 MÉTODO CORREGIDO: Aprobar solicitud y crear usuario (sin campos inexistentes)
+    // 🔐 MÉTODO: Aprobar solicitud y crear usuario
     async approveAccessRequestAndCreateUser(requestId) {
         console.log('✅ Iniciando aprobación de solicitud:', requestId);
         
         try {
-            // 1. Obtener la solicitud de acceso
             const solicitudesAcceso = await this.getSolicitudesAcceso();
             const solicitud = solicitudesAcceso.find(s => s.id === requestId);
             
@@ -792,16 +748,13 @@ class AirtableAPI {
                 throw new Error('La solicitud ya fue aprobada anteriormente');
             }
 
-            // 2. Generar código de acceso
             const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
             console.log(`🔐 Código generado: ${codigoAcceso}`);
 
-            // 3. Detectar valores válidos si no se han detectado
             if (!this.validUserValues.estado) {
                 await this.detectValidUserValues();
             }
 
-            // 4. Preparar datos del usuario con valores limpios
             const userData = {
                 nombreCompleto: this.cleanFieldValue(solicitud.nombreCompleto || 'Sin nombre'),
                 email: this.cleanFieldValue(solicitud.email || 'no-email@temp.com'),
@@ -809,10 +762,9 @@ class AirtableAPI {
                 cargo: this.cleanFieldValue(solicitud.cargo || ''),
                 codigoAcceso: codigoAcceso,
                 fechaCreacion: new Date().toISOString(),
-                solicitudOrigenId: requestId  // ID de la solicitud de origen
+                solicitudOrigenId: requestId
             };
 
-            // 5. Agregar estado si tenemos un valor válido
             if (this.validUserValues.estado) {
                 userData.estado = this.validUserValues.estado;
             } else {
@@ -822,7 +774,6 @@ class AirtableAPI {
 
             console.log('📝 Datos del usuario a crear:', userData);
 
-            // 6. Intentar crear el usuario
             let newUser;
             try {
                 newUser = await this.makeRequest(this.tables.usuarios, 'POST', {
@@ -834,7 +785,6 @@ class AirtableAPI {
                 if (error.message.includes('422')) {
                     console.warn('⚠️ Error 422 al crear usuario, reintentando con campos mínimos...');
                     
-                    // Reintentar con campos absolutamente mínimos
                     const minimalUserData = {
                         nombreCompleto: userData.nombreCompleto,
                         email: userData.email,
@@ -852,9 +802,7 @@ class AirtableAPI {
                 }
             }
 
-            // 7. Actualizar SOLO el estado de la solicitud de acceso
             try {
-                // Detectar el valor correcto para estado APROBADA
                 let aprobadasValue = 'Aprobada';
                 if (this.validAccessRequestValues.estadoValues) {
                     const aprobadaDetectada = this.validAccessRequestValues.estadoValues.find(v => 
@@ -866,12 +814,10 @@ class AirtableAPI {
                     }
                 }
 
-                // IMPORTANTE: Solo actualizar campos que existan en Airtable
                 const updateFields = {
                     estado: aprobadasValue
                 };
                 
-                // Solo agregar usuarioCreado si sabemos que el campo existe
                 if (this.validAccessRequestValues.availableFields.includes('usuarioCreado')) {
                     updateFields.usuarioCreado = newUser.id;
                 }
@@ -889,7 +835,6 @@ class AirtableAPI {
                 console.warn('⚠️ El usuario fue creado pero no se pudo actualizar completamente la solicitud');
             }
 
-            // 8. Retornar resultado exitoso
             return {
                 success: true,
                 user: {
@@ -993,18 +938,15 @@ class AirtableAPI {
         
         console.log(`🗺️ Mapeando ${fieldType}: "${cleanValue}"`);
         
-        // Si el valor ya es el esperado, devolverlo tal cual
         if (this.fieldMappings[fieldType]) {
             const mapping = this.fieldMappings[fieldType];
             
-            // Si el valor es una clave directa del mapeo, devolver su valor mapeado
             if (mapping[cleanValue]) {
                 const mappedValue = mapping[cleanValue];
                 console.log(`✅ Mapeado ${fieldType}: "${cleanValue}" → "${mappedValue}"`);
                 return mappedValue;
             }
             
-            // Buscar si el valor es uno de los valores mapeados
             for (const [key, mappedValue] of Object.entries(mapping)) {
                 if (mappedValue === cleanValue) {
                     console.log(`✅ Valor ya mapeado correctamente: "${cleanValue}"`);
@@ -1097,7 +1039,7 @@ class AirtableAPI {
         }
     }
 
-    // 📋 MÉTODO ACTUALIZADO Y MEJORADO: Crear solicitud
+    // 📋 MÉTODO: Crear solicitud
     async createSolicitud(solicitudData) {
         console.log('📝 Creando solicitud con mapeo y valores conocidos...');
         console.log('🔍 Datos recibidos:', solicitudData);
@@ -1105,38 +1047,32 @@ class AirtableAPI {
         console.log('📋 Valores válidos conocidos:', this.validSolicitudValues);
         
         try {
-            // CRÍTICO: Aplicar mapeo de valores
             const mappedData = { ...solicitudData };
             
-            // Mapear servicioIngenieria
             if (mappedData.servicioIngenieria && this.fieldMappings.servicioIngenieria[mappedData.servicioIngenieria]) {
                 const valorOriginal = mappedData.servicioIngenieria;
                 mappedData.servicioIngenieria = this.fieldMappings.servicioIngenieria[mappedData.servicioIngenieria];
                 console.log(`🗺️ ÁREA MAPEADA: ${valorOriginal} → ${mappedData.servicioIngenieria}`);
             }
             
-            // Mapear tipoServicio
             if (mappedData.tipoServicio && this.fieldMappings.tipoServicio[mappedData.tipoServicio]) {
                 const valorOriginal = mappedData.tipoServicio;
                 mappedData.tipoServicio = this.fieldMappings.tipoServicio[mappedData.tipoServicio];
                 console.log(`🗺️ TIPO SERVICIO MAPEADO: ${valorOriginal} → ${mappedData.tipoServicio}`);
             }
             
-            // Mapear prioridad
             if (mappedData.prioridad && this.fieldMappings.prioridad[mappedData.prioridad]) {
                 const valorOriginal = mappedData.prioridad;
                 mappedData.prioridad = this.fieldMappings.prioridad[mappedData.prioridad];
                 console.log(`🗺️ PRIORIDAD MAPEADA: ${valorOriginal} → ${mappedData.prioridad}`);
             }
             
-            // VERIFICAR QUE EL VALOR MAPEADO SEA VÁLIDO
             if (mappedData.servicioIngenieria && 
                 this.validSolicitudValues.servicioIngenieria.length > 0 &&
                 !this.validSolicitudValues.servicioIngenieria.includes(mappedData.servicioIngenieria)) {
                 console.warn(`⚠️ Valor mapeado ${mappedData.servicioIngenieria} no está en la lista de valores válidos`);
                 console.log('📋 Valores válidos detectados:', this.validSolicitudValues.servicioIngenieria);
                 
-                // Intentar encontrar un valor similar
                 const valorSimilar = this.validSolicitudValues.servicioIngenieria.find(v => 
                     v.toLowerCase().includes('biom') && mappedData.servicioIngenieria.toLowerCase().includes('biom') ||
                     v.toLowerCase().includes('mec') && mappedData.servicioIngenieria.toLowerCase().includes('mec') ||
@@ -1149,14 +1085,12 @@ class AirtableAPI {
                 }
             }
             
-            // Generar número específico del área
             const numero = await this.generateAreaSpecificNumber(solicitudData.servicioIngenieria);
             
-            // Preparar datos con valores mapeados
             const rawData = {
                 numero: numero,
                 descripcion: mappedData.descripcion || 'Solicitud de mantenimiento',
-                estado: 'Pendiente', // Usar valor que sabemos que funciona
+                estado: 'Pendiente',
                 fechaCreacion: new Date().toISOString(),
                 servicioIngenieria: mappedData.servicioIngenieria,
                 tipoServicio: mappedData.tipoServicio,
@@ -1170,14 +1104,12 @@ class AirtableAPI {
                 tiempoRespuestaMaximo: this.calculateMaxResponseTime(mappedData.prioridad || 'Media')
             };
             
-            // CRÍTICO: Verificar que el área no sea undefined o null
             if (!rawData.servicioIngenieria) {
                 console.error('❌ ERROR CRÍTICO: servicioIngenieria es undefined o null');
                 console.error('Datos originales:', solicitudData);
                 throw new Error('El área de ingeniería es requerida');
             }
             
-            // Limpiar campos undefined o null
             const cleanData = {};
             Object.keys(rawData).forEach(key => {
                 if (rawData[key] !== undefined && rawData[key] !== null && rawData[key] !== '') {
@@ -1199,7 +1131,6 @@ class AirtableAPI {
                 console.log(`🏥 Área guardada: ${data.fields.servicioIngenieria}`);
                 console.log(`🔧 Tipo servicio guardado: ${data.fields.tipoServicio}`);
                 
-                // Verificar que el área se guardó
                 if (result.fields && result.fields.servicioIngenieria) {
                     console.log(`✅ ÁREA CONFIRMADA EN RESPUESTA: ${result.fields.servicioIngenieria}`);
                 } else {
@@ -1215,11 +1146,9 @@ class AirtableAPI {
                     console.error('📋 Valores detectados disponibles:', this.validSolicitudValues);
                     console.error('📝 Datos que se intentaron enviar:', data);
                     
-                    // Proporcionar información más específica del error
                     let mensajeError = 'No se pudo crear la solicitud. ';
                     
                     try {
-                        // Intentar extraer información específica del error
                         if (error.message.includes('servicioIngenieria')) {
                             mensajeError += `El valor "${mappedData.servicioIngenieria}" no es válido para el área. `;
                             mensajeError += `Valores válidos: ${this.validSolicitudValues.servicioIngenieria.join(', ')}`;
@@ -1249,10 +1178,10 @@ class AirtableAPI {
 
     calculateMaxResponseTime(prioridad) {
         const tiemposRespuesta = {
-            'Crítica': 2,  // 2 horas
-            'Alta': 8,     // 8 horas
-            'Media': 24,   // 24 horas
-            'Baja': 72,    // 72 horas
+            'Crítica': 2,
+            'Alta': 8,
+            'Media': 24,
+            'Baja': 72,
             'CRITICA': 2,
             'ALTA': 8,
             'MEDIA': 24,
@@ -1276,7 +1205,6 @@ class AirtableAPI {
         if (solicitud.fechaCompletado) {
             fechaFin = new Date(solicitud.fechaCompletado);
         } else if (solicitud.estado === 'CANCELADA' || solicitud.estado === 'Cancelada') {
-            // Si está cancelada, usar la fecha actual como fin
             fechaFin = new Date();
         }
         
@@ -1420,12 +1348,11 @@ class AirtableAPI {
         }
     }
 
-    // 🔄 MÉTODO CORREGIDO: Actualizar estado de solicitud
+    // 🔄 MÉTODO ORIGINAL: Actualizar estado de solicitud (sin cambio de tipo de servicio)
     async updateRequestStatus(solicitudId, nuevoEstado, observaciones = '') {
         console.log('🔄 Actualizando estado de solicitud:', { solicitudId, nuevoEstado });
         
         try {
-            // Obtener la solicitud actual para validar
             const solicitudes = await this.getSolicitudes();
             const solicitud = solicitudes.find(s => s.id === solicitudId);
             
@@ -1436,21 +1363,17 @@ class AirtableAPI {
             console.log('📋 Estado actual:', solicitud.estado);
             console.log('🔄 Nuevo estado solicitado:', nuevoEstado);
             
-            // Mapear el nuevo estado
             const estadoMapeado = this.mapFieldValue('estado', nuevoEstado);
             console.log('🗺️ Estado mapeado:', estadoMapeado);
             
-            // Preparar campos a actualizar
             const updateData = {
                 estado: estadoMapeado
             };
             
-            // Agregar observaciones si se proporcionan
             if (observaciones) {
                 updateData.observaciones = (solicitud.observaciones || '') + '\n[' + new Date().toLocaleString('es-CO') + '] ' + observaciones;
             }
             
-            // Lógica específica según el estado
             if (nuevoEstado === 'EN_PROCESO' || nuevoEstado === 'EN PROCESO') {
                 updateData.fechaInicioTrabajo = new Date().toISOString();
                 console.log('📅 Registrando fecha de inicio de trabajo');
@@ -1459,7 +1382,6 @@ class AirtableAPI {
                 const fechaCompletado = new Date();
                 updateData.fechaCompletado = fechaCompletado.toISOString();
                 
-                // Calcular tiempo total de respuesta
                 if (solicitud.fechaCreacion) {
                     const fechaCreacion = new Date(solicitud.fechaCreacion);
                     const tiempoTotalMs = fechaCompletado - fechaCreacion;
@@ -1473,7 +1395,6 @@ class AirtableAPI {
             
             console.log('📝 Datos a actualizar:', updateData);
             
-            // Realizar la actualización
             try {
                 const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                     fields: updateData
@@ -1481,7 +1402,6 @@ class AirtableAPI {
                 
                 console.log('✅ Estado actualizado exitosamente');
                 
-                // Si se completó la solicitud, liberar el técnico
                 if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
                     console.log('🔓 Liberando técnico asignado...');
                     await this.liberarTecnicoAsignado(solicitudId);
@@ -1496,11 +1416,9 @@ class AirtableAPI {
             } catch (updateError) {
                 console.error('❌ Error actualizando estado:', updateError);
                 
-                // Si el error es 422, intentar con valores alternativos
                 if (updateError.message.includes('422')) {
                     console.warn('⚠️ Error 422 detectado, intentando con valores alternativos...');
                     
-                    // Intentar con diferentes variaciones del estado
                     const estadoAlternativas = {
                         'EN_PROCESO': ['En Proceso', 'EN PROCESO', 'en_proceso'],
                         'COMPLETADA': ['Completada', 'completada'],
@@ -1522,7 +1440,6 @@ class AirtableAPI {
                             
                             console.log(`✅ Estado actualizado con valor alternativo: ${estadoAlt}`);
                             
-                            // Si se completó la solicitud, liberar el técnico
                             if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
                                 await this.liberarTecnicoAsignado(solicitudId);
                             }
@@ -1549,7 +1466,146 @@ class AirtableAPI {
         }
     }
 
-    // 🔓 MÉTODO MEJORADO: Liberar técnico asignado
+    // 🆕 NUEVO MÉTODO: Actualizar estado con cambio de tipo de servicio
+    async updateRequestStatusWithServiceType(solicitudId, nuevoEstado, nuevoTipoServicio = null, observaciones = '') {
+        console.log('🔄 Actualizando estado y tipo de servicio de solicitud:', { solicitudId, nuevoEstado, nuevoTipoServicio });
+        
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
+            }
+            
+            console.log('📋 Estado actual:', solicitud.estado);
+            console.log('🔨 Tipo de servicio actual:', solicitud.tipoServicio);
+            console.log('🔄 Nuevo estado solicitado:', nuevoEstado);
+            if (nuevoTipoServicio) {
+                console.log('🔨 Nuevo tipo de servicio solicitado:', nuevoTipoServicio);
+            }
+            
+            const estadoMapeado = this.mapFieldValue('estado', nuevoEstado);
+            console.log('🗺️ Estado mapeado:', estadoMapeado);
+            
+            const updateData = {
+                estado: estadoMapeado
+            };
+            
+            // Si se proporciona un nuevo tipo de servicio, mapearlo y agregarlo
+            if (nuevoTipoServicio) {
+                const tipoServicioMapeado = this.mapFieldValue('tipoServicio', nuevoTipoServicio);
+                updateData.tipoServicio = tipoServicioMapeado;
+                console.log('🗺️ Tipo de servicio mapeado:', tipoServicioMapeado);
+                
+                // Agregar una observación indicando el cambio de tipo de servicio
+                const tipoAnterior = solicitud.tipoServicio || 'No especificado';
+                const cambioTipoMsg = `\n[${new Date().toLocaleString('es-CO')}] Tipo de servicio actualizado de "${tipoAnterior}" a "${nuevoTipoServicio}"`;
+                observaciones = observaciones ? observaciones + cambioTipoMsg : cambioTipoMsg;
+            }
+            
+            if (observaciones) {
+                updateData.observaciones = (solicitud.observaciones || '') + '\n[' + new Date().toLocaleString('es-CO') + '] ' + observaciones;
+            }
+            
+            if (nuevoEstado === 'EN_PROCESO' || nuevoEstado === 'EN PROCESO') {
+                updateData.fechaInicioTrabajo = new Date().toISOString();
+                console.log('📅 Registrando fecha de inicio de trabajo');
+                
+            } else if (nuevoEstado === 'COMPLETADA') {
+                const fechaCompletado = new Date();
+                updateData.fechaCompletado = fechaCompletado.toISOString();
+                
+                if (solicitud.fechaCreacion) {
+                    const fechaCreacion = new Date(solicitud.fechaCreacion);
+                    const tiempoTotalMs = fechaCompletado - fechaCreacion;
+                    const horas = Math.floor(tiempoTotalMs / (1000 * 60 * 60));
+                    const minutos = Math.floor((tiempoTotalMs % (1000 * 60 * 60)) / (1000 * 60));
+                    updateData.tiempoTotalRespuesta = `${horas}h ${minutos}m`;
+                    
+                    console.log('⏱️ Tiempo total calculado:', updateData.tiempoTotalRespuesta);
+                }
+                
+                // Si se detectó que era error de usuario, registrarlo
+                if (nuevoTipoServicio === 'ERROR_USUARIO') {
+                    console.log('⚠️ Solicitud marcada como ERROR DE USUARIO');
+                }
+            }
+            
+            console.log('📝 Datos a actualizar:', updateData);
+            
+            try {
+                const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                    fields: updateData
+                });
+                
+                console.log('✅ Estado y tipo de servicio actualizados exitosamente');
+                
+                if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
+                    console.log('🔓 Liberando técnico asignado...');
+                    await this.liberarTecnicoAsignado(solicitudId);
+                }
+                
+                return { 
+                    success: true, 
+                    solicitud: { ...solicitud, ...updateData },
+                    mensaje: `Estado cambiado a ${nuevoEstado}${nuevoTipoServicio ? ` y tipo de servicio a ${nuevoTipoServicio}` : ''}`
+                };
+                
+            } catch (updateError) {
+                console.error('❌ Error actualizando:', updateError);
+                
+                if (updateError.message.includes('422')) {
+                    console.warn('⚠️ Error 422 detectado, intentando con valores alternativos...');
+                    
+                    const estadoAlternativas = {
+                        'EN_PROCESO': ['En Proceso', 'EN PROCESO', 'en_proceso'],
+                        'COMPLETADA': ['Completada', 'completada'],
+                        'ASIGNADA': ['Asignada', 'asignada'],
+                        'PENDIENTE': ['Pendiente', 'pendiente'],
+                        'CANCELADA': ['Cancelada', 'cancelada']
+                    };
+                    
+                    const alternativas = estadoAlternativas[nuevoEstado] || [];
+                    
+                    for (const estadoAlt of alternativas) {
+                        try {
+                            console.log(`🔄 Intentando con estado alternativo: ${estadoAlt}`);
+                            updateData.estado = estadoAlt;
+                            
+                            const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                                fields: updateData
+                            });
+                            
+                            console.log(`✅ Actualizado con valor alternativo: ${estadoAlt}`);
+                            
+                            if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
+                                await this.liberarTecnicoAsignado(solicitudId);
+                            }
+                            
+                            return { 
+                                success: true, 
+                                solicitud: { ...solicitud, ...updateData },
+                                mensaje: `Estado cambiado a ${nuevoEstado}${nuevoTipoServicio ? ` y tipo de servicio a ${nuevoTipoServicio}` : ''}`
+                            };
+                            
+                        } catch (altError) {
+                            console.warn(`❌ Falló con ${estadoAlt}:`, altError.message);
+                            continue;
+                        }
+                    }
+                }
+                
+                throw updateError;
+            }
+            
+        } catch (error) {
+            console.error('❌ Error en updateRequestStatusWithServiceType:', error);
+            throw new Error(`Error actualizando: ${error.message}`);
+        }
+    }
+
+    // 🔓 MÉTODO: Liberar técnico asignado
     async liberarTecnicoAsignado(solicitudId) {
         console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
         
@@ -1582,13 +1638,11 @@ class AirtableAPI {
                     
                 } catch (tecnicoError) {
                     console.error('❌ Error actualizando técnico:', tecnicoError);
-                    // Continuar aunque falle la actualización del técnico
                 }
             } else {
                 console.warn('⚠️ No se encontró el técnico en la base de datos');
             }
             
-            // Actualizar la solicitud para quitar el técnico asignado
             try {
                 await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                     fields: {
@@ -1608,7 +1662,6 @@ class AirtableAPI {
             
         } catch (error) {
             console.error('❌ Error liberando técnico:', error);
-            // No lanzar error para no interrumpir el flujo principal
             return { 
                 success: false, 
                 mensaje: 'Error liberando técnico',
@@ -1715,7 +1768,7 @@ class AirtableAPI {
         }
     }
 
-    // 📊 MÉTODO MEJORADO: Estadísticas avanzadas con indicadores solicitados
+    // 📊 MÉTODO: Estadísticas avanzadas
     async getAdvancedStatistics() {
         try {
             const [solicitudes, tecnicos, usuarios] = await Promise.all([
@@ -1724,7 +1777,6 @@ class AirtableAPI {
                 this.getUsuarios()
             ]);
             
-            // Estadísticas básicas existentes
             const totalSolicitudes = solicitudes.length;
             const pendientes = solicitudes.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente').length;
             const asignadas = solicitudes.filter(s => s.estado === 'ASIGNADA' || s.estado === 'Asignada').length;
@@ -1732,12 +1784,10 @@ class AirtableAPI {
             const completadas = solicitudes.filter(s => s.estado === 'COMPLETADA' || s.estado === 'Completada').length;
             const canceladas = solicitudes.filter(s => s.estado === 'CANCELADA' || s.estado === 'Cancelada').length;
             
-            // 1. PORCENTAJE DE GESTIÓN DE SOLICITUDES COMPLETADAS
             const porcentajeCompletadas = totalSolicitudes > 0 
                 ? ((completadas / totalSolicitudes) * 100).toFixed(2) 
                 : 0;
             
-            // 2. PORCENTAJE DE MANTENIMIENTOS CORRECTIVOS
             const mantenimientosCorrectivos = solicitudes.filter(s => 
                 s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || 
                 s.tipoServicio === 'Mantenimiento Correctivo'
@@ -1746,7 +1796,6 @@ class AirtableAPI {
                 ? ((mantenimientosCorrectivos / totalSolicitudes) * 100).toFixed(2) 
                 : 0;
             
-            // 3. PORCENTAJE DE ERRORES DE USUARIO
             const erroresUsuario = solicitudes.filter(s => 
                 s.tipoServicio === 'ERROR_USUARIO' || 
                 s.tipoServicio === 'Error de Usuario' ||
@@ -1757,7 +1806,6 @@ class AirtableAPI {
                 ? ((erroresUsuario / totalSolicitudes) * 100).toFixed(2) 
                 : 0;
             
-            // 4. TIEMPO DE RESPUESTA DE CADA SOLICITUD
             const tiemposRespuesta = [];
             let totalTiempoRespuestaMs = 0;
             let solicitudesConTiempo = 0;
@@ -1774,7 +1822,6 @@ class AirtableAPI {
                         diasDecimales: tiempoRespuesta.diasDecimales
                     });
                     
-                    // Solo contar solicitudes completadas o canceladas para el promedio
                     if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada' || 
                         solicitud.estado === 'CANCELADA' || solicitud.estado === 'Cancelada') {
                         totalTiempoRespuestaMs += tiempoRespuesta.totalMs;
@@ -1783,17 +1830,14 @@ class AirtableAPI {
                 }
             });
             
-            // Calcular promedio de tiempo de respuesta
             const promedioTiempoRespuestaMs = solicitudesConTiempo > 0 
                 ? totalTiempoRespuestaMs / solicitudesConTiempo 
                 : 0;
             const promedioHoras = Math.floor(promedioTiempoRespuestaMs / (1000 * 60 * 60));
             const promedioMinutos = Math.floor((promedioTiempoRespuestaMs % (1000 * 60 * 60)) / (1000 * 60));
             
-            // Ordenar tiempos de respuesta por duración (mayor a menor)
             tiemposRespuesta.sort((a, b) => b.horas - a.horas);
             
-            // Estadísticas por tipo de servicio (incluyendo DESINSTALACION)
             const estadisticasPorTipo = {};
             this.validSolicitudValues.tipoServicio.forEach(tipo => {
                 const solicitudesTipo = solicitudes.filter(s => s.tipoServicio === tipo);
@@ -1858,10 +1902,9 @@ class AirtableAPI {
                             s.estado === 'CANCELADA' || s.estado === 'Cancelada') return false;
                         return new Date() > new Date(s.tiempoRespuestaMaximo);
                     }).length,
-                    detalleTiempos: tiemposRespuesta.slice(0, 10), // Top 10 tiempos más largos
+                    detalleTiempos: tiemposRespuesta.slice(0, 10),
                     totalConTiempoRegistrado: solicitudesConTiempo
                 },
-                // NUEVOS INDICADORES
                 indicadoresGestion: {
                     porcentajeCompletadas: parseFloat(porcentajeCompletadas),
                     porcentajeMantenimientosCorrectivos: parseFloat(porcentajeCorrectivos),
@@ -1938,208 +1981,6 @@ class AirtableAPI {
         }
     }
 
-    // 🔧 NUEVO: Método de diagnóstico para valores de solicitudes
-    async diagnosticSolicitudValues() {
-        console.log('🔍 DIAGNÓSTICO COMPLETO DE VALORES DE SOLICITUDES');
-        console.log('==============================================');
-        
-        try {
-            // 1. Mostrar valores actuales
-            console.log('\n📋 VALORES ACTUALES:');
-            console.log('Servicios de Ingeniería:', this.validSolicitudValues.servicioIngenieria);
-            console.log('Tipos de Servicio:', this.validSolicitudValues.tipoServicio);
-            console.log('Prioridades:', this.validSolicitudValues.prioridad);
-            console.log('Estados:', this.validSolicitudValues.estado);
-            
-            // 2. Intentar detectar valores
-            console.log('\n🔍 DETECTANDO VALORES EN AIRTABLE...');
-            await this.detectValidSolicitudValues();
-            
-            // 3. Probar creación con cada área
-            console.log('\n🧪 PROBANDO CREACIÓN CON CADA ÁREA:');
-            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-            const resultados = {};
-            
-            for (const area of areas) {
-                try {
-                    // Aplicar mapeo
-                    const areaMapeada = this.mapFieldValue('servicioIngenieria', area);
-                    console.log(`\nProbando ${area} → ${areaMapeada}`);
-                    
-                    const testData = {
-                        fields: {
-                            numero: 'TEST_' + Date.now(),
-                            descripcion: 'Test de área',
-                            servicioIngenieria: areaMapeada,
-                            fechaCreacion: new Date().toISOString(),
-                            estado: 'Pendiente'
-                        }
-                    };
-                    
-                    const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
-                    
-                    if (result && result.id) {
-                        console.log(`✅ ${area} → ${areaMapeada} - VÁLIDO`);
-                        resultados[area] = { 
-                            valido: true, 
-                            valorMapeado: areaMapeada,
-                            valorGuardado: result.fields?.servicioIngenieria 
-                        };
-                        
-                        // Eliminar registro de prueba
-                        try {
-                            await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'DELETE');
-                        } catch (deleteError) {
-                            console.warn('⚠️ No se pudo eliminar registro de prueba');
-                        }
-                    }
-                    
-                } catch (error) {
-                    console.log(`❌ ${area} - INVÁLIDO: ${error.message}`);
-                    resultados[area] = { valido: false, error: error.message };
-                }
-            }
-            
-            // 4. Probar DESINSTALACION
-            console.log('\n🧪 PROBANDO TIPO DE SERVICIO DESINSTALACION:');
-            try {
-                const testData = {
-                    fields: {
-                        numero: 'TEST_DESINST_' + Date.now(),
-                        descripcion: 'Test de desinstalación',
-                        servicioIngenieria: 'MECANICA',
-                        tipoServicio: 'DESINSTALACION',
-                        fechaCreacion: new Date().toISOString(),
-                        estado: 'Pendiente'
-                    }
-                };
-                
-                const result = await this.makeRequest(this.tables.solicitudes, 'POST', testData);
-                
-                if (result && result.id) {
-                    console.log(`✅ DESINSTALACION - VÁLIDO`);
-                    
-                    // Eliminar registro de prueba
-                    try {
-                        await this.makeRequest(`${this.tables.solicitudes}/${result.id}`, 'DELETE');
-                    } catch (deleteError) {
-                        console.warn('⚠️ No se pudo eliminar registro de prueba');
-                    }
-                } else {
-                    console.log(`❌ DESINSTALACION - No se pudo crear`);
-                }
-            } catch (error) {
-                console.log(`❌ DESINSTALACION - INVÁLIDO: ${error.message}`);
-            }
-            
-            return {
-                valoresActuales: this.validSolicitudValues,
-                mapeoConfigurado: this.fieldMappings.servicioIngenieria,
-                tipoServicioMapeo: this.fieldMappings.tipoServicio,
-                resultadosPruebas: resultados,
-                recomendaciones: [
-                    'Verificar que los valores en Airtable coincidan con el mapeo',
-                    'Usar los valores mapeados al crear solicitudes',
-                    'Si persiste el error, verificar permisos del campo en Airtable',
-                    'DESINSTALACION ya está agregado al mapeo y valores válidos'
-                ]
-            };
-            
-        } catch (error) {
-            console.error('❌ Error en diagnóstico:', error);
-            return { error: error.message };
-        }
-    }
-
-    // 🔧 NUEVO: Método de diagnóstico para cambios de estado
-    async diagnosticEstadoChange(solicitudId) {
-        console.log('🔍 DIAGNÓSTICO DE CAMBIO DE ESTADO');
-        console.log('===================================');
-        
-        try {
-            const solicitudes = await this.getSolicitudes();
-            const solicitud = solicitudes.find(s => s.id === solicitudId);
-            
-            if (!solicitud) {
-                return { error: 'Solicitud no encontrada' };
-            }
-            
-            console.log('\n📋 SOLICITUD ACTUAL:');
-            console.log('ID:', solicitud.id);
-            console.log('Número:', solicitud.numero);
-            console.log('Estado actual:', solicitud.estado);
-            console.log('Técnico asignado:', solicitud.tecnicoAsignado);
-            
-            console.log('\n🧪 PROBANDO CAMBIOS DE ESTADO:');
-            const estadosPrueba = ['EN_PROCESO', 'COMPLETADA'];
-            const resultados = {};
-            
-            for (const nuevoEstado of estadosPrueba) {
-                console.log(`\nProbando cambio a: ${nuevoEstado}`);
-                
-                try {
-                    // Intentar con el valor mapeado
-                    const estadoMapeado = this.mapFieldValue('estado', nuevoEstado);
-                    console.log(`Estado mapeado: ${estadoMapeado}`);
-                    
-                    // Simular la actualización sin ejecutarla
-                    const updateData = {
-                        estado: estadoMapeado
-                    };
-                    
-                    if (nuevoEstado === 'EN_PROCESO') {
-                        updateData.fechaInicioTrabajo = new Date().toISOString();
-                    } else if (nuevoEstado === 'COMPLETADA') {
-                        updateData.fechaCompletado = new Date().toISOString();
-                    }
-                    
-                    console.log('Datos que se enviarían:', updateData);
-                    
-                    // Verificar si el valor está en la lista de valores válidos
-                    if (this.validSolicitudValues.estado.includes(estadoMapeado)) {
-                        resultados[nuevoEstado] = {
-                            valido: true,
-                            valorMapeado: estadoMapeado,
-                            mensaje: 'El valor está en la lista de valores válidos'
-                        };
-                    } else {
-                        resultados[nuevoEstado] = {
-                            valido: false,
-                            valorMapeado: estadoMapeado,
-                            mensaje: 'El valor NO está en la lista de valores válidos',
-                            valoresValidos: this.validSolicitudValues.estado
-                        };
-                    }
-                    
-                } catch (error) {
-                    resultados[nuevoEstado] = {
-                        error: error.message
-                    };
-                }
-            }
-            
-            return {
-                solicitud: {
-                    id: solicitud.id,
-                    numero: solicitud.numero,
-                    estadoActual: solicitud.estado,
-                    tecnicoAsignado: solicitud.tecnicoAsignado
-                },
-                valoresValidosDetectados: this.validSolicitudValues.estado,
-                resultadosPruebas: resultados,
-                recomendaciones: [
-                    'Verificar que los valores de estado en Airtable coincidan con el mapeo',
-                    'Revisar la configuración del campo "estado" en Airtable',
-                    'Si usa valores personalizados, agregarlos al mapeo en AIRTABLE_VALUE_MAPPING'
-                ]
-            };
-            
-        } catch (error) {
-            console.error('❌ Error en diagnóstico:', error);
-            return { error: error.message };
-        }
-    }
-
     getStatus() {
         return {
             isConnected: this.connectionStatus === 'connected',
@@ -2149,23 +1990,22 @@ class AirtableAPI {
             baseUrl: this.baseUrl,
             tables: this.tables,
             timestamp: new Date().toISOString(),
-            version: '9.2-desinstalacion-agregado',
+            version: '10.0-cambio-tipo-servicio',
             validAccessRequestValues: this.validAccessRequestValues,
             validUserValues: this.validUserValues,
             validSolicitudValues: this.validSolicitudValues,
             features: [
-                'NUEVO: Tipo de servicio DESINSTALACION agregado',
+                '✨ NUEVO: Cambio de tipo de servicio al marcar como completada',
+                '✨ NUEVO: Método updateRequestStatusWithServiceType agregado',
+                '✨ NUEVO: Detección de errores de usuario al completar',
                 'FIX: Cambio de estado mejorado con múltiples intentos',
                 'FIX: Liberación de técnico al completar solicitud',
-                'NUEVO: Diagnóstico específico para cambios de estado',
                 'NUEVO: Indicadores avanzados de gestión',
                 'NUEVO: Porcentaje de solicitudes completadas',
                 'NUEVO: Porcentaje de mantenimientos correctivos',
                 'NUEVO: Porcentaje de errores de usuario',
                 'NUEVO: Cálculo de tiempos de respuesta detallados',
-                'FIX: Detección robusta de valores para todas las tablas',
-                'FIX: Mejor manejo de errores 422 con mensajes específicos',
-                'Sistema completo funcionando con valores mapeados e indicadores'
+                'Sistema completo funcionando con cambio de tipo de servicio'
             ]
         };
     }
@@ -2173,9 +2013,9 @@ class AirtableAPI {
 
 // 🌍 Crear instancia global
 try {
-    console.log('🔧 Creando instancia global con indicadores avanzados...');
+    console.log('🔧 Creando instancia global con cambio de tipo de servicio...');
     window.airtableAPI = new AirtableAPI();
-    console.log('✅ window.airtableAPI creado exitosamente (versión con DESINSTALACION)');
+    console.log('✅ window.airtableAPI creado exitosamente (versión con cambio de tipo de servicio)');
 } catch (error) {
     console.error('❌ Error creando airtableAPI:', error);
 }
@@ -2188,8 +2028,8 @@ try {
         if (typeof updateConnectionStatus === 'function') {
             const status = event.detail.connected ? 'connected' : 'disconnected';
             const message = event.detail.connected 
-                ? '✅ Conectado (con DESINSTALACION)' 
-                : 'Modo Local (con DESINSTALACION)';
+                ? '✅ Conectado (con cambio tipo servicio)' 
+                : 'Modo Local (con cambio tipo servicio)';
             
             updateConnectionStatus(status, message);
         }
@@ -2198,7 +2038,7 @@ try {
     console.warn('⚠️ No se pudo configurar event listener:', error);
 }
 
-// 🛠️ Función de diagnóstico actualizada
+// 🛠️ Función de diagnóstico
 try {
     window.debugAirtableConnection = function() {
         if (!window.airtableAPI) {
@@ -2208,84 +2048,18 @@ try {
         
         const status = window.airtableAPI.getStatus();
         
-        console.log('🔍 DIAGNÓSTICO INDICADORES AVANZADOS');
-        console.log('==================================');
+        console.log('🔍 DIAGNÓSTICO CON CAMBIO DE TIPO DE SERVICIO');
+        console.log('==============================================');
         console.log('🌐 Hostname:', status.hostname);
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
         console.log('📡 URL base:', status.baseUrl);
         console.log('🔍 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
         console.log('📋 Versión:', status.version);
-        console.log('🔐 Valores de solicitudes de acceso:', status.validAccessRequestValues);
-        console.log('👤 Valores de usuarios:', status.validUserValues);
-        console.log('📋 Valores de solicitudes:', status.validSolicitudValues);
-        console.log('✨ NUEVO: Tipo de servicio DESINSTALACION incluido');
-        console.log('📊 Nuevas características:', status.features.filter(f => f.startsWith('NUEVO') || f.startsWith('FIX')));
+        console.log('✨ NUEVO: Cambio de tipo de servicio al completar habilitado');
+        console.log('📊 Nuevas características:', status.features.filter(f => f.startsWith('✨') || f.startsWith('NUEVO') || f.startsWith('FIX')));
         
         return status;
-    };
-    
-    // Función para debug específico de solicitudes de acceso
-    window.debugAccessRequests = async function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        return await window.airtableAPI.detectValidAccessRequestValues();
-    };
-    
-    // Función para diagnóstico completo de solicitudes
-    window.debugSolicitudValues = async function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        return await window.airtableAPI.diagnosticSolicitudValues();
-    };
-    
-    // NUEVA: Función para diagnóstico de cambio de estado
-    window.debugEstadoChange = async function(solicitudId) {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        if (!solicitudId) {
-            console.error('❌ Debe proporcionar un ID de solicitud');
-            return { error: 'ID de solicitud requerido' };
-        }
-        
-        return await window.airtableAPI.diagnosticEstadoChange(solicitudId);
-    };
-    
-    // Función para ver estadísticas avanzadas
-    window.debugAdvancedStats = async function() {
-        if (!window.airtableAPI) {
-            console.error('❌ window.airtableAPI no está disponible');
-            return { error: 'airtableAPI no disponible' };
-        }
-        
-        console.log('📊 Obteniendo estadísticas avanzadas...');
-        const stats = await window.airtableAPI.getAdvancedStatistics();
-        
-        console.log('📊 ESTADÍSTICAS AVANZADAS');
-        console.log('========================');
-        console.log('📈 Indicadores de Gestión:');
-        console.log(`  • Completadas: ${stats.indicadoresGestion.porcentajeCompletadas}%`);
-        console.log(`  • Mantenimientos Correctivos: ${stats.indicadoresGestion.porcentajeMantenimientosCorrectivos}%`);
-        console.log(`  • Errores de Usuario: ${stats.indicadoresGestion.porcentajeErroresUsuario}%`);
-        console.log(`  • Efectividad Total: ${stats.indicadoresGestion.efectividad.porcentajeGestion}%`);
-        console.log('\n⏱️ Tiempos de Respuesta:');
-        console.log(`  • Promedio: ${stats.tiemposRespuesta.promedioRespuesta}`);
-        console.log(`  • Vencidas: ${stats.tiemposRespuesta.solicitudesVencidas}`);
-        console.log('\n📋 Por Tipo de Servicio:');
-        Object.entries(stats.estadisticasPorTipo).forEach(([tipo, data]) => {
-            console.log(`  • ${tipo}: ${data.total} (${data.porcentaje}%)`);
-        });
-        
-        return stats;
     };
     
     console.log('✅ Funciones de debug creadas exitosamente');
@@ -2293,13 +2067,10 @@ try {
     console.error('❌ Error creando funciones de debug:', error);
 }
 
-console.log('✅ airtable-config.js (CON DESINSTALACION) cargado');
-console.log('✨ NUEVO: Tipo de servicio DESINSTALACION agregado');
-console.log('🔄 FIX: Cambio de estado con múltiples intentos');
-console.log('🔓 FIX: Liberación de técnico al completar');
-console.log('🧪 NUEVO: Para diagnosticar cambio de estado: debugEstadoChange("ID_SOLICITUD")');
-console.log('📊 Para estadísticas avanzadas: debugAdvancedStats()');
-console.log('🔍 Para diagnóstico completo: debugSolicitudValues()');
+console.log('✅ airtable-config.js (CON CAMBIO DE TIPO DE SERVICIO) cargado');
+console.log('✨ NUEVO: Método updateRequestStatusWithServiceType disponible');
+console.log('✨ NUEVO: Cambio de tipo de servicio al marcar como completada');
+console.log('📊 Para estadísticas avanzadas: window.airtableAPI.getAdvancedStatistics()');
 console.log('🛠️ Para estado general: debugAirtableConnection()');
 
 // Auto-verificación después de la carga
@@ -2308,11 +2079,9 @@ setTimeout(async () => {
         console.log('🔄 Iniciando detección automática de valores válidos...');
         
         try {
-            // Siempre detectar valores de acceso y usuarios
             await window.airtableAPI.detectValidAccessRequestValues();
             await window.airtableAPI.detectValidUserValues();
             
-            // Intentar detectar valores de solicitudes, pero no fallar si no hay registros
             try {
                 await window.airtableAPI.detectValidSolicitudValues();
             } catch (error) {
@@ -2328,9 +2097,7 @@ setTimeout(async () => {
                 prioridades: solicitudValues.prioridad.length,
                 estados: solicitudValues.estado.length
             });
-            console.log('✨ Verificando DESINSTALACION en tipos:', 
-                solicitudValues.tipoServicio.includes('DESINSTALACION') ? '✅ Incluido' : '❌ No incluido');
-            console.log('📊 Sistema listo con cambio de estado mejorado y DESINSTALACION');
+            console.log('✨ Sistema listo con cambio de tipo de servicio al completar');
             
         } catch (error) {
             console.error('❌ Error en detección automática:', error);
