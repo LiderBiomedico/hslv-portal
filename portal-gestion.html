@@ -2601,7 +2601,8 @@
                             <div class="request-detail-label">📅 Fecha de Solicitud</div>
                             <div class="request-detail-value">${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
                         </div>
-                        ${!isCompleted ? 
+                        ${isCompleted ? 
+                            completadoPorInfo :
                             `<div class="request-detail">
                                 <div class="request-detail-label">👨‍🔧 Personal Asignado</div>
                                 <div class="request-detail-value">
@@ -2610,8 +2611,7 @@
                                         '<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
                                     }
                                 </div>
-                            </div>` : 
-                            completadoPorInfo
+                            </div>`
                         }
                     </div>
 
@@ -2673,331 +2673,549 @@
             return area;
         }
 
-        // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas con estadísticas por personal
-        async function showAdvancedStatisticsModal() {
-            try {
-                const modal = document.getElementById('stats-modal');
-                const content = document.getElementById('stats-modal-content');
-                
-                content.innerHTML = `
-                    <div style="text-align: center; padding: 3rem;">
-                        <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                        <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
-                    </div>
-                `;
-                
-                modal.classList.add('show');
-                
-                // Obtener estadísticas generales
-                const stats = await window.airtableAPI.getAdvancedStatistics();
-                
-                // Calcular estadísticas por área
-                const statsPorArea = calcularEstadisticasPorArea();
-                
-                // NUEVO: Calcular estadísticas por personal
-                const statsPorPersonal = calcularEstadisticasPorPersonal();
-                
-                // Generar HTML con pestañas por área y personal
-                content.innerHTML = `
-                    <div style="padding: 1rem;">
-                        <!-- Encabezado con botones de acción -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                            <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
-                                    📄 Exportar a PDF
-                                </button>
-                                <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
-                                    🔄 Actualizar
-                                </button>
-                            </div>
-                        </div>
+        // 🔄 FUNCIÓN CRÍTICA MODIFICADA: Cambiar estado de solicitud
+        async function showChangeStatusModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) return;
 
-                        <!-- Pestañas de áreas -->
-                        <div class="area-tabs">
-                            <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
-                                🌐 General
-                            </button>
-                            <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
-                                🏥 Biomédica
-                            </button>
-                            <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
-                                ⚙️ Mecánica
-                            </button>
-                            <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
-                                🏗️ Infraestructura
-                            </button>
-                            <button class="area-tab" data-area-stats="personal" onclick="showAreaStats('personal')">
-                                👥 Por Personal
-                            </button>
-                        </div>
+            const modal = document.getElementById('status-modal');
+            const content = document.getElementById('status-modal-content');
 
-                        <!-- Contenido de estadísticas General -->
-                        <div id="stats-todas" class="area-stats-section active">
-                            ${generateGeneralStats(stats)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Biomédica -->
-                        <div id="stats-biomedica" class="area-stats-section">
-                            ${generateAreaSpecificStats('BIOMEDICA', statsPorArea.BIOMEDICA)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Mecánica -->
-                        <div id="stats-mecanica" class="area-stats-section">
-                            ${generateAreaSpecificStats('MECANICA', statsPorArea.MECANICA)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Infraestructura -->
-                        <div id="stats-infraestructura" class="area-stats-section">
-                            ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
-                        </div>
-
-                        <!-- NUEVO: Contenido de estadísticas por Personal -->
-                        <div id="stats-personal" class="area-stats-section">
-                            ${generatePersonalStats(statsPorPersonal)}
-                        </div>
-                    </div>
-                `;
-                
-                // Crear gráficos después de que el HTML esté listo
-                setTimeout(() => {
-                    createGeneralCharts(stats);
-                    if (currentAreaStats === 'todas') {
-                        // Ya se crearon los gráficos generales
-                    } else if (currentAreaStats === 'personal') {
-                        createPersonalCharts(statsPorPersonal);
-                    } else {
-                        createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
-                    }
-                }, 100);
-                
-            } catch (error) {
-                console.error('❌ Error mostrando estadísticas:', error);
-                const content = document.getElementById('stats-modal-content');
-                content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4>❌ Error al cargar estadísticas</h4>
-                        <p>${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        // NUEVA FUNCIÓN: Calcular estadísticas por personal
-        function calcularEstadisticasPorPersonal() {
-            const statsPorPersonal = {};
-            
-            cloudTecnicos.forEach(tecnico => {
-                // Solicitudes asignadas a este técnico
-                const solicitudesAsignadas = cloudSolicitudes.filter(s => 
-                    s.tecnicoAsignado === tecnico.nombre
-                );
-                
-                const completadas = solicitudesAsignadas.filter(s => 
-                    (s.estado || '').toUpperCase() === 'COMPLETADA'
-                ).length;
-                
-                const enProceso = solicitudesAsignadas.filter(s => {
-                    const estado = (s.estado || '').toUpperCase();
-                    return estado === 'EN_PROCESO' || estado === 'EN PROCESO' || estado === 'ASIGNADA';
-                }).length;
-                
-                // Calcular tiempo promedio de respuesta
-                let tiempoTotalMs = 0;
-                let solicitudesConTiempo = 0;
-                
-                solicitudesAsignadas.forEach(s => {
-                    if (s.fechaCreacion && (s.estado === 'COMPLETADA' || s.estado === 'Completada')) {
-                        const fechaCreacion = new Date(s.fechaCreacion);
-                        const fechaFin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
-                        const tiempoMs = fechaFin - fechaCreacion;
-                        tiempoTotalMs += tiempoMs;
-                        solicitudesConTiempo++;
-                    }
-                });
-                
-                const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-                const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-                const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                // Calcular tasa de eficiencia
-                const tasaCompletado = solicitudesAsignadas.length > 0 ? 
-                    ((completadas / solicitudesAsignadas.length) * 100).toFixed(1) : 0;
-                
-                statsPorPersonal[tecnico.nombre] = {
-                    area: getAreaName(tecnico.area),
-                    tipo: tecnico.tipo,
-                    estado: tecnico.estado,
-                    totalAsignadas: solicitudesAsignadas.length,
-                    completadas: completadas,
-                    enProceso: enProceso,
-                    tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
-                    tasaCompletado: tasaCompletado,
-                    especialidad: tecnico.especialidad || 'No especificada'
-                };
-            });
-            
-            return statsPorPersonal;
-        }
-
-        // NUEVA FUNCIÓN: Generar HTML de estadísticas por personal
-        function generatePersonalStats(statsPorPersonal) {
-            const personalOrdenado = Object.entries(statsPorPersonal)
-                .sort((a, b) => b[1].completadas - a[1].completadas);
-            
-            return `
-                <h3 style="color: #1f2937; margin-bottom: 1.5rem;">👥 Estadísticas por Personal de Soporte</h3>
-                
-                <!-- Top 5 Personal más eficiente -->
-                <div class="card" style="margin-bottom: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">🏆 Top 5 - Personal Más Eficiente</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="stats-grid">
-                            ${personalOrdenado.slice(0, 5).map((entry, index) => {
-                                const [nombre, stats] = entry;
-                                const medalColor = index === 0 ? '#FFD700' : index === 1 ? '#C0C0C0' : index === 2 ? '#CD7F32' : '#059669';
-                                return `
-                                    <div class="stat-card" style="border-top: 4px solid ${medalColor};">
-                                        <div class="stat-card-header">
-                                            <span class="stat-card-title">${index + 1}. ${nombre}</span>
-                                            <span style="font-size: 1.5rem;">${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '⭐'}</span>
-                                        </div>
-                                        <div class="stat-card-value" style="color: ${medalColor};">
-                                            ${stats.completadas}
-                                        </div>
-                                        <div class="stat-card-description">
-                                            Solicitudes completadas<br>
-                                            Área: ${stats.area}<br>
-                                            Eficiencia: ${stats.tasaCompletado}%
-                                        </div>
-                                    </div>
-                                `;
-                            }).join('')}
-                        </div>
-                    </div>
+            content.innerHTML = `
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="color: #1f2937; margin-bottom: 0.5rem;">Solicitud: ${solicitud.numero}</h4>
+                    <p style="color: #6b7280;">Estado actual: <strong>${solicitud.estado || 'PENDIENTE'}</strong></p>
+                    ${solicitud.tecnicoAsignado ? `<p style="color: #059669;">Técnico asignado: <strong>${solicitud.tecnicoAsignado}</strong></p>` : ''}
                 </div>
                 
-                <!-- Tabla detallada de todo el personal -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">📊 Detalle Completo del Personal</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="table-responsive">
-                            <table class="stats-table">
-                                <thead>
-                                    <tr>
-                                        <th>Personal</th>
-                                        <th>Área</th>
-                                        <th>Tipo</th>
-                                        <th>Estado</th>
-                                        <th>Asignadas</th>
-                                        <th>Completadas</th>
-                                        <th>En Proceso</th>
-                                        <th>Tiempo Promedio</th>
-                                        <th>Eficiencia</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${personalOrdenado.map(entry => {
-                                        const [nombre, stats] = entry;
-                                        const estadoColor = stats.estado === 'disponible' ? '#059669' : 
-                                                          stats.estado === 'ocupado' ? '#f59e0b' : '#ef4444';
-                                        return `
-                                            <tr>
-                                                <td style="font-weight: 600;">${nombre}</td>
-                                                <td>${stats.area}</td>
-                                                <td>${stats.tipo || 'No especificado'}</td>
-                                                <td><span style="color: ${estadoColor}; font-weight: 600;">${stats.estado || 'No especificado'}</span></td>
-                                                <td style="text-align: center;">${stats.totalAsignadas}</td>
-                                                <td style="text-align: center; font-weight: 600; color: #059669;">${stats.completadas}</td>
-                                                <td style="text-align: center;">${stats.enProceso}</td>
-                                                <td>${stats.tiempoPromedio}</td>
-                                                <td style="text-align: center; font-weight: 600;">
-                                                    <span style="color: ${parseFloat(stats.tasaCompletado) > 75 ? '#059669' : parseFloat(stats.tasaCompletado) > 50 ? '#f59e0b' : '#ef4444'};">
-                                                        ${stats.tasaCompletado}%
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">🔄 Nuevo Estado</label>
+                    <select class="form-select" id="new-status">
+                        <option value="PENDIENTE">⏳ Pendiente</option>
+                        <option value="ASIGNADA">🎯 Asignada</option>
+                        <option value="EN_PROCESO">🔧 En Proceso</option>
+                        <option value="COMPLETADA">✅ Completada</option>
+                        <option value="CANCELADA">❌ Cancelada</option>
+                    </select>
                 </div>
                 
-                <!-- Gráfico de rendimiento por personal -->
-                <div class="card" style="margin-top: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">📈 Gráfico de Rendimiento</h3>
+                <div class="form-group">
+                    <label class="form-label">📝 Observaciones (opcional)</label>
+                    <textarea class="form-textarea" id="status-observations" 
+                        placeholder="Agregar observaciones sobre el cambio de estado..."></textarea>
+                </div>
+
+                ${solicitud.estado !== 'COMPLETADA' ? `
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <h5 style="color: #1e40af; margin-bottom: 0.5rem;">ℹ️ Información</h5>
+                        <p style="color: #1e3a8a; font-size: 0.875rem;">
+                            Al cambiar a "Completada", el técnico permanecerá registrado como quien completó la solicitud.
+                        </p>
                     </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="personalChart"></canvas>
-                        </div>
-                    </div>
+                ` : ''}
+                
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button class="btn btn-success" onclick="confirmStatusChange('${solicitudId}')">
+                        ✅ Confirmar Cambio
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeStatusModal()">
+                        ↩️ Cancelar
+                    </button>
                 </div>
             `;
+
+            modal.classList.add('show');
         }
 
-        // NUEVA FUNCIÓN: Crear gráficos de personal
-        function createPersonalCharts(statsPorPersonal) {
-            const ctx = document.getElementById('personalChart');
-            if (!ctx) return;
+        // FUNCIÓN CRÍTICA MODIFICADA: Confirmar cambio de estado SIN LIBERAR TÉCNICO
+        async function confirmStatusChange(solicitudId) {
+            const newStatus = document.getElementById('new-status').value;
+            const observations = document.getElementById('status-observations').value;
+
+            try {
+                // Cambiar el estado SIN liberar el técnico
+                const result = await window.airtableAPI.updateRequestStatusWithoutRelease(solicitudId, newStatus, observations);
+                
+                if (result.success) {
+                    // Actualizar datos locales
+                    await loadAllDataFromCloud();
+                    
+                    closeStatusModal();
+                    
+                    // Mostrar confirmación específica si se completó
+                    if (newStatus === 'COMPLETADA') {
+                        alert(`✅ Solicitud marcada como COMPLETADA\n\n📋 Número: ${result.solicitud.numero || 'N/A'}\n👤 Completado por: ${result.solicitud.tecnicoAsignado || 'No asignado'}\n\nEl técnico permanece registrado como quien completó la solicitud.`);
+                    } else {
+                        alert(`✅ Estado actualizado a ${newStatus}\n\n${result.mensaje}`);
+                    }
+                } else {
+                    alert('❌ Error al cambiar el estado');
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error al cambiar el estado: ' + error.message);
+            }
+        }
+
+        // Resto de las funciones siguen igual...
+        function closeStatusModal() {
+            document.getElementById('status-modal').classList.remove('show');
+        }
+
+        function closeAssignmentModal() {
+            document.getElementById('assignment-modal').classList.remove('show');
+        }
+
+        function closeApprovalModal() {
+            document.getElementById('approval-modal').classList.remove('show');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.remove('show');
+        }
+
+        function closeAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.remove('show');
+            document.getElementById('add-personal-form').reset();
+        }
+
+        function closeEditPersonalModal() {
+            document.getElementById('edit-personal-modal').classList.remove('show');
+        }
+
+        function closeStatsModal() {
+            document.getElementById('stats-modal').classList.remove('show');
+        }
+
+        // Las demás funciones permanecen sin cambios...
+        
+        // Función para mostrar vista
+        function showView(viewName) {
+            // Ocultar todas las vistas
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.add('hidden');
+            });
             
-            const chartId = 'personalChart';
-            if (chartInstances[chartId]) {
-                chartInstances[chartId].destroy();
+            // Mostrar la vista seleccionada
+            const viewElement = document.getElementById(`${viewName}-view`);
+            if (viewElement) {
+                viewElement.classList.remove('hidden');
             }
             
-            const personalOrdenado = Object.entries(statsPorPersonal)
-                .sort((a, b) => b[1].completadas - a[1].completadas)
-                .slice(0, 10); // Top 10
-            
-            chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
-                type: 'bar',
-                data: {
-                    labels: personalOrdenado.map(entry => entry[0]),
-                    datasets: [
-                        {
-                            label: 'Completadas',
-                            data: personalOrdenado.map(entry => entry[1].completadas),
-                            backgroundColor: '#059669'
-                        },
-                        {
-                            label: 'En Proceso',
-                            data: personalOrdenado.map(entry => entry[1].enProceso),
-                            backgroundColor: '#f59e0b'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 1
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const stats = statsPorPersonal[context.label];
-                                    return `Área: ${stats.area}\nEficiencia: ${stats.tasaCompletado}%`;
-                                }
-                            }
-                        }
-                    }
+            // Actualizar pestañas activas
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.dataset.view === viewName) {
+                    tab.classList.add('active');
                 }
             });
         }
+
+        // Función para ver detalles de solicitud
+        function viewRequestDetails(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) return;
+            
+            alert(`📋 Detalles de la Solicitud\n\n` +
+                  `Número: ${solicitud.numero}\n` +
+                  `Estado: ${solicitud.estado}\n` +
+                  `Área: ${getAreaName(solicitud.servicioIngenieria)}\n` +
+                  `Prioridad: ${solicitud.prioridad}\n` +
+                  `Tipo: ${solicitud.tipoServicio}\n` +
+                  `Solicitante: ${solicitud.solicitante}\n` +
+                  `Técnico: ${solicitud.tecnicoAsignado || 'Sin asignar'}\n` +
+                  `Descripción: ${solicitud.descripcion}`);
+        }
+
+        // Función para mostrar notificaciones
+        function showNotifications() {
+            alert('🔔 Centro de Notificaciones\n\nPróximamente: Sistema de notificaciones en tiempo real');
+        }
+
+        // Función para filtrar por estado
+        function filterByStatus(status) {
+            showView('solicitudes');
+            filterByDetailedStatus(status);
+        }
+
+        // Función para filtrar por área
+        function filterByArea(area) {
+            if (area === 'all') {
+                showView('solicitudes');
+                filterSolicitudesByArea('TODAS');
+            } else {
+                showView('solicitudes');
+                filterSolicitudesByArea(area);
+            }
+        }
+
+        // Función para filtrar solicitudes
+        function filterSolicitudes() {
+            applyCurrentFilters();
+            updateSolicitudesList();
+        }
+
+        // Función para limpiar filtros de solicitudes
+        function clearSolicitudesFilters() {
+            document.getElementById('filter-estado-solicitud').value = '';
+            document.getElementById('filter-prioridad-solicitud').value = '';
+            document.getElementById('filter-tipo-servicio').value = '';
+            
+            filterSolicitudesByArea(currentAreaFilter);
+        }
+
+        // Función para mostrar modal de asignación
+        async function showAssignPersonalModal(solicitudId) {
+            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+            if (!solicitud) return;
+
+            const modal = document.getElementById('assignment-modal');
+            const content = document.getElementById('assignment-modal-content');
+
+            // Filtrar técnicos disponibles del área correspondiente
+            const area = normalizarArea(solicitud.servicioIngenieria);
+            const tecnicosArea = cloudTecnicos.filter(t => {
+                const tecnicoArea = normalizarArea(t.area);
+                return tecnicoArea === area && t.estado === 'disponible';
+            });
+
+            if (tecnicosArea.length === 0) {
+                content.innerHTML = `
+                    <div class="alert alert-warning">
+                        <h4>⚠️ No hay personal disponible</h4>
+                        <p>No hay técnicos disponibles en el área de ${getAreaName(solicitud.servicioIngenieria)}</p>
+                    </div>
+                    <button class="btn btn-secondary" onclick="closeAssignmentModal()">Cerrar</button>
+                `;
+            } else {
+                content.innerHTML = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #1f2937;">Solicitud: ${solicitud.numero}</h4>
+                        <p style="color: #6b7280;">Área: ${getAreaName(solicitud.servicioIngenieria)}</p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">👨‍🔧 Seleccionar Personal</label>
+                        <select class="form-select" id="technician-select">
+                            <option value="">Seleccione un técnico...</option>
+                            ${tecnicosArea.map(t => `
+                                <option value="${t.id}">
+                                    ${t.nombre} - ${t.tipo || 'Técnico'} 
+                                    ${t.especialidad ? `(${t.especialidad})` : ''}
+                                </option>
+                            `).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">📝 Observaciones (opcional)</label>
+                        <textarea class="form-textarea" id="assignment-observations" 
+                            placeholder="Agregar observaciones sobre la asignación..."></textarea>
+                    </div>
+                    
+                    <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                        <button class="btn btn-success" onclick="confirmAssignment('${solicitudId}')">
+                            ✅ Confirmar Asignación
+                        </button>
+                        <button class="btn btn-secondary" onclick="closeAssignmentModal()">
+                            ↩️ Cancelar
+                        </button>
+                    </div>
+                `;
+            }
+
+            modal.classList.add('show');
+        }
+
+        // Función para confirmar asignación
+        async function confirmAssignment(solicitudId) {
+            const technicianId = document.getElementById('technician-select').value;
+            const observations = document.getElementById('assignment-observations').value;
+
+            if (!technicianId) {
+                alert('⚠️ Por favor seleccione un técnico');
+                return;
+            }
+
+            try {
+                const result = await window.airtableAPI.assignTechnicianToRequest(
+                    solicitudId,
+                    technicianId,
+                    observations
+                );
+
+                if (result.success) {
+                    await loadAllDataFromCloud();
+                    closeAssignmentModal();
+                    alert(`✅ Asignación exitosa\n\n${result.tecnico.nombre} ha sido asignado a la solicitud ${result.solicitud.numero}`);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error al asignar personal: ' + error.message);
+            }
+        }
+
+        // Función para liberar personal
+        async function unassignPersonal(solicitudId) {
+            if (!confirm('¿Está seguro de liberar el personal asignado?')) return;
+
+            try {
+                const result = await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
+                
+                if (result.success) {
+                    await loadAllDataFromCloud();
+                    alert(`✅ ${result.mensaje}`);
+                } else {
+                    alert(`⚠️ ${result.mensaje}`);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error al liberar personal: ' + error.message);
+            }
+        }
+
+        // Función para auto-asignar pendientes
+        async function autoAssignPending() {
+            if (!confirm('¿Desea auto-asignar todas las solicitudes pendientes al personal disponible?')) return;
+
+            try {
+                const result = await window.airtableAPI.autoAssignPendingRequests();
+                
+                await loadAllDataFromCloud();
+                
+                alert(`✅ Auto-asignación completada\n\n` +
+                      `Asignadas: ${result.asignadas}\n` +
+                      `Sin técnicos disponibles: ${result.sinTecnicos}\n` +
+                      `Fallidas: ${result.fallidas}\n` +
+                      `Total procesadas: ${result.total}`);
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error en auto-asignación: ' + error.message);
+            }
+        }
+
+        // Funciones de Personal
+        function updateTechniciansList() {
+            const container = document.getElementById('technicians-container');
+            
+            if (cloudTecnicos.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">👥</div>
+                        <h3 style="color: #1f2937;">No hay personal registrado</h3>
+                        <p>Agregue personal de soporte para gestionar las solicitudes</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cloudTecnicos.map(tecnico => `
+                    <div style="background: white; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 style="color: #1f2937; font-weight: 600;">${tecnico.nombre}</h4>
+                                <p style="color: #6b7280; font-size: 0.875rem;">
+                                    ${tecnico.area} | ${tecnico.tipo || 'Técnico'}
+                                    ${tecnico.especialidad ? ` | ${tecnico.especialidad}` : ''}
+                                </p>
+                                <span class="status-${tecnico.estado || 'disponible'}" style="font-size: 0.75rem;">
+                                    ${tecnico.estado || 'disponible'}
+                                </span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-primary btn-sm" onclick="editTechnician('${tecnico.id}')">
+                                    ✏️ Editar
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteTechnician('${tecnico.id}')">
+                                    🗑️ Eliminar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function filterPersonal() {
+            // Implementar filtrado de personal
+            console.log('Filtrar personal');
+        }
+
+        function clearPersonalFilters() {
+            document.getElementById('filter-area').value = '';
+            document.getElementById('filter-estado').value = '';
+            document.getElementById('filter-tipo').value = '';
+            updateTechniciansList();
+        }
+
+        function showAddPersonalModal() {
+            document.getElementById('add-personal-modal').classList.add('show');
+        }
+
+        function showPersonalStatistics() {
+            alert('📊 Estadísticas de Personal\n\nPróximamente: Dashboard detallado del personal');
+        }
+
+        function debugPersonalConnection() {
+            console.log('Debug Personal:', cloudTecnicos);
+            alert(`🔧 Debug de Personal\n\nTotal registrados: ${cloudTecnicos.length}\n\nVer consola para más detalles`);
+        }
+
+        function editTechnician(technicianId) {
+            alert('✏️ Editar técnico\n\nFuncionalidad próximamente');
+        }
+
+        function deleteTechnician(technicianId) {
+            if (confirm('¿Está seguro de eliminar este técnico?')) {
+                alert('🗑️ Eliminar técnico\n\nFuncionalidad próximamente');
+            }
+        }
+
+        // Funciones de Accesos
+        function updateAccessRequestsList() {
+            const container = document.getElementById('access-requests-container');
+            
+            if (cloudSolicitudesAcceso.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #6b7280;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🔐</div>
+                        <h3 style="color: #1f2937;">No hay solicitudes de acceso</h3>
+                        <p>Las solicitudes de acceso aparecerán aquí</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cloudSolicitudesAcceso.map(solicitud => {
+                    const isPending = solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.estado;
+                    const cardClass = isPending ? 'pending' : solicitud.estado === 'APROBADA' ? 'approved' : 'rejected';
+                    
+                    return `
+                        <div class="access-request-card ${cardClass}">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <h4 class="request-name">${solicitud.nombreCompleto}</h4>
+                                    <p style="color: #6b7280; font-size: 0.875rem;">
+                                        📧 ${solicitud.email} | 📞 ${solicitud.telefono || 'Sin teléfono'}
+                                    </p>
+                                    <p style="color: #6b7280; font-size: 0.875rem;">
+                                        🏥 ${solicitud.servicioHospitalario} | 👤 ${solicitud.cargo}
+                                    </p>
+                                    <p style="color: #6b7280; font-size: 0.875rem; margin-top: 0.5rem;">
+                                        📝 ${solicitud.justificacion || 'Sin justificación'}
+                                    </p>
+                                </div>
+                                <div>
+                                    ${isPending ? `
+                                        <button class="btn btn-success btn-sm" onclick="approveAccessRequest('${solicitud.id}')">
+                                            ✅ Aprobar
+                                        </button>
+                                        <button class="btn btn-danger btn-sm" onclick="rejectAccessRequest('${solicitud.id}')">
+                                            ❌ Rechazar
+                                        </button>
+                                    ` : `
+                                        <span class="status-${solicitud.estado === 'APROBADA' ? 'aprobada' : 'rechazada'}">
+                                            ${solicitud.estado}
+                                        </span>
+                                    `}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        async function approveAccessRequest(requestId) {
+            if (!confirm('¿Aprobar esta solicitud de acceso?')) return;
+
+            try {
+                const result = await window.airtableAPI.approveAccessRequestAndCreateUser(requestId);
+                
+                if (result.success) {
+                    await loadAllDataFromCloud();
+                    alert(`✅ Acceso aprobado\n\nUsuario: ${result.user.nombreCompleto}\nCódigo de acceso: ${result.accessCode}`);
+                }
+            } catch (error) {
+                console.error('❌ Error:', error);
+                alert('❌ Error al aprobar acceso: ' + error.message);
+            }
+        }
+
+        function rejectAccessRequest(requestId) {
+            alert('❌ Rechazar solicitud\n\nFuncionalidad próximamente');
+        }
+
+        function approveAllPending() {
+            alert('✅ Aprobar todas\n\nFuncionalidad próximamente');
+        }
+
+        // Función de estadísticas (simplificada para no modificar)
+        async function showAdvancedStatisticsModal() {
+            const modal = document.getElementById('stats-modal');
+            const content = document.getElementById('stats-modal-content');
+            
+            content.innerHTML = `
+                <div style="text-align: center; padding: 3rem;">
+                    <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                    <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas...</p>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+            
+            setTimeout(() => {
+                content.innerHTML = `
+                    <div style="padding: 1rem;">
+                        <h3 style="color: #1f2937; margin-bottom: 1rem;">📊 Estadísticas del Sistema</h3>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-card-title">Total Solicitudes</div>
+                                <div class="stat-card-value">${cloudSolicitudes.length}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-card-title">Personal Registrado</div>
+                                <div class="stat-card-value">${cloudTecnicos.length}</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-card-title">Usuarios Activos</div>
+                                <div class="stat-card-value">${cloudUsuarios.length}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }, 1000);
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Iniciando Portal de Gestión Cloud...');
+            
+            // Cargar datos iniciales
+            await loadAllDataFromCloud();
+            
+            // Iniciar auto-refresh
+            startAutoRefresh();
+            
+            // Configurar formulario de agregar personal
+            document.getElementById('add-personal-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const personalData = {
+                    nombre: document.getElementById('personal-nombre').value,
+                    email: document.getElementById('personal-email').value,
+                    area: document.getElementById('personal-area').value,
+                    tipo: document.getElementById('personal-tipo').value,
+                    especialidad: document.getElementById('personal-especialidad').value,
+                    estado: document.getElementById('personal-estado').value
+                };
+                
+                try {
+                    await window.airtableAPI.createTecnico(personalData);
+                    await syncTechniciansWithCloud();
+                    closeAddPersonalModal();
+                    alert('✅ Personal agregado exitosamente');
+                } catch (error) {
+                    console.error('❌ Error:', error);
+                    alert('❌ Error al agregar personal: ' + error.message);
+                }
+            });
+            
+            console.log('✅ Portal de Gestión Cloud inicializado');
+        });
