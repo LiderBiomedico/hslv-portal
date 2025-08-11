@@ -1583,8 +1583,19 @@ class AirtableAPI {
                 
                 // Si se completó la solicitud, liberar el técnico
                 if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                    console.log('🔓 Liberando técnico asignado...');
-                    await this.liberarTecnicoAsignado(solicitudId);
+                    // 🔒 NO borrar tecnicoAsignado de la solicitud; solo marcar el técnico como disponible
+                    try {
+                        const tecnicos = await this.getTecnicos();
+                        const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+                        if (tecnico) {
+                            await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
+                                fields: { estado: 'disponible', solicitudAsignada: '' }
+                            });
+                            console.log('✅ Técnico marcado como disponible (sin desasignar en la solicitud)');
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ No se pudo marcar el técnico como disponible:', e);
+                    }
                 }
                 
                 return { 
@@ -1624,8 +1635,20 @@ class AirtableAPI {
                             
                             // Si se completó la solicitud, liberar el técnico
                             if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                                await this.liberarTecnicoAsignado(solicitudId);
-                            }
+                    // 🔒 NO borrar tecnicoAsignado de la solicitud; solo marcar el técnico como disponible
+                    try {
+                        const tecnicos = await this.getTecnicos();
+                        const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+                        if (tecnico) {
+                            await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
+                                fields: { estado: 'disponible', solicitudAsignada: '' }
+                            });
+                            console.log('✅ Técnico marcado como disponible (sin desasignar en la solicitud)');
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ No se pudo marcar el técnico como disponible:', e);
+                    }
+                }
                             
                             return { 
                                 success: true, 
