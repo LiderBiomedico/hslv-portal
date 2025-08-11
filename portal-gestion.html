@@ -2513,8 +2513,8 @@
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
 
-            const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
-            const isCompleted = estadoUpper === 'COMPLETADA';
+            const estadoUpper = (solicitud.estado ?? '').toString().toUpperCase().trim();
+            const isCompleted = estadoUpper === 'COMPLETADA' || estadoUpper === 'COMPLETADO';
             const isCancelled = estadoUpper === 'CANCELADA';
             
             if (solicitud.tiempoRespuestaMaximo && !isCompleted && !isCancelled) {
