@@ -2837,3 +2837,404 @@
                         </div>
                         
                         <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">⏳ Pendientes</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #f59e0b;">
+                                ${stats.mesActual.pendientes}
+                            </div>
+                            <div class="stat-card-description">
+                                Por resolver
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">⏱️ Tiempo Promedio</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #8b5cf6;">
+                                ${stats.mesActual.tiempoPromedio}h
+                            </div>
+                            <div class="stat-card-description">
+                                De resolución
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución por áreas del mes -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">🏥 Distribución por Áreas - ${stats.nombreMes}</h3>
+                        </div>
+                        <div class="card-content">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                                <div style="text-align: center; padding: 1rem; background: #dcfce7; border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem; font-weight: bold; color: #059669;">
+                                        ${stats.mesActual.porArea.BIOMEDICA}
+                                    </div>
+                                    <div style="color: #047857; font-weight: 500;">Biomédica</div>
+                                </div>
+                                <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">
+                                        ${stats.mesActual.porArea.MECANICA}
+                                    </div>
+                                    <div style="color: #d97706; font-weight: 500;">Mecánica</div>
+                                </div>
+                                <div style="text-align: center; padding: 1rem; background: #ede9fe; border-radius: 0.5rem;">
+                                    <div style="font-size: 2rem; font-weight: bold; color: #8b5cf6;">
+                                        ${stats.mesActual.porArea.INFRAESTRUCTURA}
+                                    </div>
+                                    <div style="color: #7c3aed; font-weight: 500;">Infraestructura</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Gráfico de tendencia semanal -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Distribución Semanal del Mes</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="chart-container">
+                                <canvas id="monthlyWeekChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparación con mes anterior -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📈 Comparación Mensual</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="chart-container">
+                                <canvas id="monthlyComparisonChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // NUEVA FUNCIÓN: Generar HTML del informe trimestral
+        function generateQuarterlyReport(stats) {
+            const trendIcon = stats.tendencia.total >= 0 ? '📈' : '📉';
+            const trendClass = stats.tendencia.total >= 0 ? 'trend-up' : 'trend-down';
+            
+            const mesesNombres = ['Mes 1', 'Mes 2', 'Mes 3'];
+            const trimestre = parseInt(stats.trimestre.match(/Q(\d)/)[1]);
+            const año = parseInt(stats.trimestre.match(/\d{4}/)[0]);
+            const primerMes = (trimestre - 1) * 3;
+            
+            for (let i = 0; i < 3; i++) {
+                const mes = new Date(año, primerMes + i, 1);
+                mesesNombres[i] = mes.toLocaleDateString('es-CO', { month: 'short' });
+            }
+            
+            return `
+                <div style="padding: 1rem;">
+                    <h3 style="color: #1f2937; margin-bottom: 1.5rem;">
+                        📈 Informe Trimestral - ${stats.trimestre}
+                    </h3>
+                    
+                    <!-- Resumen ejecutivo trimestral -->
+                    <div class="comparison-card">
+                        <div class="comparison-header">
+                            <div>
+                                <div class="comparison-title">Resumen Ejecutivo del Trimestre</div>
+                                <div class="comparison-trend ${trendClass}">
+                                    ${trendIcon} ${stats.tendencia.total >= 0 ? '+' : ''}${stats.tendencia.total} solicitudes (${stats.tendencia.porcentaje}%)
+                                </div>
+                            </div>
+                            <div class="comparison-value" style="color: #2563eb;">
+                                ${stats.trimestreActual.total} Total
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- KPIs del trimestre -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">📊 Total Trimestre</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #2563eb;">
+                                ${stats.trimestreActual.total}
+                            </div>
+                            <div class="stat-card-description">
+                                Solicitudes totales
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">✅ Tasa Completado</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #059669;">
+                                ${stats.trimestreActual.tasaCompletado}%
+                            </div>
+                            <div class="stat-card-description">
+                                ${stats.trimestreActual.completadas} de ${stats.trimestreActual.total}
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card" style="border-top: 4px solid #ef4444;">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">👤 Errores Usuario</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #ef4444;">
+                                ${stats.trimestreActual.tasaErrores}%
+                            </div>
+                            <div class="stat-card-description">
+                                ${stats.trimestreActual.erroresUsuario} casos
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">⏳ Pendientes</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #f59e0b;">
+                                ${stats.trimestreActual.pendientes}
+                            </div>
+                            <div class="stat-card-description">
+                                Por resolver
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Distribución por áreas del trimestre -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">🏥 Distribución por Áreas - ${stats.trimestre}</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="chart-container">
+                                <canvas id="quarterlyAreaChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Tendencia mensual del trimestre -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📊 Tendencia Mensual del Trimestre</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="chart-container">
+                                <canvas id="quarterlyMonthChart"></canvas>
+                            </div>
+                            <div style="margin-top: 1rem;">
+                                <table class="stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Mes</th>
+                                            <th>Solicitudes</th>
+                                            <th>% del Trimestre</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${mesesNombres.map((mes, i) => `
+                                            <tr>
+                                                <td>${mes}</td>
+                                                <td>${stats.trimestreActual.porMes[i]}</td>
+                                                <td>${stats.trimestreActual.total > 0 ? 
+                                                    ((stats.trimestreActual.porMes[i] / stats.trimestreActual.total) * 100).toFixed(1) : 0}%</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Comparación trimestral -->
+                    <div class="card" style="margin-top: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">📈 Comparación con Trimestre Anterior</h3>
+                        </div>
+                        <div class="card-content">
+                            <div class="chart-container">
+                                <canvas id="quarterlyComparisonChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // NUEVA FUNCIÓN: Crear gráficos mensuales
+        function createMonthlyCharts(stats) {
+            // Gráfico de distribución semanal
+            const ctxWeek = document.getElementById('monthlyWeekChart');
+            if (ctxWeek) {
+                if (chartInstances.monthlyWeekChart) {
+                    chartInstances.monthlyWeekChart.destroy();
+                }
+                
+                chartInstances.monthlyWeekChart = new Chart(ctxWeek.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Semana 5'],
+                        datasets: [{
+                            label: 'Solicitudes por Semana',
+                            data: stats.mesActual.porSemana,
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Gráfico de comparación mensual
+            const ctxComparison = document.getElementById('monthlyComparisonChart');
+            if (ctxComparison) {
+                if (chartInstances.monthlyComparisonChart) {
+                    chartInstances.monthlyComparisonChart.destroy();
+                }
+                
+                const mesAnteriorNombre = new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth() - 1,
+                    1
+                ).toLocaleDateString('es-CO', { month: 'long' });
+                
+                chartInstances.monthlyComparisonChart = new Chart(ctxComparison.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: [mesAnteriorNombre, stats.nombreMes],
+                        datasets: [{
+                            label: 'Total Solicitudes',
+                            data: [stats.mesAnterior.total, stats.mesActual.total],
+                            backgroundColor: ['#6b7280', '#2563eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // NUEVA FUNCIÓN: Crear gráficos trimestrales
+        function createQuarterlyCharts(stats) {
+            // Gráfico de distribución por áreas
+            const ctxArea = document.getElementById('quarterlyAreaChart');
+            if (ctxArea) {
+                if (chartInstances.quarterlyAreaChart) {
+                    chartInstances.quarterlyAreaChart.destroy();
+                }
+                
+                chartInstances.quarterlyAreaChart = new Chart(ctxArea.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Biomédica', 'Mecánica', 'Infraestructura'],
+                        datasets: [{
+                            data: [
+                                stats.trimestreActual.porArea.BIOMEDICA,
+                                stats.trimestreActual.porArea.MECANICA,
+                                stats.trimestreActual.porArea.INFRAESTRUCTURA
+                            ],
+                            backgroundColor: ['#059669', '#f59e0b', '#8b5cf6']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Gráfico de tendencia mensual
+            const ctxMonth = document.getElementById('quarterlyMonthChart');
+            if (ctxMonth) {
+                if (chartInstances.quarterlyMonthChart) {
+                    chartInstances.quarterlyMonthChart.destroy();
+                }
+                
+                const trimestre = parseInt(stats.trimestre.match(/Q(\d)/)[1]);
+                const año = parseInt(stats.trimestre.match(/\d{4}/)[0]);
+                const primerMes = (trimestre - 1) * 3;
+                const mesesNombres = [];
+                
+                for (let i = 0; i < 3; i++) {
+                    const mes = new Date(año, primerMes + i, 1);
+                    mesesNombres.push(mes.toLocaleDateString('es-CO', { month: 'short' }));
+                }
+                
+                chartInstances.quarterlyMonthChart = new Chart(ctxMonth.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: mesesNombres,
+                        datasets: [{
+                            label: 'Solicitudes por Mes',
+                            data: stats.trimestreActual.porMes,
+                            backgroundColor: ['#dbeafe', '#93c5fd', '#2563eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Gráfico de comparación trimestral
+            const ctxComparison = document.getElementById('quarterlyComparisonChart');
+            if (ctxComparison) {
+                if (chartInstances.quarterlyComparisonChart) {
+                    chartInstances.quarterlyComparisonChart.destroy();
+                }
+                
+                const trimestreAnterior = `Q${parseInt(stats.trimestre.match(/Q(\d)/)[1]) - 1}`;
+                
+                chartInstances.quarterlyComparisonChart = new Chart(ctxComparison.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: [trimestreAnterior, stats.trimestre],
+                        datasets: [{
+                            label: 'Total Solicitudes',
+                            data: [stats.trimestreAnterior.total, stats.trimestreActual.total],
+                            backgroundColor: ['#6b7280', '#2563eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        }
