@@ -2516,6 +2516,9 @@
             const estadoUpper = (solicitud.estado ?? '').toString().toUpperCase().trim();
             const isCompleted = estadoUpper === 'COMPLETADA' || estadoUpper === 'COMPLETADO';
             const isCancelled = estadoUpper === 'CANCELADA';
+            const showActions = !(isCompleted || isCancelled);
+            const showAssignBtn = showActions && (estadoUpper === 'PENDIENTE' || estadoUpper === 'ASIGNADA' || !solicitud.tecnicoAsignado);
+
             
             if (solicitud.tiempoRespuestaMaximo && !isCompleted && !isCancelled) {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
@@ -2541,8 +2544,7 @@
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
             
             // Indicador de sin asignar - NO mostrar si está completada
-            const sinAsignarBadge = (!solicitud.tecnicoAsignado && !isCompleted && !isCancelled) ? 
-                '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
+            const sinAsignarBadge = (!solicitud.tecnicoAsignado && ( !(isCompleted || isCancelled) )) ? '<span style="background: #fee2e2; color: #dc2626; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
 
             // MEJORADO: Mostrar quién completó la solicitud
             const completadoPorInfo = isCompleted && solicitud.tecnicoAsignado ? 
@@ -2623,13 +2625,13 @@
                     </div>
 
                     <div class="request-actions">
-                        ${(!isCompleted && !isCancelled && (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado)) ? `
+                        ${(showAssignBtn) ? `
                             <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
                                 🎯 Asignar Personal
                             </button>
                         ` : ''}
                         
-                        ${(!isCompleted && !isCancelled) ? `
+                        ${(showActions) ? `
                             <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
                                 🔄 Cambiar Estado
                             </button>
