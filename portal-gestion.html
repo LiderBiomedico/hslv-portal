@@ -5115,25 +5115,153 @@ async function notifyTechnician(technicianId, requestNumber) {
         }
 
         // Otras funciones
-        function showView(viewName) {
-            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
-            document.getElementById(viewName + '-view').classList.remove('hidden');
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+     // Agregar esta función actualizada que incluye todos los casos necesarios
+// Reemplaza la función showView existente con esta versión completa:
+
+function showView(viewName) {
+    // Ocultar todas las vistas
+    document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+    
+    // Mostrar la vista seleccionada
+    const targetView = document.getElementById(viewName + '-view');
+    if (targetView) {
+        targetView.classList.remove('hidden');
+    }
+    
+    // Actualizar pestañas de navegación activas
+    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+    const activeTab = document.querySelector(`[data-view="${viewName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+    
+    // Ejecutar acciones específicas según la vista
+    switch(viewName) {
+        case 'dashboard':
+            // Actualizar métricas del dashboard
+            updateAllCounters();
+            updatePersonnelSummaries();
+            break;
             
-            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
-            
-            switch(viewName) {
-                case 'solicitudes':
-                    updateSolicitudesList();
-                    break;
-                case 'personal':
-                    updateTechniciansList();
-                    break;
-                case 'accesos':
-                    updateAccessRequestsList();
-                    break;
+        case 'solicitudes':
+            // Actualizar lista de solicitudes
+            if (filteredSolicitudes.length === 0) {
+                filteredSolicitudes = [...cloudSolicitudes];
             }
-        }
+            updateSolicitudesList();
+            clasificarSolicitudesPorArea();
+            updateAreaBadges();
+            updateStatusCounters();
+            break;
+            
+        case 'personal':
+            // Actualizar lista de personal
+            updateTechniciansList();
+            updatePersonnelSummaries();
+            break;
+            
+        case 'accesos':
+            // Actualizar lista de solicitudes de acceso
+            updateAccessRequestsList();
+            break;
+            
+        default:
+            console.warn('Vista no reconocida:', viewName);
+    }
+}
+
+// También asegúrate de que estas funciones auxiliares estén definidas:
+
+function filterByArea(area) {
+    console.log('📍 Filtrar por área:', area);
+    
+    if (area === 'all') {
+        filteredSolicitudes = [...cloudSolicitudes];
+    } else {
+        const areaNormalizada = area.toUpperCase();
+        filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
+            const areaServicio = normalizarArea(solicitud.servicioIngenieria);
+            return areaServicio === areaNormalizada;
+        });
+    }
+    
+    // Cambiar a vista de solicitudes
+    showView('solicitudes');
+    
+    // Actualizar el filtro de área activo
+    filterSolicitudesByArea(area === 'all' ? 'TODAS' : area);
+}
+
+function filterByStatus(status) {
+    console.log('🔍 Filtrar por estado:', status);
+    
+    switch(status) {
+        case 'PENDIENTE':
+            filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
+                const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
+                if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
+                    return false;
+                }
+                return estadoUpper === 'PENDIENTE' || !solicitud.tecnicoAsignado;
+            });
+            break;
+            
+        case 'ASIGNADA':
+            filteredSolicitudes = cloudSolicitudes.filter(solicitud => {
+                const estadoUpper = (solicitud.estado || '').toUpperCase();
+                return estadoUpper === 'ASIGNADA' && solicitud.tecnicoAsignado;
+            });
+            break;
+            
+        default:
+            filteredSolicitudes = [...cloudSolicitudes];
+    }
+    
+    // Cambiar a vista de solicitudes
+    showView('solicitudes');
+    
+    // Actualizar la lista
+    updateSolicitudesList();
+}
+
+// Función adicional para manejar notificaciones
+function showNotifications() {
+    const pendingAccess = cloudSolicitudesAcceso.filter(s => {
+        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+        return estado === 'PENDIENTE';
+    }).length;
+    
+    const pendingSolicitudes = cloudSolicitudes.filter(s => {
+        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+        return estado === 'PENDIENTE' || !s.tecnicoAsignado;
+    }).length;
+    
+    const erroresUsuario = cloudSolicitudes.filter(s => 
+        s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+    ).length;
+    
+    const totalSolicitudes = cloudSolicitudes.length;
+    const porcentajeErrores = totalSolicitudes > 0 ? 
+        ((erroresUsuario / totalSolicitudes) * 100).toFixed(1) : 0;
+    
+    const criticasSinAsignar = cloudSolicitudes.filter(s => 
+        (s.prioridad === 'CRITICA' || s.prioridad === 'Crítica') && !s.tecnicoAsignado
+    ).length;
+    
+    alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n` +
+        `📊 RESUMEN:\n` +
+        `• ${pendingAccess} Solicitudes de acceso pendientes\n` +
+        `• ${pendingSolicitudes} Solicitudes sin asignar\n` +
+        `• ${criticasSinAsignar} Solicitudes CRÍTICAS sin personal\n\n` +
+        `⚠️ ERRORES DE USUARIO:\n` +
+        `• ${erroresUsuario} solicitudes (${porcentajeErrores}% del total)\n\n` +
+        `🌐 ESTADO DEL SISTEMA:\n` +
+        `• Conexión: ${isConnectedToAirtable ? '🟢 Airtable Conectado' : '🔴 Modo Local'}\n` +
+        `• Auto-refresh: ${isAutoRefreshActive ? '🟢 Activo (5s)' : '🔴 Pausado'}\n` +
+        `• Última actualización: ${new Date().toLocaleTimeString('es-CO')}`
+    );
+}
 
         function showNotifications() {
             const pendingAccess = cloudSolicitudesAcceso.filter(s => {
