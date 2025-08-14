@@ -2722,6 +2722,18 @@ async function showAdvancedStatisticsModal() {
         `;
         
         modal.classList.add('show');
+                // Mostrar opción de causa de cierre cuando el nuevo estado sea COMPLETADA
+                const newStatusSelect = document.getElementById('new-status');
+                const closeCauseGroup = document.getElementById('close-cause-group');
+                if (newStatusSelect && closeCauseGroup) {
+                    const toggleCloseCause = () => {
+                        closeCauseGroup.style.display = (newStatusSelect.value === 'COMPLETADA') ? 'block' : 'none';
+                    };
+                    newStatusSelect.addEventListener('change', toggleCloseCause);
+                    // Inicializar estado
+                    toggleCloseCause();
+                }
+
         
         // Obtener estadísticas generales
         const stats = await window.airtableAPI.getAdvancedStatistics();
@@ -4699,7 +4711,24 @@ async function exportTemporalAnalysis() {
                             </select>
                         </div>
 
-                        <div class="form-group">
+                        
+                        <div class="form-group" id="close-cause-group" style="display: none;">
+                            <label class="form-label">✅ Causa de cierre (solo para estado Completada)</label>
+                            <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+                                <label style="display:flex; align-items:center; gap:0.5rem;">
+                                    <input type="radio" name="close-cause" value="NORMAL" checked />
+                                    Cierre normal
+                                </label>
+                                <label style="display:flex; align-items:center; gap:0.5rem;">
+                                    <input type="radio" name="close-cause" value="ERROR_USUARIO" />
+                                    Error de usuario
+                                </label>
+                            </div>
+                            <p style="color:#6b7280; font-size:0.9rem; margin-top:0.5rem;">
+                                Si seleccionas <strong>Error de usuario</strong>, la solicitud se marcará con tipo de servicio <code>ERROR_USUARIO</code> para las estadísticas.
+                            </p>
+                        </div>
+<div class="form-group">
                             <label class="form-label">📝 Observaciones del Cambio</label>
                             <textarea id="status-notes" class="form-textarea" 
                                 placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
@@ -4744,9 +4773,32 @@ async function exportTemporalAnalysis() {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '⏳ Cambiando estado...';
 
-                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
                 
-                if (result.success) {
+                let result;
+                if (nuevoEstado === 'COMPLETADA') {
+                    const causeEl = document.querySelector('input[name="close-cause"]:checked');
+                    const cause = causeEl ? causeEl.value : 'NORMAL';
+                    if (cause === 'ERROR_USUARIO') {
+                        // Marcar tipo de servicio como ERROR_USUARIO
+                        result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                            solicitudId, nuevoEstado, observaciones, 
+                            'COMPLETADA', 
+                            'ERROR_USUARIO', 
+                            observaciones
+                        );
+                    } else {
+                        // Cierre normal, solo cambia el estado
+                        result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                            solicitudId, nuevoEstado, observaciones, 
+                            'COMPLETADA', 
+                            null, 
+                            observaciones
+                        );
+                    }
+                } else {
+                    result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
+                }
+if (result.success) {
                     await refreshFromCloud();
                     
                     if (nuevoEstado === 'COMPLETADA') {
