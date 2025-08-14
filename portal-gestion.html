@@ -15,7 +15,73 @@
             padding: 0;
             box-sizing: border-box;
         }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+/* Estilos para análisis temporal */
+.temporal-period-section {
+    animation: fadeIn 0.3s ease-in;
+}
+
+.temporal-area-section {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.main-stats-section {
+    min-height: 400px;
+}
+
+/* Mejorar visualización de tablas de análisis temporal */
+.stats-table tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+
+.stats-table tbody tr:hover {
+    background: #e0f2fe;
+    transition: background 0.2s;
+}
+
+/* Indicadores de tendencia */
+.trend-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.trend-up {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.trend-down {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.trend-stable {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background-color: #f1f8f5;
@@ -2642,658 +2708,961 @@
             
             return area;
         }
-
-        // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas
-        async function showAdvancedStatisticsModal() {
-            try {
-                const modal = document.getElementById('stats-modal');
-                const content = document.getElementById('stats-modal-content');
-                
-                content.innerHTML = `
-                    <div style="text-align: center; padding: 3rem;">
-                        <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                        <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
+async function showAdvancedStatisticsModal() {
+    try {
+        const modal = document.getElementById('stats-modal');
+        const content = document.getElementById('stats-modal-content');
+        
+        content.innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
+            </div>
+        `;
+        
+        modal.classList.add('show');
+        
+        // Obtener estadísticas generales
+        const stats = await window.airtableAPI.getAdvancedStatistics();
+        
+        // Calcular estadísticas por área
+        const statsPorArea = calcularEstadisticasPorArea();
+        
+        // NUEVO: Calcular análisis temporal
+        const analisisTemporal = calcularAnalisisTemporal();
+        
+        // Generar HTML con pestañas por área y análisis temporal
+        content.innerHTML = `
+            <div style="padding: 1rem;">
+                <!-- Encabezado con botones de acción -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                    <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
+                            📄 Exportar a PDF
+                        </button>
+                        <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
+                            🔄 Actualizar
+                        </button>
                     </div>
-                `;
-                
-                modal.classList.add('show');
-                
-                // Obtener estadísticas generales
-                const stats = await window.airtableAPI.getAdvancedStatistics();
-                
-                // Calcular estadísticas por área
-                const statsPorArea = calcularEstadisticasPorArea();
-                
-                // Generar HTML con pestañas por área
-                content.innerHTML = `
-                    <div style="padding: 1rem;">
-                        <!-- Encabezado con botones de acción -->
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                            <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
-                            <div style="display: flex; gap: 0.5rem;">
-                                <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
-                                    📄 Exportar a PDF
-                                </button>
-                                <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
-                                    🔄 Actualizar
-                                </button>
-                            </div>
-                        </div>
+                </div>
 
-                        <!-- Pestañas de áreas -->
-                        <div class="area-tabs">
-                            <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
-                                🌐 General
-                            </button>
-                            <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
-                                🏥 Biomédica
-                            </button>
-                            <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
-                                ⚙️ Mecánica
-                            </button>
-                            <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
-                                🏗️ Infraestructura
-                            </button>
-                        </div>
+                <!-- Pestañas principales de navegación -->
+                <div class="analysis-tabs" style="border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem;">
+                    <button class="analysis-tab active" data-main-tab="resumen" onclick="showMainStatsTab('resumen')">
+                        📊 Resumen General
+                    </button>
+                    <button class="analysis-tab" data-main-tab="temporal" onclick="showMainStatsTab('temporal')">
+                        📅 Análisis Temporal
+                    </button>
+                </div>
 
-                        <!-- Contenido de estadísticas General -->
-                        <div id="stats-todas" class="area-stats-section active">
-                            ${generateGeneralStats(stats)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Biomédica -->
-                        <div id="stats-biomedica" class="area-stats-section">
-                            ${generateAreaSpecificStats('BIOMEDICA', statsPorArea.BIOMEDICA)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Mecánica -->
-                        <div id="stats-mecanica" class="area-stats-section">
-                            ${generateAreaSpecificStats('MECANICA', statsPorArea.MECANICA)}
-                        </div>
-
-                        <!-- Contenido de estadísticas Infraestructura -->
-                        <div id="stats-infraestructura" class="area-stats-section">
-                            ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
-                        </div>
+                <!-- Contenido de Resumen General (existente) -->
+                <div id="main-tab-resumen" class="main-stats-section active">
+                    <!-- Pestañas de áreas existentes -->
+                    <div class="area-tabs">
+                        <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
+                            🌐 General
+                        </button>
+                        <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
+                            🏥 Biomédica
+                        </button>
+                        <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
+                            ⚙️ Mecánica
+                        </button>
+                        <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
+                            🏗️ Infraestructura
+                        </button>
                     </div>
-                `;
-                
-                // Crear gráficos después de que el HTML esté listo
-                setTimeout(() => {
-                    createGeneralCharts(stats);
-                    if (currentAreaStats === 'todas') {
-                        // Ya se crearon los gráficos generales
-                    } else {
-                        createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
-                    }
-                }, 100);
-                
-            } catch (error) {
-                console.error('❌ Error mostrando estadísticas:', error);
-                const content = document.getElementById('stats-modal-content');
-                content.innerHTML = `
-                    <div class="alert alert-danger">
-                        <h4>❌ Error al cargar estadísticas</h4>
-                        <p>${error.message}</p>
+
+                    <!-- Contenido de estadísticas General -->
+                    <div id="stats-todas" class="area-stats-section active">
+                        ${generateGeneralStats(stats)}
                     </div>
-                `;
+
+                    <!-- Contenido de estadísticas Biomédica -->
+                    <div id="stats-biomedica" class="area-stats-section">
+                        ${generateAreaSpecificStats('BIOMEDICA', statsPorArea.BIOMEDICA)}
+                    </div>
+
+                    <!-- Contenido de estadísticas Mecánica -->
+                    <div id="stats-mecanica" class="area-stats-section">
+                        ${generateAreaSpecificStats('MECANICA', statsPorArea.MECANICA)}
+                    </div>
+
+                    <!-- Contenido de estadísticas Infraestructura -->
+                    <div id="stats-infraestructura" class="area-stats-section">
+                        ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
+                    </div>
+                </div>
+
+                <!-- NUEVO: Contenido de Análisis Temporal -->
+                <div id="main-tab-temporal" class="main-stats-section" style="display: none;">
+                    ${generateTemporalAnalysis(analisisTemporal)}
+                </div>
+            </div>
+        `;
+        
+        // Crear gráficos después de que el HTML esté listo
+        setTimeout(() => {
+            if (document.getElementById('main-tab-resumen').style.display !== 'none') {
+                createGeneralCharts(stats);
+                if (currentAreaStats === 'todas') {
+                    // Ya se crearon los gráficos generales
+                } else {
+                    createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
+                }
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ Error mostrando estadísticas:', error);
+        const content = document.getElementById('stats-modal-content');
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <h4>❌ Error al cargar estadísticas</h4>
+                <p>${error.message}</p>
+            </div>
+        `;
+    }
+}
+
+// NUEVA FUNCIÓN: Mostrar pestaña principal de estadísticas
+function showMainStatsTab(tab) {
+    // Actualizar pestañas activas
+    document.querySelectorAll('.analysis-tab[data-main-tab]').forEach(t => {
+        t.classList.remove('active');
+        if (t.dataset.mainTab === tab) {
+            t.classList.add('active');
+        }
+    });
+    
+    // Ocultar todas las secciones principales
+    document.querySelectorAll('.main-stats-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Mostrar sección seleccionada
+    const section = document.getElementById(`main-tab-${tab}`);
+    if (section) {
+        section.style.display = 'block';
+        
+        // Si es análisis temporal, crear los gráficos
+        if (tab === 'temporal') {
+            setTimeout(() => {
+                createTemporalCharts();
+            }, 100);
+        }
+    }
+}
+
+// NUEVA FUNCIÓN: Calcular análisis temporal
+function calcularAnalisisTemporal() {
+    const now = new Date();
+    const analisis = {
+        mensual: {
+            BIOMEDICA: {},
+            MECANICA: {},
+            INFRAESTRUCTURA: {}
+        },
+        trimestral: {
+            BIOMEDICA: {},
+            MECANICA: {},
+            INFRAESTRUCTURA: {}
+        }
+    };
+    
+    // Inicializar últimos 12 meses
+    for (let i = 11; i >= 0; i--) {
+        const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+            analisis.mensual[area][monthKey] = {
+                total: 0,
+                completadas: 0,
+                pendientes: 0,
+                erroresUsuario: 0,
+                tiempoPromedio: 0,
+                solicitudes: []
+            };
+        });
+    }
+    
+    // Inicializar últimos 4 trimestres
+    for (let i = 3; i >= 0; i--) {
+        const quarterDate = new Date(now.getFullYear(), now.getMonth() - (i * 3), 1);
+        const year = quarterDate.getFullYear();
+        const quarter = Math.floor(quarterDate.getMonth() / 3) + 1;
+        const quarterKey = `${year}-Q${quarter}`;
+        
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+            analisis.trimestral[area][quarterKey] = {
+                total: 0,
+                completadas: 0,
+                pendientes: 0,
+                erroresUsuario: 0,
+                tiempoPromedio: 0,
+                solicitudes: []
+            };
+        });
+    }
+    
+    // Procesar solicitudes
+    cloudSolicitudes.forEach(solicitud => {
+        if (!solicitud.fechaCreacion) return;
+        
+        const fecha = new Date(solicitud.fechaCreacion);
+        const monthKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+        const quarter = Math.floor(fecha.getMonth() / 3) + 1;
+        const quarterKey = `${fecha.getFullYear()}-Q${quarter}`;
+        
+        const area = normalizarArea(solicitud.servicioIngenieria);
+        
+        // Análisis mensual
+        if (analisis.mensual[area] && analisis.mensual[area][monthKey]) {
+            analisis.mensual[area][monthKey].total++;
+            analisis.mensual[area][monthKey].solicitudes.push(solicitud);
+            
+            if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') {
+                analisis.mensual[area][monthKey].completadas++;
+            } else if (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) {
+                analisis.mensual[area][monthKey].pendientes++;
+            }
+            
+            if (solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') {
+                analisis.mensual[area][monthKey].erroresUsuario++;
             }
         }
-
-        // FUNCIÓN: Calcular estadísticas por área
-        function calcularEstadisticasPorArea() {
-            const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-            const statsPorArea = {};
+        
+        // Análisis trimestral
+        if (analisis.trimestral[area] && analisis.trimestral[area][quarterKey]) {
+            analisis.trimestral[area][quarterKey].total++;
+            analisis.trimestral[area][quarterKey].solicitudes.push(solicitud);
             
-            areas.forEach(area => {
-                const solicitudesArea = solicitudesPorArea[area] || [];
-                const tecnicosArea = cloudTecnicos.filter(t => normalizarArea(t.area) === area);
-                
-                const pendientes = solicitudesArea.filter(s => {
-                    const estado = (s.estado || 'PENDIENTE').toUpperCase();
-                    return estado === 'PENDIENTE' || (!s.tecnicoAsignado && estado !== 'COMPLETADA' && estado !== 'CANCELADA');
-                }).length;
-                
-                const asignadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'ASIGNADA').length;
-                const enProceso = solicitudesArea.filter(s => {
-                    const estado = (s.estado || '').toUpperCase();
-                    return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-                }).length;
-                const completadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length;
-                const canceladas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'CANCELADA').length;
-                
-                // Calcular errores de usuario
-                const erroresUsuario = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
-                ).length;
-                
-                // Calcular mantenimientos correctivos
-                const correctivos = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
-                ).length;
-                
-                // Calcular tiempos promedio
-                let tiempoTotalMs = 0;
-                let solicitudesConTiempo = 0;
-                
-                solicitudesArea.forEach(s => {
-                    if (s.fechaCreacion && (s.estado === 'COMPLETADA' || s.estado === 'Completada')) {
-                        const fechaCreacion = new Date(s.fechaCreacion);
-                        const fechaFin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
-                        const tiempoMs = fechaFin - fechaCreacion;
-                        tiempoTotalMs += tiempoMs;
-                        solicitudesConTiempo++;
+            if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') {
+                analisis.trimestral[area][quarterKey].completadas++;
+            } else if (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) {
+                analisis.trimestral[area][quarterKey].pendientes++;
+            }
+            
+            if (solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') {
+                analisis.trimestral[area][quarterKey].erroresUsuario++;
+            }
+        }
+    });
+    
+    // Calcular tiempos promedio
+    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+        // Mensual
+        Object.keys(analisis.mensual[area]).forEach(monthKey => {
+            const solicitudesCompletadas = analisis.mensual[area][monthKey].solicitudes.filter(s => 
+                s.estado === 'COMPLETADA' || s.estado === 'Completada'
+            );
+            
+            if (solicitudesCompletadas.length > 0) {
+                let totalHoras = 0;
+                solicitudesCompletadas.forEach(s => {
+                    if (s.fechaCreacion && s.fechaCompletado) {
+                        const inicio = new Date(s.fechaCreacion);
+                        const fin = new Date(s.fechaCompletado);
+                        const horas = (fin - inicio) / (1000 * 60 * 60);
+                        totalHoras += horas;
                     }
                 });
-                
-                const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-                const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-                const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                // Personal del área
-                const personalDisponible = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'disponible').length;
-                const personalOcupado = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'ocupado').length;
-                const personalInactivo = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'inactivo').length;
-                
-                statsPorArea[area] = {
-                    total: solicitudesArea.length,
-                    pendientes,
-                    asignadas,
-                    enProceso,
-                    completadas,
-                    canceladas,
-                    erroresUsuario,
-                    correctivos,
-                    porcentajeCompletadas: solicitudesArea.length > 0 ? ((completadas / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    porcentajeErrores: solicitudesArea.length > 0 ? ((erroresUsuario / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    porcentajeCorrectivos: solicitudesArea.length > 0 ? ((correctivos / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
-                    personal: {
-                        total: tecnicosArea.length,
-                        disponible: personalDisponible,
-                        ocupado: personalOcupado,
-                        inactivo: personalInactivo
-                    },
-                    eficiencia: solicitudesArea.length > 0 ? (((completadas + canceladas) / solicitudesArea.length) * 100).toFixed(1) : 0
-                };
-            });
+                analisis.mensual[area][monthKey].tiempoPromedio = Math.round(totalHoras / solicitudesCompletadas.length);
+            }
+        });
+        
+        // Trimestral
+        Object.keys(analisis.trimestral[area]).forEach(quarterKey => {
+            const solicitudesCompletadas = analisis.trimestral[area][quarterKey].solicitudes.filter(s => 
+                s.estado === 'COMPLETADA' || s.estado === 'Completada'
+            );
             
-            return statsPorArea;
-        }
+            if (solicitudesCompletadas.length > 0) {
+                let totalHoras = 0;
+                solicitudesCompletadas.forEach(s => {
+                    if (s.fechaCreacion && s.fechaCompletado) {
+                        const inicio = new Date(s.fechaCreacion);
+                        const fin = new Date(s.fechaCompletado);
+                        const horas = (fin - inicio) / (1000 * 60 * 60);
+                        totalHoras += horas;
+                    }
+                });
+                analisis.trimestral[area][quarterKey].tiempoPromedio = Math.round(totalHoras / solicitudesCompletadas.length);
+            }
+        });
+    });
+    
+    return analisis;
+}
 
-        // FUNCIÓN: Generar HTML de estadísticas generales
-        function generateGeneralStats(stats) {
-            return `
-                <!-- Indicadores principales -->
-                <div class="stats-grid">
+// NUEVA FUNCIÓN: Generar HTML de análisis temporal
+function generateTemporalAnalysis(analisis) {
+    return `
+        <div style="margin-bottom: 2rem;">
+            <h3 style="color: #1f2937; margin-bottom: 1rem;">📅 Análisis Temporal por Áreas</h3>
+            
+            <!-- Selector de período -->
+            <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+                <button class="btn btn-primary btn-sm" onclick="showTemporalPeriod('mensual')">
+                    📆 Análisis Mensual
+                </button>
+                <button class="btn btn-info btn-sm" onclick="showTemporalPeriod('trimestral')">
+                    📊 Análisis Trimestral
+                </button>
+            </div>
+            
+            <!-- Pestañas de áreas para análisis temporal -->
+            <div class="area-tabs" style="margin-bottom: 1.5rem;">
+                <button class="area-tab active" data-temporal-area="BIOMEDICA" onclick="showTemporalArea('BIOMEDICA')">
+                    🏥 Biomédica
+                </button>
+                <button class="area-tab" data-temporal-area="MECANICA" onclick="showTemporalArea('MECANICA')">
+                    ⚙️ Mecánica
+                </button>
+                <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA')">
+                    🏗️ Infraestructura
+                </button>
+                <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO')">
+                    📊 Comparativo
+                </button>
+            </div>
+            
+            <!-- Contenido de análisis mensual -->
+            <div id="temporal-mensual" class="temporal-period-section">
+                <!-- Biomédica Mensual -->
+                <div id="temporal-mensual-BIOMEDICA" class="temporal-area-section active">
+                    ${generateMonthlyAnalysisForArea('BIOMEDICA', analisis.mensual.BIOMEDICA)}
+                </div>
+                
+                <!-- Mecánica Mensual -->
+                <div id="temporal-mensual-MECANICA" class="temporal-area-section" style="display: none;">
+                    ${generateMonthlyAnalysisForArea('MECANICA', analisis.mensual.MECANICA)}
+                </div>
+                
+                <!-- Infraestructura Mensual -->
+                <div id="temporal-mensual-INFRAESTRUCTURA" class="temporal-area-section" style="display: none;">
+                    ${generateMonthlyAnalysisForArea('INFRAESTRUCTURA', analisis.mensual.INFRAESTRUCTURA)}
+                </div>
+                
+                <!-- Comparativo Mensual -->
+                <div id="temporal-mensual-COMPARATIVO" class="temporal-area-section" style="display: none;">
+                    ${generateComparativeAnalysis('mensual', analisis.mensual)}
+                </div>
+            </div>
+            
+            <!-- Contenido de análisis trimestral -->
+            <div id="temporal-trimestral" class="temporal-period-section" style="display: none;">
+                <!-- Biomédica Trimestral -->
+                <div id="temporal-trimestral-BIOMEDICA" class="temporal-area-section active">
+                    ${generateQuarterlyAnalysisForArea('BIOMEDICA', analisis.trimestral.BIOMEDICA)}
+                </div>
+                
+                <!-- Mecánica Trimestral -->
+                <div id="temporal-trimestral-MECANICA" class="temporal-area-section" style="display: none;">
+                    ${generateQuarterlyAnalysisForArea('MECANICA', analisis.trimestral.MECANICA)}
+                </div>
+                
+                <!-- Infraestructura Trimestral -->
+                <div id="temporal-trimestral-INFRAESTRUCTURA" class="temporal-area-section" style="display: none;">
+                    ${generateQuarterlyAnalysisForArea('INFRAESTRUCTURA', analisis.trimestral.INFRAESTRUCTURA)}
+                </div>
+                
+                <!-- Comparativo Trimestral -->
+                <div id="temporal-trimestral-COMPARATIVO" class="temporal-area-section" style="display: none;">
+                    ${generateComparativeAnalysis('trimestral', analisis.trimestral)}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// NUEVA FUNCIÓN: Generar análisis mensual por área
+function generateMonthlyAnalysisForArea(area, data) {
+    const months = Object.keys(data).sort();
+    const totales = months.map(m => data[m].total);
+    const completadas = months.map(m => data[m].completadas);
+    const pendientes = months.map(m => data[m].pendientes);
+    const errores = months.map(m => data[m].erroresUsuario);
+    
+    const areaColors = {
+        'BIOMEDICA': '#059669',
+        'MECANICA': '#f59e0b',
+        'INFRAESTRUCTURA': '#8b5cf6'
+    };
+    
+    const color = areaColors[area];
+    
+    return `
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, ${color}22 0%, ${color}11 100%);">
+                <h3 class="card-title" style="color: ${color};">📆 Análisis Mensual - ${area}</h3>
+            </div>
+            <div class="card-content">
+                <!-- Métricas resumidas -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">✅ Tasa de Completado</span>
-                            <span style="font-size: 1.5rem;">📈</span>
+                            <span class="stat-card-title">📈 Promedio Mensual</span>
+                        </div>
+                        <div class="stat-card-value" style="color: ${color};">
+                            ${Math.round(totales.reduce((a, b) => a + b, 0) / months.length)}
+                        </div>
+                        <div class="stat-card-description">Solicitudes/mes</div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">✅ Tasa Completado</span>
                         </div>
                         <div class="stat-card-value" style="color: #059669;">
-                            ${stats.indicadoresGestion.porcentajeCompletadas}%
+                            ${totales.reduce((a, b) => a + b, 0) > 0 ? 
+                                Math.round((completadas.reduce((a, b) => a + b, 0) / totales.reduce((a, b) => a + b, 0)) * 100) : 0}%
                         </div>
-                        <div class="stat-card-description">
-                            ${stats.solicitudes.completadas} de ${stats.solicitudes.total} solicitudes
-                        </div>
+                        <div class="stat-card-description">Último año</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">🔧 Mantenimientos Correctivos</span>
-                            <span style="font-size: 1.5rem;">⚙️</span>
-                        </div>
-                        <div class="stat-card-value" style="color: #f59e0b;">
-                            ${stats.indicadoresGestion.porcentajeMantenimientosCorrectivos}%
-                        </div>
-                        <div class="stat-card-description">
-                            Del total de solicitudes
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card" style="border: 2px solid #ef4444;">
-                        <div class="stat-card-header">
-                            <span class="stat-card-title">👤 Errores de Usuario</span>
-                            <span style="font-size: 1.5rem;">⚠️</span>
+                            <span class="stat-card-title">⚠️ Errores Usuario</span>
                         </div>
                         <div class="stat-card-value" style="color: #ef4444;">
-                            ${stats.indicadoresGestion.porcentajeErroresUsuario}%
+                            ${errores.reduce((a, b) => a + b, 0)}
                         </div>
-                        <div class="stat-card-description">
-                            Solicitudes por mal uso del equipo
-                        </div>
+                        <div class="stat-card-description">Total año</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">⏱️ Tiempo Promedio</span>
-                            <span style="font-size: 1.5rem;">⏰</span>
+                            <span class="stat-card-title">📊 Tendencia</span>
                         </div>
-                        <div class="stat-card-value" style="color: #2563eb;">
-                            ${stats.tiemposRespuesta.promedioRespuesta}
+                        <div class="stat-card-value" style="color: ${totales[totales.length - 1] > totales[totales.length - 2] ? '#ef4444' : '#059669'};">
+                            ${totales[totales.length - 1] > totales[totales.length - 2] ? '↗️ Subiendo' : '↘️ Bajando'}
                         </div>
-                        <div class="stat-card-description">
-                            Respuesta promedio
-                        </div>
+                        <div class="stat-card-description">Último mes</div>
                     </div>
                 </div>
                 
-                <!-- Gráfico de distribución por estado -->
-                <div class="card" style="margin-top: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">📊 Distribución por Estado</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="estadoChart"></canvas>
-                        </div>
-                    </div>
+                <!-- Gráfico de tendencia mensual -->
+                <div class="chart-container" style="height: 400px; margin-bottom: 2rem;">
+                    <canvas id="monthlyChart-${area}"></canvas>
                 </div>
                 
-                <!-- Gráfico de solicitudes por área -->
-                <div class="card" style="margin-top: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">🏥 Distribución por Área</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="areaChart"></canvas>
-                        </div>
-                    </div>
+                <!-- Tabla detallada -->
+                <div class="table-responsive">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Mes</th>
+                                <th>Total</th>
+                                <th>Completadas</th>
+                                <th>Pendientes</th>
+                                <th>Errores Usuario</th>
+                                <th>Tiempo Promedio</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${months.map(month => `
+                                <tr>
+                                    <td><strong>${formatMonth(month)}</strong></td>
+                                    <td>${data[month].total}</td>
+                                    <td style="color: #059669;">${data[month].completadas}</td>
+                                    <td style="color: #f59e0b;">${data[month].pendientes}</td>
+                                    <td style="color: #ef4444;">${data[month].erroresUsuario}</td>
+                                    <td>${data[month].tiempoPromedio}h</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
-        // FUNCIÓN: Generar HTML de estadísticas específicas por área
-        function generateAreaSpecificStats(area, stats) {
-            const areaNames = {
-                'BIOMEDICA': 'Ingeniería Biomédica',
-                'MECANICA': 'Mecánica',
-                'INFRAESTRUCTURA': 'Infraestructura'
-            };
-            
-            const areaColors = {
-                'BIOMEDICA': '#059669',
-                'MECANICA': '#f59e0b',
-                'INFRAESTRUCTURA': '#8b5cf6'
-            };
-            
-            const areaName = areaNames[area];
-            const areaColor = areaColors[area];
-            
-            return `
-                <h3 style="color: ${areaColor}; margin-bottom: 1.5rem;">📊 Estadísticas de ${areaName}</h3>
-                
-                <!-- Indicadores del área -->
-                <div class="stats-grid">
+// NUEVA FUNCIÓN: Generar análisis trimestral por área
+function generateQuarterlyAnalysisForArea(area, data) {
+    const quarters = Object.keys(data).sort();
+    const totales = quarters.map(q => data[q].total);
+    const completadas = quarters.map(q => data[q].completadas);
+    const pendientes = quarters.map(q => data[q].pendientes);
+    const errores = quarters.map(q => data[q].erroresUsuario);
+    
+    const areaColors = {
+        'BIOMEDICA': '#059669',
+        'MECANICA': '#f59e0b',
+        'INFRAESTRUCTURA': '#8b5cf6'
+    };
+    
+    const color = areaColors[area];
+    
+    return `
+        <div class="card">
+            <div class="card-header" style="background: linear-gradient(135deg, ${color}22 0%, ${color}11 100%);">
+                <h3 class="card-title" style="color: ${color};">📊 Análisis Trimestral - ${area}</h3>
+            </div>
+            <div class="card-content">
+                <!-- Métricas resumidas -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">📋 Total Solicitudes</span>
+                            <span class="stat-card-title">📈 Promedio Trimestral</span>
                         </div>
-                        <div class="stat-card-value" style="color: ${areaColor};">
-                            ${stats.total}
+                        <div class="stat-card-value" style="color: ${color};">
+                            ${Math.round(totales.reduce((a, b) => a + b, 0) / quarters.length)}
                         </div>
-                        <div class="stat-card-description">
-                            Solicitudes del área
-                        </div>
+                        <div class="stat-card-description">Solicitudes/trimestre</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">✅ Completadas</span>
+                            <span class="stat-card-title">✅ Mejor Trimestre</span>
                         </div>
                         <div class="stat-card-value" style="color: #059669;">
-                            ${stats.porcentajeCompletadas}%
+                            ${quarters[completadas.indexOf(Math.max(...completadas))]}
                         </div>
-                        <div class="stat-card-description">
-                            ${stats.completadas} de ${stats.total}
-                        </div>
+                        <div class="stat-card-description">Mayor completado</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">⏳ Pendientes</span>
+                            <span class="stat-card-title">📊 Crecimiento</span>
                         </div>
-                        <div class="stat-card-value" style="color: #f59e0b;">
-                            ${stats.pendientes}
+                        <div class="stat-card-value" style="color: ${totales[totales.length - 1] > totales[0] ? '#059669' : '#ef4444'};">
+                            ${totales[0] > 0 ? Math.round(((totales[totales.length - 1] - totales[0]) / totales[0]) * 100) : 0}%
                         </div>
-                        <div class="stat-card-description">
-                            Sin asignar o completar
-                        </div>
+                        <div class="stat-card-description">Año actual</div>
                     </div>
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">⏱️ Tiempo Promedio</span>
-                        </div>
-                        <div class="stat-card-value" style="color: #2563eb;">
-                            ${stats.tiempoPromedio}
-                        </div>
-                        <div class="stat-card-description">
-                            De respuesta
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Indicadores específicos -->
-                <div class="stats-grid" style="margin-top: 1.5rem;">
-                    <div class="stat-card" style="border-top: 4px solid #ef4444;">
-                        <div class="stat-card-header">
-                            <span class="stat-card-title">👤 Errores Usuario</span>
+                            <span class="stat-card-title">⚠️ Total Errores</span>
                         </div>
                         <div class="stat-card-value" style="color: #ef4444;">
-                            ${stats.porcentajeErrores}%
+                            ${errores.reduce((a, b) => a + b, 0)}
                         </div>
-                        <div class="stat-card-description">
-                            ${stats.erroresUsuario} casos
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card" style="border-top: 4px solid #f59e0b;">
-                        <div class="stat-card-header">
-                            <span class="stat-card-title">🔧 Correctivos</span>
-                        </div>
-                        <div class="stat-card-value" style="color: #f59e0b;">
-                            ${stats.porcentajeCorrectivos}%
-                        </div>
-                        <div class="stat-card-description">
-                            ${stats.correctivos} mantenimientos
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card" style="border-top: 4px solid #059669;">
-                        <div class="stat-card-header">
-                            <span class="stat-card-title">🎯 Eficiencia</span>
-                        </div>
-                        <div class="stat-card-value" style="color: #059669;">
-                            ${stats.eficiencia}%
-                        </div>
-                        <div class="stat-card-description">
-                            Solicitudes gestionadas
-                        </div>
+                        <div class="stat-card-description">Últimos 4 trimestres</div>
                     </div>
                 </div>
                 
-                <!-- Personal del área -->
-                <div class="card" style="margin-top: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">👥 Personal del Área</h3>
-                    </div>
-                    <div class="card-content">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
-                            <div style="text-align: center; padding: 1rem; background: #f0fdf4; border-radius: 0.5rem;">
-                                <div style="font-size: 2rem; font-weight: bold; color: #059669;">${stats.personal.disponible}</div>
-                                <div style="color: #047857; font-weight: 500;">Disponibles</div>
-                            </div>
-                            <div style="text-align: center; padding: 1rem; background: #fef3c7; border-radius: 0.5rem;">
-                                <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">${stats.personal.ocupado}</div>
-                                <div style="color: #d97706; font-weight: 500;">Ocupados</div>
-                            </div>
-                            <div style="text-align: center; padding: 1rem; background: #fee2e2; border-radius: 0.5rem;">
-                                <div style="font-size: 2rem; font-weight: bold; color: #ef4444;">${stats.personal.inactivo}</div>
-                                <div style="color: #dc2626; font-weight: 500;">Inactivos</div>
-                            </div>
-                            <div style="text-align: center; padding: 1rem; background: #e0f2fe; border-radius: 0.5rem;">
-                                <div style="font-size: 2rem; font-weight: bold; color: #0284c7;">${stats.personal.total}</div>
-                                <div style="color: #0369a1; font-weight: 500;">Total</div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Gráfico de tendencia trimestral -->
+                <div class="chart-container" style="height: 400px; margin-bottom: 2rem;">
+                    <canvas id="quarterlyChart-${area}"></canvas>
                 </div>
                 
-                <!-- Gráfico de estados del área -->
-                <div class="card" style="margin-top: 2rem;">
-                    <div class="card-header">
-                        <h3 class="card-title">📊 Distribución de Estados - ${areaName}</h3>
-                    </div>
-                    <div class="card-content">
-                        <div class="chart-container">
-                            <canvas id="estadoChart${area}"></canvas>
-                        </div>
-                    </div>
+                <!-- Tabla detallada -->
+                <div class="table-responsive">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Trimestre</th>
+                                <th>Total</th>
+                                <th>Completadas</th>
+                                <th>Pendientes</th>
+                                <th>Errores Usuario</th>
+                                <th>Tiempo Promedio</th>
+                                <th>Eficiencia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${quarters.map(quarter => {
+                                const eficiencia = data[quarter].total > 0 ? 
+                                    Math.round((data[quarter].completadas / data[quarter].total) * 100) : 0;
+                                return `
+                                    <tr>
+                                        <td><strong>${quarter}</strong></td>
+                                        <td>${data[quarter].total}</td>
+                                        <td style="color: #059669;">${data[quarter].completadas}</td>
+                                        <td style="color: #f59e0b;">${data[quarter].pendientes}</td>
+                                        <td style="color: #ef4444;">${data[quarter].erroresUsuario}</td>
+                                        <td>${data[quarter].tiempoPromedio}h</td>
+                                        <td>
+                                            <span style="color: ${eficiencia >= 80 ? '#059669' : eficiencia >= 60 ? '#f59e0b' : '#ef4444'};">
+                                                ${eficiencia}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
                 </div>
-            `;
-        }
+            </div>
+        </div>
+    `;
+}
 
-        // FUNCIÓN: Mostrar estadísticas de área específica
-        function showAreaStats(area) {
-            currentAreaStats = area;
-            
-            // Actualizar pestañas activas
-            document.querySelectorAll('.area-tab[data-area-stats]').forEach(tab => {
-                tab.classList.remove('active');
-                if (tab.dataset.areaStats === area) {
-                    tab.classList.add('active');
-                }
-            });
-            
-            // Ocultar todas las secciones
-            document.querySelectorAll('.area-stats-section').forEach(section => {
-                section.classList.remove('active');
-            });
-            
-            // Mostrar sección seleccionada
-            const section = document.getElementById(`stats-${area}`);
-            if (section) {
-                section.classList.add('active');
+// NUEVA FUNCIÓN: Generar análisis comparativo
+function generateComparativeAnalysis(periodo, data) {
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const periodos = Object.keys(data.BIOMEDICA).sort();
+    
+    return `
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">📊 Análisis Comparativo ${periodo === 'mensual' ? 'Mensual' : 'Trimestral'}</h3>
+            </div>
+            <div class="card-content">
+                <!-- Resumen comparativo -->
+                <div class="stats-grid" style="margin-bottom: 2rem;">
+                    ${areas.map(area => {
+                        const areaData = data[area];
+                        const totales = periodos.map(p => areaData[p].total);
+                        const total = totales.reduce((a, b) => a + b, 0);
+                        const completadas = periodos.map(p => areaData[p].completadas).reduce((a, b) => a + b, 0);
+                        
+                        const areaColors = {
+                            'BIOMEDICA': '#059669',
+                            'MECANICA': '#f59e0b',
+                            'INFRAESTRUCTURA': '#8b5cf6'
+                        };
+                        
+                        return `
+                            <div class="stat-card" style="border-top: 4px solid ${areaColors[area]};">
+                                <div class="stat-card-header">
+                                    <span class="stat-card-title">${area}</span>
+                                </div>
+                                <div class="stat-card-value" style="color: ${areaColors[area]};">
+                                    ${total}
+                                </div>
+                                <div class="stat-card-description">
+                                    ${completadas} completadas (${total > 0 ? Math.round((completadas/total)*100) : 0}%)
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
                 
-                // Crear gráficos si es un área específica
-                if (area !== 'todas') {
-                    setTimeout(() => {
-                        const statsPorArea = calcularEstadisticasPorArea();
-                        createAreaCharts(area.toUpperCase(), statsPorArea[area.toUpperCase()]);
-                    }, 100);
-                }
-            }
-        }
+                <!-- Gráfico comparativo -->
+                <div class="chart-container" style="height: 400px; margin-bottom: 2rem;">
+                    <canvas id="comparativeChart-${periodo}"></canvas>
+                </div>
+                
+                <!-- Tabla comparativa detallada -->
+                <div class="table-responsive">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>${periodo === 'mensual' ? 'Mes' : 'Trimestre'}</th>
+                                <th style="color: #059669;">Biomédica</th>
+                                <th style="color: #f59e0b;">Mecánica</th>
+                                <th style="color: #8b5cf6;">Infraestructura</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${periodos.map(periodo => `
+                                <tr>
+                                    <td><strong>${periodo === 'mensual' ? formatMonth(periodo) : periodo}</strong></td>
+                                    <td>${data.BIOMEDICA[periodo].total}</td>
+                                    <td>${data.MECANICA[periodo].total}</td>
+                                    <td>${data.INFRAESTRUCTURA[periodo].total}</td>
+                                    <td><strong>${data.BIOMEDICA[periodo].total + data.MECANICA[periodo].total + data.INFRAESTRUCTURA[periodo].total}</strong></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    `;
+}
 
-        // Crear gráficos generales
-        function createGeneralCharts(stats) {
-            // Gráfico de estados
-            const ctxEstado = document.getElementById('estadoChart');
-            if (ctxEstado) {
-                if (chartInstances.estadoChart) {
-                    chartInstances.estadoChart.destroy();
-                }
-                
-                chartInstances.estadoChart = new Chart(ctxEstado.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Pendientes', 'Asignadas', 'En Proceso', 'Completadas', 'Canceladas'],
-                        datasets: [{
-                            data: [
-                                stats.solicitudes.pendientes,
-                                stats.solicitudes.asignadas,
-                                stats.solicitudes.enProceso,
-                                stats.solicitudes.completadas,
-                                stats.solicitudes.canceladas
-                            ],
-                            backgroundColor: [
-                                '#f59e0b',
-                                '#0ea5e9',
-                                '#8b5cf6',
-                                '#059669',
-                                '#ef4444'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
-                });
-            }
-            
-            // Gráfico de áreas
-            const ctxArea = document.getElementById('areaChart');
-            if (ctxArea) {
-                if (chartInstances.areaChart) {
-                    chartInstances.areaChart.destroy();
-                }
-                
-                chartInstances.areaChart = new Chart(ctxArea.getContext('2d'), {
-                    type: 'bar',
-                    data: {
-                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura'],
-                        datasets: [{
-                            label: 'Solicitudes por Área',
-                            data: [
-                                stats.solicitudes.porArea.INGENIERIA_BIOMEDICA,
-                                stats.solicitudes.porArea.MECANICA,
-                                stats.solicitudes.porArea.INFRAESTRUCTURA
-                            ],
-                            backgroundColor: [
-                                '#059669',
-                                '#f59e0b',
-                                '#8b5cf6'
-                            ]
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        }
+// NUEVA FUNCIÓN: Formatear mes
+function formatMonth(monthKey) {
+    const [year, month] = monthKey.split('-');
+    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+    return `${months[parseInt(month) - 1]} ${year}`;
+}
 
-        // Crear gráficos por área
-        function createAreaCharts(area, stats) {
-            const ctx = document.getElementById(`estadoChart${area}`);
-            if (!ctx) return;
-            
-            const chartId = `estadoChart${area}`;
-            if (chartInstances[chartId]) {
-                chartInstances[chartId].destroy();
-            }
-            
-            chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: ['Pendientes', 'Asignadas', 'En Proceso', 'Completadas', 'Canceladas'],
-                    datasets: [{
-                        data: [
-                            stats.pendientes,
-                            stats.asignadas,
-                            stats.enProceso,
-                            stats.completadas,
-                            stats.canceladas
-                        ],
-                        backgroundColor: [
-                            '#f59e0b',
-                            '#0ea5e9',
-                            '#8b5cf6',
-                            '#059669',
-                            '#ef4444'
-                        ]
-                    }]
+// NUEVA FUNCIÓN: Mostrar período temporal
+function showTemporalPeriod(periodo) {
+    // Ocultar todos los períodos
+    document.querySelectorAll('.temporal-period-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Mostrar período seleccionado
+    const section = document.getElementById(`temporal-${periodo}`);
+    if (section) {
+        section.style.display = 'block';
+        
+        // Recrear gráficos para el período
+        setTimeout(() => {
+            const currentArea = document.querySelector('.area-tab[data-temporal-area].active')?.dataset.temporalArea || 'BIOMEDICA';
+            createTemporalChartsForArea(currentArea, periodo);
+        }, 100);
+    }
+}
+
+// NUEVA FUNCIÓN: Mostrar área temporal
+function showTemporalArea(area) {
+    // Actualizar pestañas activas
+    document.querySelectorAll('.area-tab[data-temporal-area]').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.temporalArea === area) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Determinar período actual
+    const currentPeriod = document.querySelector('.temporal-period-section:not([style*="none"])');
+    const periodo = currentPeriod ? currentPeriod.id.replace('temporal-', '') : 'mensual';
+    
+    // Ocultar todas las secciones de área del período actual
+    document.querySelectorAll(`#temporal-${periodo} .temporal-area-section`).forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Mostrar sección de área seleccionada
+    const section = document.getElementById(`temporal-${periodo}-${area}`);
+    if (section) {
+        section.style.display = 'block';
+        
+        // Crear gráficos para el área
+        setTimeout(() => {
+            createTemporalChartsForArea(area, periodo);
+        }, 100);
+    }
+}
+
+// NUEVA FUNCIÓN: Crear gráficos temporales
+function createTemporalCharts() {
+    const currentPeriod = document.querySelector('.temporal-period-section:not([style*="none"])');
+    const periodo = currentPeriod ? currentPeriod.id.replace('temporal-', '') : 'mensual';
+    
+    const currentArea = document.querySelector('.area-tab[data-temporal-area].active')?.dataset.temporalArea || 'BIOMEDICA';
+    
+    createTemporalChartsForArea(currentArea, periodo);
+}
+
+// NUEVA FUNCIÓN: Crear gráficos temporales para un área
+function createTemporalChartsForArea(area, periodo) {
+    const analisis = calcularAnalisisTemporal();
+    
+    if (area === 'COMPARATIVO') {
+        createComparativeChart(periodo, analisis[periodo]);
+    } else {
+        if (periodo === 'mensual') {
+            createMonthlyChart(area, analisis.mensual[area]);
+        } else {
+            createQuarterlyChart(area, analisis.trimestral[area]);
+        }
+    }
+}
+
+// NUEVA FUNCIÓN: Crear gráfico mensual
+function createMonthlyChart(area, data) {
+    const canvas = document.getElementById(`monthlyChart-${area}`);
+    if (!canvas) return;
+    
+    const months = Object.keys(data).sort();
+    const chartId = `monthlyChart-${area}`;
+    
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+    }
+    
+    const areaColors = {
+        'BIOMEDICA': '#059669',
+        'MECANICA': '#f59e0b',
+        'INFRAESTRUCTURA': '#8b5cf6'
+    };
+    
+    chartInstances[chartId] = new Chart(canvas.getContext('2d'), {
+        type: 'line',
+        data: {
+            labels: months.map(m => formatMonth(m)),
+            datasets: [
+                {
+                    label: 'Total',
+                    data: months.map(m => data[m].total),
+                    borderColor: areaColors[area],
+                    backgroundColor: areaColors[area] + '20',
+                    tension: 0.4,
+                    fill: true
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.parsed || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = ((value / total) * 100).toFixed(1);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
-                            }
-                        }
-                    }
+                {
+                    label: 'Completadas',
+                    data: months.map(m => data[m].completadas),
+                    borderColor: '#059669',
+                    backgroundColor: '#05966920',
+                    tension: 0.4
+                },
+                {
+                    label: 'Pendientes',
+                    data: months.map(m => data[m].pendientes),
+                    borderColor: '#f59e0b',
+                    backgroundColor: '#f59e0b20',
+                    tension: 0.4
+                },
+                {
+                    label: 'Errores Usuario',
+                    data: months.map(m => data[m].erroresUsuario),
+                    borderColor: '#ef4444',
+                    backgroundColor: '#ef444420',
+                    tension: 0.4,
+                    borderDash: [5, 5]
                 }
-            });
-        }
-
-        // Cerrar modal de estadísticas
-        function closeStatsModal() {
-            document.getElementById('stats-modal').classList.remove('show');
-        }
-
-        // Actualizar datos de estadísticas
-        async function refreshStatsData() {
-            await loadAllDataFromCloud();
-            await showAdvancedStatisticsModal();
-        }
-
-        // Exportar estadísticas a PDF
-        async function exportStatsToPDF() {
-            try {
-                const content = document.getElementById('stats-modal-content');
-                
-                const pdfContent = document.createElement('div');
-                pdfContent.style.width = '210mm';
-                pdfContent.style.padding = '20px';
-                pdfContent.style.background = 'white';
-                pdfContent.innerHTML = `
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <h1 style="color: #1f2937; font-size: 24px;">HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.</h1>
-                        <h2 style="color: #4b5563; font-size: 18px;">Reporte de Estadísticas por Áreas</h2>
-                        <p style="color: #6b7280;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
-                    </div>
-                    ${content.innerHTML}
-                `;
-                
-                document.body.appendChild(pdfContent);
-                
-                const canvas = await html2canvas(pdfContent, {
-                    scale: 2,
-                    logging: false,
-                    useCORS: true
-                });
-                
-                document.body.removeChild(pdfContent);
-                
-                const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
-                const imgWidth = 210;
-                const pageHeight = 295;
-                const imgHeight = (canvas.height * imgWidth) / canvas.width;
-                let heightLeft = imgHeight;
-                let position = 0;
-                
-                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                heightLeft -= pageHeight;
-                
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
-                    pdf.addPage();
-                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-                    heightLeft -= pageHeight;
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: `Tendencia Mensual - ${area}`
                 }
-                
-                pdf.save(`Estadisticas_Areas_Hospital_${new Date().toISOString().split('T')[0]}.pdf`);
-                
-                alert('✅ PDF generado exitosamente');
-                
-            } catch (error) {
-                console.error('❌ Error generando PDF:', error);
-                alert('❌ Error al generar el PDF: ' + error.message);
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
             }
         }
+    });
+}
 
+// NUEVA FUNCIÓN: Crear gráfico trimestral
+function createQuarterlyChart(area, data) {
+    const canvas = document.getElementById(`quarterlyChart-${area}`);
+    if (!canvas) return;
+    
+    const quarters = Object.keys(data).sort();
+    const chartId = `quarterlyChart-${area}`;
+    
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+    }
+    
+    const areaColors = {
+        'BIOMEDICA': '#059669',
+        'MECANICA': '#f59e0b',
+        'INFRAESTRUCTURA': '#8b5cf6'
+    };
+    
+    chartInstances[chartId] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: quarters,
+            datasets: [
+                {
+                    label: 'Total',
+                    data: quarters.map(q => data[q].total),
+                    backgroundColor: areaColors[area],
+                    borderColor: areaColors[area],
+                    borderWidth: 2
+                },
+                {
+                    label: 'Completadas',
+                    data: quarters.map(q => data[q].completadas),
+                    backgroundColor: '#059669',
+                    borderColor: '#059669',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Pendientes',
+                    data: quarters.map(q => data[q].pendientes),
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#f59e0b',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: `Análisis Trimestral - ${area}`
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+// NUEVA FUNCIÓN: Crear gráfico comparativo
+function createComparativeChart(periodo, data) {
+    const canvas = document.getElementById(`comparativeChart-${periodo}`);
+    if (!canvas) return;
+    
+    const periodos = Object.keys(data.BIOMEDICA).sort();
+    const chartId = `comparativeChart-${periodo}`;
+    
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+    }
+    
+    chartInstances[chartId] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: periodos.map(p => periodo === 'mensual' ? formatMonth(p) : p),
+            datasets: [
+                {
+                    label: 'Biomédica',
+                    data: periodos.map(p => data.BIOMEDICA[p].total),
+                    backgroundColor: '#059669',
+                    borderColor: '#059669',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Mecánica',
+                    data: periodos.map(p => data.MECANICA[p].total),
+                    backgroundColor: '#f59e0b',
+                    borderColor: '#f59e0b',
+                    borderWidth: 2
+                },
+                {
+                    label: 'Infraestructura',
+                    data: periodos.map(p => data.INFRAESTRUCTURA[p].total),
+                    backgroundColor: '#8b5cf6',
+                    borderColor: '#8b5cf6',
+                    borderWidth: 2
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: `Comparativo ${periodo === 'mensual' ? 'Mensual' : 'Trimestral'} por Áreas`
+                }
+            },
+            scales: {
+                x: {
+                    stacked: false
+                },
+                y: {
+                    beginAtZero: true,
+                    stacked: false
+                }
+            }
+        }
+    });
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // 🔍 Filtros
         function filterSolicitudes() {
             const estadoFilter = document.getElementById('filter-estado-solicitud').value;
