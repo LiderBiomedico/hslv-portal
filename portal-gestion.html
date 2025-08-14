@@ -2748,7 +2748,329 @@ async function showAdvancedStatisticsModal() {
                         </button>
                     </div>
                 </div>
+// Agregar estas funciones después de la línea 2750 aproximadamente, 
+// junto con las otras funciones de estadísticas
 
+// Función para cerrar el modal de estadísticas
+function closeStatsModal() {
+    const modal = document.getElementById('stats-modal');
+    if (modal) {
+        modal.classList.remove('show');
+    }
+    
+    // Limpiar cualquier gráfico activo
+    Object.keys(chartInstances).forEach(key => {
+        if (chartInstances[key]) {
+            chartInstances[key].destroy();
+            delete chartInstances[key];
+        }
+    });
+}
+
+// Función para mostrar estadísticas de área específica
+function showAreaStats(area) {
+    // Actualizar pestañas activas
+    document.querySelectorAll('.area-tab[data-area-stats]').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.areaStats === area) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Ocultar todas las secciones
+    document.querySelectorAll('.area-stats-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Mostrar sección seleccionada
+    const section = document.getElementById(`stats-${area}`);
+    if (section) {
+        section.classList.add('active');
+        currentAreaStats = area;
+        
+        // Recrear gráficos para el área
+        setTimeout(() => {
+            const statsPorArea = calcularEstadisticasPorArea();
+            if (area === 'todas') {
+                createGeneralCharts({
+                    totalSolicitudes: cloudSolicitudes.length,
+                    solicitudesPorEstado: calcularSolicitudesPorEstado(),
+                    solicitudesPorArea: statsPorArea,
+                    solicitudesPorPrioridad: calcularSolicitudesPorPrioridad()
+                });
+            } else {
+                createAreaCharts(area, statsPorArea[area.toUpperCase()]);
+            }
+        }, 100);
+    }
+}
+
+// Función para exportar estadísticas a PDF
+async function exportStatsToPDF() {
+    try {
+        alert('📄 Función de exportación a PDF en desarrollo\n\nPróximamente podrás exportar todas las estadísticas a un documento PDF.');
+        // Aquí iría la implementación real con jsPDF y html2canvas
+    } catch (error) {
+        console.error('Error exportando a PDF:', error);
+        alert('❌ Error al exportar a PDF');
+    }
+}
+
+// Función para actualizar datos de estadísticas
+async function refreshStatsData() {
+    try {
+        // Cerrar y reabrir el modal con datos actualizados
+        closeStatsModal();
+        await loadAllDataFromCloud();
+        setTimeout(() => {
+            showAdvancedStatisticsModal();
+        }, 500);
+    } catch (error) {
+        console.error('Error actualizando estadísticas:', error);
+        alert('❌ Error al actualizar estadísticas');
+    }
+}
+
+// Funciones auxiliares para calcular estadísticas
+function calcularEstadisticasPorArea() {
+    const stats = {
+        BIOMEDICA: {
+            total: 0,
+            pendientes: 0,
+            asignadas: 0,
+            enProceso: 0,
+            completadas: 0,
+            sinAsignar: 0,
+            erroresUsuario: 0,
+            personal: [],
+            tiempoPromedioResolucion: 0
+        },
+        MECANICA: {
+            total: 0,
+            pendientes: 0,
+            asignadas: 0,
+            enProceso: 0,
+            completadas: 0,
+            sinAsignar: 0,
+            erroresUsuario: 0,
+            personal: [],
+            tiempoPromedioResolucion: 0
+        },
+        INFRAESTRUCTURA: {
+            total: 0,
+            pendientes: 0,
+            asignadas: 0,
+            enProceso: 0,
+            completadas: 0,
+            sinAsignar: 0,
+            erroresUsuario: 0,
+            personal: [],
+            tiempoPromedioResolucion: 0
+        }
+    };
+    
+    // Calcular estadísticas por área
+    cloudSolicitudes.forEach(solicitud => {
+        const area = normalizarArea(solicitud.servicioIngenieria);
+        if (stats[area]) {
+            stats[area].total++;
+            
+            const estado = (solicitud.estado || 'PENDIENTE').toUpperCase();
+            
+            if (!solicitud.tecnicoAsignado) {
+                stats[area].sinAsignar++;
+            }
+            
+            switch(estado) {
+                case 'PENDIENTE':
+                    stats[area].pendientes++;
+                    break;
+                case 'ASIGNADA':
+                    stats[area].asignadas++;
+                    break;
+                case 'EN_PROCESO':
+                case 'EN PROCESO':
+                    stats[area].enProceso++;
+                    break;
+                case 'COMPLETADA':
+                    stats[area].completadas++;
+                    break;
+            }
+            
+            if (solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') {
+                stats[area].erroresUsuario++;
+            }
+        }
+    });
+    
+    // Agregar personal por área
+    cloudTecnicos.forEach(tecnico => {
+        const area = normalizarArea(tecnico.area);
+        if (stats[area]) {
+            stats[area].personal.push(tecnico);
+        }
+    });
+    
+    return stats;
+}
+
+function calcularSolicitudesPorEstado() {
+    const estados = {};
+    cloudSolicitudes.forEach(solicitud => {
+        const estado = (solicitud.estado || 'PENDIENTE').toUpperCase();
+        estados[estado] = (estados[estado] || 0) + 1;
+    });
+    return estados;
+}
+
+function calcularSolicitudesPorPrioridad() {
+    const prioridades = {};
+    cloudSolicitudes.forEach(solicitud => {
+        const prioridad = (solicitud.prioridad || 'MEDIA').toUpperCase();
+        prioridades[prioridad] = (prioridades[prioridad] || 0) + 1;
+    });
+    return prioridades;
+}
+
+// Funciones para generar HTML de estadísticas
+function generateGeneralStats(stats) {
+    return `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">📊 Total Solicitudes</span>
+                </div>
+                <div class="stat-card-value">${cloudSolicitudes.length}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">👥 Personal Total</span>
+                </div>
+                <div class="stat-card-value">${cloudTecnicos.length}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">🔐 Usuarios Activos</span>
+                </div>
+                <div class="stat-card-value">${cloudUsuarios.length}</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="generalStatsChart"></canvas>
+        </div>
+    `;
+}
+
+function generateAreaSpecificStats(area, stats) {
+    if (!stats) return '<p>No hay estadísticas disponibles para esta área</p>';
+    
+    return `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">📊 Total</span>
+                </div>
+                <div class="stat-card-value">${stats.total}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">✅ Completadas</span>
+                </div>
+                <div class="stat-card-value">${stats.completadas}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">⏳ Pendientes</span>
+                </div>
+                <div class="stat-card-value">${stats.pendientes}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">👥 Personal</span>
+                </div>
+                <div class="stat-card-value">${stats.personal.length}</div>
+            </div>
+        </div>
+        
+        <div class="chart-container">
+            <canvas id="areaStatsChart-${area}"></canvas>
+        </div>
+    `;
+}
+
+// Funciones para crear gráficos
+function createGeneralCharts(stats) {
+    const canvas = document.getElementById('generalStatsChart');
+    if (!canvas) return;
+    
+    if (chartInstances['generalStatsChart']) {
+        chartInstances['generalStatsChart'].destroy();
+    }
+    
+    chartInstances['generalStatsChart'] = new Chart(canvas.getContext('2d'), {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(stats.solicitudesPorEstado || {}),
+            datasets: [{
+                data: Object.values(stats.solicitudesPorEstado || {}),
+                backgroundColor: [
+                    '#059669',
+                    '#f59e0b', 
+                    '#3b82f6',
+                    '#8b5cf6',
+                    '#ef4444'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                title: {
+                    display: true,
+                    text: 'Distribución por Estado'
+                }
+            }
+        }
+    });
+}
+
+function createAreaCharts(area, stats) {
+    if (!stats) return;
+    
+    const canvas = document.getElementById(`areaStatsChart-${area}`);
+    if (!canvas) return;
+    
+    const chartId = `areaStatsChart-${area}`;
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+    }
+    
+    chartInstances[chartId] = new Chart(canvas.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['Pendientes', 'Asignadas', 'En Proceso', 'Completadas'],
+            datasets: [{
+                label: 'Solicitudes',
+                data: [stats.pendientes, stats.asignadas, stats.enProceso, stats.completadas],
+                backgroundColor: ['#f59e0b', '#3b82f6', '#8b5cf6', '#059669']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
                 <!-- Pestañas principales de navegación -->
                 <div class="analysis-tabs" style="border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem;">
                     <button class="analysis-tab active" data-main-tab="resumen" onclick="showMainStatsTab('resumen')">
