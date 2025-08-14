@@ -601,6 +601,69 @@
             box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
         }
 
+/* Estilos para el selector de tipo de servicio en modal */
+#service-type-group {
+    transition: all 0.3s ease;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#new-service-type option[value="ERROR_USUARIO"] {
+    background: #fee2e2;
+    font-weight: 600;
+}
+
+#error-usuario-confirmation {
+    animation: fadeIn 0.3s ease-in;
+}
+
+#error-usuario-confirmation input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-select option:disabled {
+    color: #9ca3af;
+    background: #f3f4f6;
+}
+
+/* Indicador visual para solicitudes marcadas como error de usuario */
+.request-card.error-usuario {
+    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+    border-left-color: #ef4444 !important;
+    border-left-width: 8px !important;
+}
+
+.request-card.error-usuario::before {
+    content: '⚠️ ERROR DE USUARIO';
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #ef4444;
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+
+
+
+
+
         .btn-success {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: white;
@@ -2578,7 +2641,8 @@
             }
 
             const cardClass = `request-card ${getStatusClass(solicitud.estado)} ${timeIndicatorClass === 'overdue' ? 'overdue' : ''}`;
-
+            const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
+            const cardClass = `request-card ${getStatusClass(solicitud.estado)} ${timeIndicatorClass === 'overdue' ? 'overdue' : ''} ${isErrorUsuario ? 'error-usuario' : ''}`;
             const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
             const tipoServicioBadge = isErrorUsuario ? 
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
@@ -4654,124 +4718,323 @@ async function exportTemporalAnalysis() {
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
         }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 
+ // 🔄 FUNCIÓN MEJORADA: Modal de cambio de estado con opción de cambiar tipo de servicio
+async function showChangeStatusModal(solicitudId) {
+    console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
+    
+    try {
+        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+        if (!solicitud) {
+            alert('❌ Solicitud no encontrada');
+            return;
+        }
 
-        async function showChangeStatusModal(solicitudId) {
-            console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
-            
-            try {
-                const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-                if (!solicitud) {
-                    alert('❌ Solicitud no encontrada');
-                    return;
-                }
+        const modal = document.getElementById('status-modal');
+        const content = document.getElementById('status-modal-content');
+        
+        const estadosDisponibles = [
+            { value: 'PENDIENTE', label: '⏳ Pendiente' },
+            { value: 'ASIGNADA', label: '🎯 Asignada' },
+            { value: 'EN_PROCESO', label: '🔄 En Proceso' },
+            { value: 'COMPLETADA', label: '✅ Completada' },
+            { value: 'CANCELADA', label: '❌ Cancelada' }
+        ];
 
-                const modal = document.getElementById('status-modal');
-                const content = document.getElementById('status-modal-content');
+        const tiposServicioDisponibles = [
+            { value: 'ERROR_USUARIO', label: '👤 Error de Usuario', color: '#ef4444' },
+            { value: 'MANTENIMIENTO_PREVENTIVO', label: '🔧 Mantenimiento Preventivo', color: '#0ea5e9' },
+            { value: 'MANTENIMIENTO_CORRECTIVO', label: '🔨 Mantenimiento Correctivo', color: '#f59e0b' },
+            { value: 'INSTALACION', label: '📦 Instalación', color: '#8b5cf6' },
+            { value: 'CALIBRACION', label: '⚖️ Calibración', color: '#059669' },
+            { value: 'ACTUALIZACION', label: '🔄 Actualización', color: '#6366f1' },
+            { value: 'EMERGENCIA', label: '🚨 Emergencia', color: '#dc2626' },
+            { value: 'INSPECCION', label: '🔍 Inspección', color: '#14b8a6' }
+        ];
+
+        content.innerHTML = `
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                    <p><strong>Número:</strong> ${solicitud.numero}</p>
+                    <p><strong>Estado Actual:</strong> <span style="color: #059669; font-weight: 600;">${solicitud.estado || 'PENDIENTE'}</span></p>
+                    <p><strong>Tipo de Servicio Actual:</strong> <span style="color: #2563eb; font-weight: 600;">${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</span></p>
+                    <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
+                </div>
                 
-                const estadosDisponibles = [
-                    { value: 'PENDIENTE', label: '⏳ Pendiente' },
-                    { value: 'ASIGNADA', label: '🎯 Asignada' },
-                    { value: 'EN_PROCESO', label: '🔄 En Proceso' },
-                    { value: 'COMPLETADA', label: '✅ Completada' },
-                    { value: 'CANCELADA', label: '❌ Cancelada' }
-                ];
-
-                content.innerHTML = `
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
-                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                            <p><strong>Número:</strong> ${solicitud.numero}</p>
-                            <p><strong>Estado Actual:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
-                            <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
-                        </div>
+                ${(solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') ? `
+                    <div style="background: #fee2e2; padding: 0.75rem; border-radius: 0.5rem; margin-top: 0.75rem; border-left: 3px solid #ef4444;">
+                        <p style="color: #dc2626; font-weight: 600; margin: 0;">
+                            ⚠️ Esta solicitud ya está marcada como ERROR DE USUARIO
+                        </p>
                     </div>
+                ` : ''}
+            </div>
 
-                    <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
-                        <div class="form-group">
-                            <label class="form-label">🔄 Nuevo Estado</label>
-                            <select id="new-status" required class="form-select">
-                                <option value="">Seleccione nuevo estado...</option>
-                                ${estadosDisponibles.map(estado => `
-                                    <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
-                                        ${estado.label}
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
+            <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
+                <div class="form-group">
+                    <label class="form-label">🔄 Nuevo Estado</label>
+                    <select id="new-status" required class="form-select" onchange="toggleServiceTypeSelector()">
+                        <option value="">Seleccione nuevo estado...</option>
+                        ${estadosDisponibles.map(estado => `
+                            <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
+                                ${estado.label}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
 
-                        <div class="form-group">
-                            <label class="form-label">📝 Observaciones del Cambio</label>
-                            <textarea id="status-notes" class="form-textarea" 
-                                placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
-                        </div>
-
-                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <button type="submit" class="btn btn-warning" style="min-width: 150px;">
-                                🔄 Cambiar Estado
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
-                                ↩️ Cancelar
-                            </button>
-                        </div>
-                    </form>
-                `;
-                
-                modal.classList.add('show');
-
-            } catch (error) {
-                console.error('❌ Error mostrando modal de estado:', error);
-                alert('❌ Error al cargar modal de estado: ' + error.message);
-            }
-        }
-
-        async function handleChangeStatus(event, solicitudId) {
-            event.preventDefault();
-            
-            const nuevoEstado = document.getElementById('new-status').value;
-            const observaciones = document.getElementById('status-notes').value.trim();
-            
-            if (!nuevoEstado) {
-                alert('❌ Por favor seleccione un nuevo estado');
-                return;
-            }
-
-            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`);
-            if (!confirmed) return;
-
-            try {
-                const submitBtn = event.target.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Cambiando estado...';
-
-                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
-                
-                if (result.success) {
-                    await refreshFromCloud();
+                <!-- Selector de tipo de servicio (solo visible cuando se selecciona COMPLETADA) -->
+                <div class="form-group" id="service-type-group" style="display: none;">
+                    <label class="form-label">
+                        🔨 Tipo de Servicio Final
+                        <span style="color: #059669; font-size: 0.875rem; font-weight: normal;">
+                            (Actualizar si el diagnóstico inicial cambió)
+                        </span>
+                    </label>
                     
-                    if (nuevoEstado === 'COMPLETADA') {
-                        await syncTechniciansWithCloud();
-                    }
+                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
+                        <p style="color: #0369a1; font-size: 0.875rem; margin: 0;">
+                            💡 <strong>Importante:</strong> Si detectó que fue un error del usuario o el tipo de servicio inicial era incorrecto, 
+                            seleccione el tipo correcto aquí. Esto actualizará el registro para las estadísticas.
+                        </p>
+                    </div>
                     
-                    closeStatusModal();
+                    <select id="new-service-type" class="form-select">
+                        <option value="">Mantener tipo actual: ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</option>
+                        <option value="">───────────────</option>
+                        ${tiposServicioDisponibles.map(tipo => `
+                            <option value="${tipo.value}" 
+                                    style="color: ${tipo.color};"
+                                    ${tipo.value === solicitud.tipoServicio ? 'disabled' : ''}>
+                                ${tipo.label} ${tipo.value === 'ERROR_USUARIO' ? '⚠️' : ''}
+                            </option>
+                        `).join('')}
+                    </select>
                     
-                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`);
+                    ${solicitud.tipoServicio !== 'ERROR_USUARIO' ? `
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-radius: 0.5rem; border-left: 3px solid #f59e0b;">
+                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">
+                                <strong>⚠️ Marcar como Error de Usuario:</strong> Use esta opción si determinó que el problema 
+                                fue causado por mal uso del equipo y no una falla técnica real.
+                            </p>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📝 Observaciones del Cambio</label>
+                    <textarea id="status-notes" class="form-textarea" rows="3"
+                        placeholder="Describa brevemente el trabajo realizado y cualquier observación importante..."></textarea>
+                </div>
+
+                <!-- Checkbox para confirmación cuando es ERROR_USUARIO -->
+                <div id="error-usuario-confirmation" style="display: none; margin-bottom: 1rem;">
+                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 1rem; background: #fee2e2; border-radius: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" id="confirm-error-usuario" style="margin-top: 0.25rem;">
+                        <span style="color: #dc2626; font-size: 0.875rem;">
+                            Confirmo que he verificado que este problema fue causado por error del usuario 
+                            (mal uso del equipo, falta de capacitación, operación incorrecta, etc.) 
+                            y no por una falla técnica del equipo.
+                        </span>
+                    </label>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button type="submit" class="btn btn-warning" style="min-width: 150px;">
+                        🔄 Cambiar Estado
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
+                        ↩️ Cancelar
+                    </button>
+                </div>
+            </form>
+        `;
+        
+        modal.classList.add('show');
+
+    } catch (error) {
+        console.error('❌ Error mostrando modal de estado:', error);
+        alert('❌ Error al cargar modal de estado: ' + error.message);
+    }
+}
+
+// 🔄 NUEVA FUNCIÓN: Mostrar/ocultar selector de tipo de servicio
+function toggleServiceTypeSelector() {
+    const newStatus = document.getElementById('new-status').value;
+    const serviceTypeGroup = document.getElementById('service-type-group');
+    const errorUsuarioConfirmation = document.getElementById('error-usuario-confirmation');
+    
+    // Mostrar selector de tipo de servicio solo cuando se selecciona COMPLETADA
+    if (newStatus === 'COMPLETADA') {
+        serviceTypeGroup.style.display = 'block';
+        
+        // Agregar listener al selector de tipo de servicio
+        const serviceTypeSelect = document.getElementById('new-service-type');
+        if (serviceTypeSelect) {
+            serviceTypeSelect.onchange = function() {
+                if (this.value === 'ERROR_USUARIO') {
+                    errorUsuarioConfirmation.style.display = 'block';
                 } else {
-                    throw new Error(result.mensaje || 'Error al cambiar estado');
+                    errorUsuarioConfirmation.style.display = 'none';
+                    const confirmCheckbox = document.getElementById('confirm-error-usuario');
+                    if (confirmCheckbox) confirmCheckbox.checked = false;
                 }
+            };
+        }
+    } else {
+        serviceTypeGroup.style.display = 'none';
+        errorUsuarioConfirmation.style.display = 'none';
+    }
+}
 
-            } catch (error) {
-                console.error('❌ Error cambiando estado:', error);
-                alert('❌ Error al cambiar estado: ' + error.message);
-            } finally {
-                const submitBtn = event.target.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '🔄 Cambiar Estado';
+// 🔄 FUNCIÓN MEJORADA: Manejar cambio de estado con opción de cambiar tipo de servicio
+async function handleChangeStatus(event, solicitudId) {
+    event.preventDefault();
+    
+    const nuevoEstado = document.getElementById('new-status').value;
+    const nuevoTipoServicio = document.getElementById('new-service-type')?.value;
+    const observaciones = document.getElementById('status-notes').value.trim();
+    const confirmErrorUsuario = document.getElementById('confirm-error-usuario');
+    
+    if (!nuevoEstado) {
+        alert('❌ Por favor seleccione un nuevo estado');
+        return;
+    }
+
+    // Validación especial para ERROR_USUARIO
+    if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio === 'ERROR_USUARIO') {
+        if (!confirmErrorUsuario || !confirmErrorUsuario.checked) {
+            alert('⚠️ Debe confirmar que ha verificado que es un error de usuario');
+            return;
+        }
+    }
+
+    // Construir mensaje de confirmación
+    let confirmMessage = `¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`;
+    
+    if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
+        confirmMessage += `\n\n🔨 También se cambiará el tipo de servicio a:\n"${nuevoTipoServicio.replace('_', ' ')}"`;
+        
+        if (nuevoTipoServicio === 'ERROR_USUARIO') {
+            confirmMessage += '\n\n⚠️ IMPORTANTE: Esto marcará la solicitud como ERROR DE USUARIO en las estadísticas.';
+        }
+    }
+
+    const confirmed = confirm(confirmMessage);
+    if (!confirmed) return;
+
+    try {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Procesando...';
+
+        let result;
+        
+        // Si es COMPLETADA y hay un nuevo tipo de servicio, usar el método especial
+        if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
+            console.log('🔄 Cambiando estado y tipo de servicio...');
+            
+            // Agregar información adicional a las observaciones si es error de usuario
+            let observacionesFinal = observaciones;
+            if (nuevoTipoServicio === 'ERROR_USUARIO') {
+                const fechaHora = new Date().toLocaleString('es-CO');
+                observacionesFinal = `${observaciones}\n\n[${fechaHora}] ⚠️ MARCADO COMO ERROR DE USUARIO - Problema causado por mal uso del equipo, no falla técnica.`;
+            }
+            
+            result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                solicitudId, 
+                nuevoEstado, 
+                nuevoTipoServicio,
+                observacionesFinal
+            );
+        } else {
+            // Usar el método normal para otros cambios de estado
+            result = await window.airtableAPI.updateRequestStatus(
+                solicitudId, 
+                nuevoEstado, 
+                observaciones
+            );
+        }
+        
+        if (result.success) {
+            await refreshFromCloud();
+            
+            if (nuevoEstado === 'COMPLETADA') {
+                await syncTechniciansWithCloud();
+            }
+            
+            closeStatusModal();
+            
+            // Mensaje de éxito personalizado
+            let successMessage = `✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`;
+            
+            if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
+                successMessage += `\n🔨 Tipo de servicio actualizado: ${nuevoTipoServicio.replace('_', ' ')}`;
+                
+                if (nuevoTipoServicio === 'ERROR_USUARIO') {
+                    successMessage += '\n\n⚠️ La solicitud ha sido marcada como ERROR DE USUARIO';
                 }
             }
+            
+            alert(successMessage);
+            
+            // Si se marcó como error de usuario, mostrar estadística actualizada
+            if (nuevoTipoServicio === 'ERROR_USUARIO') {
+                setTimeout(() => {
+                    mostrarEstadisticaErroresUsuario();
+                }, 1000);
+            }
+            
+        } else {
+            throw new Error(result.mensaje || 'Error al cambiar estado');
         }
 
+    } catch (error) {
+        console.error('❌ Error cambiando estado:', error);
+        alert('❌ Error al cambiar estado: ' + error.message);
+    } finally {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🔄 Cambiar Estado';
+        }
+    }
+}
+
+// 📊 NUEVA FUNCIÓN: Mostrar estadística de errores de usuario
+async function mostrarEstadisticaErroresUsuario() {
+    try {
+        const stats = await window.airtableAPI.getAdvancedStatistics();
+        const porcentajeErrores = stats.indicadoresGestion.porcentajeErroresUsuario;
+        
+        console.log(`📊 Estadística de Errores de Usuario actualizada: ${porcentajeErrores}%`);
+        
+        // Actualizar el dashboard si está visible
+        const dashboardView = document.getElementById('dashboard-view');
+        if (dashboardView && !dashboardView.classList.contains('hidden')) {
+            // Puedes agregar aquí una notificación visual o actualizar algún indicador
+            console.log('Dashboard actualizado con nueva estadística de errores de usuario');
+        }
+        
+    } catch (error) {
+        console.error('Error obteniendo estadísticas:', error);
+    }
+}
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }
