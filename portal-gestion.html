@@ -500,69 +500,7 @@
             border-color: #22c55e;
             color: #15803d;
         }
-/* Estilos para análisis temporal */
-.temporal-period-btn {
-    padding: 0.625rem 1.25rem;
-    background: #f3f4f6;
-    border: 2px solid #e5e7eb;
-    border-radius: 0.5rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: #6b7280;
-    cursor: pointer;
-    transition: all 0.2s;
-}
 
-.temporal-period-btn.active {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-    color: white;
-    border-color: transparent;
-}
-
-.temporal-period-btn:hover:not(.active) {
-    background: #e5e7eb;
-}
-
-.temporal-area-content {
-    animation: fadeIn 0.3s ease-in;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.analysis-content {
-    transition: all 0.3s ease;
-}
-
-.analysis-tab {
-    padding: 0.75rem 1.5rem;
-    background: none;
-    border: none;
-    border-bottom: 3px solid transparent;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #6b7280;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.analysis-tab.active {
-    color: #2563eb;
-    border-bottom-color: #2563eb;
-}
-
-.analysis-tab:hover:not(.active) {
-    color: #374151;
-    background: #f9fafb;
-}
         .alert-warning {
             background: #fffbeb;
             border-color: #f59e0b;
@@ -600,69 +538,6 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
         }
-
-/* Estilos para el selector de tipo de servicio en modal */
-#service-type-group {
-    transition: all 0.3s ease;
-    animation: slideDown 0.3s ease-out;
-}
-
-@keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-#new-service-type option[value="ERROR_USUARIO"] {
-    background: #fee2e2;
-    font-weight: 600;
-}
-
-#error-usuario-confirmation {
-    animation: fadeIn 0.3s ease-in;
-}
-
-#error-usuario-confirmation input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-.form-select option:disabled {
-    color: #9ca3af;
-    background: #f3f4f6;
-}
-
-/* Indicador visual para solicitudes marcadas como error de usuario */
-.request-card.error-usuario {
-    background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-    border-left-color: #ef4444 !important;
-    border-left-width: 8px !important;
-}
-
-.request-card.error-usuario::before {
-    content: '⚠️ ERROR DE USUARIO';
-    position: absolute;
-    top: 0.5rem;
-    right: 0.5rem;
-    background: #ef4444;
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 0.25rem;
-    font-size: 0.625rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-}
-
-
-
-
-
 
         .btn-success {
             background: linear-gradient(135deg, #059669 0%, #047857 100%);
@@ -2641,8 +2516,7 @@
             }
 
             const cardClass = `request-card ${getStatusClass(solicitud.estado)} ${timeIndicatorClass === 'overdue' ? 'overdue' : ''}`;
-            const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
-            const cardClass = `request-card ${getStatusClass(solicitud.estado)} ${timeIndicatorClass === 'overdue' ? 'overdue' : ''} ${isErrorUsuario ? 'error-usuario' : ''}`;
+
             const isErrorUsuario = solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario';
             const tipoServicioBadge = isErrorUsuario ? 
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
@@ -2770,1168 +2644,102 @@
         }
 
         // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas
-       
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
-	   // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
-async function showAdvancedStatisticsModal() {
-    try {
-        const modal = document.getElementById('stats-modal');
-        const content = document.getElementById('stats-modal-content');
-        
-        content.innerHTML = `
-            <div style="text-align: center; padding: 3rem;">
-                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
-            </div>
-        `;
-        
-        modal.classList.add('show');
-        
-        // Obtener estadísticas generales
-        const stats = await window.airtableAPI.getAdvancedStatistics();
-        
-        // Calcular estadísticas por área
-        const statsPorArea = calcularEstadisticasPorArea();
-        
-        // NUEVO: Calcular análisis temporal
-        const analisisTemporal = calcularAnalisisTemporal();
-        
-        // Generar HTML con pestañas por área y análisis temporal
-        content.innerHTML = `
-            <div style="padding: 1rem;">
-                <!-- Encabezado con botones de acción -->
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                    <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
-                            📄 Exportar a PDF
-                        </button>
-                        <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
-                            🔄 Actualizar
-                        </button>
+        async function showAdvancedStatisticsModal() {
+            try {
+                const modal = document.getElementById('stats-modal');
+                const content = document.getElementById('stats-modal-content');
+                
+                content.innerHTML = `
+                    <div style="text-align: center; padding: 3rem;">
+                        <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                        <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
                     </div>
-                </div>
-
-                <!-- Pestañas principales de navegación -->
-                <div class="analysis-tabs" style="border-bottom: 2px solid #e5e7eb; margin-bottom: 1.5rem;">
-                    <button class="analysis-tab active" data-analysis-type="general" onclick="showAnalysisType('general')">
-                        📊 Vista General
-                    </button>
-                    <button class="analysis-tab" data-analysis-type="temporal" onclick="showAnalysisType('temporal')">
-                        📅 Análisis Temporal
-                    </button>
-                </div>
-
-                <!-- Contenido de Vista General (existente) -->
-                <div id="analysis-general" class="analysis-content" style="display: block;">
-                    <!-- Pestañas de áreas existentes -->
-                    <div class="area-tabs">
-                        <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
-                            🌐 General
-                        </button>
-                        <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
-                            🏥 Biomédica
-                        </button>
-                        <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
-                            ⚙️ Mecánica
-                        </button>
-                        <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
-                            🏗️ Infraestructura
-                        </button>
-                    </div>
-
-                    <!-- Contenido de estadísticas General -->
-                    <div id="stats-todas" class="area-stats-section active">
-                        ${generateGeneralStats(stats)}
-                    </div>
-
-                    <!-- Contenido de estadísticas Biomédica -->
-                    <div id="stats-biomedica" class="area-stats-section">
-                        ${generateAreaSpecificStats('BIOMEDICA', statsPorArea.BIOMEDICA)}
-                    </div>
-
-                    <!-- Contenido de estadísticas Mecánica -->
-                    <div id="stats-mecanica" class="area-stats-section">
-                        ${generateAreaSpecificStats('MECANICA', statsPorArea.MECANICA)}
-                    </div>
-
-                    <!-- Contenido de estadísticas Infraestructura -->
-                    <div id="stats-infraestructura" class="area-stats-section">
-                        ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
-                    </div>
-                </div>
-
-                <!-- NUEVO: Contenido de Análisis Temporal -->
-                <div id="analysis-temporal" class="analysis-content" style="display: none;">
-                    ${generateTemporalAnalysis(analisisTemporal)}
-                </div>
-            </div>
-        `;
-        
-        // Crear gráficos después de que el HTML esté listo
-        setTimeout(() => {
-            if (document.getElementById('analysis-general').style.display !== 'none') {
-                createGeneralCharts(stats);
-                if (currentAreaStats === 'todas') {
-                    // Ya se crearon los gráficos generales
-                } else {
-                    createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
-                }
-            } else {
-                // Crear gráficos temporales
-                createTemporalCharts(analisisTemporal);
-            }
-        }, 100);
-        
-    } catch (error) {
-        console.error('❌ Error mostrando estadísticas:', error);
-        const content = document.getElementById('stats-modal-content');
-        content.innerHTML = `
-            <div class="alert alert-danger">
-                <h4>❌ Error al cargar estadísticas</h4>
-                <p>${error.message}</p>
-            </div>
-        `;
-    }
-}
-
-// NUEVA FUNCIÓN: Cambiar tipo de análisis
-function showAnalysisType(type) {
-    // Actualizar pestañas activas
-    document.querySelectorAll('.analysis-tab').forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.dataset.analysisType === type) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // Ocultar todos los contenidos
-    document.querySelectorAll('.analysis-content').forEach(content => {
-        content.style.display = 'none';
-    });
-    
-    // Mostrar contenido seleccionado
-    const selectedContent = document.getElementById(`analysis-${type}`);
-    if (selectedContent) {
-        selectedContent.style.display = 'block';
-        
-        // Si es análisis temporal, crear los gráficos
-        if (type === 'temporal') {
-            setTimeout(() => {
-                const analisisTemporal = calcularAnalisisTemporal();
-                createTemporalCharts(analisisTemporal);
-            }, 100);
-        } else if (type === 'general') {
-            // Recrear gráficos generales si es necesario
-            setTimeout(async () => {
+                `;
+                
+                modal.classList.add('show');
+                
+                // Obtener estadísticas generales
                 const stats = await window.airtableAPI.getAdvancedStatistics();
-                createGeneralCharts(stats);
-            }, 100);
-        }
-    }
-}
-
-// NUEVA FUNCIÓN: Calcular análisis temporal
-function calcularAnalisisTemporal() {
-    const ahora = new Date();
-    const mesActual = ahora.getMonth();
-    const añoActual = ahora.getFullYear();
-    
-    // Inicializar estructuras de datos
-    const analisis = {
-        mensual: {
-            BIOMEDICA: {},
-            MECANICA: {},
-            INFRAESTRUCTURA: {}
-        },
-        trimestral: {
-            BIOMEDICA: {},
-            MECANICA: {},
-            INFRAESTRUCTURA: {}
-        }
-    };
-    
-    // Calcular últimos 12 meses
-    for (let i = 11; i >= 0; i--) {
-        const fecha = new Date(añoActual, mesActual - i, 1);
-        const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
-        
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
-            analisis.mensual[area][mesKey] = {
-                total: 0,
-                completadas: 0,
-                pendientes: 0,
-                erroresUsuario: 0,
-                tiempoPromedio: 0
-            };
-        });
-    }
-    
-    // Calcular últimos 4 trimestres
-    for (let i = 3; i >= 0; i--) {
-        const trimestre = Math.floor((mesActual - (i * 3)) / 3);
-        const año = añoActual - Math.floor((i * 3 - mesActual) / 12);
-        const trimestreKey = `${año}-Q${((trimestre + 4) % 4) + 1}`;
-        
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
-            analisis.trimestral[area][trimestreKey] = {
-                total: 0,
-                completadas: 0,
-                pendientes: 0,
-                erroresUsuario: 0,
-                tiempoPromedio: 0,
-                eficiencia: 0
-            };
-        });
-    }
-    
-    // Procesar solicitudes por área
-    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
-        const solicitudesArea = solicitudesPorArea[area] || [];
-        
-        solicitudesArea.forEach(solicitud => {
-            if (!solicitud.fechaCreacion) return;
-            
-            const fechaSolicitud = new Date(solicitud.fechaCreacion);
-            const mesKey = `${fechaSolicitud.getFullYear()}-${String(fechaSolicitud.getMonth() + 1).padStart(2, '0')}`;
-            const trimestre = Math.floor(fechaSolicitud.getMonth() / 3) + 1;
-            const trimestreKey = `${fechaSolicitud.getFullYear()}-Q${trimestre}`;
-            
-            // Análisis mensual
-            if (analisis.mensual[area][mesKey]) {
-                analisis.mensual[area][mesKey].total++;
                 
-                if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') {
-                    analisis.mensual[area][mesKey].completadas++;
-                } else if (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente') {
-                    analisis.mensual[area][mesKey].pendientes++;
-                }
+                // Calcular estadísticas por área
+                const statsPorArea = calcularEstadisticasPorArea();
                 
-                if (solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') {
-                    analisis.mensual[area][mesKey].erroresUsuario++;
-                }
-            }
-            
-            // Análisis trimestral
-            if (analisis.trimestral[area][trimestreKey]) {
-                analisis.trimestral[area][trimestreKey].total++;
-                
-                if (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') {
-                    analisis.trimestral[area][trimestreKey].completadas++;
-                } else if (solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente') {
-                    analisis.trimestral[area][trimestreKey].pendientes++;
-                }
-                
-                if (solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') {
-                    analisis.trimestral[area][trimestreKey].erroresUsuario++;
-                }
-            }
-        });
-        
-        // Calcular eficiencias trimestrales
-        Object.keys(analisis.trimestral[area]).forEach(trimestre => {
-            const datos = analisis.trimestral[area][trimestre];
-            if (datos.total > 0) {
-                datos.eficiencia = ((datos.completadas / datos.total) * 100).toFixed(1);
-            }
-        });
-    });
-    
-    return analisis;
-}
-
-// NUEVA FUNCIÓN: Generar HTML de análisis temporal
-function generateTemporalAnalysis(analisisTemporal) {
-    return `
-        <!-- Selector de período -->
-        <div style="display: flex; gap: 1rem; margin-bottom: 2rem; align-items: center; flex-wrap: wrap;">
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-primary btn-sm temporal-period-btn active" data-period="mensual" onclick="showTemporalPeriod('mensual')">
-                    📅 Análisis Mensual
-                </button>
-                <button class="btn btn-primary btn-sm temporal-period-btn" data-period="trimestral" onclick="showTemporalPeriod('trimestral')">
-                    📊 Análisis Trimestral
-                </button>
-            </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-info btn-sm" onclick="exportTemporalAnalysis()">
-                    📥 Exportar Análisis
-                </button>
-            </div>
-        </div>
-
-        <!-- Análisis Mensual -->
-        <div id="temporal-mensual" class="temporal-period-content" style="display: block;">
-            <h3 style="color: #1f2937; margin-bottom: 1.5rem;">📅 Análisis Mensual por Área (Últimos 12 meses)</h3>
-            
-            <!-- Pestañas de áreas para análisis mensual -->
-            <div class="area-tabs" style="margin-bottom: 1.5rem;">
-                <button class="area-tab active" data-temporal-area="BIOMEDICA" onclick="showTemporalArea('BIOMEDICA', 'mensual')">
-                    🏥 Biomédica
-                </button>
-                <button class="area-tab" data-temporal-area="MECANICA" onclick="showTemporalArea('MECANICA', 'mensual')">
-                    ⚙️ Mecánica
-                </button>
-                <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'mensual')">
-                    🏗️ Infraestructura
-                </button>
-                <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'mensual')">
-                    📊 Comparativo
-                </button>
-            </div>
-            
-            <!-- Contenido mensual por área -->
-            <div id="mensual-BIOMEDICA" class="temporal-area-content" style="display: block;">
-                ${generateMonthlyAreaAnalysis('BIOMEDICA', analisisTemporal.mensual.BIOMEDICA)}
-            </div>
-            <div id="mensual-MECANICA" class="temporal-area-content" style="display: none;">
-                ${generateMonthlyAreaAnalysis('MECANICA', analisisTemporal.mensual.MECANICA)}
-            </div>
-            <div id="mensual-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
-                ${generateMonthlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.mensual.INFRAESTRUCTURA)}
-            </div>
-            <div id="mensual-COMPARATIVO" class="temporal-area-content" style="display: none;">
-                ${generateComparativeAnalysis('mensual', analisisTemporal.mensual)}
-            </div>
-        </div>
-
-        <!-- Análisis Trimestral -->
-        <div id="temporal-trimestral" class="temporal-period-content" style="display: none;">
-            <h3 style="color: #1f2937; margin-bottom: 1.5rem;">📊 Análisis Trimestral por Área (Últimos 4 trimestres)</h3>
-            
-            <!-- Pestañas de áreas para análisis trimestral -->
-            <div class="area-tabs" style="margin-bottom: 1.5rem;">
-                <button class="area-tab active" data-temporal-area="BIOMEDICA" onclick="showTemporalArea('BIOMEDICA', 'trimestral')">
-                    🏥 Biomédica
-                </button>
-                <button class="area-tab" data-temporal-area="MECANICA" onclick="showTemporalArea('MECANICA', 'trimestral')">
-                    ⚙️ Mecánica
-                </button>
-                <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'trimestral')">
-                    🏗️ Infraestructura
-                </button>
-                <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'trimestral')">
-                    📊 Comparativo
-                </button>
-            </div>
-            
-            <!-- Contenido trimestral por área -->
-            <div id="trimestral-BIOMEDICA" class="temporal-area-content" style="display: block;">
-                ${generateQuarterlyAreaAnalysis('BIOMEDICA', analisisTemporal.trimestral.BIOMEDICA)}
-            </div>
-            <div id="trimestral-MECANICA" class="temporal-area-content" style="display: none;">
-                ${generateQuarterlyAreaAnalysis('MECANICA', analisisTemporal.trimestral.MECANICA)}
-            </div>
-            <div id="trimestral-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
-                ${generateQuarterlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.trimestral.INFRAESTRUCTURA)}
-            </div>
-            <div id="trimestral-COMPARATIVO" class="temporal-area-content" style="display: none;">
-                ${generateComparativeAnalysis('trimestral', analisisTemporal.trimestral)}
-            </div>
-        </div>
-    `;
-}
-
-// NUEVA FUNCIÓN: Generar análisis mensual por área
-function generateMonthlyAreaAnalysis(area, datosMenuales) {
-    const areaColors = {
-        'BIOMEDICA': '#059669',
-        'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
-    };
-    
-    const areaNames = {
-        'BIOMEDICA': 'Ingeniería Biomédica',
-        'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
-    };
-    
-    const color = areaColors[area];
-    const nombre = areaNames[area];
-    
-    // Calcular totales y promedios
-    const meses = Object.keys(datosMenuales).sort();
-    const totales = meses.map(mes => datosMenuales[mes].total);
-    const completadas = meses.map(mes => datosMenuales[mes].completadas);
-    const pendientes = meses.map(mes => datosMenuales[mes].pendientes);
-    const erroresUsuario = meses.map(mes => datosMenuales[mes].erroresUsuario);
-    
-    const totalGeneral = totales.reduce((a, b) => a + b, 0);
-    const completadasGeneral = completadas.reduce((a, b) => a + b, 0);
-    const pendientesGeneral = pendientes.reduce((a, b) => a + b, 0);
-    const erroresGeneral = erroresUsuario.reduce((a, b) => a + b, 0);
-    
-    return `
-        <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem;">
-            <h4 style="color: ${color}; margin-bottom: 1.5rem;">📊 ${nombre} - Análisis Mensual</h4>
-            
-            <!-- Indicadores clave -->
-            <div class="stats-grid" style="margin-bottom: 2rem;">
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">📋 Total Solicitudes</span>
-                    </div>
-                    <div class="stat-card-value" style="color: ${color};">
-                        ${totalGeneral}
-                    </div>
-                    <div class="stat-card-description">
-                        Últimos 12 meses
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">✅ Completadas</span>
-                    </div>
-                    <div class="stat-card-value" style="color: #059669;">
-                        ${completadasGeneral}
-                    </div>
-                    <div class="stat-card-description">
-                        ${totalGeneral > 0 ? ((completadasGeneral / totalGeneral) * 100).toFixed(1) : 0}% del total
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">⏳ Pendientes</span>
-                    </div>
-                    <div class="stat-card-value" style="color: #f59e0b;">
-                        ${pendientesGeneral}
-                    </div>
-                    <div class="stat-card-description">
-                        ${totalGeneral > 0 ? ((pendientesGeneral / totalGeneral) * 100).toFixed(1) : 0}% del total
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">👤 Errores Usuario</span>
-                    </div>
-                    <div class="stat-card-value" style="color: #ef4444;">
-                        ${erroresGeneral}
-                    </div>
-                    <div class="stat-card-description">
-                        ${totalGeneral > 0 ? ((erroresGeneral / totalGeneral) * 100).toFixed(1) : 0}% del total
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Gráfico de tendencia mensual -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📈 Tendencia Mensual - ${nombre}</h3>
-                </div>
-                <div class="card-content">
-                    <div class="chart-container">
-                        <canvas id="monthlyChart-${area}"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tabla de datos mensuales -->
-            <div class="card" style="margin-top: 1.5rem;">
-                <div class="card-header">
-                    <h3 class="card-title">📊 Detalle Mensual - ${nombre}</h3>
-                </div>
-                <div class="card-content">
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Mes</th>
-                                    <th>Total</th>
-                                    <th>Completadas</th>
-                                    <th>Pendientes</th>
-                                    <th>Errores Usuario</th>
-                                    <th>Eficiencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${meses.map(mes => {
-                                    const datos = datosMenuales[mes];
-                                    const eficiencia = datos.total > 0 ? ((datos.completadas / datos.total) * 100).toFixed(1) : 0;
-                                    return `
-                                        <tr>
-                                            <td><strong>${formatMonth(mes)}</strong></td>
-                                            <td>${datos.total}</td>
-                                            <td style="color: #059669;">${datos.completadas}</td>
-                                            <td style="color: #f59e0b;">${datos.pendientes}</td>
-                                            <td style="color: #ef4444;">${datos.erroresUsuario}</td>
-                                            <td>
-                                                <span style="color: ${eficiencia > 70 ? '#059669' : eficiencia > 50 ? '#f59e0b' : '#ef4444'};">
-                                                    ${eficiencia}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                            <tfoot style="font-weight: bold; background: #f8fafc;">
-                                <tr>
-                                    <td>TOTAL</td>
-                                    <td>${totalGeneral}</td>
-                                    <td style="color: #059669;">${completadasGeneral}</td>
-                                    <td style="color: #f59e0b;">${pendientesGeneral}</td>
-                                    <td style="color: #ef4444;">${erroresGeneral}</td>
-                                    <td>
-                                        ${totalGeneral > 0 ? ((completadasGeneral / totalGeneral) * 100).toFixed(1) : 0}%
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// NUEVA FUNCIÓN: Generar análisis trimestral por área
-function generateQuarterlyAreaAnalysis(area, datosTrimestral) {
-    const areaColors = {
-        'BIOMEDICA': '#059669',
-        'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
-    };
-    
-    const areaNames = {
-        'BIOMEDICA': 'Ingeniería Biomédica',
-        'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
-    };
-    
-    const color = areaColors[area];
-    const nombre = areaNames[area];
-    
-    // Calcular totales y promedios
-    const trimestres = Object.keys(datosTrimestral).sort();
-    const totales = trimestres.map(t => datosTrimestral[t].total);
-    const completadas = trimestres.map(t => datosTrimestral[t].completadas);
-    const pendientes = trimestres.map(t => datosTrimestral[t].pendientes);
-    const erroresUsuario = trimestres.map(t => datosTrimestral[t].erroresUsuario);
-    const eficiencias = trimestres.map(t => parseFloat(datosTrimestral[t].eficiencia || 0));
-    
-    const totalGeneral = totales.reduce((a, b) => a + b, 0);
-    const completadasGeneral = completadas.reduce((a, b) => a + b, 0);
-    const pendientesGeneral = pendientes.reduce((a, b) => a + b, 0);
-    const erroresGeneral = erroresUsuario.reduce((a, b) => a + b, 0);
-    const eficienciaPromedio = eficiencias.reduce((a, b) => a + b, 0) / (eficiencias.length || 1);
-    
-    return `
-        <div style="background: linear-gradient(135deg, ${color}15 0%, ${color}05 100%); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem;">
-            <h4 style="color: ${color}; margin-bottom: 1.5rem;">📊 ${nombre} - Análisis Trimestral</h4>
-            
-            <!-- Indicadores trimestrales -->
-            <div class="stats-grid" style="margin-bottom: 2rem;">
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">📋 Total Solicitudes</span>
-                    </div>
-                    <div class="stat-card-value" style="color: ${color};">
-                        ${totalGeneral}
-                    </div>
-                    <div class="stat-card-description">
-                        Últimos 4 trimestres
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">✅ Tasa Completación</span>
-                    </div>
-                    <div class="stat-card-value" style="color: #059669;">
-                        ${totalGeneral > 0 ? ((completadasGeneral / totalGeneral) * 100).toFixed(1) : 0}%
-                    </div>
-                    <div class="stat-card-description">
-                        ${completadasGeneral} de ${totalGeneral}
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">📈 Eficiencia Promedio</span>
-                    </div>
-                    <div class="stat-card-value" style="color: ${eficienciaPromedio > 70 ? '#059669' : eficienciaPromedio > 50 ? '#f59e0b' : '#ef4444'};">
-                        ${eficienciaPromedio.toFixed(1)}%
-                    </div>
-                    <div class="stat-card-description">
-                        En los 4 trimestres
-                    </div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-card-header">
-                        <span class="stat-card-title">⚠️ Promedio Trimestral</span>
-                    </div>
-                    <div class="stat-card-value" style="color: #2563eb;">
-                        ${Math.round(totalGeneral / 4)}
-                    </div>
-                    <div class="stat-card-description">
-                        Solicitudes/trimestre
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Gráfico de tendencia trimestral -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📈 Evolución Trimestral - ${nombre}</h3>
-                </div>
-                <div class="card-content">
-                    <div class="chart-container">
-                        <canvas id="quarterlyChart-${area}"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tabla de datos trimestrales -->
-            <div class="card" style="margin-top: 1.5rem;">
-                <div class="card-header">
-                    <h3 class="card-title">📊 Detalle Trimestral - ${nombre}</h3>
-                </div>
-                <div class="card-content">
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Trimestre</th>
-                                    <th>Total</th>
-                                    <th>Completadas</th>
-                                    <th>Pendientes</th>
-                                    <th>Errores Usuario</th>
-                                    <th>Eficiencia</th>
-                                    <th>Tendencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${trimestres.map((trimestre, index) => {
-                                    const datos = datosTrimestral[trimestre];
-                                    const eficiencia = parseFloat(datos.eficiencia || 0);
-                                    const tendencia = index > 0 ? 
-                                        (datos.total > datosTrimestral[trimestres[index-1]].total ? '📈' : 
-                                         datos.total < datosTrimestral[trimestres[index-1]].total ? '📉' : '➡️') : '➡️';
-                                    
-                                    return `
-                                        <tr>
-                                            <td><strong>${trimestre}</strong></td>
-                                            <td>${datos.total}</td>
-                                            <td style="color: #059669;">${datos.completadas}</td>
-                                            <td style="color: #f59e0b;">${datos.pendientes}</td>
-                                            <td style="color: #ef4444;">${datos.erroresUsuario}</td>
-                                            <td>
-                                                <span style="color: ${eficiencia > 70 ? '#059669' : eficiencia > 50 ? '#f59e0b' : '#ef4444'};">
-                                                    ${eficiencia}%
-                                                </span>
-                                            </td>
-                                            <td style="font-size: 1.2rem;">${tendencia}</td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                            <tfoot style="font-weight: bold; background: #f8fafc;">
-                                <tr>
-                                    <td>TOTAL</td>
-                                    <td>${totalGeneral}</td>
-                                    <td style="color: #059669;">${completadasGeneral}</td>
-                                    <td style="color: #f59e0b;">${pendientesGeneral}</td>
-                                    <td style="color: #ef4444;">${erroresGeneral}</td>
-                                    <td colspan="2">
-                                        Promedio: ${eficienciaPromedio.toFixed(1)}%
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// NUEVA FUNCIÓN: Generar análisis comparativo
-function generateComparativeAnalysis(periodo, datos) {
-    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-    const periodos = Object.keys(datos.BIOMEDICA).sort();
-    
-    return `
-        <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 1.5rem; border-radius: 1rem; margin-bottom: 2rem;">
-            <h4 style="color: #0284c7; margin-bottom: 1.5rem;">📊 Análisis Comparativo ${periodo === 'mensual' ? 'Mensual' : 'Trimestral'}</h4>
-            
-            <!-- Gráfico comparativo de todas las áreas -->
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">📈 Comparación entre Áreas</h3>
-                </div>
-                <div class="card-content">
-                    <div class="chart-container">
-                        <canvas id="comparativeChart-${periodo}"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Tabla comparativa -->
-            <div class="card" style="margin-top: 1.5rem;">
-                <div class="card-header">
-                    <h3 class="card-title">📊 Resumen Comparativo por Área</h3>
-                </div>
-                <div class="card-content">
-                    <div class="table-responsive">
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Área</th>
-                                    <th>Total</th>
-                                    <th>Completadas</th>
-                                    <th>Pendientes</th>
-                                    <th>Errores Usuario</th>
-                                    <th>Eficiencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${areas.map(area => {
-                                    const areaData = datos[area];
-                                    let total = 0, completadas = 0, pendientes = 0, errores = 0;
-                                    
-                                    periodos.forEach(p => {
-                                        total += areaData[p].total;
-                                        completadas += areaData[p].completadas;
-                                        pendientes += areaData[p].pendientes;
-                                        errores += areaData[p].erroresUsuario;
-                                    });
-                                    
-                                    const eficiencia = total > 0 ? ((completadas / total) * 100).toFixed(1) : 0;
-                                    const areaColors = {
-                                        'BIOMEDICA': '#059669',
-                                        'MECANICA': '#f59e0b',
-                                        'INFRAESTRUCTURA': '#8b5cf6'
-                                    };
-                                    
-                                    return `
-                                        <tr>
-                                            <td style="color: ${areaColors[area]}; font-weight: bold;">
-                                                ${area === 'BIOMEDICA' ? '🏥 Biomédica' : 
-                                                  area === 'MECANICA' ? '⚙️ Mecánica' : 
-                                                  '🏗️ Infraestructura'}
-                                            </td>
-                                            <td>${total}</td>
-                                            <td style="color: #059669;">${completadas}</td>
-                                            <td style="color: #f59e0b;">${pendientes}</td>
-                                            <td style="color: #ef4444;">${errores}</td>
-                                            <td>
-                                                <span style="color: ${eficiencia > 70 ? '#059669' : eficiencia > 50 ? '#f59e0b' : '#ef4444'};">
-                                                    ${eficiencia}%
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    `;
-                                }).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Indicadores de rendimiento comparativo -->
-            <div class="stats-grid" style="margin-top: 1.5rem;">
-                ${areas.map(area => {
-                    const areaData = datos[area];
-                    let total = 0;
-                    periodos.forEach(p => {
-                        total += areaData[p].total;
-                    });
-                    
-                    const areaColors = {
-                        'BIOMEDICA': '#059669',
-                        'MECANICA': '#f59e0b',
-                        'INFRAESTRUCTURA': '#8b5cf6'
-                    };
-                    
-                    const areaNames = {
-                        'BIOMEDICA': '🏥 Biomédica',
-                        'MECANICA': '⚙️ Mecánica',
-                        'INFRAESTRUCTURA': '🏗️ Infraestructura'
-                    };
-                    
-                    return `
-                        <div class="stat-card" style="border-top: 4px solid ${areaColors[area]};">
-                            <div class="stat-card-header">
-                                <span class="stat-card-title">${areaNames[area]}</span>
-                            </div>
-                            <div class="stat-card-value" style="color: ${areaColors[area]};">
-                                ${total}
-                            </div>
-                            <div class="stat-card-description">
-                                Solicitudes totales
+                // Generar HTML con pestañas por área
+                content.innerHTML = `
+                    <div style="padding: 1rem;">
+                        <!-- Encabezado con botones de acción -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+                            <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
+                                    📄 Exportar a PDF
+                                </button>
+                                <button class="btn btn-info btn-sm" onclick="refreshStatsData()">
+                                    🔄 Actualizar
+                                </button>
                             </div>
                         </div>
-                    `;
-                }).join('')}
-            </div>
-        </div>
-    `;
-}
 
-// NUEVA FUNCIÓN: Crear gráficos temporales
-function createTemporalCharts(analisisTemporal) {
-    const periodo = document.querySelector('.temporal-period-btn.active')?.dataset.period || 'mensual';
-    const area = document.querySelector(`#temporal-${periodo} .area-tab.active`)?.dataset.temporalArea || 'BIOMEDICA';
-    
-    if (area === 'COMPARATIVO') {
-        createComparativeChart(periodo, analisisTemporal[periodo]);
-    } else {
-        if (periodo === 'mensual') {
-            createMonthlyChart(area, analisisTemporal.mensual[area]);
-        } else {
-            createQuarterlyChart(area, analisisTemporal.trimestral[area]);
-        }
-    }
-}
+                        <!-- Pestañas de áreas -->
+                        <div class="area-tabs">
+                            <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
+                                🌐 General
+                            </button>
+                            <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
+                                🏥 Biomédica
+                            </button>
+                            <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
+                                ⚙️ Mecánica
+                            </button>
+                            <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
+                                🏗️ Infraestructura
+                            </button>
+                        </div>
 
-// NUEVA FUNCIÓN: Crear gráfico mensual
-function createMonthlyChart(area, datosMenuales) {
-    const ctx = document.getElementById(`monthlyChart-${area}`);
-    if (!ctx) return;
-    
-    const chartId = `monthlyChart-${area}`;
-    if (chartInstances[chartId]) {
-        chartInstances[chartId].destroy();
-    }
-    
-    const meses = Object.keys(datosMenuales).sort();
-    const labels = meses.map(mes => formatMonth(mes));
-    
-    chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Total',
-                    data: meses.map(mes => datosMenuales[mes].total),
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
-                    tension: 0.3
-                },
-                {
-                    label: 'Completadas',
-                    data: meses.map(mes => datosMenuales[mes].completadas),
-                    borderColor: '#059669',
-                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                    tension: 0.3
-                },
-                {
-                    label: 'Pendientes',
-                    data: meses.map(mes => datosMenuales[mes].pendientes),
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    tension: 0.3
-                },
-                {
-                    label: 'Errores Usuario',
-                    data: meses.map(mes => datosMenuales[mes].erroresUsuario),
-                    borderColor: '#ef4444',
-                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                    tension: 0.3,
-                    borderDash: [5, 5]
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
+                        <!-- Contenido de estadísticas General -->
+                        <div id="stats-todas" class="area-stats-section active">
+                            ${generateGeneralStats(stats)}
+                        </div>
+
+                        <!-- Contenido de estadísticas Biomédica -->
+                        <div id="stats-biomedica" class="area-stats-section">
+                            ${generateAreaSpecificStats('BIOMEDICA', statsPorArea.BIOMEDICA)}
+                        </div>
+
+                        <!-- Contenido de estadísticas Mecánica -->
+                        <div id="stats-mecanica" class="area-stats-section">
+                            ${generateAreaSpecificStats('MECANICA', statsPorArea.MECANICA)}
+                        </div>
+
+                        <!-- Contenido de estadísticas Infraestructura -->
+                        <div id="stats-infraestructura" class="area-stats-section">
+                            ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
+                        </div>
+                    </div>
+                `;
+                
+                // Crear gráficos después de que el HTML esté listo
+                setTimeout(() => {
+                    createGeneralCharts(stats);
+                    if (currentAreaStats === 'todas') {
+                        // Ya se crearon los gráficos generales
+                    } else {
+                        createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('❌ Error mostrando estadísticas:', error);
+                const content = document.getElementById('stats-modal-content');
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <h4>❌ Error al cargar estadísticas</h4>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
         }
-    });
-}
 
-// NUEVA FUNCIÓN: Crear gráfico trimestral
-function createQuarterlyChart(area, datosTrimestral) {
-    const ctx = document.getElementById(`quarterlyChart-${area}`);
-    if (!ctx) return;
-    
-    const chartId = `quarterlyChart-${area}`;
-    if (chartInstances[chartId]) {
-        chartInstances[chartId].destroy();
-    }
-    
-    const trimestres = Object.keys(datosTrimestral).sort();
-    
-    chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
-        type: 'bar',
-        data: {
-            labels: trimestres,
-            datasets: [
-                {
-                    label: 'Total',
-                    data: trimestres.map(t => datosTrimestral[t].total),
-                    backgroundColor: 'rgba(37, 99, 235, 0.7)'
-                },
-                {
-                    label: 'Completadas',
-                    data: trimestres.map(t => datosTrimestral[t].completadas),
-                    backgroundColor: 'rgba(5, 150, 105, 0.7)'
-                },
-                {
-                    label: 'Pendientes',
-                    data: trimestres.map(t => datosTrimestral[t].pendientes),
-                    backgroundColor: 'rgba(245, 158, 11, 0.7)'
-                },
-                {
-                    label: 'Errores Usuario',
-                    data: trimestres.map(t => datosTrimestral[t].erroresUsuario),
-                    backgroundColor: 'rgba(239, 68, 68, 0.7)'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-// NUEVA FUNCIÓN: Crear gráfico comparativo
-function createComparativeChart(periodo, datos) {
-    const ctx = document.getElementById(`comparativeChart-${periodo}`);
-    if (!ctx) return;
-    
-    const chartId = `comparativeChart-${periodo}`;
-    if (chartInstances[chartId]) {
-        chartInstances[chartId].destroy();
-    }
-    
-    const periodos = Object.keys(datos.BIOMEDICA).sort();
-    const labels = periodo === 'mensual' ? 
-        periodos.map(mes => formatMonth(mes)) : 
-        periodos;
-    
-    chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: '🏥 Biomédica',
-                    data: periodos.map(p => datos.BIOMEDICA[p].total),
-                    borderColor: '#059669',
-                    backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                    tension: 0.3
-                },
-                {
-                    label: '⚙️ Mecánica',
-                    data: periodos.map(p => datos.MECANICA[p].total),
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    tension: 0.3
-                },
-                {
-                    label: '🏗️ Infraestructura',
-                    data: periodos.map(p => datos.INFRAESTRUCTURA[p].total),
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    tension: 0.3
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                },
-                tooltip: {
-                    mode: 'index',
-                    intersect: false
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-}
-
-// NUEVA FUNCIÓN: Mostrar período temporal
-function showTemporalPeriod(periodo) {
-    // Actualizar botones activos
-    document.querySelectorAll('.temporal-period-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.period === periodo) {
-            btn.classList.add('active');
-        }
-    });
-    
-    // Ocultar todos los contenidos
-    document.querySelectorAll('.temporal-period-content').forEach(content => {
-        content.style.display = 'none';
-    });
-    
-    // Mostrar contenido seleccionado
-    const selectedContent = document.getElementById(`temporal-${periodo}`);
-    if (selectedContent) {
-        selectedContent.style.display = 'block';
-        
-        // Recrear gráficos para el período seleccionado
-        setTimeout(() => {
-            const analisisTemporal = calcularAnalisisTemporal();
-            const area = document.querySelector(`#temporal-${periodo} .area-tab.active`)?.dataset.temporalArea || 'BIOMEDICA';
-            
-            if (area === 'COMPARATIVO') {
-                createComparativeChart(periodo, analisisTemporal[periodo]);
-            } else {
-                if (periodo === 'mensual') {
-                    createMonthlyChart(area, analisisTemporal.mensual[area]);
-                } else {
-                    createQuarterlyChart(area, analisisTemporal.trimestral[area]);
-                }
-            }
-        }, 100);
-    }
-}
-
-// NUEVA FUNCIÓN: Mostrar área temporal
-function showTemporalArea(area, periodo) {
-    // Actualizar pestañas activas
-    document.querySelectorAll(`#temporal-${periodo} .area-tab`).forEach(tab => {
-        tab.classList.remove('active');
-        if (tab.dataset.temporalArea === area) {
-            tab.classList.add('active');
-        }
-    });
-    
-    // Ocultar todos los contenidos del período
-    document.querySelectorAll(`#temporal-${periodo} .temporal-area-content`).forEach(content => {
-        content.style.display = 'none';
-    });
-    
-    // Mostrar contenido seleccionado
-    const selectedContent = document.getElementById(`${periodo}-${area}`);
-    if (selectedContent) {
-        selectedContent.style.display = 'block';
-        
-        // Crear gráficos para el área seleccionada
-        setTimeout(() => {
-            const analisisTemporal = calcularAnalisisTemporal();
-            
-            if (area === 'COMPARATIVO') {
-                createComparativeChart(periodo, analisisTemporal[periodo]);
-            } else {
-                if (periodo === 'mensual') {
-                    createMonthlyChart(area, analisisTemporal.mensual[area]);
-                } else {
-                    createQuarterlyChart(area, analisisTemporal.trimestral[area]);
-                }
-            }
-        }, 100);
-    }
-}
-
-// NUEVA FUNCIÓN: Formatear mes
-function formatMonth(monthKey) {
-    const [year, month] = monthKey.split('-');
-    const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-    return `${months[parseInt(month) - 1]} ${year}`;
-}
-
-// NUEVA FUNCIÓN: Exportar análisis temporal
-async function exportTemporalAnalysis() {
-    try {
-        const periodo = document.querySelector('.temporal-period-btn.active')?.dataset.period || 'mensual';
-        const analisisTemporal = calcularAnalisisTemporal();
-        
-        // Crear contenido para PDF
-        const pdfContent = document.createElement('div');
-        pdfContent.style.width = '210mm';
-        pdfContent.style.padding = '20px';
-        pdfContent.style.background = 'white';
-        
-        pdfContent.innerHTML = `
-            <div style="text-align: center; margin-bottom: 30px;">
-                <h1 style="color: #1f2937; font-size: 24px;">HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.</h1>
-                <h2 style="color: #4b5563; font-size: 18px;">Análisis Temporal ${periodo === 'mensual' ? 'Mensual' : 'Trimestral'} por Áreas</h2>
-                <p style="color: #6b7280;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
-            </div>
-            
-            <div style="margin-bottom: 30px;">
-                <h3 style="color: #1f2937; margin-bottom: 15px;">Resumen Ejecutivo</h3>
-                <p style="color: #4b5563;">
-                    Este informe presenta el análisis ${periodo === 'mensual' ? 'mensual (últimos 12 meses)' : 'trimestral (últimos 4 trimestres)'} 
-                    de las solicitudes de mantenimiento por área de servicio.
-                </p>
-            </div>
-            
-            <!-- Aquí agregarías las tablas y datos del análisis temporal -->
-        `;
-        
-        document.body.appendChild(pdfContent);
-        
-        const canvas = await html2canvas(pdfContent, {
-            scale: 2,
-            logging: false,
-            useCORS: true
-        });
-        
-        document.body.removeChild(pdfContent);
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-        
-        pdf.save(`Analisis_Temporal_${periodo}_${new Date().toISOString().split('T')[0]}.pdf`);
-        
-        alert('✅ Análisis temporal exportado exitosamente');
-        
-    } catch (error) {
-        console.error('❌ Error exportando análisis temporal:', error);
-        alert('❌ Error al exportar el análisis: ' + error.message);
-    }
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // FUNCIÓN: Calcular estadísticas por área
         function calcularEstadisticasPorArea() {
             const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
@@ -4718,323 +3526,124 @@ async function exportTemporalAnalysis() {
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
         }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////
- 
- // 🔄 FUNCIÓN MEJORADA: Modal de cambio de estado con opción de cambiar tipo de servicio
-async function showChangeStatusModal(solicitudId) {
-    console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
-    
-    try {
-        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            alert('❌ Solicitud no encontrada');
-            return;
-        }
 
-        const modal = document.getElementById('status-modal');
-        const content = document.getElementById('status-modal-content');
-        
-        const estadosDisponibles = [
-            { value: 'PENDIENTE', label: '⏳ Pendiente' },
-            { value: 'ASIGNADA', label: '🎯 Asignada' },
-            { value: 'EN_PROCESO', label: '🔄 En Proceso' },
-            { value: 'COMPLETADA', label: '✅ Completada' },
-            { value: 'CANCELADA', label: '❌ Cancelada' }
-        ];
+        async function showChangeStatusModal(solicitudId) {
+            console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
+            
+            try {
+                const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+                if (!solicitud) {
+                    alert('❌ Solicitud no encontrada');
+                    return;
+                }
 
-        const tiposServicioDisponibles = [
-            { value: 'ERROR_USUARIO', label: '👤 Error de Usuario', color: '#ef4444' },
-            { value: 'MANTENIMIENTO_PREVENTIVO', label: '🔧 Mantenimiento Preventivo', color: '#0ea5e9' },
-            { value: 'MANTENIMIENTO_CORRECTIVO', label: '🔨 Mantenimiento Correctivo', color: '#f59e0b' },
-            { value: 'INSTALACION', label: '📦 Instalación', color: '#8b5cf6' },
-            { value: 'CALIBRACION', label: '⚖️ Calibración', color: '#059669' },
-            { value: 'ACTUALIZACION', label: '🔄 Actualización', color: '#6366f1' },
-            { value: 'EMERGENCIA', label: '🚨 Emergencia', color: '#dc2626' },
-            { value: 'INSPECCION', label: '🔍 Inspección', color: '#14b8a6' }
-        ];
-
-        content.innerHTML = `
-            <div style="margin-bottom: 1.5rem;">
-                <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
-                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                    <p><strong>Número:</strong> ${solicitud.numero}</p>
-                    <p><strong>Estado Actual:</strong> <span style="color: #059669; font-weight: 600;">${solicitud.estado || 'PENDIENTE'}</span></p>
-                    <p><strong>Tipo de Servicio Actual:</strong> <span style="color: #2563eb; font-weight: 600;">${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</span></p>
-                    <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
-                </div>
+                const modal = document.getElementById('status-modal');
+                const content = document.getElementById('status-modal-content');
                 
-                ${(solicitud.tipoServicio === 'ERROR_USUARIO' || solicitud.tipoServicio === 'Error de Usuario') ? `
-                    <div style="background: #fee2e2; padding: 0.75rem; border-radius: 0.5rem; margin-top: 0.75rem; border-left: 3px solid #ef4444;">
-                        <p style="color: #dc2626; font-weight: 600; margin: 0;">
-                            ⚠️ Esta solicitud ya está marcada como ERROR DE USUARIO
-                        </p>
-                    </div>
-                ` : ''}
-            </div>
+                const estadosDisponibles = [
+                    { value: 'PENDIENTE', label: '⏳ Pendiente' },
+                    { value: 'ASIGNADA', label: '🎯 Asignada' },
+                    { value: 'EN_PROCESO', label: '🔄 En Proceso' },
+                    { value: 'COMPLETADA', label: '✅ Completada' },
+                    { value: 'CANCELADA', label: '❌ Cancelada' }
+                ];
 
-            <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
-                <div class="form-group">
-                    <label class="form-label">🔄 Nuevo Estado</label>
-                    <select id="new-status" required class="form-select" onchange="toggleServiceTypeSelector()">
-                        <option value="">Seleccione nuevo estado...</option>
-                        ${estadosDisponibles.map(estado => `
-                            <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
-                                ${estado.label}
-                            </option>
-                        `).join('')}
-                    </select>
-                </div>
-
-                <!-- Selector de tipo de servicio (solo visible cuando se selecciona COMPLETADA) -->
-                <div class="form-group" id="service-type-group" style="display: none;">
-                    <label class="form-label">
-                        🔨 Tipo de Servicio Final
-                        <span style="color: #059669; font-size: 0.875rem; font-weight: normal;">
-                            (Actualizar si el diagnóstico inicial cambió)
-                        </span>
-                    </label>
-                    
-                    <div style="background: #f0f9ff; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
-                        <p style="color: #0369a1; font-size: 0.875rem; margin: 0;">
-                            💡 <strong>Importante:</strong> Si detectó que fue un error del usuario o el tipo de servicio inicial era incorrecto, 
-                            seleccione el tipo correcto aquí. Esto actualizará el registro para las estadísticas.
-                        </p>
-                    </div>
-                    
-                    <select id="new-service-type" class="form-select">
-                        <option value="">Mantener tipo actual: ${solicitud.tipoServicio?.replace('_', ' ') || 'No especificado'}</option>
-                        <option value="">───────────────</option>
-                        ${tiposServicioDisponibles.map(tipo => `
-                            <option value="${tipo.value}" 
-                                    style="color: ${tipo.color};"
-                                    ${tipo.value === solicitud.tipoServicio ? 'disabled' : ''}>
-                                ${tipo.label} ${tipo.value === 'ERROR_USUARIO' ? '⚠️' : ''}
-                            </option>
-                        `).join('')}
-                    </select>
-                    
-                    ${solicitud.tipoServicio !== 'ERROR_USUARIO' ? `
-                        <div style="margin-top: 0.75rem; padding: 0.75rem; background: #fef3c7; border-radius: 0.5rem; border-left: 3px solid #f59e0b;">
-                            <p style="color: #92400e; font-size: 0.8rem; margin: 0;">
-                                <strong>⚠️ Marcar como Error de Usuario:</strong> Use esta opción si determinó que el problema 
-                                fue causado por mal uso del equipo y no una falla técnica real.
-                            </p>
+                content.innerHTML = `
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
+                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                            <p><strong>Número:</strong> ${solicitud.numero}</p>
+                            <p><strong>Estado Actual:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
+                            <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
                         </div>
-                    ` : ''}
-                </div>
+                    </div>
 
-                <div class="form-group">
-                    <label class="form-label">📝 Observaciones del Cambio</label>
-                    <textarea id="status-notes" class="form-textarea" rows="3"
-                        placeholder="Describa brevemente el trabajo realizado y cualquier observación importante..."></textarea>
-                </div>
+                    <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
+                        <div class="form-group">
+                            <label class="form-label">🔄 Nuevo Estado</label>
+                            <select id="new-status" required class="form-select">
+                                <option value="">Seleccione nuevo estado...</option>
+                                ${estadosDisponibles.map(estado => `
+                                    <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
+                                        ${estado.label}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
 
-                <!-- Checkbox para confirmación cuando es ERROR_USUARIO -->
-                <div id="error-usuario-confirmation" style="display: none; margin-bottom: 1rem;">
-                    <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 1rem; background: #fee2e2; border-radius: 0.5rem; cursor: pointer;">
-                        <input type="checkbox" id="confirm-error-usuario" style="margin-top: 0.25rem;">
-                        <span style="color: #dc2626; font-size: 0.875rem;">
-                            Confirmo que he verificado que este problema fue causado por error del usuario 
-                            (mal uso del equipo, falta de capacitación, operación incorrecta, etc.) 
-                            y no por una falla técnica del equipo.
-                        </span>
-                    </label>
-                </div>
+                        <div class="form-group">
+                            <label class="form-label">📝 Observaciones del Cambio</label>
+                            <textarea id="status-notes" class="form-textarea" 
+                                placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
+                        </div>
 
-                <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                    <button type="submit" class="btn btn-warning" style="min-width: 150px;">
-                        🔄 Cambiar Estado
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
-                        ↩️ Cancelar
-                    </button>
-                </div>
-            </form>
-        `;
-        
-        modal.classList.add('show');
-
-    } catch (error) {
-        console.error('❌ Error mostrando modal de estado:', error);
-        alert('❌ Error al cargar modal de estado: ' + error.message);
-    }
-}
-
-// 🔄 NUEVA FUNCIÓN: Mostrar/ocultar selector de tipo de servicio
-function toggleServiceTypeSelector() {
-    const newStatus = document.getElementById('new-status').value;
-    const serviceTypeGroup = document.getElementById('service-type-group');
-    const errorUsuarioConfirmation = document.getElementById('error-usuario-confirmation');
-    
-    // Mostrar selector de tipo de servicio solo cuando se selecciona COMPLETADA
-    if (newStatus === 'COMPLETADA') {
-        serviceTypeGroup.style.display = 'block';
-        
-        // Agregar listener al selector de tipo de servicio
-        const serviceTypeSelect = document.getElementById('new-service-type');
-        if (serviceTypeSelect) {
-            serviceTypeSelect.onchange = function() {
-                if (this.value === 'ERROR_USUARIO') {
-                    errorUsuarioConfirmation.style.display = 'block';
-                } else {
-                    errorUsuarioConfirmation.style.display = 'none';
-                    const confirmCheckbox = document.getElementById('confirm-error-usuario');
-                    if (confirmCheckbox) confirmCheckbox.checked = false;
-                }
-            };
-        }
-    } else {
-        serviceTypeGroup.style.display = 'none';
-        errorUsuarioConfirmation.style.display = 'none';
-    }
-}
-
-// 🔄 FUNCIÓN MEJORADA: Manejar cambio de estado con opción de cambiar tipo de servicio
-async function handleChangeStatus(event, solicitudId) {
-    event.preventDefault();
-    
-    const nuevoEstado = document.getElementById('new-status').value;
-    const nuevoTipoServicio = document.getElementById('new-service-type')?.value;
-    const observaciones = document.getElementById('status-notes').value.trim();
-    const confirmErrorUsuario = document.getElementById('confirm-error-usuario');
-    
-    if (!nuevoEstado) {
-        alert('❌ Por favor seleccione un nuevo estado');
-        return;
-    }
-
-    // Validación especial para ERROR_USUARIO
-    if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio === 'ERROR_USUARIO') {
-        if (!confirmErrorUsuario || !confirmErrorUsuario.checked) {
-            alert('⚠️ Debe confirmar que ha verificado que es un error de usuario');
-            return;
-        }
-    }
-
-    // Construir mensaje de confirmación
-    let confirmMessage = `¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`;
-    
-    if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
-        confirmMessage += `\n\n🔨 También se cambiará el tipo de servicio a:\n"${nuevoTipoServicio.replace('_', ' ')}"`;
-        
-        if (nuevoTipoServicio === 'ERROR_USUARIO') {
-            confirmMessage += '\n\n⚠️ IMPORTANTE: Esto marcará la solicitud como ERROR DE USUARIO en las estadísticas.';
-        }
-    }
-
-    const confirmed = confirm(confirmMessage);
-    if (!confirmed) return;
-
-    try {
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '⏳ Procesando...';
-
-        let result;
-        
-        // Si es COMPLETADA y hay un nuevo tipo de servicio, usar el método especial
-        if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
-            console.log('🔄 Cambiando estado y tipo de servicio...');
-            
-            // Agregar información adicional a las observaciones si es error de usuario
-            let observacionesFinal = observaciones;
-            if (nuevoTipoServicio === 'ERROR_USUARIO') {
-                const fechaHora = new Date().toLocaleString('es-CO');
-                observacionesFinal = `${observaciones}\n\n[${fechaHora}] ⚠️ MARCADO COMO ERROR DE USUARIO - Problema causado por mal uso del equipo, no falla técnica.`;
-            }
-            
-            result = await window.airtableAPI.updateRequestStatusWithServiceType(
-                solicitudId, 
-                nuevoEstado, 
-                nuevoTipoServicio,
-                observacionesFinal
-            );
-        } else {
-            // Usar el método normal para otros cambios de estado
-            result = await window.airtableAPI.updateRequestStatus(
-                solicitudId, 
-                nuevoEstado, 
-                observaciones
-            );
-        }
-        
-        if (result.success) {
-            await refreshFromCloud();
-            
-            if (nuevoEstado === 'COMPLETADA') {
-                await syncTechniciansWithCloud();
-            }
-            
-            closeStatusModal();
-            
-            // Mensaje de éxito personalizado
-            let successMessage = `✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`;
-            
-            if (nuevoEstado === 'COMPLETADA' && nuevoTipoServicio) {
-                successMessage += `\n🔨 Tipo de servicio actualizado: ${nuevoTipoServicio.replace('_', ' ')}`;
+                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                            <button type="submit" class="btn btn-warning" style="min-width: 150px;">
+                                🔄 Cambiar Estado
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
+                                ↩️ Cancelar
+                            </button>
+                        </div>
+                    </form>
+                `;
                 
-                if (nuevoTipoServicio === 'ERROR_USUARIO') {
-                    successMessage += '\n\n⚠️ La solicitud ha sido marcada como ERROR DE USUARIO';
+                modal.classList.add('show');
+
+            } catch (error) {
+                console.error('❌ Error mostrando modal de estado:', error);
+                alert('❌ Error al cargar modal de estado: ' + error.message);
+            }
+        }
+
+        async function handleChangeStatus(event, solicitudId) {
+            event.preventDefault();
+            
+            const nuevoEstado = document.getElementById('new-status').value;
+            const observaciones = document.getElementById('status-notes').value.trim();
+            
+            if (!nuevoEstado) {
+                alert('❌ Por favor seleccione un nuevo estado');
+                return;
+            }
+
+            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`);
+            if (!confirmed) return;
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Cambiando estado...';
+
+                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
+                
+                if (result.success) {
+                    await refreshFromCloud();
+                    
+                    if (nuevoEstado === 'COMPLETADA') {
+                        await syncTechniciansWithCloud();
+                    }
+                    
+                    closeStatusModal();
+                    
+                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`);
+                } else {
+                    throw new Error(result.mensaje || 'Error al cambiar estado');
+                }
+
+            } catch (error) {
+                console.error('❌ Error cambiando estado:', error);
+                alert('❌ Error al cambiar estado: ' + error.message);
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🔄 Cambiar Estado';
                 }
             }
-            
-            alert(successMessage);
-            
-            // Si se marcó como error de usuario, mostrar estadística actualizada
-            if (nuevoTipoServicio === 'ERROR_USUARIO') {
-                setTimeout(() => {
-                    mostrarEstadisticaErroresUsuario();
-                }, 1000);
-            }
-            
-        } else {
-            throw new Error(result.mensaje || 'Error al cambiar estado');
         }
 
-    } catch (error) {
-        console.error('❌ Error cambiando estado:', error);
-        alert('❌ Error al cambiar estado: ' + error.message);
-    } finally {
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '🔄 Cambiar Estado';
-        }
-    }
-}
-
-// 📊 NUEVA FUNCIÓN: Mostrar estadística de errores de usuario
-async function mostrarEstadisticaErroresUsuario() {
-    try {
-        const stats = await window.airtableAPI.getAdvancedStatistics();
-        const porcentajeErrores = stats.indicadoresGestion.porcentajeErroresUsuario;
-        
-        console.log(`📊 Estadística de Errores de Usuario actualizada: ${porcentajeErrores}%`);
-        
-        // Actualizar el dashboard si está visible
-        const dashboardView = document.getElementById('dashboard-view');
-        if (dashboardView && !dashboardView.classList.contains('hidden')) {
-            // Puedes agregar aquí una notificación visual o actualizar algún indicador
-            console.log('Dashboard actualizado con nueva estadística de errores de usuario');
-        }
-        
-    } catch (error) {
-        console.error('Error obteniendo estadísticas:', error);
-    }
-}
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }
