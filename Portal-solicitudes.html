@@ -958,7 +958,7 @@
         let currentUser = null;
         let isCloudConnected = false;
         
-        // ACTUALIZADO: Mapa completo de servicios hospitalarios para ubicaciones - AHORA CON NUEVAS ÁREAS
+        // MAPA COMPLETO DE UBICACIONES HOSPITALARIAS CON NUEVAS ÁREAS
         const ubicacionesHospitalarias = {
             // Urgencias
             'URGENCIAS_ADULTO': 'Urgencias Adulto',
@@ -1210,14 +1210,13 @@
             }
         }
 
-        // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
+        // Solicitud de acceso con todos los campos obligatorios
         async function handleAccessRequestCloud(e) {
             e.preventDefault();
             
             console.log('📝 Procesando solicitud de acceso cloud protegido...');
             
             const formData = {
-                // CORRECCIÓN: No incluir id, Airtable generará uno automáticamente
                 nombreCompleto: document.getElementById('req-name').value.trim(),
                 email: document.getElementById('req-email').value.trim(),
                 telefono: document.getElementById('req-phone').value.trim(),
@@ -1269,7 +1268,6 @@
                     showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
-                // CORRECCIÓN: Resetear el formulario correctamente
                 const formElement = document.querySelector('#request-form form');
                 if (formElement) {
                     formElement.reset();
@@ -1306,15 +1304,13 @@
             }
         }
 
-        // ACTUALIZADO: Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
+        // Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
         async function handleMaintenanceRequest(e) {
             e.preventDefault();
             
-            // CORRECCIÓN: Obtener el valor del área directamente
             const areaValue = document.getElementById('area').value;
             console.log('📋 Área seleccionada:', areaValue);
             
-            // Validación crítica del área ANTES de continuar
             if (!areaValue) {
                 const alertDiv = document.getElementById('form-alert');
                 showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
@@ -1322,7 +1318,6 @@
                 return;
             }
             
-            // ACTUALIZADO: Obtener el valor de ubicación del select
             const ubicacionValue = document.getElementById('ubicacion').value;
             if (!ubicacionValue) {
                 const alertDiv = document.getElementById('form-alert');
@@ -1331,14 +1326,13 @@
             }
             
             const formData = {
-                servicioIngenieria: areaValue, // Se enviará tal cual, el mapeo se hace en airtable-config.js
+                servicioIngenieria: areaValue,
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 equipo: document.getElementById('equipo').value.trim(),
-                ubicacion: ubicacionValue, // ACTUALIZADO: Ahora es el valor del select
+                ubicacion: ubicacionValue,
                 prioridad: document.querySelector('input[name="prioridad"]:checked').value,
                 descripcion: document.getElementById('descripcion').value.trim(),
                 observaciones: document.getElementById('observaciones').value.trim(),
-                // Datos del solicitante
                 solicitante: currentUser.nombreCompleto || currentUser.email,
                 servicioHospitalario: currentUser.servicioHospitalario || 'NO_ESPECIFICADO',
                 emailSolicitante: currentUser.email
@@ -1352,7 +1346,6 @@
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-btn');
             
-            // Validación adicional de campos requeridos
             if (!formData.tipoServicio || !formData.equipo || !formData.ubicacion || !formData.descripcion) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
                 return;
@@ -1368,7 +1361,6 @@
                     console.log('☁️ Enviando a Airtable con mapeo automático...');
                     result = await window.airtableAPI.createSolicitud(formData);
                     
-                    // Verificar que el área se guardó correctamente
                     if (result.fields && result.fields.servicioIngenieria) {
                         console.log('✅ ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
                     } else {
@@ -1413,7 +1405,6 @@
                     );
                 }
                 
-                // Limpiar formulario después de éxito
                 setTimeout(() => {
                     document.getElementById('maintenance-form').reset();
                     document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
@@ -1421,7 +1412,6 @@
                 
             } catch (error) {
                 console.error('❌ Error enviando solicitud:', error);
-                // Unificar el mensaje de error para evitar que se concatene sin salto de línea
                 const mensaje = `❌ Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
                 showAlert(alertDiv, 'error', mensaje);
             } finally {
