@@ -5,7 +5,137 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
 <!-- Agregar Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js">
+        // ✅ Modal de cambio de estado con opción "Error de Usuario"
+        function showChangeStatusModal(solicitudId) {
+            try {
+                const solicitud = (window.cloudSolicitudes || []).find(s => s.id === solicitudId) || {};
+                const modal = document.getElementById('status-modal');
+                const content = document.getElementById('status-modal-content');
+
+                const estados = [
+                    { value: 'EN_PROCESO', label: '🛠️ En Proceso' },
+                    { value: 'COMPLETADA', label: '✅ Completada' },
+                    { value: 'CANCELADA', label: '⛔ Cancelada' }
+                ];
+
+                content.innerHTML = `
+                    <div style="padding: 0.5rem 0 1rem 0;">
+                        <div style="margin-bottom: 1rem;">
+                            <div class="request-detail-label">📌 Selecciona el nuevo estado</div>
+                            <div style="display:grid; gap: .5rem; margin-top:.5rem;">
+                                ${estados.map(e => `
+                                    <label style="display:flex; align-items:center; gap:.5rem;">
+                                        <input type="radio" name="nuevo-estado" value="${e.value}" ${e.value==='COMPLETADA'?'checked':''}/>
+                                        <span>${e.label}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div id="error-usuario-wrapper" style="margin:.75rem 0; padding:.75rem; background:#fff7ed; border:1px dashed #fdba74; border-radius:.5rem;">
+                            <label style="display:flex; align-items:center; gap:.5rem;">
+                                <input type="checkbox" id="chk-error-usuario"/>
+                                <span>Marcar como <strong>Error de Usuario</strong> (afecta estadísticas)</span>
+                            </label>
+                            <div style="font-size:.8rem; color:#92400e; margin-top:.25rem;">
+                                Si seleccionas esta casilla y completas, el <em>tipo de servicio</em> se actualizará a <strong>ERROR_USUARIO</strong>.
+                            </div>
+                        </div>
+
+                        <div style="margin-top: .5rem;">
+                            <div class="request-detail-label">📝 Observaciones (opcional)</div>
+                            <textarea id="status-observaciones" class="form-input" style="min-height: 80px;" placeholder="Notas sobre el cambio de estado"></textarea>
+                        </div>
+
+                        <div style="display:flex; gap:.5rem; justify-content:flex-end; margin-top:1rem;">
+                            <button class="btn btn-secondary" onclick="closeStatusModal()">Cancelar</button>
+                            <button class="btn btn-primary" onclick="confirmStatusChange('${solicitudId}')">Confirmar</button>
+                        </div>
+                    </div>
+                `;
+
+                const radios = content.querySelectorAll('input[name=\"nuevo-estado\"]');
+                const errorWrap = content.querySelector('#error-usuario-wrapper');
+                function toggleErrorOption() {
+                    const selected = content.querySelector('input[name=\"nuevo-estado\"]:checked')?.value;
+                    errorWrap.style.display = (selected === 'COMPLETADA') ? 'block' : 'none';
+                }
+                radios.forEach(r => r.addEventListener('change', toggleErrorOption));
+                toggleErrorOption();
+
+                modal.classList.add('show');
+            } catch (e) {
+                console.error('❌ Error mostrando modal de estado:', e);
+                alert('No se pudo abrir el cambio de estado.');
+            }
+        }
+
+        async function confirmStatusChange(solicitudId) {
+            const modal = document.getElementById('status-modal');
+            const content = document.getElementById('status-modal-content');
+            try {
+                const selected = content.querySelector('input[name=\"nuevo-estado\"]:checked')?.value || 'COMPLETADA';
+                const marcarError = !!content.querySelector('#chk-error-usuario')?.checked;
+                const observ = (document.getElementById('status-observaciones')?.value || '').trim();
+
+                // Guardar técnico que realizó antes de completar para mantenerlo visible
+                const idx = (window.cloudSolicitudes || []).findIndex(s => s.id === solicitudId);
+                let tecnicoFinal = null;
+                if (idx >= 0) {
+                    tecnicoFinal = window.cloudSolicitudes[idx].tecnicoAsignado || null;
+                }
+
+                let result;
+                if (selected === 'COMPLETADA' && marcarError) {
+                    result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                        solicitudId, 'COMPLETADA', 'ERROR_USUARIO', (observ ? observ + ' - ' : '') + 'Completada con marca: Error de Usuario'
+                    );
+                } else {
+                    // Sin cambio de tipo de servicio
+                    result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                        solicitudId, selected, null, observ
+                    );
+                }
+
+                if (result && result.success !== false) {
+                    // Actualizar en memoria para refrescar UI sin perder técnico visible
+                    if (idx >= 0) {
+                        window.cloudSolicitudes[idx] = {
+                            ...window.cloudSolicitudes[idx],
+                            estado: selected,
+                            tecnicoFinal: tecnicoFinal || window.cloudSolicitudes[idx].tecnicoFinal || window.cloudSolicitudes[idx].tecnicoAsignado,
+                            // Si se marcó error de usuario, reflejar también en tipoServicio local
+                            ...(selected === 'COMPLETADA' && marcarError ? { tipoServicio: 'ERROR_USUARIO' } : {}),
+                            // Añadir observación breve local
+                            observaciones: (window.cloudSolicitudes[idx].observaciones || '') + (observ ? ('\n[' + new Date().toLocaleString('es-CO') + '] ' + observ) : '')
+                        };
+                    }
+
+                    // Re-clasificar y refrescar listas y contadores
+                    if (typeof clasificarSolicitudesPorArea === 'function') clasificarSolicitudesPorArea();
+                    if (typeof filterSolicitudesByArea === 'function') filterSolicitudesByArea(window.currentAreaFilter || 'TODAS');
+                    if (typeof updateAllCounters === 'function') updateAllCounters();
+                    if (typeof updateAllDisplays === 'function') updateAllDisplays();
+                    if (typeof updateSolicitudesList === 'function') updateSolicitudesList();
+
+                    closeStatusModal();
+                    alert('✅ Estado actualizado correctamente.');
+                } else {
+                    throw new Error(result && result.mensaje ? result.mensaje : 'No se pudo actualizar.');
+                }
+            } catch (e) {
+                console.error('❌ Error confirmando cambio de estado:', e);
+                alert('❌ Error cambiando el estado de la solicitud: ' + e.message);
+            }
+        }
+
+        function closeStatusModal() {
+            const modal = document.getElementById('status-modal');
+            if (modal) modal.classList.remove('show');
+        }
+
+</script>
 <!-- Agregar jsPDF para exportar a PDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2408,7 +2538,7 @@
                             <div class="request-detail-label">👨‍🔧 Personal Asignado</div>
                             <div class="request-detail-value">
                                 ${solicitud.tecnicoAsignado ? 
-                                    `<span style="color: #059669; font-weight: 600;">${solicitud.tecnicoAsignado}</span>` : 
+                                    `<span style="color: #059669; font-weight: 600;">${solicitud.tecnicoAsignado || ((solicitud.estado==='COMPLETADA'||solicitud.estado==='Completada') ? (solicitud.tecnicoFinal||'') : '')}</span>` : 
                                     '<span style="color: #f59e0b;">Sin asignar</span>'
                                 }
                             </div>
@@ -2423,7 +2553,7 @@
                     </div>
 
                     <div class="request-actions">
-                        ${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
+                        ${( (solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') && (!solicitud.tecnicoAsignado || solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente') ) ? `
                             <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
                                 🎯 Asignar Personal
                             </button>
@@ -2440,8 +2570,7 @@
                             👁️ Ver Detalles
                         </button>
                         
-                        ${solicitud.tecnicoAsignado && 
-                          solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
+                        ${solicitud.tecnicoAsignado && (solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada') ? `
                             <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
                                 🔓 Liberar Personal
                             </button>
