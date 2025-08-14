@@ -4654,124 +4654,197 @@ async function exportTemporalAnalysis() {
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
         }
-
-        async function showChangeStatusModal(solicitudId) {
-            console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
-            
-            try {
-                const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-                if (!solicitud) {
-                    alert('❌ Solicitud no encontrada');
-                    return;
-                }
-
-                const modal = document.getElementById('status-modal');
-                const content = document.getElementById('status-modal-content');
-                
-                const estadosDisponibles = [
-                    { value: 'PENDIENTE', label: '⏳ Pendiente' },
-                    { value: 'ASIGNADA', label: '🎯 Asignada' },
-                    { value: 'EN_PROCESO', label: '🔄 En Proceso' },
-                    { value: 'COMPLETADA', label: '✅ Completada' },
-                    { value: 'CANCELADA', label: '❌ Cancelada' }
-                ];
-
-                content.innerHTML = `
-                    <div style="margin-bottom: 1.5rem;">
-                        <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
-                        <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
-                            <p><strong>Número:</strong> ${solicitud.numero}</p>
-                            <p><strong>Estado Actual:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
-                            <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
-                        </div>
-                    </div>
-
-                    <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
-                        <div class="form-group">
-                            <label class="form-label">🔄 Nuevo Estado</label>
-                            <select id="new-status" required class="form-select">
-                                <option value="">Seleccione nuevo estado...</option>
-                                ${estadosDisponibles.map(estado => `
-                                    <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
-                                        ${estado.label}
-                                    </option>
-                                `).join('')}
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">📝 Observaciones del Cambio</label>
-                            <textarea id="status-notes" class="form-textarea" 
-                                placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
-                        </div>
-
-                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
-                            <button type="submit" class="btn btn-warning" style="min-width: 150px;">
-                                🔄 Cambiar Estado
-                            </button>
-                            <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
-                                ↩️ Cancelar
-                            </button>
-                        </div>
-                    </form>
-                `;
-                
-                modal.classList.add('show');
-
-            } catch (error) {
-                console.error('❌ Error mostrando modal de estado:', error);
-                alert('❌ Error al cargar modal de estado: ' + error.message);
-            }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+       
+	   async function showChangeStatusModal(solicitudId) {
+    console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
+    
+    try {
+        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+        if (!solicitud) {
+            alert('❌ Solicitud no encontrada');
+            return;
         }
 
-        async function handleChangeStatus(event, solicitudId) {
-            event.preventDefault();
-            
-            const nuevoEstado = document.getElementById('new-status').value;
-            const observaciones = document.getElementById('status-notes').value.trim();
-            
-            if (!nuevoEstado) {
-                alert('❌ Por favor seleccione un nuevo estado');
-                return;
-            }
+        const modal = document.getElementById('status-modal');
+        const content = document.getElementById('status-modal-content');
+        
+        const estadosDisponibles = [
+            { value: 'PENDIENTE', label: '⏳ Pendiente' },
+            { value: 'ASIGNADA', label: '🎯 Asignada' },
+            { value: 'EN_PROCESO', label: '🔄 En Proceso' },
+            { value: 'COMPLETADA', label: '✅ Completada' },
+            { value: 'CANCELADA', label: '❌ Cancelada' }
+        ];
 
-            const confirmed = confirm(`¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`);
-            if (!confirmed) return;
+        const tiposServicio = [
+            { value: 'ERROR_USUARIO', label: '👤 Error de Usuario' },
+            { value: 'MANTENIMIENTO_PREVENTIVO', label: '🔧 Mantenimiento Preventivo' },
+            { value: 'MANTENIMIENTO_CORRECTIVO', label: '⚙️ Mantenimiento Correctivo' },
+            { value: 'INSTALACION', label: '📦 Instalación' },
+            { value: 'CALIBRACION', label: '⚖️ Calibración' },
+            { value: 'ACTUALIZACION', label: '🔄 Actualización' },
+            { value: 'EMERGENCIA', label: '🚨 Emergencia' },
+            { value: 'INSPECCION', label: '🔍 Inspección' }
+        ];
 
-            try {
-                const submitBtn = event.target.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '⏳ Cambiando estado...';
+        content.innerHTML = `
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                    <p><strong>Número:</strong> ${solicitud.numero}</p>
+                    <p><strong>Estado Actual:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
+                    <p><strong>Tipo Actual:</strong> ${solicitud.tipoServicio || 'No especificado'}</p>
+                    <p><strong>Personal Asignado:</strong> ${solicitud.tecnicoAsignado || 'Sin asignar'}</p>
+                </div>
+            </div>
 
-                const result = await window.airtableAPI.updateRequestStatus(solicitudId, nuevoEstado, observaciones);
-                
-                if (result.success) {
-                    await refreshFromCloud();
+            <form id="status-form" onsubmit="handleChangeStatus(event, '${solicitudId}')">
+                <div class="form-group">
+                    <label class="form-label">🔄 Nuevo Estado</label>
+                    <select id="new-status" required class="form-select" onchange="toggleServiceTypeField()">
+                        <option value="">Seleccione nuevo estado...</option>
+                        ${estadosDisponibles.map(estado => `
+                            <option value="${estado.value}" ${estado.value === solicitud.estado ? 'disabled' : ''}>
+                                ${estado.label}
+                            </option>
+                        `).join('')}
+                    </select>
+                </div>
+
+                <!-- NUEVO: Campo para tipo de servicio (solo visible al completar) -->
+                <div class="form-group" id="service-type-group" style="display: none;">
+                    <label class="form-label">🔧 Tipo de Servicio (Opcional)</label>
+                    <select id="new-service-type" class="form-select">
+                        <option value="">Mantener tipo actual</option>
+                        ${tiposServicio.map(tipo => `
+                            <option value="${tipo.value}">
+                                ${tipo.label}
+                            </option>
+                        `).join('')}
+                    </select>
+                    <small style="color: #6b7280; font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        💡 Si detectó que era un error de usuario, seleccione "Error de Usuario"
+                    </small>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📝 Observaciones del Cambio</label>
+                    <textarea id="status-notes" class="form-textarea" 
+                        placeholder="Observaciones sobre el cambio de estado (opcional)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button type="submit" class="btn btn-warning" style="min-width: 150px;">
+                        🔄 Cambiar Estado
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeStatusModal()" style="min-width: 120px;">
+                        ↩️ Cancelar
+                    </button>
+                </div>
+            </form>
+
+            <script>
+                function toggleServiceTypeField() {
+                    const statusSelect = document.getElementById('new-status');
+                    const serviceTypeGroup = document.getElementById('service-type-group');
                     
-                    if (nuevoEstado === 'COMPLETADA') {
-                        await syncTechniciansWithCloud();
+                    if (statusSelect.value === 'COMPLETADA') {
+                        serviceTypeGroup.style.display = 'block';
+                    } else {
+                        serviceTypeGroup.style.display = 'none';
+                        document.getElementById('new-service-type').value = '';
                     }
-                    
-                    closeStatusModal();
-                    
-                    alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`);
-                } else {
-                    throw new Error(result.mensaje || 'Error al cambiar estado');
                 }
+            </script>
+        `;
+        
+        modal.classList.add('show');
 
-            } catch (error) {
-                console.error('❌ Error cambiando estado:', error);
-                alert('❌ Error al cambiar estado: ' + error.message);
-            } finally {
-                const submitBtn = event.target.querySelector('button[type="submit"]');
-                if (submitBtn) {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = '🔄 Cambiar Estado';
-                }
+    } catch (error) {
+        console.error('❌ Error mostrando modal de estado:', error);
+        alert('❌ Error al cargar modal de estado: ' + error.message);
+    }
+}
+	   
+	   
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        async function handleChangeStatus(event, solicitudId) {
+    event.preventDefault();
+    
+    const nuevoEstado = document.getElementById('new-status').value;
+    const nuevoTipoServicio = document.getElementById('new-service-type')?.value || null;
+    const observaciones = document.getElementById('status-notes').value.trim();
+    
+    if (!nuevoEstado) {
+        alert('❌ Por favor seleccione un nuevo estado');
+        return;
+    }
+
+    let confirmMessage = `¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`;
+    if (nuevoTipoServicio) {
+        confirmMessage += `\n\nTambién se cambiará el tipo de servicio a "${nuevoTipoServicio}".`;
+    }
+
+    const confirmed = confirm(confirmMessage);
+    if (!confirmed) return;
+
+    try {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Cambiando estado...';
+
+        let result;
+        
+        // Usar método con cambio de tipo de servicio si se proporciona
+        if (nuevoTipoServicio) {
+            console.log('🔄 Cambiando estado y tipo de servicio...');
+            result = await window.airtableAPI.updateRequestStatusWithServiceType(
+                solicitudId, 
+                nuevoEstado, 
+                nuevoTipoServicio, 
+                observaciones
+            );
+        } else {
+            console.log('🔄 Cambiando solo estado...');
+            result = await window.airtableAPI.updateRequestStatus(
+                solicitudId, 
+                nuevoEstado, 
+                observaciones
+            );
+        }
+        
+        if (result.success) {
+            await refreshFromCloud();
+            
+            if (nuevoEstado === 'COMPLETADA') {
+                await syncTechniciansWithCloud();
             }
+            
+            closeStatusModal();
+            
+            let successMessage = `✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`;
+            if (nuevoTipoServicio) {
+                successMessage += `\n🔧 Nuevo tipo de servicio: ${nuevoTipoServicio}`;
+            }
+            alert(successMessage);
+        } else {
+            throw new Error(result.mensaje || 'Error al cambiar estado');
         }
 
+    } catch (error) {
+        console.error('❌ Error cambiando estado:', error);
+        alert('❌ Error al cambiar estado: ' + error.message);
+    } finally {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '🔄 Cambiar Estado';
+        }
+    }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }
