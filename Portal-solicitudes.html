@@ -713,7 +713,7 @@
                                     </optgroup>
                                     <optgroup label="Personal Administrativo">
                                         <option value="ADMINISTRATIVO">💼 Administrativo</option>
-                                        <option value="DIRECTIVO">💡 Directivo</option>
+                                        <option value="DIRECTIVO">👔 Directivo</option>
                                         <option value="OTRO">📋 Otro</option>
                                     </optgroup>
                                 </select>
@@ -741,19 +741,19 @@
                             </h4>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✔</span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Revisión por administrador</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✔</span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Código único de 4 dígitos</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✔</span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Sistema con mapeo seguro</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✔</span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Respuesta en 24-48 horas</span>
                                 </div>
                             </div>
@@ -856,15 +856,9 @@
                                 <option value="LABORATORIO_CLINICO">🔬 Laboratorio Clínico</option>
                             </optgroup>
                             <optgroup label="Servicios Farmacéuticos">
-                                <option value="BODEGA_MEDICAMENTOS">📦 Bodega de Medicamentos</option>
                                 <option value="FARMACIA_CENTRAL">💊 Farmacia Central</option>
                                 <option value="FARMACIA_ADULTO">💊 Farmacia Adulto</option>
                                 <option value="FARMACIA_UMI">💊 Farmacia UMI</option>
-                                <option value="FARMACIA_CIRUGIA_UMI">💊 Farmacia Cirugía UMI</option>
-                                <option value="FARMACIA_CIRUGIA_ADULTO">💊 Farmacia Cirugía Adulto</option>
-                                <option value="FARMACIA_URGENCIAS">💊 Farmacia Urgencias</option>
-                                <option value="FARMACIA_UCI_ADULTOS">💊 Farmacia UCI Adultos</option>
-                                <option value="OFICINA_QUIMICOS_FARMACEUTICOS">🔬 Oficina Químicos Farmacéuticos</option>
                             </optgroup>
                             <optgroup label="Servicios de Apoyo Terapéutico">
                                 <option value="FISIOTERAPIA">🏃 Fisioterapia</option>
@@ -876,15 +870,6 @@
                             <optgroup label="Centrales de Esterilización">
                                 <option value="CENTRAL_ESTERILIZACION_UMI">🧪 Central de Esterilización UMI</option>
                                 <option value="CENTRAL_ESTERILIZACION_ADULTO">🧪 Central de Esterilización Adulto</option>
-                            </optgroup>
-                            <optgroup label="Áreas de Gestión y Apoyo">
-                                <option value="SISTEMAS">💻 Sistemas</option>
-                                <option value="HUMANIZACION">💝 Humanización</option>
-                                <option value="SEGURIDAD_PACIENTE_SALUD">🛡️ Seguridad del Paciente y Salud</option>
-                                <option value="EPIDEMIOLOGIA">📊 Epidemiología</option>
-                                <option value="CIENCIA_DATO">📈 Ciencia del Dato</option>
-                                <option value="HOSPITAL">🏥 Hospital General</option>
-                                <option value="SUMINISTROS">📋 Suministros</option>
                             </optgroup>
                             <optgroup label="Áreas por Tramos">
                                 <option value="TRAMO_1">📍 Tramo 1</option>
@@ -958,7 +943,7 @@
         let currentUser = null;
         let isCloudConnected = false;
         
-        // MAPA COMPLETO DE UBICACIONES HOSPITALARIAS CON NUEVAS ÁREAS
+        // ACTUALIZADO: Mapa completo de servicios hospitalarios para ubicaciones
         const ubicacionesHospitalarias = {
             // Urgencias
             'URGENCIAS_ADULTO': 'Urgencias Adulto',
@@ -982,16 +967,10 @@
             'IMAGENES_DIAGNOSTICAS': 'Imágenes Diagnósticas',
             // Laboratorio
             'LABORATORIO_CLINICO': 'Laboratorio Clínico',
-            // Farmacia - NUEVAS ÁREAS
-            'BODEGA_MEDICAMENTOS': 'Bodega de Medicamentos',
+            // Farmacia
             'FARMACIA_CENTRAL': 'Farmacia Central',
             'FARMACIA_ADULTO': 'Farmacia Adulto',
             'FARMACIA_UMI': 'Farmacia UMI',
-            'FARMACIA_CIRUGIA_UMI': 'Farmacia Cirugía UMI',
-            'FARMACIA_CIRUGIA_ADULTO': 'Farmacia Cirugía Adulto',
-            'FARMACIA_URGENCIAS': 'Farmacia Urgencias',
-            'FARMACIA_UCI_ADULTOS': 'Farmacia UCI Adultos',
-            'OFICINA_QUIMICOS_FARMACEUTICOS': 'Oficina Químicos Farmacéuticos',
             // Apoyo terapéutico
             'FISIOTERAPIA': 'Fisioterapia',
             'VACUNACION': 'Vacunación',
@@ -1000,14 +979,6 @@
             // Esterilización
             'CENTRAL_ESTERILIZACION_UMI': 'Central de Esterilización UMI',
             'CENTRAL_ESTERILIZACION_ADULTO': 'Central de Esterilización Adulto',
-            // Áreas de Gestión y Apoyo - NUEVAS ÁREAS
-            'SISTEMAS': 'Sistemas',
-            'HUMANIZACION': 'Humanización',
-            'SEGURIDAD_PACIENTE_SALUD': 'Seguridad del Paciente y Salud',
-            'EPIDEMIOLOGIA': 'Epidemiología',
-            'CIENCIA_DATO': 'Ciencia del Dato',
-            'HOSPITAL': 'Hospital General',
-            'SUMINISTROS': 'Suministros',
             // Tramos
             'TRAMO_1': 'Tramo 1',
             'TRAMO_2': 'Tramo 2',
@@ -1041,27 +1012,14 @@
             'LABORATORIO': 'Laboratorio',
             'LABORATORIO_CLINICO': 'Laboratorio Clínico',
             'FARMACIA': 'Farmacia',
-            'BODEGA_MEDICAMENTOS': 'Bodega de Medicamentos',
             'FARMACIA_CENTRAL': 'Farmacia Central',
             'FARMACIA_ADULTO': 'Farmacia Adulto',
             'FARMACIA_UMI': 'Farmacia UMI',
-            'FARMACIA_CIRUGIA_UMI': 'Farmacia Cirugía UMI',
-            'FARMACIA_CIRUGIA_ADULTO': 'Farmacia Cirugía Adulto',
-            'FARMACIA_URGENCIAS': 'Farmacia Urgencias',
-            'FARMACIA_UCI_ADULTOS': 'Farmacia UCI Adultos',
-            'OFICINA_QUIMICOS_FARMACEUTICOS': 'Oficina Químicos Farmacéuticos',
             'FISIOTERAPIA': 'Fisioterapia',
             'VACUNACION': 'Vacunación',
             'TRANSPORTE_ASISTENCIAL': 'Transporte Asistencial',
             'CENTRAL_ESTERILIZACION_UMI': 'Central Esterilización UMI',
             'CENTRAL_ESTERILIZACION_ADULTO': 'Central Esterilización Adulto',
-            'SISTEMAS': 'Sistemas',
-            'HUMANIZACION': 'Humanización',
-            'SEGURIDAD_PACIENTE_SALUD': 'Seguridad del Paciente y Salud',
-            'EPIDEMIOLOGIA': 'Epidemiología',
-            'CIENCIA_DATO': 'Ciencia del Dato',
-            'HOSPITAL': 'Hospital General',
-            'SUMINISTROS': 'Suministros',
             'TRAMO_1': 'Tramo 1',
             'TRAMO_2': 'Tramo 2',
             'TRAMO_3': 'Tramo 3',
@@ -1075,9 +1033,8 @@
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('✨ ACTUALIZACIÓN: Se agregaron nuevas ubicaciones al sistema');
+            console.log('✨ ACTUALIZACIÓN: Se agregó opción DESINSTALACIÓN en tipo de servicio');
             console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
-            console.log('🆕 Nuevas áreas agregadas: Bodega de medicamentos, Farmacias adicionales, Sistemas, Humanización, etc.');
             
             // Verificar sesión
             checkSession();
@@ -1130,7 +1087,7 @@
                 iconSpan.textContent = '☁️';
                 textSpan.textContent = 'Conectado a Airtable';
             } else {
-                iconSpan.textContent = '🔴';
+                iconSpan.textContent = '📴';
                 textSpan.textContent = 'Sin conexión (Modo local)';
             }
         }
@@ -1210,13 +1167,14 @@
             }
         }
 
-        // Solicitud de acceso con todos los campos obligatorios
+        // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
         async function handleAccessRequestCloud(e) {
             e.preventDefault();
             
-            console.log('📝 Procesando solicitud de acceso cloud protegido...');
+            console.log('🔍 Procesando solicitud de acceso cloud protegido...');
             
             const formData = {
+                // CORRECCIÓN: No incluir id, Airtable generará uno automáticamente
                 nombreCompleto: document.getElementById('req-name').value.trim(),
                 email: document.getElementById('req-email').value.trim(),
                 telefono: document.getElementById('req-phone').value.trim(),
@@ -1268,6 +1226,7 @@
                     showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
+                // CORRECCIÓN: Resetear el formulario correctamente
                 const formElement = document.querySelector('#request-form form');
                 if (formElement) {
                     formElement.reset();
@@ -1304,13 +1263,15 @@
             }
         }
 
-        // Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
+        // ACTUALIZADO: Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
         async function handleMaintenanceRequest(e) {
             e.preventDefault();
             
+            // CORRECCIÓN: Obtener el valor del área directamente
             const areaValue = document.getElementById('area').value;
             console.log('📋 Área seleccionada:', areaValue);
             
+            // Validación crítica del área ANTES de continuar
             if (!areaValue) {
                 const alertDiv = document.getElementById('form-alert');
                 showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
@@ -1318,6 +1279,7 @@
                 return;
             }
             
+            // ACTUALIZADO: Obtener el valor de ubicación del select
             const ubicacionValue = document.getElementById('ubicacion').value;
             if (!ubicacionValue) {
                 const alertDiv = document.getElementById('form-alert');
@@ -1326,13 +1288,14 @@
             }
             
             const formData = {
-                servicioIngenieria: areaValue,
+                servicioIngenieria: areaValue, // Se enviará tal cual, el mapeo se hace en airtable-config.js
                 tipoServicio: document.getElementById('tipo-servicio').value,
                 equipo: document.getElementById('equipo').value.trim(),
-                ubicacion: ubicacionValue,
+                ubicacion: ubicacionValue, // ACTUALIZADO: Ahora es el valor del select
                 prioridad: document.querySelector('input[name="prioridad"]:checked').value,
                 descripcion: document.getElementById('descripcion').value.trim(),
                 observaciones: document.getElementById('observaciones').value.trim(),
+                // Datos del solicitante
                 solicitante: currentUser.nombreCompleto || currentUser.email,
                 servicioHospitalario: currentUser.servicioHospitalario || 'NO_ESPECIFICADO',
                 emailSolicitante: currentUser.email
@@ -1341,11 +1304,12 @@
             console.log('📋 Datos de solicitud preparados:', formData);
             console.log('🏥 ÁREA A ENVIAR:', formData.servicioIngenieria);
             console.log('📍 UBICACIÓN SELECCIONADA:', formData.ubicacion, '-', ubicacionesHospitalarias[formData.ubicacion]);
-            console.log('🗺️ MAPEO: Los valores se mapearán automáticamente en airtable-config.js');
+            console.log('🔍 MAPEO: Los valores se mapearán automáticamente en airtable-config.js');
             
             const alertDiv = document.getElementById('form-alert');
             const submitBtn = document.getElementById('submit-btn');
             
+            // Validación adicional de campos requeridos
             if (!formData.tipoServicio || !formData.equipo || !formData.ubicacion || !formData.descripcion) {
                 showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
                 return;
@@ -1361,6 +1325,7 @@
                     console.log('☁️ Enviando a Airtable con mapeo automático...');
                     result = await window.airtableAPI.createSolicitud(formData);
                     
+                    // Verificar que el área se guardó correctamente
                     if (result.fields && result.fields.servicioIngenieria) {
                         console.log('✅ ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
                     } else {
@@ -1377,8 +1342,7 @@
                         `🛡️ SISTEMA ACTUALIZADO:\n` +
                         `• Ubicación seleccionada de lista predefinida\n` +
                         `• Valores mapeados correctamente\n` +
-                        `• Compatible con Airtable\n` +
-                        `• Nuevas áreas de gestión disponibles\n\n` +
+                        `• Compatible con Airtable\n\n` +
                         `🌐 Su solicitud está visible en el Portal de Gestión\n` +
                         `⏱️ Tiempo estimado de respuesta según prioridad\n` +
                         `🔄 Sistema con asignación automática de personal`
@@ -1405,6 +1369,7 @@
                     );
                 }
                 
+                // Limpiar formulario después de éxito
                 setTimeout(() => {
                     document.getElementById('maintenance-form').reset();
                     document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
@@ -1412,6 +1377,7 @@
                 
             } catch (error) {
                 console.error('❌ Error enviando solicitud:', error);
+                // Unificar el mensaje de error para evitar que se concatene sin salto de línea
                 const mensaje = `❌ Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
                 showAlert(alertDiv, 'error', mensaje);
             } finally {
@@ -1502,13 +1468,6 @@
             prioridades.forEach(prioridad => {
                 const mapped = window.airtableAPI.mapFieldValue('prioridad', prioridad);
                 console.log(`Prioridad: ${prioridad} → ${mapped}`);
-            });
-            
-            // Probar nuevas ubicaciones
-            const nuevasUbicaciones = ['BODEGA_MEDICAMENTOS', 'FARMACIA_CIRUGIA_UMI', 'SISTEMAS', 'HUMANIZACION', 'EPIDEMIOLOGIA'];
-            console.log('\n🆕 PROBANDO NUEVAS UBICACIONES:');
-            nuevasUbicaciones.forEach(ubicacion => {
-                console.log(`Ubicación: ${ubicacion} → ${ubicacionesHospitalarias[ubicacion] || 'No mapeado'}`);
             });
         }
 
