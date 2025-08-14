@@ -1251,6 +1251,201 @@
                 break-inside: avoid;
             }
         }
+		// Agregar este código INMEDIATAMENTE después de las variables globales (línea ~1250)
+// ANTES de cualquier otra función
+
+// Definir funciones críticas en el ámbito global
+window.showView = function(viewName) {
+    // Asegurarse de que el DOM esté listo
+    if (!document.getElementById(viewName + '-view')) {
+        console.error('Vista no encontrada:', viewName);
+        return;
+    }
+    
+    // Ocultar todas las vistas
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.add('hidden');
+    });
+    
+    // Mostrar la vista seleccionada
+    const targetView = document.getElementById(viewName + '-view');
+    if (targetView) {
+        targetView.classList.remove('hidden');
+    }
+    
+    // Actualizar pestañas de navegación activas
+    document.querySelectorAll('.nav-tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+    
+    const activeTab = document.querySelector(`[data-view="${viewName}"]`);
+    if (activeTab) {
+        activeTab.classList.add('active');
+    }
+    
+    // Ejecutar acciones específicas según la vista
+    switch(viewName) {
+        case 'dashboard':
+            // Actualizar métricas del dashboard si las funciones están disponibles
+            if (typeof updateAllCounters === 'function') {
+                updateAllCounters();
+            }
+            if (typeof updatePersonnelSummaries === 'function') {
+                updatePersonnelSummaries();
+            }
+            break;
+            
+        case 'solicitudes':
+            // Actualizar lista de solicitudes
+            if (typeof updateSolicitudesList === 'function') {
+                if (!window.filteredSolicitudes || window.filteredSolicitudes.length === 0) {
+                    window.filteredSolicitudes = [...(window.cloudSolicitudes || [])];
+                }
+                updateSolicitudesList();
+            }
+            if (typeof clasificarSolicitudesPorArea === 'function') {
+                clasificarSolicitudesPorArea();
+            }
+            if (typeof updateAreaBadges === 'function') {
+                updateAreaBadges();
+            }
+            if (typeof updateStatusCounters === 'function') {
+                updateStatusCounters();
+            }
+            break;
+            
+        case 'personal':
+            // Actualizar lista de personal
+            if (typeof updateTechniciansList === 'function') {
+                updateTechniciansList();
+            }
+            if (typeof updatePersonnelSummaries === 'function') {
+                updatePersonnelSummaries();
+            }
+            break;
+            
+        case 'accesos':
+            // Actualizar lista de solicitudes de acceso
+            if (typeof updateAccessRequestsList === 'function') {
+                updateAccessRequestsList();
+            }
+            break;
+            
+        default:
+            console.warn('Vista no reconocida:', viewName);
+    }
+};
+
+// También definir estas funciones en el ámbito global
+window.filterByArea = function(area) {
+    console.log('📍 Filtrar por área:', area);
+    
+    if (area === 'all') {
+        window.filteredSolicitudes = [...(window.cloudSolicitudes || [])];
+    } else {
+        const areaNormalizada = area.toUpperCase();
+        window.filteredSolicitudes = (window.cloudSolicitudes || []).filter(solicitud => {
+            const areaServicio = typeof normalizarArea === 'function' ? 
+                normalizarArea(solicitud.servicioIngenieria) : areaNormalizada;
+            return areaServicio === areaNormalizada;
+        });
+    }
+    
+    // Cambiar a vista de solicitudes
+    window.showView('solicitudes');
+    
+    // Actualizar el filtro de área activo si la función existe
+    if (typeof filterSolicitudesByArea === 'function') {
+        filterSolicitudesByArea(area === 'all' ? 'TODAS' : area);
+    }
+};
+
+window.filterByStatus = function(status) {
+    console.log('🔍 Filtrar por estado:', status);
+    
+    const solicitudes = window.cloudSolicitudes || [];
+    
+    switch(status) {
+        case 'PENDIENTE':
+            window.filteredSolicitudes = solicitudes.filter(solicitud => {
+                const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
+                if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
+                    return false;
+                }
+                return estadoUpper === 'PENDIENTE' || !solicitud.tecnicoAsignado;
+            });
+            break;
+            
+        case 'ASIGNADA':
+            window.filteredSolicitudes = solicitudes.filter(solicitud => {
+                const estadoUpper = (solicitud.estado || '').toUpperCase();
+                return estadoUpper === 'ASIGNADA' && solicitud.tecnicoAsignado;
+            });
+            break;
+            
+        default:
+            window.filteredSolicitudes = [...solicitudes];
+    }
+    
+    // Cambiar a vista de solicitudes
+    window.showView('solicitudes');
+    
+    // Actualizar la lista si la función existe
+    if (typeof updateSolicitudesList === 'function') {
+        updateSolicitudesList();
+    }
+};
+
+window.showNotifications = function() {
+    const solicitudesAcceso = window.cloudSolicitudesAcceso || [];
+    const solicitudes = window.cloudSolicitudes || [];
+    
+    const pendingAccess = solicitudesAcceso.filter(s => {
+        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+        return estado === 'PENDIENTE';
+    }).length;
+    
+    const pendingSolicitudes = solicitudes.filter(s => {
+        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+        return estado === 'PENDIENTE' || !s.tecnicoAsignado;
+    }).length;
+    
+    const erroresUsuario = solicitudes.filter(s => 
+        s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+    ).length;
+    
+    const totalSolicitudes = solicitudes.length;
+    const porcentajeErrores = totalSolicitudes > 0 ? 
+        ((erroresUsuario / totalSolicitudes) * 100).toFixed(1) : 0;
+    
+    const criticasSinAsignar = solicitudes.filter(s => 
+        (s.prioridad === 'CRITICA' || s.prioridad === 'Crítica') && !s.tecnicoAsignado
+    ).length;
+    
+    alert(`🔔 NOTIFICACIONES DEL SISTEMA\n\n` +
+        `📊 RESUMEN:\n` +
+        `• ${pendingAccess} Solicitudes de acceso pendientes\n` +
+        `• ${pendingSolicitudes} Solicitudes sin asignar\n` +
+        `• ${criticasSinAsignar} Solicitudes CRÍTICAS sin personal\n\n` +
+        `⚠️ ERRORES DE USUARIO:\n` +
+        `• ${erroresUsuario} solicitudes (${porcentajeErrores}% del total)\n\n` +
+        `🌐 ESTADO DEL SISTEMA:\n` +
+        `• Conexión: ${window.isConnectedToAirtable ? '🟢 Airtable Conectado' : '🔴 Modo Local'}\n` +
+        `• Auto-refresh: ${window.isAutoRefreshActive ? '🟢 Activo (5s)' : '🔴 Pausado'}\n` +
+        `• Última actualización: ${new Date().toLocaleTimeString('es-CO')}`
+    );
+};
+
+// Asegurar que las funciones estén disponibles globalmente
+window.testCloudConnection = testCloudConnection;
+window.refreshFromCloud = refreshFromCloud;
+window.showAdvancedStatisticsModal = showAdvancedStatisticsModal;
+window.toggleAutoRefresh = toggleAutoRefresh;
+		
+		
+		
+		
+		
     </style>
 </head>
 <body>
