@@ -2087,70 +2087,55 @@
         }
 
         // NUEVA FUNCIÓN: Actualizar contadores de estado
-//////////////////////////////////////////////////////////////////////////////////////////////////////// 
-// FUNCIÓN CORREGIDA: Actualizar contadores de estado
-function updateStatusCounters() {
-    let solicitudesParaContar = [];
-    
-    // Determinar qué solicitudes contar según el área actual
-    if (currentAreaFilter === 'TODAS') {
-        solicitudesParaContar = cloudSolicitudes;
-    } else {
-        solicitudesParaContar = solicitudesPorArea[currentAreaFilter] || [];
-    }
-    
-    // Calcular contadores - CORREGIDO: Excluir completadas y canceladas de sin asignar
-    const sinAsignar = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || 'PENDIENTE').toUpperCase();
-        // No contar como "sin asignar" si está completada o cancelada
-        if (estado === 'COMPLETADA' || estado === 'CANCELADA') {
-            return false;
+        function updateStatusCounters() {
+            let solicitudesParaContar = [];
+            
+            // Determinar qué solicitudes contar según el área actual
+            if (currentAreaFilter === 'TODAS') {
+                solicitudesParaContar = cloudSolicitudes;
+            } else {
+                solicitudesParaContar = solicitudesPorArea[currentAreaFilter] || [];
+            }
+            
+            // Calcular contadores
+            const sinAsignar = solicitudesParaContar.filter(s => !s.tecnicoAsignado).length;
+            const pendientes = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || 'PENDIENTE').toUpperCase();
+                return estado === 'PENDIENTE';
+            }).length;
+            const asignadas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'ASIGNADA';
+            }).length;
+            const enProceso = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+            }).length;
+            const completadas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'COMPLETADA';
+            }).length;
+            const noCompletas = solicitudesParaContar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
+            }).length;
+            
+            // Actualizar resumen de estado
+            document.getElementById('summary-sin-asignar').textContent = sinAsignar;
+            document.getElementById('summary-pendientes').textContent = pendientes;
+            document.getElementById('summary-en-proceso').textContent = enProceso;
+            document.getElementById('summary-no-completas').textContent = noCompletas;
+            
+            // Actualizar contadores en botones de filtro
+            document.getElementById('count-todas').textContent = solicitudesParaContar.length;
+            document.getElementById('count-sin-asignar').textContent = sinAsignar;
+            document.getElementById('count-pendiente').textContent = pendientes;
+            document.getElementById('count-asignada').textContent = asignadas;
+            document.getElementById('count-en-proceso').textContent = enProceso;
+            document.getElementById('count-completada').textContent = completadas;
+            document.getElementById('count-no-completas').textContent = noCompletas;
         }
-        // Solo contar como sin asignar si no tiene técnico
-        return !s.tecnicoAsignado;
-    }).length;
-    
-    const pendientes = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || 'PENDIENTE').toUpperCase();
-        return estado === 'PENDIENTE';
-    }).length;
-    
-    const asignadas = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || '').toUpperCase();
-        return estado === 'ASIGNADA';
-    }).length;
-    
-    const enProceso = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || '').toUpperCase();
-        return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-    }).length;
-    
-    const completadas = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || '').toUpperCase();
-        return estado === 'COMPLETADA';
-    }).length;
-    
-    const noCompletas = solicitudesParaContar.filter(s => {
-        const estado = (s.estado || '').toUpperCase();
-        return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
-    }).length;
-    
-    // Actualizar resumen de estado
-    document.getElementById('summary-sin-asignar').textContent = sinAsignar;
-    document.getElementById('summary-pendientes').textContent = pendientes;
-    document.getElementById('summary-en-proceso').textContent = enProceso;
-    document.getElementById('summary-no-completas').textContent = noCompletas;
-    
-    // Actualizar contadores en botones de filtro
-    document.getElementById('count-todas').textContent = solicitudesParaContar.length;
-    document.getElementById('count-sin-asignar').textContent = sinAsignar;
-    document.getElementById('count-pendiente').textContent = pendientes;
-    document.getElementById('count-asignada').textContent = asignadas;
-    document.getElementById('count-en-proceso').textContent = enProceso;
-    document.getElementById('count-completada').textContent = completadas;
-    document.getElementById('count-no-completas').textContent = noCompletas;
-}
-/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // NUEVA FUNCIÓN: Filtrar por estado detallado
         function filterByDetailedStatus(status) {
             currentStatusFilter = status;
