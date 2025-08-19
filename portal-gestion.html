@@ -2687,27 +2687,7 @@ function updateStatusCounters() {
                             <span class="${getPriorityBadge(solicitud.prioridad)}">${solicitud.prioridad || 'MEDIA'}</span>
                         </div>
                     </div>
-                    ${(() => {
-            const estadoUpper = (solicitud.estado || '').toUpperCase();
-            if (estadoUpper === 'COMPLETADA') {
-                return `
-                    <div style="background: #dcfce7; border: 2px solid #059669; padding: 0.75rem; border-radius: 0.5rem; margin: 1rem 0; text-align: center;">
-                        <span style="color: #059669; font-weight: bold; font-size: 1rem;">
-                            ✅ SOLICITUD COMPLETADA - No requiere más acciones
-                        </span>
-                    </div>
-                `;
-            } else if (estadoUpper === 'CANCELADA') {
-                return `
-                    <div style="background: #fee2e2; border: 2px solid #ef4444; padding: 0.75rem; border-radius: 0.5rem; margin: 1rem 0; text-align: center;">
-                        <span style="color: #dc2626; font-weight: bold; font-size: 1rem;">
-                            ❌ SOLICITUD CANCELADA - No requiere más acciones
-                        </span>
-                    </div>
-                `;
-            }
-            return '';
-        })()}
+                    
                     <div class="request-details">
                         <div class="request-detail">
                             <div class="request-detail-label">🔨 Tipo de Servicio</div>
@@ -2748,64 +2728,41 @@ function updateStatusCounters() {
                         ${solicitud.observaciones ? `<div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;"><strong>Observaciones:</strong> ${solicitud.observaciones}</div>` : ''}
                         ${solicitud.observacionesAsignacion ? `<div style="margin-top: 0.5rem; color: #059669;"><strong>Observaciones de Asignación:</strong> ${solicitud.observacionesAsignacion}</div>` : ''}
                     </div>
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-<div class="request-actions">
-    ${(() => {
-        const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
-        const isCompletada = estadoUpper === 'COMPLETADA';
-        const isCancelada = estadoUpper === 'CANCELADA';
-        const isFinalizada = isCompletada || isCancelada;
-        
-        // NO mostrar botón de asignar si está finalizada
-        let botonesHTML = '';
-        
-        // Botón Asignar Personal - Solo si NO está finalizada
-        if (!isFinalizada && (estadoUpper === 'PENDIENTE' || !solicitud.tecnicoAsignado)) {
-            botonesHTML += `
-                <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
-                    🎯 Asignar Personal
-                </button>
+
+                    <div class="request-actions">
+                        ${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
+                            <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
+                                🎯 Asignar Personal
+                            </button>
+                        ` : ''}
+                        
+                        ${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
+                           solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
+                            <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
+                                🔄 Cambiar Estado
+                            </button>
+                        ` : ''}
+                        
+                        <button class="btn btn-info btn-sm" onclick="viewRequestDetails('${solicitud.id}')">
+                            👁️ Ver Detalles
+                        </button>
+                        
+                        ${solicitud.tecnicoAsignado && 
+                          solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
+                            <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
+                                🔓 Liberar Personal
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
+                        <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
+                        <span style="color: #1e3a8a;">Sincronizado - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
+                    </div>
+                </div>
             `;
         }
-        
-        // Botón Cambiar Estado - Solo si NO está finalizada
-        if (!isFinalizada) {
-            botonesHTML += `
-                <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
-                    🔄 Cambiar Estado
-                </button>
-            `;
-        }
-        
-        // Botón Ver Detalles - Siempre visible
-        botonesHTML += `
-            <button class="btn btn-info btn-sm" onclick="viewRequestDetails('${solicitud.id}')">
-                👁️ Ver Detalles
-            </button>
-        `;
-        
-        // Botón Liberar Personal - Solo si tiene técnico y NO está finalizada
-        if (solicitud.tecnicoAsignado && !isFinalizada) {
-            botonesHTML += `
-                <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
-                    🔓 Liberar Personal
-                </button>
-            `;
-        }
-        
-        // Si está finalizada, mostrar mensaje informativo
-        if (isFinalizada) {
-            botonesHTML += `
-                <span class="badge" style="background: #6b7280; color: white; padding: 0.5rem 1rem; border-radius: 0.25rem;">
-                    🔒 Solicitud ${isCompletada ? 'Completada' : 'Cancelada'}
-                </span>
-            `;
-        }
-        
-        return botonesHTML;
-    })()}
-</div>
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // Función helper para obtener nombre de área
         function getAreaName(area) {
             if (!area) return 'Sin área';
@@ -5642,8 +5599,7 @@ async function exportTemporalAnalysis() {
         }
 
         // Las siguientes funciones permanecen sin cambios (personal, accesos, modales, etc.)
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
-  async function showAssignPersonalModal(solicitudId) {
+        async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
             try {
@@ -6839,9 +6795,7 @@ async function notifyTechnician(technicianId, requestNumber) {
             showView('solicitudes');
             updateSolicitudesList();
         }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (Con Análisis por Áreas)');
