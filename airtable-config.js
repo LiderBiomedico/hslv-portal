@@ -850,20 +850,58 @@ class AirtableAPI {
             throw error;
         }
     }
+/////////////////////////////////////////////////////////////////////////////////
+// En airtable-config.js, reemplaza el método getSolicitudes() con este:
 
-    async getSolicitudes() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudes);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo solicitudes:', error);
-            return [];
-        }
+async getSolicitudes() {
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        // Continuar obteniendo páginas mientras haya más registros
+        do {
+            pageCount++;
+            console.log(`📄 Obteniendo página ${pageCount} de solicitudes...`);
+            
+            let endpoint = this.tables.solicitudes;
+            let params = new URLSearchParams({
+                pageSize: 100  // Máximo permitido por Airtable
+            });
+            
+            if (offset) {
+                params.append('offset', offset);
+            }
+            
+            endpoint += '?' + params.toString();
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                allRecords = allRecords.concat(result.records);
+                console.log(`✅ Página ${pageCount}: ${result.records.length} registros obtenidos`);
+            }
+            
+            // Airtable devuelve un offset si hay más páginas
+            offset = result.offset;
+            
+        } while (offset);
+        
+        console.log(`✅ Total de solicitudes obtenidas: ${allRecords.length}`);
+        
+        return allRecords.map(record => ({
+            id: record.id,
+            ...record.fields
+        }));
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo solicitudes:', error);
+        return [];
     }
-
+}
+//////////////////////////////////////////////////////////////////////////////////////
     async getTecnicos() {
         try {
             const result = await this.makeRequest(this.tables.tecnicos);
