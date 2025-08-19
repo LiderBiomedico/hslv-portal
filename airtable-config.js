@@ -850,58 +850,20 @@ class AirtableAPI {
             throw error;
         }
     }
-/////////////////////////////////////////////////////////////////////////////////
-// En airtable-config.js, reemplaza el método getSolicitudes() con este:
 
-async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
-        
-        // Continuar obteniendo páginas mientras haya más registros
-        do {
-            pageCount++;
-            console.log(`📄 Obteniendo página ${pageCount} de solicitudes...`);
-            
-            let endpoint = this.tables.solicitudes;
-            let params = new URLSearchParams({
-                pageSize: 100  // Máximo permitido por Airtable
-            });
-            
-            if (offset) {
-                params.append('offset', offset);
-            }
-            
-            endpoint += '?' + params.toString();
-            
-            const result = await this.makeRequest(endpoint);
-            
-            if (result.records && result.records.length > 0) {
-                allRecords = allRecords.concat(result.records);
-                console.log(`✅ Página ${pageCount}: ${result.records.length} registros obtenidos`);
-            }
-            
-            // Airtable devuelve un offset si hay más páginas
-            offset = result.offset;
-            
-        } while (offset);
-        
-        console.log(`✅ Total de solicitudes obtenidas: ${allRecords.length}`);
-        
-        return allRecords.map(record => ({
-            id: record.id,
-            ...record.fields
-        }));
-        
-    } catch (error) {
-        console.error('❌ Error obteniendo solicitudes:', error);
-        return [];
+    async getSolicitudes() {
+        try {
+            const result = await this.makeRequest(this.tables.solicitudes);
+            return result.records.map(record => ({
+                id: record.id,
+                ...record.fields
+            }));
+        } catch (error) {
+            console.error('❌ Error obteniendo solicitudes:', error);
+            return [];
+        }
     }
-}
-//////////////////////////////////////////////////////////////////////////////////////
+
     async getTecnicos() {
         try {
             const result = await this.makeRequest(this.tables.tecnicos);
@@ -1441,10 +1403,9 @@ async getSolicitudes() {
                 console.log('✅ Estado actualizado exitosamente');
                 
                 if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-				console.log('🔓 Liberando técnico asignado (manteniendo nombre en solicitud completada)...');
-					// Pasar true para mantener el nombre del técnico en la solicitud completada
-				await this.liberarTecnicoAsignado(solicitudId, true);
-}
+                    console.log('🔓 Liberando técnico asignado...');
+                    await this.liberarTecnicoAsignado(solicitudId);
+                }
                 
                 return { 
                     success: true, 
@@ -1580,11 +1541,10 @@ async getSolicitudes() {
                 
                 console.log('✅ Estado y tipo de servicio actualizados exitosamente');
                 
-               if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-				console.log('🔓 Liberando técnico asignado (manteniendo nombre en solicitud completada)...');
-				// Pasar true para mantener el nombre del técnico en la solicitud completada
-				await this.liberarTecnicoAsignado(solicitudId, true);
-}
+                if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
+                    console.log('🔓 Liberando técnico asignado...');
+                    await this.liberarTecnicoAsignado(solicitudId);
+                }
                 
                 return { 
                     success: true, 
@@ -1712,50 +1672,44 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
         throw new Error(`Error al redirigir solicitud: ${error.message}`);
     }
 }
-////////////////////////////////////////////////////    // 🔓 MÉTODO: Liberar técnico asignado
-
-// 🔓 MÉTODO: Liberar técnico asignado (VERSIÓN MEJORADA - Mantiene el nombre en solicitudes completadas)
-async liberarTecnicoAsignado(solicitudId, mantenerNombreEnSolicitud = false) {
-    console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
-    console.log('📋 Mantener nombre en solicitud:', mantenerNombreEnSolicitud);
-    
-    try {
-        const solicitudes = await this.getSolicitudes();
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
+    // 🔓 MÉTODO: Liberar técnico asignado
+    async liberarTecnicoAsignado(solicitudId) {
+        console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
         
-        if (!solicitud || !solicitud.tecnicoAsignado) {
-            console.log('ℹ️ No hay técnico asignado para liberar');
-            return { success: true, mensaje: 'No había técnico asignado' };
-        }
-        
-        console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
-        
-        const tecnicos = await this.getTecnicos();
-        const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
-        
-        if (tecnico) {
-            console.log('🔄 Actualizando estado del técnico a disponible...');
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
             
-            try {
-                // Liberar el técnico (ponerlo disponible y quitar la solicitud asignada)
-                await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
-                    fields: {
-                        estado: 'disponible',
-                        solicitudAsignada: ''
-                    }
-                });
-                
-                console.log(`✅ Técnico ${tecnico.nombre} liberado y disponible para nuevas asignaciones`);
-                
-            } catch (tecnicoError) {
-                console.error('❌ Error actualizando técnico:', tecnicoError);
+            if (!solicitud || !solicitud.tecnicoAsignado) {
+                console.log('ℹ️ No hay técnico asignado para liberar');
+                return { success: true, mensaje: 'No había técnico asignado' };
             }
-        } else {
-            console.warn('⚠️ No se encontró el técnico en la base de datos');
-        }
-        
-        // CAMBIO IMPORTANTE: Solo borrar el técnico de la solicitud si NO es una completada
-        if (!mantenerNombreEnSolicitud) {
+            
+            console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
+            
+            const tecnicos = await this.getTecnicos();
+            const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+            
+            if (tecnico) {
+                console.log('🔄 Actualizando estado del técnico a disponible...');
+                
+                try {
+                    await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
+                        fields: {
+                            estado: 'disponible',
+                            solicitudAsignada: ''
+                        }
+                    });
+                    
+                    console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
+                    
+                } catch (tecnicoError) {
+                    console.error('❌ Error actualizando técnico:', tecnicoError);
+                }
+            } else {
+                console.warn('⚠️ No se encontró el técnico en la base de datos');
+            }
+            
             try {
                 await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                     fields: {
@@ -1766,27 +1720,23 @@ async liberarTecnicoAsignado(solicitudId, mantenerNombreEnSolicitud = false) {
             } catch (solicitudError) {
                 console.error('❌ Error actualizando solicitud:', solicitudError);
             }
-        } else {
-            console.log('📋 Manteniendo nombre del técnico en la solicitud completada para registro histórico');
+            
+            return { 
+                success: true, 
+                mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
+                tecnico: tecnico
+            };
+            
+        } catch (error) {
+            console.error('❌ Error liberando técnico:', error);
+            return { 
+                success: false, 
+                mensaje: 'Error liberando técnico',
+                error: error.message 
+            };
         }
-        
-        return { 
-            success: true, 
-            mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado${mantenerNombreEnSolicitud ? ' (nombre mantenido en solicitud)' : ''}`,
-            tecnico: tecnico
-        };
-        
-    } catch (error) {
-        console.error('❌ Error liberando técnico:', error);
-        return { 
-            success: false, 
-            mensaje: 'Error liberando técnico',
-            error: error.message 
-        };
     }
-}
 
-///////////////////////////////////////////////////////////////////////////////////////////////
     async updateSolicitudAcceso(requestId, updateData) {
         const cleanData = {};
         Object.keys(updateData).forEach(key => {
