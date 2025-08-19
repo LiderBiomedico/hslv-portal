@@ -2736,42 +2736,35 @@
                         ${solicitud.observacionesAsignacion ? `<div style="margin-top: 0.5rem; color: #059669;"><strong>Observaciones de Asignación:</strong> ${solicitud.observacionesAsignacion}</div>` : ''}
                     </div>
 
-                    <div class="request-actions">
-                        ${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
-                            <button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
-                                🎯 Asignar Personal
-                            </button>
-                        ` : ''}
-                         <!-- AGREGAR ESTE NUEVO BOTÓN AQUÍ -->
-						<button class="btn btn-info btn-sm" onclick="showRedirectAreaModal('${solicitud.id}')">
-							🔄 Redirigir Área
-						</button>
+					<div class="request-actions">
+						${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
+				<button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
+					🎯 Asignar Personal
+					</button>
+    `				 : ''}
     
-							${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
-							solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
-							<button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
-						📄 Cambiar Estado
-						</button>
-    ` 						: ''}
-                        ${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
-                           solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
-                            <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
-                                🔄 Cambiar Estado
-                            </button>
-                        ` : ''}
-                        
-                        <button class="btn btn-info btn-sm" onclick="viewRequestDetails('${solicitud.id}')">
-                            👁️ Ver Detalles
-                        </button>
-                        
-                        ${solicitud.tecnicoAsignado && 
-                          solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
-                            <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
-                                🔓 Liberar Personal
-                            </button>
-                        ` : ''}
-                    </div>
-
+					<button class="btn btn-info btn-sm" onclick="showRedirectAreaModal('${solicitud.id}')">
+					🔄 Redirigir Área
+					</button>
+    
+					${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
+					solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
+					<button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
+					📄 Cambiar Estado
+				</button>
+    `			 : ''}
+    
+    <button class="btn btn-info btn-sm" onclick="viewRequestDetails('${solicitud.id}')">
+        👁️ Ver Detalles
+    </button>
+    
+    ${solicitud.tecnicoAsignado && 
+      solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
+        <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
+            🔓 Liberar Personal
+        </button>
+    ` : ''}
+</div>
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
                         <span style="color: #1e3a8a;">Sincronizado - Auto-refresh ${isAutoRefreshActive ? 'activo' : 'pausado'}</span>
