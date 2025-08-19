@@ -50,7 +50,17 @@
             position: relative;
             gap: 0.5rem;
         }
+       /* Botón de redirección de área */
+          .btn-redirect {
+           background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+         color: white;
+        }
 
+        .btn-redirect:hover {
+              background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+            }
         .logo {
             display: flex;
             align-items: center;
@@ -1557,6 +1567,18 @@
 </select>
 </div>
 <div>
+<!-- Modal de Redirección de Área -->
+<div class="modal" id="redirect-area-modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">🔄 Redirigir Solicitud a Otra Área</h3>
+            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
+        </div>
+        <div id="redirect-area-content">
+            <!-- Contenido dinámico del modal -->
+        </div>
+    </div>
+</div>
 <label class="form-label">Prioridad:</label>
 <select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
 <option value="">Todas las prioridades</option>
@@ -2720,7 +2742,17 @@
                                 🎯 Asignar Personal
                             </button>
                         ` : ''}
-                        
+                         <!-- AGREGAR ESTE NUEVO BOTÓN AQUÍ -->
+						<button class="btn btn-info btn-sm" onclick="showRedirectAreaModal('${solicitud.id}')">
+							🔄 Redirigir Área
+						</button>
+    
+							${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
+							solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
+							<button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
+						📄 Cambiar Estado
+						</button>
+    ` 						: ''}
                         ${(solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
                            solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada') ? `
                             <button class="btn btn-warning btn-sm" onclick="showChangeStatusModal('${solicitud.id}')">
@@ -4693,7 +4725,168 @@ function createMonthlyChart(area, datosMenuales) {
         }
     });
 }
+// 🔄 FUNCIONES PARA REDIRIGIR ÁREA
+async function showRedirectAreaModal(solicitudId) {
+    console.log('🔄 Mostrando modal de redirección de área para:', solicitudId);
+    
+    try {
+        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+        if (!solicitud) {
+            alert('❌ Solicitud no encontrada');
+            return;
+        }
 
+        const modal = document.getElementById('redirect-area-modal');
+        const content = document.getElementById('redirect-area-content');
+        
+        // Determinar área actual normalizada
+        const areaActual = normalizarArea(solicitud.servicioIngenieria);
+        
+        // Crear opciones de áreas disponibles (excluyendo la actual)
+        const areasDisponibles = [];
+        if (areaActual !== 'BIOMEDICA') {
+            areasDisponibles.push({ value: 'INGENIERIA_BIOMEDICA', label: '🏥 Ingeniería Biomédica' });
+        }
+        if (areaActual !== 'MECANICA') {
+            areasDisponibles.push({ value: 'MECANICA', label: '⚙️ Mecánica' });
+        }
+        if (areaActual !== 'INFRAESTRUCTURA') {
+            areasDisponibles.push({ value: 'INFRAESTRUCTURA', label: '🏗️ Infraestructura' });
+        }
+        
+        content.innerHTML = `
+            <div style="margin-bottom: 1.5rem;">
+                <h4 style="color: #1f2937; margin-bottom: 1rem;">📋 Información de la Solicitud</h4>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                    <p><strong>Número:</strong> ${solicitud.numero}</p>
+                    <p><strong>Área Actual:</strong> <span style="color: #dc2626; font-weight: bold;">${getAreaName(solicitud.servicioIngenieria)}</span></p>
+                    <p><strong>Tipo de Servicio:</strong> ${solicitud.tipoServicio || 'No especificado'}</p>
+                    <p><strong>Equipo:</strong> ${solicitud.equipo || 'No especificado'}</p>
+                    <p><strong>Estado:</strong> ${solicitud.estado || 'PENDIENTE'}</p>
+                    ${solicitud.tecnicoAsignado ? 
+                        `<div style="background: #fee2e2; padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+                            <strong>⚠️ ADVERTENCIA:</strong> Esta solicitud tiene personal asignado (${solicitud.tecnicoAsignado}). 
+                            Al redirigir se liberará automáticamente.
+                        </div>` : ''
+                    }
+                </div>
+            </div>
+
+            <form id="redirect-area-form" onsubmit="handleRedirectArea(event, '${solicitudId}')">
+                <div class="form-group">
+                    <label class="form-label">🔄 Seleccionar Nueva Área *</label>
+                    <select id="new-area" required class="form-select">
+                        <option value="">Seleccione el área correcta...</option>
+                        ${areasDisponibles.map(area => `
+                            <option value="${area.value}">${area.label}</option>
+                        `).join('')}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📝 Motivo de la Redirección *</label>
+                    <textarea id="redirect-reason" class="form-textarea" required
+                        placeholder="Explique por qué esta solicitud debe ser redirigida a otra área..."></textarea>
+                </div>
+
+                <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h5 style="color: #d97706; margin-bottom: 0.5rem;">⚠️ Importante</h5>
+                    <ul style="color: #92400e; margin: 0; padding-left: 1rem; font-size: 0.875rem;">
+                        <li>Se generará un nuevo número de solicitud para el área seleccionada</li>
+                        <li>El personal asignado (si existe) será liberado automáticamente</li>
+                        <li>El estado se reiniciará a PENDIENTE</li>
+                        <li>Se conservará el historial de la redirección</li>
+                    </ul>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button type="submit" class="btn btn-primary" style="min-width: 150px;">
+                        ✅ Confirmar Redirección
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="closeRedirectAreaModal()" style="min-width: 120px;">
+                        ↩️ Cancelar
+                    </button>
+                </div>
+            </form>
+        `;
+        
+        modal.classList.add('show');
+
+    } catch (error) {
+        console.error('❌ Error mostrando modal de redirección:', error);
+        alert('❌ Error al cargar modal de redirección: ' + error.message);
+    }
+}
+
+async function handleRedirectArea(event, solicitudId) {
+    event.preventDefault();
+    
+    const nuevaArea = document.getElementById('new-area').value;
+    const motivo = document.getElementById('redirect-reason').value.trim();
+    
+    if (!nuevaArea || !motivo) {
+        alert('❌ Por favor complete todos los campos requeridos');
+        return;
+    }
+
+    const confirmed = confirm('¿Está seguro que desea redirigir esta solicitud a otra área?\n\nEsto generará un nuevo número y liberará cualquier personal asignado.');
+    if (!confirmed) return;
+
+    try {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '⏳ Redirigiendo...';
+
+        // Obtener la solicitud actual
+        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
+        if (!solicitud) {
+            throw new Error('Solicitud no encontrada');
+        }
+
+        // Si hay técnico asignado, liberarlo primero
+        if (solicitud.tecnicoAsignado) {
+            console.log('🔓 Liberando técnico asignado antes de redirigir...');
+            await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
+        }
+
+        // Actualizar el área de la solicitud
+        const result = await window.airtableAPI.updateRequestArea(
+            solicitudId,
+            nuevaArea,
+            motivo,
+            solicitud.servicioIngenieria // Área anterior
+        );
+
+        if (result.success) {
+            await refreshFromCloud();
+            closeRedirectAreaModal();
+            
+            alert(`✅ Solicitud redirigida exitosamente\n\n` +
+                  `📋 Número anterior: ${solicitud.numero}\n` +
+                  `📋 Nuevo número: ${result.nuevoNumero || 'Mantenido'}\n` +
+                  `🏥 Área anterior: ${getAreaName(solicitud.servicioIngenieria)}\n` +
+                  `🔄 Nueva área: ${getAreaName(nuevaArea)}\n\n` +
+                  `La solicitud ahora aparecerá en el área de ${getAreaName(nuevaArea)}`);
+        } else {
+            throw new Error(result.mensaje || 'Error al redirigir');
+        }
+
+    } catch (error) {
+        console.error('❌ Error redirigiendo solicitud:', error);
+        alert('❌ Error al redirigir solicitud: ' + error.message);
+    } finally {
+        const submitBtn = event.target.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '✅ Confirmar Redirección';
+        }
+    }
+}
+
+function closeRedirectAreaModal() {
+    document.getElementById('redirect-area-modal').classList.remove('show');
+}
 // NUEVA FUNCIÓN: Crear gráfico trimestral
 function createQuarterlyChart(area, datosTrimestral) {
     const ctx = document.getElementById(`quarterlyChart-${area}`);
