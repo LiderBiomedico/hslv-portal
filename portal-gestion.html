@@ -5642,7 +5642,8 @@ async function exportTemporalAnalysis() {
         }
 
         // Las siguientes funciones permanecen sin cambios (personal, accesos, modales, etc.)
-        async function showAssignPersonalModal(solicitudId) {
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////  
+  async function showAssignPersonalModal(solicitudId) {
             console.log('🎯 Mostrando modal de asignación para:', solicitudId);
             
             try {
@@ -6839,24 +6840,7 @@ async function notifyTechnician(technicianId, requestNumber) {
             updateSolicitudesList();
         }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-async function showAssignPersonalModal(solicitudId) {
-    console.log('🎯 Mostrando modal de asignación para:', solicitudId);
-    
-    try {
-        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            alert('❌ Solicitud no encontrada');
-            return;
-        }
 
-        // NUEVA VALIDACIÓN: Verificar si la solicitud está finalizada
-        const estadoUpper = (solicitud.estado || '').toUpperCase();
-        if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
-            alert('⚠️ No se puede asignar personal a una solicitud ' + estadoUpper.toLowerCase());
-            return;
-        }
-
-        // Resto del código continúa igual...
 /////////////////////////////////////////////////////////////////////////////////////////////////////
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
