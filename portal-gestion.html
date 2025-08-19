@@ -2389,7 +2389,16 @@
         }
 
         function updatePersonnelSummaries() {
-            const areas = [
+         // Agregar esta validación al contar personal disponible:
+		const available = personnel.filter(p => {
+    // Un técnico está disponible si:
+    // 1. Su estado es 'disponible'
+    // 2. O no tiene solicitud asignada (aunque aparezca en solicitudes completadas)
+			return String(p.estado || '').toLowerCase() === 'disponible' || 
+           !p.solicitudAsignada || 
+           p.solicitudAsignada === '';
+			}).length;  
+		   const areas = [
                 { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
                 { key: 'MECANICA', name: 'mecanica' },
                 { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
@@ -2718,15 +2727,21 @@
                             <div class="request-detail-label">📅 Fecha de Solicitud</div>
                             <div class="request-detail-value">${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
                         </div>
-                        <div class="request-detail">
-                            <div class="request-detail-label">👨‍🔧 Personal Asignado</div>
-                            <div class="request-detail-value">
-                                ${solicitud.tecnicoAsignado ? 
-                                    `<span style="color: #059669; font-weight: 600;">${solicitud.tecnicoAsignado}</span>` : 
-                                    '<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
-                                }
-                            </div>
-                        </div>
+                      <div class="request-detail">
+					<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
+					<div class="request-detail-value">
+					${solicitud.tecnicoAsignado ? 
+					`<span style="color: #059669; font-weight: 600;">
+						${solicitud.tecnicoAsignado}
+						${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? 
+						'<span style="color: #0284c7; font-size: 0.75rem;"> (Completó - Disponible)</span>' : 
+						'<span style="color: #f59e0b; font-size: 0.75rem;"> (Trabajando)</span>'
+					}
+					</span>` : 
+				'<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
+					}
+					</div>
+				</div>
                     </div>
 
                     <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
@@ -6124,7 +6139,7 @@ function toggleErrorUsuarioOption(estado) {
             if (!confirmed) return;
 
             try {
-                await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
+                await window.airtableAPI.liberarTecnicoAsignado(solicitudId, false);
                 await window.airtableAPI.updateRequestStatus(solicitudId, 'PENDIENTE', 'Personal liberado manualmente');
                 
                 await refreshFromCloud();

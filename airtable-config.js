@@ -1403,9 +1403,10 @@ class AirtableAPI {
                 console.log('✅ Estado actualizado exitosamente');
                 
                 if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                    console.log('🔓 Liberando técnico asignado (manteniendo nombre en solicitud)...');
-                    await this.liberarTecnicoAsignado(solicitudId, true);
-                }
+				console.log('🔓 Liberando técnico asignado (manteniendo nombre en solicitud completada)...');
+					// Pasar true para mantener el nombre del técnico en la solicitud completada
+				await this.liberarTecnicoAsignado(solicitudId, true);
+}
                 
                 return { 
                     success: true, 
@@ -1541,10 +1542,11 @@ class AirtableAPI {
                 
                 console.log('✅ Estado y tipo de servicio actualizados exitosamente');
                 
-                if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
-                    console.log('🔓 Liberando técnico asignado...');
-                    await this.liberarTecnicoAsignado(solicitudId);
-                }
+               if (nuevoEstado === 'COMPLETADA' && solicitud.tecnicoAsignado) {
+				console.log('🔓 Liberando técnico asignado (manteniendo nombre en solicitud completada)...');
+				// Pasar true para mantener el nombre del técnico en la solicitud completada
+				await this.liberarTecnicoAsignado(solicitudId, true);
+}
                 
                 return { 
                     success: true, 
