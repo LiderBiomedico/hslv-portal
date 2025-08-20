@@ -1671,45 +1671,49 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
         console.error('❌ Error actualizando área:', error);
         throw new Error(`Error al redirigir solicitud: ${error.message}`);
     }
-}
+}/////////////////////////////////////////////////////////////////////////////////////////////////////
     // 🔓 MÉTODO: Liberar técnico asignado
-    async liberarTecnicoAsignado(solicitudId) {
-        console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
+    // 🔓 MÉTODO: Liberar técnico asignado
+async liberarTecnicoAsignado(solicitudId) {
+    console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
+    
+    try {
+        const solicitudes = await this.getSolicitudes();
+        const solicitud = solicitudes.find(s => s.id === solicitudId);
         
-        try {
-            const solicitudes = await this.getSolicitudes();
-            const solicitud = solicitudes.find(s => s.id === solicitudId);
+        if (!solicitud || !solicitud.tecnicoAsignado) {
+            console.log('ℹ️ No hay técnico asignado para liberar');
+            return { success: true, mensaje: 'No había técnico asignado' };
+        }
+        
+        console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
+        
+        const tecnicos = await this.getTecnicos();
+        const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+        
+        if (tecnico) {
+            console.log('🔄 Actualizando estado del técnico a disponible...');
             
-            if (!solicitud || !solicitud.tecnicoAsignado) {
-                console.log('ℹ️ No hay técnico asignado para liberar');
-                return { success: true, mensaje: 'No había técnico asignado' };
-            }
-            
-            console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
-            
-            const tecnicos = await this.getTecnicos();
-            const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
-            
-            if (tecnico) {
-                console.log('🔄 Actualizando estado del técnico a disponible...');
+            try {
+                await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
+                    fields: {
+                        estado: 'disponible',
+                        solicitudAsignada: ''
+                    }
+                });
                 
-                try {
-                    await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
-                        fields: {
-                            estado: 'disponible',
-                            solicitudAsignada: ''
-                        }
-                    });
-                    
-                    console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
-                    
-                } catch (tecnicoError) {
-                    console.error('❌ Error actualizando técnico:', tecnicoError);
-                }
-            } else {
-                console.warn('⚠️ No se encontró el técnico en la base de datos');
+                console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
+                
+            } catch (tecnicoError) {
+                console.error('❌ Error actualizando técnico:', tecnicoError);
             }
-            
+        } else {
+            console.warn('⚠️ No se encontró el técnico en la base de datos');
+        }
+        
+        // 🔴 CAMBIO IMPORTANTE: NO borrar el técnico de la solicitud si está COMPLETADA
+        const estadoUpper = (solicitud.estado || '').toUpperCase();
+        if (estadoUpper !== 'COMPLETADA') {
             try {
                 await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                     fields: {
@@ -1720,23 +1724,26 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
             } catch (solicitudError) {
                 console.error('❌ Error actualizando solicitud:', solicitudError);
             }
-            
-            return { 
-                success: true, 
-                mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
-                tecnico: tecnico
-            };
-            
-        } catch (error) {
-            console.error('❌ Error liberando técnico:', error);
-            return { 
-                success: false, 
-                mensaje: 'Error liberando técnico',
-                error: error.message 
-            };
+        } else {
+            console.log('✅ Manteniendo nombre del técnico en solicitud completada');
         }
+        
+        return { 
+            success: true, 
+            mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
+            tecnico: tecnico
+        };
+        
+    } catch (error) {
+        console.error('❌ Error liberando técnico:', error);
+        return { 
+            success: false, 
+            mensaje: 'Error liberando técnico',
+            error: error.message 
+        };
     }
-
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
     async updateSolicitudAcceso(requestId, updateData) {
         const cleanData = {};
         Object.keys(updateData).forEach(key => {

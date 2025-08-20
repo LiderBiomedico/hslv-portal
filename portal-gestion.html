@@ -2388,87 +2388,69 @@
             updateAccessRequestsList();
         }
 
-     function updatePersonnelSummaries() {
-    const areas = [
-        { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
-        { key: 'MECANICA', name: 'mecanica' },
-        { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
-    ];
+        function updatePersonnelSummaries() {
+            const areas = [
+                { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
+                { key: 'MECANICA', name: 'mecanica' },
+                { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
+            ];
 
-    areas.forEach(area => {
-        let personnel; // DECLARACIÓN DE LA VARIABLE
-        
-        if (area.key === 'INGENIERIA_BIOMEDICA') {
-            personnel = cloudTecnicos.filter(t => {
-                if (!t.area) return false;
-                const lowerArea = t.area.toLowerCase();
-                return t.area === 'INGENIERIA_BIOMEDICA' || 
-                       t.area === 'Ingeniería Biomédica' ||
-                       lowerArea.includes('biomed') || 
-                       lowerArea.includes('bioméd');
+            areas.forEach(area => {
+                let personnel;
+                if (area.key === 'INGENIERIA_BIOMEDICA') {
+                    personnel = cloudTecnicos.filter(t => {
+                        if (!t.area) return false;
+                        const lowerArea = t.area.toLowerCase();
+                        return t.area === 'INGENIERIA_BIOMEDICA' || 
+                               t.area === 'Ingeniería Biomédica' ||
+                               lowerArea.includes('biomed') || 
+                               lowerArea.includes('bioméd');
+                    });
+                } else if (area.key === 'MECANICA') {
+                    personnel = cloudTecnicos.filter(t => 
+                        t.area === 'MECANICA' || 
+                        t.area === 'Mecánica' ||
+                        (t.area && t.area.toLowerCase().includes('mec'))
+                    );
+                } else if (area.key === 'INFRAESTRUCTURA') {
+                    personnel = cloudTecnicos.filter(t => 
+                        t.area === 'INFRAESTRUCTURA' || 
+                        t.area === 'Infraestructura' ||
+                        (t.area && t.area.toLowerCase().includes('infra'))
+                    );
+                } else {
+                    personnel = cloudTecnicos.filter(t => t.area === area.key);
+                }
+                
+                const summaryContainer = document.getElementById(`${area.name}-personnel-summary`);
+                
+                if (personnel.length === 0) {
+                    summaryContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No hay personal registrado</p>';
+                } else {
+                    const available = personnel.filter(p => String(p.estado || '').toLowerCase() === 'disponible').length;
+                    const busy = personnel.filter(p => String(p.estado || '').toLowerCase() === 'ocupado').length;
+                    const inactive = personnel.filter(p => String(p.estado || '').toLowerCase() === 'inactivo').length;
+                    
+                    summaryContainer.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
+                            <div>
+                                <div style="font-weight: bold; color: #059669;">${available}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Disponibles</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #f59e0b;">${busy}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Ocupados</div>
+                            </div>
+                            <div>
+                                <div style="font-weight: bold; color: #ef4444;">${inactive}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">Inactivos</div>
+                            </div>
+                        </div>
+                    `;
+                }
             });
-        } else if (area.key === 'MECANICA') {
-            personnel = cloudTecnicos.filter(t => 
-                t.area === 'MECANICA' || 
-                t.area === 'Mecánica' ||
-                (t.area && t.area.toLowerCase().includes('mec'))
-            );
-        } else if (area.key === 'INFRAESTRUCTURA') {
-            personnel = cloudTecnicos.filter(t => 
-                t.area === 'INFRAESTRUCTURA' || 
-                t.area === 'Infraestructura' ||
-                (t.area && t.area.toLowerCase().includes('infra'))
-            );
-        } else {
-            personnel = cloudTecnicos.filter(t => t.area === area.key);
         }
-        
-        const summaryContainer = document.getElementById(`${area.name}-personnel-summary`);
-        
-        if (personnel.length === 0) {
-            summaryContainer.innerHTML = '<p style="color: #6b7280; text-align: center;">No hay personal registrado</p>';
-        } else {
-            // CORRECCIÓN: Contar disponibles considerando solicitudes completadas
-            const available = personnel.filter(p => {
-                // Un técnico está disponible si:
-                // 1. Su estado es 'disponible'
-                // 2. O no tiene solicitud asignada (aunque aparezca en solicitudes completadas)
-                const estadoDisponible = String(p.estado || '').toLowerCase() === 'disponible';
-                const sinSolicitudActiva = !p.solicitudAsignada || p.solicitudAsignada === '';
-                return estadoDisponible || sinSolicitudActiva;
-            }).length;
-            
-            // Contar ocupados (solo los que realmente están trabajando)
-            const busy = personnel.filter(p => {
-                const estadoOcupado = String(p.estado || '').toLowerCase() === 'ocupado';
-                const tieneSolicitud = p.solicitudAsignada && p.solicitudAsignada !== '';
-                return estadoOcupado && tieneSolicitud;
-            }).length;
-            
-            // Contar inactivos
-            const inactive = personnel.filter(p => 
-                String(p.estado || '').toLowerCase() === 'inactivo'
-            ).length;
-            
-            summaryContainer.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; text-align: center;">
-                    <div>
-                        <div style="font-weight: bold; color: #059669;">${available}</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">Disponibles</div>
-                    </div>
-                    <div>
-                        <div style="font-weight: bold; color: #f59e0b;">${busy}</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">Ocupados</div>
-                    </div>
-                    <div>
-                        <div style="font-weight: bold; color: #ef4444;">${inactive}</div>
-                        <div style="font-size: 0.75rem; color: #6b7280;">Inactivos</div>
-                    </div>
-                </div>
-            `;
-        }
-    });
-}
+
         // 🔄 Funciones de sincronización específicas
         async function refreshFromCloud() {
             console.log('🔄 Actualizando solicitudes desde Airtable...');
@@ -2736,21 +2718,20 @@
                             <div class="request-detail-label">📅 Fecha de Solicitud</div>
                             <div class="request-detail-value">${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
                         </div>
-                      <div class="request-detail">
-					<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
-					<div class="request-detail-value">
-					${solicitud.tecnicoAsignado ? 
-					`<span style="color: #059669; font-weight: 600;">
+						////////////////////////////////////////////////////////////////////////////
+                        <div class="request-detail">
+						<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
+						<div class="request-detail-value">
+						${solicitud.tecnicoAsignado ? 
+            `			<span style="color: ${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? '#059669' : '#2563eb'}; font-weight: 600;">
 						${solicitud.tecnicoAsignado}
-						${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? 
-						'<span style="color: #0284c7; font-size: 0.75rem;"> (Completó - Disponible)</span>' : 
-						'<span style="color: #f59e0b; font-size: 0.75rem;"> (Trabajando)</span>'
-					}
+						${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? ' ✅' : ''}
 					</span>` : 
-				'<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
-					}
-					</div>
-				</div>
+            '<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
+        }
+    </div>
+</div>
+						//////////////////////////////////////////////////////////////////////////////////////////////////
                     </div>
 
                     <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
@@ -2759,7 +2740,7 @@
                         ${solicitud.observaciones ? `<div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;"><strong>Observaciones:</strong> ${solicitud.observaciones}</div>` : ''}
                         ${solicitud.observacionesAsignacion ? `<div style="margin-top: 0.5rem; color: #059669;"><strong>Observaciones de Asignación:</strong> ${solicitud.observacionesAsignacion}</div>` : ''}
                     </div>
-
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 					<div class="request-actions">
 						${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
 				<button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
@@ -2788,6 +2769,14 @@
             🔓 Liberar Personal
         </button>
     ` : ''}
+	${/* NUEVO: Mostrar quién completó la solicitud */
+      (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') && 
+      solicitud.tecnicoAsignado ? `
+        <div style="background: #dcfce7; padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
+            <strong>✅ Completada por:</strong> ${solicitud.tecnicoAsignado}
+        </div>
+    ` : ''}
+</div>
 </div>
                     <div style="background: #eff6ff; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; margin-top: 1rem;">
                         <span style="color: #1e40af; font-weight: 600;">🌐 Estado Cloud:</span>
@@ -6148,7 +6137,7 @@ function toggleErrorUsuarioOption(estado) {
             if (!confirmed) return;
 
             try {
-                await window.airtableAPI.liberarTecnicoAsignado(solicitudId, false);
+                await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
                 await window.airtableAPI.updateRequestStatus(solicitudId, 'PENDIENTE', 'Personal liberado manualmente');
                 
                 await refreshFromCloud();
