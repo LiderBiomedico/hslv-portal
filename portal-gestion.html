@@ -2718,7 +2718,7 @@
                             <div class="request-detail-label">📅 Fecha de Solicitud</div>
                             <div class="request-detail-value">${solicitud.fechaCreacion ? new Date(solicitud.fechaCreacion).toLocaleString('es-CO') : 'No disponible'}</div>
                         </div>
-						////////////////////////////////////////////////////////////////////////////
+						
                         <div class="request-detail">
 						<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
 						<div class="request-detail-value">
@@ -2807,9 +2807,8 @@
 
         // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas
        
-///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	   // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
 async function showAdvancedStatisticsModal() {
     try {
@@ -3969,7 +3968,7 @@ async function exportTemporalAnalysis() {
         alert('❌ Error al exportar el análisis: ' + error.message);
     }
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 // NUEVA FUNCIÓN: Cambiar tipo de análisis
 function showAnalysisType(type) {
     // Actualizar pestañas activas
@@ -5167,7 +5166,7 @@ async function exportTemporalAnalysis() {
         alert('❌ Error al exportar el análisis: ' + error.message);
     }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         // FUNCIÓN: Calcular estadísticas por área
         function calcularEstadisticasPorArea() {
             const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
@@ -5954,7 +5953,7 @@ async function exportTemporalAnalysis() {
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
         }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
        async function showChangeStatusModal(solicitudId) {
     console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
     
@@ -6052,7 +6051,7 @@ function toggleErrorUsuarioOption(estado) {
         }
     }
 }
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
        async function handleChangeStatus(event, solicitudId) {
     event.preventDefault();
     
@@ -6127,7 +6126,7 @@ function toggleErrorUsuarioOption(estado) {
         }
     }
 }
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }
@@ -6673,21 +6672,6 @@ async function notifyTechnician(technicianId, requestNumber) {
         console.error('Error enviando notificación:', error);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
         function createAccessRequestCard(solicitud, status) {
             const statusMap = {
