@@ -2731,7 +2731,7 @@
         }
     </div>
 </div>
-						//////////////////////////////////////////////////////////////////////////////////////////////////
+						
                     </div>
 
                     <div style="margin: 1rem 0; padding: 1rem; background: #f8fafc; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
@@ -2740,7 +2740,7 @@
                         ${solicitud.observaciones ? `<div style="margin-top: 0.5rem; font-style: italic; color: #6b7280;"><strong>Observaciones:</strong> ${solicitud.observaciones}</div>` : ''}
                         ${solicitud.observacionesAsignacion ? `<div style="margin-top: 0.5rem; color: #059669;"><strong>Observaciones de Asignación:</strong> ${solicitud.observacionesAsignacion}</div>` : ''}
                     </div>
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 					<div class="request-actions">
 						${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
 				<button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
