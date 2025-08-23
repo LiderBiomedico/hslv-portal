@@ -2328,76 +2328,152 @@
         }
 
         // 📊 Actualizar contadores
-        function updateAllCounters() {
-            const total = cloudSolicitudes.length;
-            
-            const isBiomedicalArea = (area) => {
-                if (!area) return false;
-                const lowerArea = area.toLowerCase();
-                return area === 'INGENIERIA_BIOMEDICA' || 
-                       area === 'Ingeniería Biomédica' ||
-                       lowerArea.includes('biomed') || 
-                       lowerArea.includes('bioméd');
-            };
-            
-            const biomedica = cloudSolicitudes.filter(r => isBiomedicalArea(r.servicioIngenieria)).length;
-            const mecanica = cloudSolicitudes.filter(r => 
-                r.servicioIngenieria === 'MECANICA' || 
-                r.servicioIngenieria === 'Mecánica' ||
-                (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('mec'))
-            ).length;
-            const infraestructura = cloudSolicitudes.filter(r => 
-                r.servicioIngenieria === 'INFRAESTRUCTURA' || 
-                r.servicioIngenieria === 'Infraestructura' ||
-                (r.servicioIngenieria && r.servicioIngenieria.toLowerCase().includes('infra'))
-            ).length;
-            
-            const pendientes = cloudSolicitudes.filter(r => {
-                const estadoUpper = (r.estado || 'PENDIENTE').toUpperCase();
-                if (estadoUpper === 'COMPLETADA' || estadoUpper === 'CANCELADA') {
-                    return false;
-                }
-                return estadoUpper === 'PENDIENTE' || 
-                       estadoUpper === 'ASIGNADA' || 
-                       !r.tecnicoAsignado;
-            }).length;
-            
-            const asignadas = cloudSolicitudes.filter(r => {
-                const estadoUpper = (r.estado || '').toUpperCase();
-                return estadoUpper === 'ASIGNADA';
-            }).length;
+function updateAllCounters() {
+    console.log('📊 Actualizando contadores con datos completos...');
+    console.log(`📋 Total de solicitudes en memoria: ${cloudSolicitudes.length}`);
+    
+    const total = cloudSolicitudes.length;
+    
+    // Función mejorada para detectar área biomédica
+    const isBiomedicalArea = (area) => {
+        if (!area) return false;
+        const areaStr = String(area).trim();
+        const lowerArea = areaStr.toLowerCase();
+        return areaStr === 'INGENIERIA_BIOMEDICA' || 
+               areaStr === 'Ingeniería Biomédica' ||
+               areaStr === 'BIOMEDICA' ||
+               lowerArea.includes('biomed') || 
+               lowerArea.includes('bioméd');
+    };
+    
+    // Función para detectar área mecánica
+    const isMechanicalArea = (area) => {
+        if (!area) return false;
+        const areaStr = String(area).trim();
+        const lowerArea = areaStr.toLowerCase();
+        return areaStr === 'MECANICA' || 
+               areaStr === 'Mecánica' ||
+               lowerArea === 'mecanica' ||
+               lowerArea === 'mecánica' ||
+               lowerArea.includes('mec') && !lowerArea.includes('biomed');
+    };
+    
+    // Función para detectar área infraestructura
+    const isInfrastructureArea = (area) => {
+        if (!area) return false;
+        const areaStr = String(area).trim();
+        const lowerArea = areaStr.toLowerCase();
+        return areaStr === 'INFRAESTRUCTURA' || 
+               areaStr === 'Infraestructura' ||
+               lowerArea.includes('infra');
+    };
+    
+    // Contar por áreas
+    const biomedica = cloudSolicitudes.filter(r => isBiomedicalArea(r.servicioIngenieria)).length;
+    const mecanica = cloudSolicitudes.filter(r => isMechanicalArea(r.servicioIngenieria)).length;
+    const infraestructura = cloudSolicitudes.filter(r => isInfrastructureArea(r.servicioIngenieria)).length;
+    
+    // Log detallado para debug
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 CONTEO DETALLADO POR ÁREAS:');
+    console.log(`🏥 Ingeniería Biomédica: ${biomedica}`);
+    console.log(`⚙️ Mecánica: ${mecanica}`);
+    console.log(`🏗️ Infraestructura: ${infraestructura}`);
+    console.log(`📋 TOTAL: ${total}`);
+    console.log(`❓ Sin clasificar: ${total - (biomedica + mecanica + infraestructura)}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // Contar por estados
+    const pendientes = cloudSolicitudes.filter(r => {
+        const estadoUpper = (r.estado || 'PENDIENTE').toUpperCase();
+        return estadoUpper === 'PENDIENTE' || 
+               (!r.tecnicoAsignado && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA');
+    }).length;
+    
+    const asignadas = cloudSolicitudes.filter(r => {
+        const estadoUpper = (r.estado || '').toUpperCase();
+        return estadoUpper === 'ASIGNADA';
+    }).length;
 
-            document.getElementById('metric-total').textContent = total;
-            document.getElementById('metric-biomedica').textContent = biomedica;
-            document.getElementById('metric-mecanica').textContent = mecanica;
-            document.getElementById('metric-infraestructura').textContent = infraestructura;
-            document.getElementById('metric-pendientes').textContent = pendientes;
-            document.getElementById('metric-asignadas').textContent = asignadas;
-            document.getElementById('total-count').textContent = total;
+    // Actualizar elementos del DOM
+    document.getElementById('metric-total').textContent = total;
+    document.getElementById('metric-biomedica').textContent = biomedica;
+    document.getElementById('metric-mecanica').textContent = mecanica;
+    document.getElementById('metric-infraestructura').textContent = infraestructura;
+    document.getElementById('metric-pendientes').textContent = pendientes;
+    document.getElementById('metric-asignadas').textContent = asignadas;
+    document.getElementById('total-count').textContent = total;
 
-            const totalTechnicians = cloudTecnicos.length;
-            const biomedicaTecnicos = cloudTecnicos.filter(t => isBiomedicalArea(t.area)).length;
-            const mecanicaTecnicos = cloudTecnicos.filter(t => 
-                t.area === 'MECANICA' || 
-                t.area === 'Mecánica' ||
-                (t.area && t.area.toLowerCase().includes('mec'))
-            ).length;
-            const infraestructuraTecnicos = cloudTecnicos.filter(t => 
-                t.area === 'INFRAESTRUCTURA' || 
-                t.area === 'Infraestructura' ||
-                (t.area && t.area.toLowerCase().includes('infra'))
-            ).length;
+    // Actualizar contadores de personal
+    const totalTechnicians = cloudTecnicos.length;
+    const biomedicaTecnicos = cloudTecnicos.filter(t => isBiomedicalArea(t.area)).length;
+    const mecanicaTecnicos = cloudTecnicos.filter(t => isMechanicalArea(t.area)).length;
+    const infraestructuraTecnicos = cloudTecnicos.filter(t => isInfrastructureArea(t.area)).length;
 
-            document.getElementById('total-technicians-nav').textContent = totalTechnicians;
-            document.getElementById('biomedica-personnel-count').textContent = `${biomedicaTecnicos} registrados`;
-            document.getElementById('mecanica-personnel-count').textContent = `${mecanicaTecnicos} registrados`;
-            document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
+    document.getElementById('total-technicians-nav').textContent = totalTechnicians;
+    document.getElementById('biomedica-personnel-count').textContent = `${biomedicaTecnicos} registrados`;
+    document.getElementById('mecanica-personnel-count').textContent = `${mecanicaTecnicos} registrados`;
+    document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
 
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado).length;
-            document.getElementById('pending-access-count').textContent = pendingAccess;
-            document.getElementById('notification-count').textContent = pendingAccess + pendientes;
+    // Actualizar contadores de accesos
+    const pendingAccess = cloudSolicitudesAcceso.filter(s => 
+        s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado
+    ).length;
+    document.getElementById('pending-access-count').textContent = pendingAccess;
+    document.getElementById('notification-count').textContent = pendingAccess + pendientes;
+    
+    // Mostrar alerta si hay solicitudes sin clasificar
+    const sinClasificar = total - (biomedica + mecanica + infraestructura);
+    if (sinClasificar > 0) {
+        console.warn(`⚠️ Hay ${sinClasificar} solicitudes sin área definida o con área no reconocida`);
+    }
+}
+// Función para debug - agregar después de updateAllCounters()
+function debugContadores() {
+    console.log('🔍 DEBUG DE CONTADORES');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    // Análisis detallado de áreas
+    const areaCount = {};
+    cloudSolicitudes.forEach(s => {
+        const area = s.servicioIngenieria || 'SIN_AREA';
+        areaCount[area] = (areaCount[area] || 0) + 1;
+    });
+    
+    console.log('📊 Distribución de áreas (valores exactos en BD):');
+    Object.entries(areaCount)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([area, count]) => {
+            console.log(`   ${area}: ${count} solicitudes`);
+        });
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📋 Total general: ${cloudSolicitudes.length}`);
+    
+    return {
+        total: cloudSolicitudes.length,
+        porArea: areaCount,
+        detalles: {
+            biomedica: cloudSolicitudes.filter(s => 
+                s.servicioIngenieria && 
+                (s.servicioIngenieria.toLowerCase().includes('biomed') || 
+                 s.servicioIngenieria === 'INGENIERIA_BIOMEDICA')
+            ).length,
+            mecanica: cloudSolicitudes.filter(s => 
+                s.servicioIngenieria && 
+                (s.servicioIngenieria.toLowerCase().includes('mec') && 
+                 !s.servicioIngenieria.toLowerCase().includes('biomed'))
+            ).length,
+            infraestructura: cloudSolicitudes.filter(s => 
+                s.servicioIngenieria && 
+                s.servicioIngenieria.toLowerCase().includes('infra')
+            ).length
         }
+    };
+}
 
+// Hacer la función global para poder llamarla desde la consola
+window.debugContadores = debugContadores;
         function updateAllDisplays() {
             updatePersonnelSummaries();
             updateSolicitudesList();

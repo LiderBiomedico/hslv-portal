@@ -928,83 +928,73 @@ async getSolicitudesAcceso() {
         }
     }
 
-   async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes con paginación...');
+async getSolicitudes() {
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación completa...');
     
     try {
-        // Usar Map para evitar duplicados
-        const recordsMap = new Map();
+        let allRecords = [];
         let offset = null;
         let pageCount = 0;
-        let duplicatesFound = 0;
+        const pageSize = 100; // Airtable devuelve máximo 100 por página
         
         do {
-            // Construir URL con offset si existe
-            let endpoint = this.tables.solicitudes;
+            // Construir URL con pageSize y offset
+            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}`;
             if (offset) {
-                endpoint += `?offset=${offset}`;
+                endpoint += `&offset=${offset}`;
             }
             
             console.log(`🔄 Obteniendo página ${pageCount + 1}...`);
             const result = await this.makeRequest(endpoint);
             
-            // Agregar registros de esta página (evitando duplicados)
+            // Agregar registros de esta página
             if (result.records && result.records.length > 0) {
-                result.records.forEach(record => {
-                    if (!recordsMap.has(record.id)) {
-                        recordsMap.set(record.id, {
-                            id: record.id,
-                            ...record.fields
-                        });
-                    } else {
-                        duplicatesFound++;
-                        console.warn(`⚠️ Duplicado detectado y omitido: ${record.id}`);
-                    }
-                });
-                console.log(`✅ Página ${pageCount + 1}: ${result.records.length} registros (${duplicatesFound} duplicados omitidos)`);
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+                console.log(`✅ Página ${pageCount + 1}: ${result.records.length} registros (Total acumulado: ${allRecords.length})`);
             }
             
             // Actualizar offset para siguiente página
             offset = result.offset || null;
             pageCount++;
             
-            // Prevención más estricta - máximo 20 páginas (2000 registros)
-            if (pageCount > 20) {
-                console.warn('⚠️ Se alcanzó el límite máximo de páginas (20)');
+            // Si hay offset, significa que hay más páginas
+            if (offset) {
+                console.log(`📄 Hay más páginas disponibles, continuando...`);
+            }
+            
+            // Prevención de bucle infinito (máximo 100 páginas = 10,000 registros)
+            if (pageCount > 100) {
+                console.warn('⚠️ Se alcanzó el límite máximo de páginas (100)');
                 break;
             }
             
-            // Si no hay offset, salir del bucle
-            if (!offset) {
-                console.log('✅ No hay más páginas disponibles');
-                break;
-            }
-            
-        } while (offset);
+        } while (offset); // Continuar mientras haya offset
         
-        // Convertir Map a array
-        const allRecords = Array.from(recordsMap.values());
+        // Eliminar duplicados por si acaso
+        const uniqueRecords = new Map();
+        allRecords.forEach(record => {
+            uniqueRecords.set(record.id, record);
+        });
         
-        console.log(`✅ Total REAL de solicitudes: ${allRecords.length} (únicos)`);
+        const finalRecords = Array.from(uniqueRecords.values());
+        
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log(`✅ TOTAL FINAL DE SOLICITUDES: ${finalRecords.length}`);
         console.log(`📊 Páginas procesadas: ${pageCount}`);
-        if (duplicatesFound > 0) {
-            console.log(`⚠️ Total de duplicados detectados y eliminados: ${duplicatesFound}`);
-        }
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         
-        // Validación adicional
-        if (allRecords.length > 1000) {
-            console.warn(`⚠️ ADVERTENCIA: Se obtuvieron ${allRecords.length} solicitudes, verificar si es correcto`);
-        }
-        
-        return allRecords;
+        return finalRecords;
         
     } catch (error) {
         console.error('❌ Error obteniendo solicitudes:', error);
         return [];
     }
 }
-
-    async getTecnicos() {
+async getTecnicos() {
     console.log('👥 Obteniendo TODOS los técnicos con paginación...');
     
     try {
@@ -1013,9 +1003,9 @@ async getSolicitudesAcceso() {
         let pageCount = 0;
         
         do {
-            let endpoint = this.tables.tecnicos;
+            let endpoint = `${this.tables.tecnicos}?pageSize=100`;
             if (offset) {
-                endpoint += `?offset=${offset}`;
+                endpoint += `&offset=${offset}`;
             }
             
             const result = await this.makeRequest(endpoint);
@@ -1031,10 +1021,7 @@ async getSolicitudesAcceso() {
             offset = result.offset || null;
             pageCount++;
             
-            if (pageCount > 20) {
-                console.warn('⚠️ Límite de páginas alcanzado para técnicos');
-                break;
-            }
+            if (pageCount > 50) break;
             
         } while (offset);
         
@@ -1043,6 +1030,86 @@ async getSolicitudesAcceso() {
         
     } catch (error) {
         console.error('❌ Error obteniendo técnicos:', error);
+        return [];
+    }
+}
+
+async getUsuarios() {
+    console.log('👤 Obteniendo TODOS los usuarios con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            let endpoint = `${this.tables.usuarios}?pageSize=100`;
+            if (offset) {
+                endpoint += `&offset=${offset}`;
+            }
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            if (pageCount > 50) break;
+            
+        } while (offset);
+        
+        console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo usuarios:', error);
+        return [];
+    }
+}
+
+async getSolicitudesAcceso() {
+    console.log('🔐 Obteniendo TODAS las solicitudes de acceso con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            let endpoint = `${this.tables.solicitudesAcceso}?pageSize=100`;
+            if (offset) {
+                endpoint += `&offset=${offset}`;
+            }
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            if (pageCount > 50) break;
+            
+        } while (offset);
+        
+        console.log(`✅ Total de solicitudes de acceso obtenidas: ${allRecords.length}`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo solicitudes de acceso:', error);
         return [];
     }
 }
