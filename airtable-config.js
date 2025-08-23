@@ -180,7 +180,7 @@ class AirtableAPI {
         // 🗺️ Mapeo de valores actualizado
         this.fieldMappings = AIRTABLE_VALUE_MAPPING;
 
-        // 🔢 CONTADORES PARA NUMERACIÓN ESPECÍFICA
+        // 📢 CONTADORES PARA NUMERACIÓN ESPECÍFICA
         this.areaCounters = {
             'INGENIERIA_BIOMEDICA': 0,
             'MECANICA': 0,
@@ -612,9 +612,9 @@ class AirtableAPI {
         }
     }
 
-    // 🔐 MÉTODO: Crear solicitud de acceso
+    // 🔍 MÉTODO: Crear solicitud de acceso
     async createSolicitudAcceso(solicitudData) {
-        console.log('📝 Creando solicitud de acceso con detección automática de valores...');
+        console.log('🔍 Creando solicitud de acceso con detección automática de valores...');
         console.log('🔍 Datos recibidos:', solicitudData);
         
         try {
@@ -651,7 +651,7 @@ class AirtableAPI {
                 fields: baseData
             };
             
-            console.log('📝 Datos finales a enviar:', JSON.stringify(data, null, 2));
+            console.log('🔍 Datos finales a enviar:', JSON.stringify(data, null, 2));
             
             try {
                 const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
@@ -698,7 +698,7 @@ class AirtableAPI {
                 }
             };
             
-            console.log('📝 Datos mínimos:', data);
+            console.log('🔍 Datos mínimos:', data);
             const result = await this.makeRequest(this.tables.solicitudesAcceso, 'POST', data);
             
             console.log('✅ Solicitud creada con campos mínimos:', result.id);
@@ -731,85 +731,88 @@ class AirtableAPI {
             throw new Error('No se pudo crear la solicitud. Por favor contacte al administrador.');
         }
     }
-	async getUsuarios() {
-    console.log('👤 Obteniendo TODOS los usuarios con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
+
+    async getUsuarios() {
+        console.log('👤 Obteniendo TODOS los usuarios con paginación...');
         
-        do {
-            let endpoint = this.tables.usuarios;
-            if (offset) {
-                endpoint += `?offset=${offset}`;
-            }
+        try {
+            let allRecords = [];
+            let offset = null;
+            let pageCount = 0;
             
-            const result = await this.makeRequest(endpoint);
+            do {
+                let endpoint = this.tables.usuarios;
+                if (offset) {
+                    endpoint += `?offset=${offset}`;
+                }
+                
+                const result = await this.makeRequest(endpoint);
+                
+                if (result.records && result.records.length > 0) {
+                    const pageRecords = result.records.map(record => ({
+                        id: record.id,
+                        ...record.fields
+                    }));
+                    allRecords = allRecords.concat(pageRecords);
+                }
+                
+                offset = result.offset || null;
+                pageCount++;
+                
+                if (pageCount > 20) break;
+                
+            } while (offset);
             
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-            }
+            console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
+            return allRecords;
             
-            offset = result.offset || null;
-            pageCount++;
-            
-            if (pageCount > 20) break;
-            
-        } while (offset);
-        
-        console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
-        return allRecords;
-        
-    } catch (error) {
-        console.error('❌ Error obteniendo usuarios:', error);
-        return [];
+        } catch (error) {
+            console.error('❌ Error obteniendo usuarios:', error);
+            return [];
+        }
     }
-}
-async getSolicitudesAcceso() {
-    console.log('🔐 Obteniendo TODAS las solicitudes de acceso con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
+
+    async getSolicitudesAcceso() {
+        console.log('🔐 Obteniendo TODAS las solicitudes de acceso con paginación...');
         
-        do {
-            let endpoint = this.tables.solicitudesAcceso;
-            if (offset) {
-                endpoint += `?offset=${offset}`;
-            }
+        try {
+            let allRecords = [];
+            let offset = null;
+            let pageCount = 0;
             
-            const result = await this.makeRequest(endpoint);
+            do {
+                let endpoint = this.tables.solicitudesAcceso;
+                if (offset) {
+                    endpoint += `?offset=${offset}`;
+                }
+                
+                const result = await this.makeRequest(endpoint);
+                
+                if (result.records && result.records.length > 0) {
+                    const pageRecords = result.records.map(record => ({
+                        id: record.id,
+                        ...record.fields
+                    }));
+                    allRecords = allRecords.concat(pageRecords);
+                }
+                
+                offset = result.offset || null;
+                pageCount++;
+                
+                if (pageCount > 20) break;
+                
+            } while (offset);
             
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-            }
+            console.log(`✅ Total de solicitudes de acceso obtenidas: ${allRecords.length}`);
+            return allRecords;
             
-            offset = result.offset || null;
-            pageCount++;
-            
-            if (pageCount > 20) break;
-            
-        } while (offset);
-        
-        console.log(`✅ Total de solicitudes de acceso obtenidas: ${allRecords.length}`);
-        return allRecords;
-        
-    } catch (error) {
-        console.error('❌ Error obteniendo solicitudes de acceso:', error);
-        return [];
+        } catch (error) {
+            console.error('❌ Error obteniendo solicitudes de acceso:', error);
+            return [];
+        }
     }
-}
-    // 🔐 MÉTODO: Aprobar solicitud y crear usuario
+
+    // 🔍 MÉTODO: Aprobar solicitud y crear usuario
     async approveAccessRequestAndCreateUser(requestId) {
         console.log('✅ Iniciando aprobación de solicitud:', requestId);
         
@@ -826,7 +829,7 @@ async getSolicitudesAcceso() {
             }
 
             const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
-            console.log(`🔐 Código generado: ${codigoAcceso}`);
+            console.log(`🔒 Código generado: ${codigoAcceso}`);
 
             if (!this.validUserValues.estado) {
                 await this.detectValidUserValues();
@@ -849,7 +852,7 @@ async getSolicitudesAcceso() {
                 console.warn('⚠️ Usando valor de estado por defecto: "Activo"');
             }
 
-            console.log('📝 Datos del usuario a crear:', userData);
+            console.log('🔍 Datos del usuario a crear:', userData);
 
             let newUser;
             try {
@@ -899,7 +902,7 @@ async getSolicitudesAcceso() {
                     updateFields.usuarioCreado = newUser.id;
                 }
 
-                console.log('📝 Actualizando solicitud con campos:', updateFields);
+                console.log('🔍 Actualizando solicitud con campos:', updateFields);
 
                 await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
                     fields: updateFields
@@ -928,630 +931,220 @@ async getSolicitudesAcceso() {
         }
     }
 
-async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
-    
-    try {
-        const allRecordsMap = new Map();
-        let offset = null;
-        let pageCount = 0;
-        let totalRecordsProcessed = 0;
+    async getSolicitudes() {
+        console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
         
-        // Configuración mejorada
-        const MAX_PAGES = 100; // Aumentar límite de páginas
-        const PAGE_SIZE = 100; // Mantener tamaño de página en 100
-        
-        while (pageCount < MAX_PAGES) {
-            // Construir endpoint sin sort para evitar problemas
-            let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
-            
-            // Agregar offset si existe
-            if (offset) {
-                endpoint += `&offset=${encodeURIComponent(offset)}`;
-            }
-            
-            pageCount++;
-            console.log(`📄 Obteniendo página ${pageCount}...`);
-            
-            try {
-                const result = await this.makeRequest(endpoint);
-                
-                // Verificar si hay registros
-                if (!result.records || result.records.length === 0) {
-                    console.log(`✅ Página ${pageCount} vacía - fin de datos`);
-                    break;
-                }
-                
-                // Procesar registros
-                let newRecords = 0;
-                result.records.forEach(record => {
-                    const recordId = record.id;
-                    
-                    if (!allRecordsMap.has(recordId)) {
-                        allRecordsMap.set(recordId, {
-                            id: recordId,
-                            ...record.fields
-                        });
-                        newRecords++;
-                        totalRecordsProcessed++;
-                    }
-                });
-                
-                console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total acumulado: ${allRecordsMap.size})`);
-                
-                // Obtener siguiente offset
-                offset = result.offset;
-                
-                // Si no hay offset, hemos terminado
-                if (!offset) {
-                    console.log('✅ No hay más páginas - paginación completa');
-                    break;
-                }
-                
-                // Pequeña pausa entre requests para no sobrecargar
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-            } catch (pageError) {
-                console.error(`❌ Error en página ${pageCount}:`, pageError.message);
-                
-                // Si es un error de red, reintentar
-                if (pageError.message && pageError.message.includes('fetch')) {
-                    console.log('🔄 Reintentando página...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    pageCount--; // Decrementar para reintentar la misma página
-                    continue;
-                }
-                
-                // Para otros errores, continuar con la siguiente página
-                break;
-            }
-        }
-        
-        const finalRecords = Array.from(allRecordsMap.values());
-        
-        // Análisis detallado de los resultados
-        console.log('╔══════════════════════════════════════════╗');
-        console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
-        console.log('╠══════════════════════════════════════════╣');
-        console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
-        console.log(`║ 📄 Páginas procesadas: ${pageCount}`);
-        console.log('╚══════════════════════════════════════════╝');
-        
-        // Análisis por área
-        this.analizarSolicitudesPorArea(finalRecords);
-        
-        return finalRecords;
-        
-    } catch (error) {
-        console.error('❌ Error crítico obteniendo solicitudes:', error);
-        throw error;
-    }
-}
-
-// Agregar este método auxiliar después del método getSolicitudes
-analizarSolicitudesPorArea(records) {
-    const porArea = {};
-    const porEstado = {};
-    
-    records.forEach(r => {
-        // Por área
-        const area = r.servicioIngenieria || 'SIN_AREA';
-        porArea[area] = (porArea[area] || 0) + 1;
-        
-        // Por estado
-        const estado = r.estado || 'SIN_ESTADO';
-        porEstado[estado] = (porEstado[estado] || 0) + 1;
-    });
-    
-    console.log('╔══════════════════════════════════════════╗');
-    console.log('║   ANÁLISIS DETALLADO POR ÁREA           ║');
-    console.log('╠══════════════════════════════════════════╣');
-    
-    // Análisis específico de áreas principales
-    let totalBiomedica = 0;
-    let totalMecanica = 0;
-    let totalInfraestructura = 0;
-    let sinArea = 0;
-    
-    Object.entries(porArea).forEach(([area, count]) => {
-        const areaLower = area.toLowerCase();
-        
-        if (area === 'INGENIERIA_BIOMEDICA' || 
-            area === 'Ingeniería Biomédica' ||
-            areaLower.includes('biomed') || 
-            areaLower.includes('bioméd')) {
-            totalBiomedica += count;
-            console.log(`║ 🏥 ${area}: ${count}`);
-        } else if (area === 'MECANICA' || 
-                   area === 'Mecánica' ||
-                   areaLower.includes('mecán') ||
-                   areaLower.includes('mecan')) {
-            totalMecanica += count;
-            console.log(`║ ⚙️ ${area}: ${count}`);
-        } else if (area === 'INFRAESTRUCTURA' || 
-                   area === 'Infraestructura' ||
-                   areaLower.includes('infra')) {
-            totalInfraestructura += count;
-            console.log(`║ 🏗️ ${area}: ${count}`);
-        } else if (area === 'SIN_AREA') {
-            sinArea = count;
-            console.log(`║ ❓ Sin área definida: ${count}`);
-        } else {
-            console.log(`║ 📋 ${area}: ${count}`);
-        }
-    });
-    
-    console.log('╠══════════════════════════════════════════╣');
-    console.log('║   TOTALES POR CATEGORÍA                 ║');
-    console.log('╠══════════════════════════════════════════╣');
-    console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
-    console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
-    console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
-    if (sinArea > 0) {
-        console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
-    }
-    console.log(`║ 📊 GRAN TOTAL: ${records.length}`);
-    console.log('╚══════════════════════════════════════════╝');
-    
-    // Análisis por estado (top 5)
-    console.log('\n📊 TOP 5 ESTADOS:');
-    Object.entries(porEstado)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .forEach(([estado, count]) => {
-            console.log(`   ${estado}: ${count}`);
-        });
-}
-// Función de diagnóstico mejorada
-window.diagnosticarSolicitudes = async function() {
-    console.log('🔍 DIAGNÓSTICO COMPLETO DE SOLICITUDES');
-    console.log('════════════════════════════════════════');
-    
-    try {
-        // Forzar recarga completa
-        console.log('📡 Obteniendo datos frescos de Airtable...');
-        
-        const solicitudes = await window.airtableAPI.getSolicitudes();
-        
-        console.log(`\n📊 RESULTADO FINAL:`);
-        console.log(`   Total obtenido: ${solicitudes.length} solicitudes`);
-        console.log(`   Esperado: 233 solicitudes`);
-        console.log(`   Diferencia: ${233 - solicitudes.length}`);
-        
-        if (solicitudes.length < 233) {
-            console.warn('⚠️ FALTAN SOLICITUDES - Verificar paginación');
-            console.log('💡 Ejecuta window.forzarRecargaCompleta() para intentar otra vez');
-        } else if (solicitudes.length === 233) {
-            console.log('✅ TODAS LAS SOLICITUDES CARGADAS CORRECTAMENTE');
-        } else if (solicitudes.length > 233) {
-            console.log('📈 Se encontraron MÁS solicitudes de las esperadas');
-        }
-        
-        return {
-            total: solicitudes.length,
-            esperado: 233,
-            diferencia: 233 - solicitudes.length,
-            solicitudes: solicitudes
-        };
-        
-    } catch (error) {
-        console.error('❌ Error en diagnóstico:', error);
-        return null;
-    }
-};
-
-// Función para forzar recarga completa
-window.forzarRecargaCompleta = async function() {
-    console.log('🔄 FORZANDO RECARGA COMPLETA DE DATOS...');
-    
-    try {
-        // Limpiar datos en memoria
-        if (window.airtableAPI) {
-            console.log('🧹 Limpiando caché...');
-            
-            // Obtener nuevos datos
-            const solicitudes = await window.airtableAPI.getSolicitudes();
-            
-            console.log(`✅ Recarga completa exitosa`);
-            console.log(`📊 Total de solicitudes: ${solicitudes.length}`);
-            
-            // Si estás en el portal de gestión, actualizar la interfaz
-            if (typeof loadAllDataFromCloud === 'function') {
-                console.log('🔄 Actualizando interfaz...');
-                await loadAllDataFromCloud();
-            }
-            
-            return solicitudes.length;
-        }
-    } catch (error) {
-        console.error('❌ Error en recarga:', error);
-        return null;
-    }
-};
-// Método alternativo usando filtros
-async getSolicitudesAlternativo() {
-    console.log('🔄 Usando método alternativo con múltiples consultas...');
-    
-    try {
-        const allRecords = new Map();
-        
-        // Intentar obtener por áreas específicas
-        const areas = [
-            'INGENIERIA_BIOMEDICA',
-            'BIOMEDICA', 
-            'MECANICA',
-            'INFRAESTRUCTURA'
-        ];
-        
-        for (const area of areas) {
-            console.log(`📋 Obteniendo solicitudes de ${area}...`);
-            
-            try {
-                // Intentar con filtro por área
-                const filterFormula = encodeURIComponent(`{servicioIngenieria}="${area}"`);
-                const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
-                
-                let offset = null;
-                let areaPageCount = 0;
-                
-                do {
-                    const finalEndpoint = offset ? `${endpoint}&offset=${encodeURIComponent(offset)}` : endpoint;
-                    const result = await this.makeRequest(finalEndpoint);
-                    
-                    if (result.records && result.records.length > 0) {
-                        result.records.forEach(record => {
-                            if (!allRecords.has(record.id)) {
-                                allRecords.set(record.id, {
-                                    id: record.id,
-                                    ...record.fields
-                                });
-                            }
-                        });
-                        
-                        console.log(`   Página ${++areaPageCount}: ${result.records.length} registros`);
-                    }
-                    
-                    offset = result.offset;
-                    
-                } while (offset && areaPageCount < 10);
-                
-                console.log(`   ✅ ${area}: ${allRecords.size} registros totales acumulados`);
-                
-            } catch (areaError) {
-                console.warn(`   ⚠️ Error obteniendo ${area}:`, areaError.message);
-            }
-        }
-        
-        // También intentar obtener registros sin área definida
         try {
-            console.log('📋 Obteniendo solicitudes sin área definida...');
-            const filterFormula = encodeURIComponent('OR({servicioIngenieria}="",NOT({servicioIngenieria}))');
-            const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
+            const allRecordsMap = new Map();
+            let offset = null;
+            let pageCount = 0;
+            let totalRecordsProcessed = 0;
             
-            const result = await this.makeRequest(endpoint);
+            // Configuración mejorada
+            const MAX_PAGES = 100; // Aumentar límite de páginas
+            const PAGE_SIZE = 100; // Mantener tamaño de página en 100
             
-            if (result.records) {
-                result.records.forEach(record => {
-                    if (!allRecords.has(record.id)) {
-                        allRecords.set(record.id, {
-                            id: record.id,
-                            ...record.fields
-                        });
-                    }
-                });
-                console.log(`   ✅ Sin área: ${result.records.length} registros`);
-            }
-        } catch (e) {
-            console.warn('   ⚠️ No se pudieron obtener registros sin área');
-        }
-        
-        const finalRecords = Array.from(allRecords.values());
-        
-        console.log(`✅ TOTAL MÉTODO ALTERNATIVO: ${finalRecords.length} registros únicos`);
-        
-        // Si aún tenemos pocos registros, intentar sin filtros por lotes
-        if (finalRecords.length < 200) {
-            console.log('🔄 Intentando obtención por lotes temporales...');
-            return await this.getSolicitudesPorLotes();
-        }
-        
-        this.analizarSolicitudes(finalRecords);
-        return finalRecords;
-        
-    } catch (error) {
-        console.error('❌ Error en método alternativo:', error);
-        return [];
-    }
-}
-
-// Método por lotes temporales
-async getSolicitudesPorLotes() {
-    console.log('🔄 Obteniendo solicitudes por lotes temporales...');
-    
-    try {
-        const allRecords = new Map();
-        const ahora = new Date();
-        
-        // Intentar por meses hacia atrás
-        for (let monthsBack = 0; monthsBack < 12; monthsBack++) {
-            const fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth() - monthsBack - 1, 1);
-            const fechaFin = new Date(ahora.getFullYear(), ahora.getMonth() - monthsBack, 0);
-            
-            const filterFormula = encodeURIComponent(
-                `AND(IS_AFTER({fechaCreacion}, "${fechaInicio.toISOString()}"), ` +
-                `IS_BEFORE({fechaCreacion}, "${fechaFin.toISOString()}"))`
-            );
-            
-            try {
-                const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
-                const result = await this.makeRequest(endpoint);
+            while (pageCount < MAX_PAGES) {
+                // Construir endpoint sin sort para evitar problemas
+                let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
                 
-                if (result.records) {
-                    result.records.forEach(record => {
-                        allRecords.set(record.id, {
-                            id: record.id,
-                            ...record.fields
-                        });
-                    });
-                    
-                    console.log(`   📅 ${fechaInicio.toLocaleDateString()} - ${fechaFin.toLocaleDateString()}: ${result.records.length} registros`);
+                // Agregar offset si existe
+                if (offset) {
+                    endpoint += `&offset=${encodeURIComponent(offset)}`;
                 }
-            } catch (e) {
-                console.warn(`   ⚠️ Error en lote temporal:`, e.message);
-            }
-            
-            // Si ya tenemos suficientes registros, parar
-            if (allRecords.size >= 233) {
-                console.log('✅ Se alcanzó el número esperado de registros');
-                break;
-            }
-        }
-        
-        const finalRecords = Array.from(allRecords.values());
-        console.log(`✅ TOTAL POR LOTES: ${finalRecords.length} registros`);
-        
-        this.analizarSolicitudes(finalRecords);
-        return finalRecords;
-        
-    } catch (error) {
-        console.error('❌ Error en obtención por lotes:', error);
-        return [];
-    }
-}
-
-// Función auxiliar para analizar solicitudes
-analizarSolicitudes(records) {
-    const porArea = {};
-    const porEstado = {};
-    
-    records.forEach(r => {
-        // Por área
-        const area = r.servicioIngenieria || 'SIN_AREA';
-        porArea[area] = (porArea[area] || 0) + 1;
-        
-        // Por estado
-        const estado = r.estado || 'SIN_ESTADO';
-        porEstado[estado] = (porEstado[estado] || 0) + 1;
-    });
-    
-    console.log('╔════════════════════════════════════════╗');
-    console.log('║   ANÁLISIS FINAL DE SOLICITUDES        ║');
-    console.log('╠════════════════════════════════════════╣');
-    console.log(`║ ✅ TOTAL: ${records.length} solicitudes`);
-    console.log('╠════════════════════════════════════════╣');
-    console.log('║ 📊 POR ÁREA:                           ║');
-    Object.entries(porArea)
-        .sort((a, b) => b[1] - a[1])
-        .forEach(([area, count]) => {
-            console.log(`║   ${area}: ${count}`);
-        });
-    console.log('╠════════════════════════════════════════╣');
-    console.log('║ 📊 POR ESTADO:                         ║');
-    Object.entries(porEstado)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .forEach(([estado, count]) => {
-            console.log(`║   ${estado}: ${count}`);
-        });
-    console.log('╚════════════════════════════════════════╝');
-}
-// Método alternativo sin sort (backup)
-async getSolicitudesWithoutSort() {
-    console.log('📋 Obteniendo solicitudes sin sort (método alternativo)...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
-        const pageSize = 100;
-        let previousTotal = 0;
-        let sameCountAttempts = 0;
-        
-        do {
-            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}`;
-            
-            if (offset) {
-                endpoint += `&offset=${offset}`;
-            }
-            
-            console.log(`🔄 Página ${pageCount + 1} (sin sort)...`);
-            
-            const result = await this.makeRequest(endpoint);
-            
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
                 
-                // Verificar si hay duplicados antes de agregar
-                const currentIds = new Set(allRecords.map(r => r.id));
-                const newRecords = pageRecords.filter(r => !currentIds.has(r.id));
+                pageCount++;
+                console.log(`🔄 Obteniendo página ${pageCount}...`);
                 
-                allRecords = allRecords.concat(newRecords);
-                console.log(`✅ Página ${pageCount + 1}: ${newRecords.length} nuevos registros (Total: ${allRecords.length})`);
-                
-                // Verificar si estamos obteniendo registros nuevos
-                if (allRecords.length === previousTotal) {
-                    sameCountAttempts++;
-                    if (sameCountAttempts >= 3) {
-                        console.log('⚠️ No se están obteniendo nuevos registros, finalizando...');
+                try {
+                    const result = await this.makeRequest(endpoint);
+                    
+                    // Verificar si hay registros
+                    if (!result.records || result.records.length === 0) {
+                        console.log(`✅ Página ${pageCount} vacía - fin de datos`);
                         break;
                     }
-                } else {
-                    sameCountAttempts = 0;
+                    
+                    // Procesar registros
+                    let newRecords = 0;
+                    result.records.forEach(record => {
+                        const recordId = record.id;
+                        
+                        if (!allRecordsMap.has(recordId)) {
+                            allRecordsMap.set(recordId, {
+                                id: recordId,
+                                ...record.fields
+                            });
+                            newRecords++;
+                            totalRecordsProcessed++;
+                        }
+                    });
+                    
+                    console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total acumulado: ${allRecordsMap.size})`);
+                    
+                    // Obtener siguiente offset
+                    offset = result.offset;
+                    
+                    // Si no hay offset, hemos terminado
+                    if (!offset) {
+                        console.log('✅ No hay más páginas - paginación completa');
+                        break;
+                    }
+                    
+                    // Pequeña pausa entre requests para no sobrecargar
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    
+                } catch (pageError) {
+                    console.error(`❌ Error en página ${pageCount}:`, pageError.message);
+                    
+                    // Si es un error de red, reintentar
+                    if (pageError.message && pageError.message.includes('fetch')) {
+                        console.log('🔄 Reintentando página...');
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        pageCount--; // Decrementar para reintentar la misma página
+                        continue;
+                    }
+                    
+                    // Para otros errores, continuar con la siguiente página
+                    break;
                 }
-                previousTotal = allRecords.length;
             }
             
-            offset = result.offset || null;
-            pageCount++;
+            const finalRecords = Array.from(allRecordsMap.values());
             
-            // Límite de seguridad
-            if (pageCount > 50) {
-                console.warn('⚠️ Límite de páginas alcanzado');
-                break;
-            }
+            // Análisis detallado de los resultados
+            console.log('╔══════════════════════════════════════════╗');
+            console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
+            console.log('╠══════════════════════════════════════════╣');
+            console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
+            console.log(`║ 🔄 Páginas procesadas: ${pageCount}`);
+            console.log('╚══════════════════════════════════════════╝');
             
-            // Pausa entre requests
-            if (offset) {
-                await new Promise(resolve => setTimeout(resolve, 150));
-            }
+            // Análisis por área
+            this.analizarSolicitudesPorArea(finalRecords);
             
-        } while (offset);
+            return finalRecords;
+            
+        } catch (error) {
+            console.error('❌ Error crítico obteniendo solicitudes:', error);
+            throw error;
+        }
+    }
+
+    // Agregar este método auxiliar después del método getSolicitudes
+    analizarSolicitudesPorArea(records) {
+        const porArea = {};
+        const porEstado = {};
         
-        // Eliminar duplicados finales
-        const uniqueRecords = new Map();
-        allRecords.forEach(record => {
-            uniqueRecords.set(record.id, record);
+        records.forEach(r => {
+            // Por área
+            const area = r.servicioIngenieria || 'SIN_AREA';
+            porArea[area] = (porArea[area] || 0) + 1;
+            
+            // Por estado
+            const estado = r.estado || 'SIN_ESTADO';
+            porEstado[estado] = (porEstado[estado] || 0) + 1;
         });
         
-        return Array.from(uniqueRecords.values());
+        console.log('╔══════════════════════════════════════════╗');
+        console.log('║   ANÁLISIS DETALLADO POR ÁREA           ║');
+        console.log('╠══════════════════════════════════════════╣');
         
-    } catch (error) {
-        console.error('❌ Error en método alternativo:', error);
-        return [];
-    }
-}
-async getTecnicos() {
-    console.log('👥 Obteniendo TODOS los técnicos con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
+        // Análisis específico de áreas principales
+        let totalBiomedica = 0;
+        let totalMecanica = 0;
+        let totalInfraestructura = 0;
+        let sinArea = 0;
         
-        do {
-            let endpoint = `${this.tables.tecnicos}?pageSize=100`;
-            if (offset) {
-                endpoint += `&offset=${offset}`;
+        Object.entries(porArea).forEach(([area, count]) => {
+            const areaLower = area.toLowerCase();
+            
+            if (area === 'INGENIERIA_BIOMEDICA' || 
+                area === 'Ingeniería Biomédica' ||
+                areaLower.includes('biomed') || 
+                areaLower.includes('bioméd')) {
+                totalBiomedica += count;
+                console.log(`║ 🏥 ${area}: ${count}`);
+            } else if (area === 'MECANICA' || 
+                       area === 'Mecánica' ||
+                       areaLower.includes('mecán') ||
+                       areaLower.includes('mecan')) {
+                totalMecanica += count;
+                console.log(`║ ⚙️ ${area}: ${count}`);
+            } else if (area === 'INFRAESTRUCTURA' || 
+                       area === 'Infraestructura' ||
+                       areaLower.includes('infra')) {
+                totalInfraestructura += count;
+                console.log(`║ 🏗️ ${area}: ${count}`);
+            } else if (area === 'SIN_AREA') {
+                sinArea = count;
+                console.log(`║ ❓ Sin área definida: ${count}`);
+            } else {
+                console.log(`║ 📋 ${area}: ${count}`);
             }
-            
-            const result = await this.makeRequest(endpoint);
-            
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-            }
-            
-            offset = result.offset || null;
-            pageCount++;
-            
-            if (pageCount > 50) break;
-            
-        } while (offset);
+        });
         
-        console.log(`✅ Total de técnicos obtenidos: ${allRecords.length}`);
-        return allRecords;
+        console.log('╠══════════════════════════════════════════╣');
+        console.log('║   TOTALES POR CATEGORÍA                 ║');
+        console.log('╠══════════════════════════════════════════╣');
+        console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
+        console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
+        console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
+        if (sinArea > 0) {
+            console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
+        }
+        console.log(`║ 📊 GRAN TOTAL: ${records.length}`);
+        console.log('╚══════════════════════════════════════════╝');
         
-    } catch (error) {
-        console.error('❌ Error obteniendo técnicos:', error);
-        return [];
+        // Análisis por estado (top 5)
+        console.log('\n📊 TOP 5 ESTADOS:');
+        Object.entries(porEstado)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .forEach(([estado, count]) => {
+                console.log(`   ${estado}: ${count}`);
+            });
     }
-}
 
-async getUsuarios() {
-    console.log('👤 Obteniendo TODOS los usuarios con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
+    async getTecnicos() {
+        console.log('👥 Obteniendo TODOS los técnicos con paginación...');
         
-        do {
-            let endpoint = `${this.tables.usuarios}?pageSize=100`;
-            if (offset) {
-                endpoint += `&offset=${offset}`;
-            }
+        try {
+            let allRecords = [];
+            let offset = null;
+            let pageCount = 0;
             
-            const result = await this.makeRequest(endpoint);
+            do {
+                let endpoint = `${this.tables.tecnicos}?pageSize=100`;
+                if (offset) {
+                    endpoint += `&offset=${offset}`;
+                }
+                
+                const result = await this.makeRequest(endpoint);
+                
+                if (result.records && result.records.length > 0) {
+                    const pageRecords = result.records.map(record => ({
+                        id: record.id,
+                        ...record.fields
+                    }));
+                    allRecords = allRecords.concat(pageRecords);
+                }
+                
+                offset = result.offset || null;
+                pageCount++;
+                
+                if (pageCount > 50) break;
+                
+            } while (offset);
             
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-            }
+            console.log(`✅ Total de técnicos obtenidos: ${allRecords.length}`);
+            return allRecords;
             
-            offset = result.offset || null;
-            pageCount++;
-            
-            if (pageCount > 50) break;
-            
-        } while (offset);
-        
-        console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
-        return allRecords;
-        
-    } catch (error) {
-        console.error('❌ Error obteniendo usuarios:', error);
-        return [];
+        } catch (error) {
+            console.error('❌ Error obteniendo técnicos:', error);
+            return [];
+        }
     }
-}
-
-async getSolicitudesAcceso() {
-    console.log('🔐 Obteniendo TODAS las solicitudes de acceso con paginación...');
-    
-    try {
-        let allRecords = [];
-        let offset = null;
-        let pageCount = 0;
-        
-        do {
-            let endpoint = `${this.tables.solicitudesAcceso}?pageSize=100`;
-            if (offset) {
-                endpoint += `&offset=${offset}`;
-            }
-            
-            const result = await this.makeRequest(endpoint);
-            
-            if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-            }
-            
-            offset = result.offset || null;
-            pageCount++;
-            
-            if (pageCount > 50) break;
-            
-        } while (offset);
-        
-        console.log(`✅ Total de solicitudes de acceso obtenidas: ${allRecords.length}`);
-        return allRecords;
-        
-    } catch (error) {
-        console.error('❌ Error obteniendo solicitudes de acceso:', error);
-        return [];
-    }
-}
 
     async validateUserCredentials(email, codigoAcceso) {
         try {
@@ -1644,7 +1237,7 @@ async getSolicitudesAcceso() {
     }
 
     async generateAreaSpecificNumber(area) {
-        console.log('🔢 Generando número específico para área:', area);
+        console.log('📢 Generando número específico para área:', area);
         
         try {
             let normalizedArea = area;
@@ -1691,7 +1284,7 @@ async getSolicitudesAcceso() {
 
     // 📋 MÉTODO: Crear solicitud
     async createSolicitud(solicitudData) {
-        console.log('📝 Creando solicitud con mapeo y valores conocidos...');
+        console.log('📍 Creando solicitud con mapeo y valores conocidos...');
         console.log('🔍 Datos recibidos:', solicitudData);
         console.log('🏥 ÁREA RECIBIDA:', solicitudData.servicioIngenieria);
         console.log('📋 Valores válidos conocidos:', this.validSolicitudValues);
@@ -1771,7 +1364,7 @@ async getSolicitudesAcceso() {
                 fields: cleanData
             };
             
-            console.log('📝 Datos finales a enviar (con valores mapeados):', JSON.stringify(data, null, 2));
+            console.log('🔍 Datos finales a enviar (con valores mapeados):', JSON.stringify(data, null, 2));
             console.log('🏥 ÁREA FINAL A GUARDAR:', data.fields.servicioIngenieria);
             console.log('🔧 TIPO SERVICIO FINAL:', data.fields.tipoServicio);
             
@@ -1794,7 +1387,7 @@ async getSolicitudesAcceso() {
                 if (error.message.includes('422')) {
                     console.error('🚨 ERROR 422 - Valores inválidos');
                     console.error('📋 Valores detectados disponibles:', this.validSolicitudValues);
-                    console.error('📝 Datos que se intentaron enviar:', data);
+                    console.error('🔍 Datos que se intentaron enviar:', data);
                     
                     let mensajeError = 'No se pudo crear la solicitud. ';
                     
@@ -1891,7 +1484,7 @@ async getSolicitudesAcceso() {
             fields: safeData
         };
         
-        console.log('📝 Creando técnico con área mapeada:', data);
+        console.log('🔍 Creando técnico con área mapeada:', data);
         
         try {
             const result = await this.makeRequest(this.tables.tecnicos, 'POST', data);
@@ -2043,7 +1636,7 @@ async getSolicitudesAcceso() {
                 }
             }
             
-            console.log('📝 Datos a actualizar:', updateData);
+            console.log('🔍 Datos a actualizar:', updateData);
             
             try {
                 const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
@@ -2182,7 +1775,7 @@ async getSolicitudesAcceso() {
                 }
             }
             
-            console.log('📝 Datos a actualizar:', updateData);
+            console.log('🔍 Datos a actualizar:', updateData);
             
             try {
                 const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
@@ -2254,145 +1847,146 @@ async getSolicitudesAcceso() {
             throw new Error(`Error actualizando: ${error.message}`);
         }
     }
-// 🔄 MÉTODO: Actualizar área de una solicitud (redirección)
-async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
-    console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
-    
-    try {
-        const solicitudes = await this.getSolicitudes();
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
+
+    // 🔄 MÉTODO: Actualizar área de una solicitud (redirección)
+    async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
+        console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
         
-        if (!solicitud) {
-            throw new Error('Solicitud no encontrada');
-        }
-        
-        console.log('📋 Solicitud actual:', solicitud);
-        console.log('🏥 Área actual:', solicitud.servicioIngenieria);
-        console.log('🔄 Nueva área solicitada:', nuevaArea);
-        
-        // Mapear el área nueva
-        const areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
-        console.log('🗺️ Área mapeada:', areaMapeada);
-        
-        // Generar nuevo número para el área
-        const nuevoNumero = await this.generateAreaSpecificNumber(nuevaArea);
-        console.log('📋 Nuevo número generado:', nuevoNumero);
-        
-        // Preparar datos de actualización
-        const updateData = {
-            servicioIngenieria: areaMapeada,
-            numero: nuevoNumero,
-            estado: 'PENDIENTE', // Resetear a pendiente
-            tecnicoAsignado: '', // Limpiar asignación
-            fechaAsignacion: null,
-            observacionesAsignacion: ''
-        };
-        
-        // Agregar al historial de observaciones
-        const fechaActual = new Date().toLocaleString('es-CO');
-        const observacionRedirección = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
-            `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
-            `- Nueva área: ${nuevaArea}\n` +
-            `- Motivo: ${motivo}\n` +
-            `- Número anterior: ${solicitud.numero}\n` +
-            `- Nuevo número: ${nuevoNumero}`;
-        
-        updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedirección;
-        
-        console.log('📝 Datos a actualizar:', updateData);
-        
-        // Hacer la actualización
-        const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-            fields: updateData
-        });
-        
-        console.log('✅ Área actualizada exitosamente');
-        
-        return {
-            success: true,
-            solicitud: { ...solicitud, ...updateData },
-            nuevoNumero: nuevoNumero,
-            areaAnterior: solicitud.servicioIngenieria,
-            nuevaArea: nuevaArea,
-            mensaje: `Solicitud redirigida de ${solicitud.servicioIngenieria} a ${nuevaArea}`
-        };
-        
-    } catch (error) {
-        console.error('❌ Error actualizando área:', error);
-        throw new Error(`Error al redirigir solicitud: ${error.message}`);
-    }
-}
-    // 🔓 MÉTODO: Liberar técnico asignado
-    // 🔓 MÉTODO: Liberar técnico asignado
-async liberarTecnicoAsignado(solicitudId) {
-    console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
-    
-    try {
-        const solicitudes = await this.getSolicitudes();
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
-        
-        if (!solicitud || !solicitud.tecnicoAsignado) {
-            console.log('ℹ️ No hay técnico asignado para liberar');
-            return { success: true, mensaje: 'No había técnico asignado' };
-        }
-        
-        console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
-        
-        const tecnicos = await this.getTecnicos();
-        const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
-        
-        if (tecnico) {
-            console.log('🔄 Actualizando estado del técnico a disponible...');
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
             
-            try {
-                await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
-                    fields: {
-                        estado: 'disponible',
-                        solicitudAsignada: ''
-                    }
-                });
-                
-                console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
-                
-            } catch (tecnicoError) {
-                console.error('❌ Error actualizando técnico:', tecnicoError);
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
             }
-        } else {
-            console.warn('⚠️ No se encontró el técnico en la base de datos');
+            
+            console.log('📋 Solicitud actual:', solicitud);
+            console.log('🏥 Área actual:', solicitud.servicioIngenieria);
+            console.log('🔄 Nueva área solicitada:', nuevaArea);
+            
+            // Mapear el área nueva
+            const areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
+            console.log('🗺️ Área mapeada:', areaMapeada);
+            
+            // Generar nuevo número para el área
+            const nuevoNumero = await this.generateAreaSpecificNumber(nuevaArea);
+            console.log('📋 Nuevo número generado:', nuevoNumero);
+            
+            // Preparar datos de actualización
+            const updateData = {
+                servicioIngenieria: areaMapeada,
+                numero: nuevoNumero,
+                estado: 'PENDIENTE', // Resetear a pendiente
+                tecnicoAsignado: '', // Limpiar asignación
+                fechaAsignacion: null,
+                observacionesAsignacion: ''
+            };
+            
+            // Agregar al historial de observaciones
+            const fechaActual = new Date().toLocaleString('es-CO');
+            const observacionRedireccion = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
+                `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
+                `- Nueva área: ${nuevaArea}\n` +
+                `- Motivo: ${motivo}\n` +
+                `- Número anterior: ${solicitud.numero}\n` +
+                `- Nuevo número: ${nuevoNumero}`;
+            
+            updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
+            
+            console.log('🔍 Datos a actualizar:', updateData);
+            
+            // Hacer la actualización
+            const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                fields: updateData
+            });
+            
+            console.log('✅ Área actualizada exitosamente');
+            
+            return {
+                success: true,
+                solicitud: { ...solicitud, ...updateData },
+                nuevoNumero: nuevoNumero,
+                areaAnterior: solicitud.servicioIngenieria,
+                nuevaArea: nuevaArea,
+                mensaje: `Solicitud redirigida de ${solicitud.servicioIngenieria} a ${nuevaArea}`
+            };
+            
+        } catch (error) {
+            console.error('❌ Error actualizando área:', error);
+            throw new Error(`Error al redirigir solicitud: ${error.message}`);
         }
-        
-        // 🔴 CAMBIO IMPORTANTE: NO borrar el técnico de la solicitud si está COMPLETADA
-        const estadoUpper = (solicitud.estado || '').toUpperCase();
-        if (estadoUpper !== 'COMPLETADA') {
-            try {
-                await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-                    fields: {
-                        tecnicoAsignado: ''
-                    }
-                });
-                console.log('✅ Técnico removido de la solicitud');
-            } catch (solicitudError) {
-                console.error('❌ Error actualizando solicitud:', solicitudError);
-            }
-        } else {
-            console.log('✅ Manteniendo nombre del técnico en solicitud completada');
-        }
-        
-        return { 
-            success: true, 
-            mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
-            tecnico: tecnico
-        };
-        
-    } catch (error) {
-        console.error('❌ Error liberando técnico:', error);
-        return { 
-            success: false, 
-            mensaje: 'Error liberando técnico',
-            error: error.message 
-        };
     }
-}
+
+    // 🔓 MÉTODO: Liberar técnico asignado
+    async liberarTecnicoAsignado(solicitudId) {
+        console.log('🔓 Liberando técnico asignado para solicitud:', solicitudId);
+        
+        try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud || !solicitud.tecnicoAsignado) {
+                console.log('ℹ️ No hay técnico asignado para liberar');
+                return { success: true, mensaje: 'No había técnico asignado' };
+            }
+            
+            console.log('👤 Técnico a liberar:', solicitud.tecnicoAsignado);
+            
+            const tecnicos = await this.getTecnicos();
+            const tecnico = tecnicos.find(t => t.nombre === solicitud.tecnicoAsignado);
+            
+            if (tecnico) {
+                console.log('🔄 Actualizando estado del técnico a disponible...');
+                
+                try {
+                    await this.makeRequest(`${this.tables.tecnicos}/${tecnico.id}`, 'PATCH', {
+                        fields: {
+                            estado: 'disponible',
+                            solicitudAsignada: ''
+                        }
+                    });
+                    
+                    console.log(`✅ Técnico ${tecnico.nombre} liberado exitosamente`);
+                    
+                } catch (tecnicoError) {
+                    console.error('❌ Error actualizando técnico:', tecnicoError);
+                }
+            } else {
+                console.warn('⚠️ No se encontró el técnico en la base de datos');
+            }
+            
+            // 🔴 CAMBIO IMPORTANTE: NO borrar el técnico de la solicitud si está COMPLETADA
+            const estadoUpper = (solicitud.estado || '').toUpperCase();
+            if (estadoUpper !== 'COMPLETADA') {
+                try {
+                    await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                        fields: {
+                            tecnicoAsignado: ''
+                        }
+                    });
+                    console.log('✅ Técnico removido de la solicitud');
+                } catch (solicitudError) {
+                    console.error('❌ Error actualizando solicitud:', solicitudError);
+                }
+            } else {
+                console.log('✅ Manteniendo nombre del técnico en solicitud completada');
+            }
+            
+            return { 
+                success: true, 
+                mensaje: `Técnico ${solicitud.tecnicoAsignado} liberado`,
+                tecnico: tecnico
+            };
+            
+        } catch (error) {
+            console.error('❌ Error liberando técnico:', error);
+            return { 
+                success: false, 
+                mensaje: 'Error liberando técnico',
+                error: error.message 
+            };
+        }
+    }
 
     async updateSolicitudAcceso(requestId, updateData) {
         const cleanData = {};
@@ -2400,7 +1994,7 @@ async liberarTecnicoAsignado(solicitudId) {
             const value = updateData[key];
             if (typeof value === 'string') {
                 cleanData[key] = this.cleanFieldValue(value);
-                console.log(`📝 Campo ${key} limpiado: "${updateData[key]}" → "${cleanData[key]}"`);
+                console.log(`🔍 Campo ${key} limpiado: "${updateData[key]}" → "${cleanData[key]}"`);
             } else {
                 cleanData[key] = value;
             }
@@ -2735,7 +2329,7 @@ async liberarTecnicoAsignado(solicitudId) {
     }
 }
 
-// 🌍 Crear instancia global
+// 🌐 Crear instancia global
 try {
     console.log('🔧 Creando instancia global con cambio de tipo de servicio...');
     window.airtableAPI = new AirtableAPI();
@@ -2778,7 +2372,7 @@ try {
         console.log('🏠 Entorno:', status.environment);
         console.log('🛡️ Proxy:', status.useProxy ? 'HABILITADO' : 'DESHABILITADO');
         console.log('📡 URL base:', status.baseUrl);
-        console.log('🔍 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
+        console.log('🔌 Estado:', status.isConnected ? '✅ CONECTADO' : '❌ DESCONECTADO');
         console.log('📋 Versión:', status.version);
         console.log('✨ NUEVO: Cambio de tipo de servicio al completar habilitado');
         console.log('📊 Nuevas características:', status.features.filter(f => f.startsWith('✨') || f.startsWith('NUEVO') || f.startsWith('FIX')));
@@ -2790,6 +2384,72 @@ try {
 } catch (error) {
     console.error('❌ Error creando funciones de debug:', error);
 }
+
+// Funciones globales de diagnóstico
+window.diagnosticarSolicitudes = async function() {
+    console.log('🔍 DIAGNÓSTICO COMPLETO DE SOLICITUDES');
+    console.log('╚══════════════════════════════════════╝');
+    
+    try {
+        console.log('📡 Obteniendo datos frescos de Airtable...');
+        
+        const solicitudes = await window.airtableAPI.getSolicitudes();
+        
+        console.log(`\n📊 RESULTADO FINAL:`);
+        console.log(`   Total obtenido: ${solicitudes.length} solicitudes`);
+        console.log(`   Esperado: 233 solicitudes`);
+        console.log(`   Diferencia: ${233 - solicitudes.length}`);
+        
+        if (solicitudes.length < 233) {
+            console.warn('⚠️ FALTAN SOLICITUDES - Verificar paginación');
+            console.log('💡 Ejecuta window.forzarRecargaCompleta() para intentar otra vez');
+        } else if (solicitudes.length === 233) {
+            console.log('✅ TODAS LAS SOLICITUDES CARGADAS CORRECTAMENTE');
+        } else if (solicitudes.length > 233) {
+            console.log('📈 Se encontraron MÁS solicitudes de las esperadas');
+        }
+        
+        return {
+            total: solicitudes.length,
+            esperado: 233,
+            diferencia: 233 - solicitudes.length,
+            solicitudes: solicitudes
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en diagnóstico:', error);
+        return null;
+    }
+};
+
+// Función para forzar recarga completa
+window.forzarRecargaCompleta = async function() {
+    console.log('🔄 FORZANDO RECARGA COMPLETA DE DATOS...');
+    
+    try {
+        // Limpiar datos en memoria
+        if (window.airtableAPI) {
+            console.log('🧹 Limpiando caché...');
+            
+            // Obtener nuevos datos
+            const solicitudes = await window.airtableAPI.getSolicitudes();
+            
+            console.log(`✅ Recarga completa exitosa`);
+            console.log(`📊 Total de solicitudes: ${solicitudes.length}`);
+            
+            // Si estás en el portal de gestión, actualizar la interfaz
+            if (typeof loadAllDataFromCloud === 'function') {
+                console.log('🔄 Actualizando interfaz...');
+                await loadAllDataFromCloud();
+            }
+            
+            return solicitudes.length;
+        }
+    } catch (error) {
+        console.error('❌ Error en recarga:', error);
+        return null;
+    }
+};
 
 console.log('✅ airtable-config.js (CON CAMBIO DE TIPO DE SERVICIO) cargado');
 console.log('✨ NUEVO: Método updateRequestStatusWithServiceType disponible');
