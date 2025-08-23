@@ -2908,30 +2908,59 @@ async function showAdvancedStatisticsModal() {
         const modal = document.getElementById('stats-modal');
         const content = document.getElementById('stats-modal-content');
         
+        // Mostrar loading
         content.innerHTML = `
             <div style="text-align: center; padding: 3rem;">
                 <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
                 <p style="margin-top: 1rem; color: #6b7280;">Calculando estadísticas avanzadas por áreas...</p>
+                <p style="margin-top: 0.5rem; color: #6b7280; font-size: 0.875rem;">Procesando ${cloudSolicitudes.length} solicitudes...</p>
             </div>
         `;
         
         modal.classList.add('show');
         
+        // Verificar que hay datos
+        if (!cloudSolicitudes || cloudSolicitudes.length === 0) {
+            console.error('❌ No hay solicitudes cargadas');
+            content.innerHTML = `
+                <div class="alert alert-warning">
+                    <h4>⚠️ No hay datos disponibles</h4>
+                    <p>Por favor, espere a que se carguen los datos o presione el botón de actualizar.</p>
+                    <button class="btn btn-primary" onclick="loadAllDataFromCloud()">🔄 Cargar Datos</button>
+                </div>
+            `;
+            return;
+        }
+        
+        console.log('📊 Generando estadísticas con', cloudSolicitudes.length, 'solicitudes');
+        
         // Obtener estadísticas generales
-        const stats = await window.airtableAPI.getAdvancedStatistics();
+        let stats;
+        try {
+            stats = await window.airtableAPI.getAdvancedStatistics();
+        } catch (error) {
+            console.error('❌ Error obteniendo estadísticas avanzadas:', error);
+            // Usar estadísticas locales como fallback
+            stats = calcularEstadisticasLocales();
+        }
         
         // Calcular estadísticas por área
         const statsPorArea = calcularEstadisticasPorArea();
         
-        // NUEVO: Calcular análisis temporal
+        // Calcular análisis temporal
         const analisisTemporal = calcularAnalisisTemporal();
         
-        // Generar HTML con pestañas por área y análisis temporal
+        // Generar HTML
         content.innerHTML = `
             <div style="padding: 1rem;">
                 <!-- Encabezado con botones de acción -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
-                    <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">📊 Análisis Completo del Sistema por Áreas</h2>
+                    <h2 style="color: #1f2937; font-size: 1.5rem; font-weight: 600;">
+                        📊 Análisis Completo del Sistema por Áreas
+                        <span style="font-size: 0.875rem; color: #6b7280; font-weight: normal;">
+                            (${cloudSolicitudes.length} solicitudes totales)
+                        </span>
+                    </h2>
                     <div style="display: flex; gap: 0.5rem;">
                         <button class="btn btn-primary btn-sm" onclick="exportStatsToPDF()">
                             📄 Exportar a PDF
@@ -2952,21 +2981,21 @@ async function showAdvancedStatisticsModal() {
                     </button>
                 </div>
 
-                <!-- Contenido de Vista General (existente) -->
+                <!-- Contenido de Vista General -->
                 <div id="analysis-general" class="analysis-content" style="display: block;">
-                    <!-- Pestañas de áreas existentes -->
+                    <!-- Pestañas de áreas -->
                     <div class="area-tabs">
                         <button class="area-tab active" data-area-stats="todas" onclick="showAreaStats('todas')">
                             🌐 General
                         </button>
                         <button class="area-tab" data-area-stats="biomedica" onclick="showAreaStats('biomedica')">
-                            🏥 Biomédica
+                            🏥 Biomédica (${statsPorArea.BIOMEDICA.total})
                         </button>
                         <button class="area-tab" data-area-stats="mecanica" onclick="showAreaStats('mecanica')">
-                            ⚙️ Mecánica
+                            ⚙️ Mecánica (${statsPorArea.MECANICA.total})
                         </button>
                         <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
-                            🏗️ Infraestructura
+                            🏗️ Infraestructura (${statsPorArea.INFRAESTRUCTURA.total})
                         </button>
                     </div>
 
@@ -2991,7 +3020,7 @@ async function showAdvancedStatisticsModal() {
                     </div>
                 </div>
 
-                <!-- NUEVO: Contenido de Análisis Temporal -->
+                <!-- Contenido de Análisis Temporal -->
                 <div id="analysis-temporal" class="analysis-content" style="display: none;">
                     ${generateTemporalAnalysis(analisisTemporal)}
                 </div>
@@ -3000,16 +3029,17 @@ async function showAdvancedStatisticsModal() {
         
         // Crear gráficos después de que el HTML esté listo
         setTimeout(() => {
-            if (document.getElementById('analysis-general').style.display !== 'none') {
-                createGeneralCharts(stats);
-                if (currentAreaStats === 'todas') {
-                    // Ya se crearon los gráficos generales
-                } else {
-                    createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
+            try {
+                if (document.getElementById('analysis-general').style.display !== 'none') {
+                    createGeneralCharts(stats);
+                    if (currentAreaStats === 'todas') {
+                        // Ya se crearon los gráficos generales
+                    } else {
+                        createAreaCharts(currentAreaStats, statsPorArea[currentAreaStats.toUpperCase()]);
+                    }
                 }
-            } else {
-                // Crear gráficos temporales
-                createTemporalCharts(analisisTemporal);
+            } catch (chartError) {
+                console.error('❌ Error creando gráficos:', chartError);
             }
         }, 100);
         
@@ -3020,11 +3050,84 @@ async function showAdvancedStatisticsModal() {
             <div class="alert alert-danger">
                 <h4>❌ Error al cargar estadísticas</h4>
                 <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="closeStatsModal(); setTimeout(() => showAdvancedStatisticsModal(), 500);">
+                    🔄 Reintentar
+                </button>
             </div>
         `;
     }
 }
-
+function calcularEstadisticasLocales() {
+    console.log('📊 Calculando estadísticas localmente...');
+    
+    const total = cloudSolicitudes.length;
+    const pendientes = cloudSolicitudes.filter(s => 
+        (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE'
+    ).length;
+    const asignadas = cloudSolicitudes.filter(s => 
+        (s.estado || '').toUpperCase() === 'ASIGNADA'
+    ).length;
+    const enProceso = cloudSolicitudes.filter(s => {
+        const estado = (s.estado || '').toUpperCase();
+        return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+    }).length;
+    const completadas = cloudSolicitudes.filter(s => 
+        (s.estado || '').toUpperCase() === 'COMPLETADA'
+    ).length;
+    const canceladas = cloudSolicitudes.filter(s => 
+        (s.estado || '').toUpperCase() === 'CANCELADA'
+    ).length;
+    
+    const mantenimientosCorrectivos = cloudSolicitudes.filter(s => 
+        s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || 
+        s.tipoServicio === 'Mantenimiento Correctivo'
+    ).length;
+    
+    const erroresUsuario = cloudSolicitudes.filter(s => 
+        s.tipoServicio === 'ERROR_USUARIO' || 
+        s.tipoServicio === 'Error de Usuario'
+    ).length;
+    
+    // Calcular por áreas
+    const porArea = {
+        INGENIERIA_BIOMEDICA: cloudSolicitudes.filter(s => {
+            const area = s.servicioIngenieria || '';
+            return area === 'INGENIERIA_BIOMEDICA' || 
+                   area.toLowerCase().includes('biomed');
+        }).length,
+        MECANICA: cloudSolicitudes.filter(s => {
+            const area = s.servicioIngenieria || '';
+            return area === 'MECANICA' || 
+                   area.toLowerCase().includes('mec');
+        }).length,
+        INFRAESTRUCTURA: cloudSolicitudes.filter(s => {
+            const area = s.servicioIngenieria || '';
+            return area === 'INFRAESTRUCTURA' || 
+                   area.toLowerCase().includes('infra');
+        }).length
+    };
+    
+    return {
+        solicitudes: {
+            total: total,
+            pendientes: pendientes,
+            asignadas: asignadas,
+            enProceso: enProceso,
+            completadas: completadas,
+            canceladas: canceladas,
+            porArea: porArea
+        },
+        indicadoresGestion: {
+            porcentajeCompletadas: total > 0 ? ((completadas / total) * 100).toFixed(1) : '0',
+            porcentajeMantenimientosCorrectivos: total > 0 ? ((mantenimientosCorrectivos / total) * 100).toFixed(1) : '0',
+            porcentajeErroresUsuario: total > 0 ? ((erroresUsuario / total) * 100).toFixed(1) : '0'
+        },
+        tiemposRespuesta: {
+            promedioRespuesta: 'N/A',
+            solicitudesVencidas: 0
+        }
+    };
+}
 // NUEVA FUNCIÓN: Cambiar tipo de análisis
 function showAnalysisType(type) {
     // Actualizar pestañas activas
@@ -5259,87 +5362,199 @@ async function exportTemporalAnalysis() {
         alert('❌ Error al exportar el análisis: ' + error.message);
     }
 }
-
-        // FUNCIÓN: Calcular estadísticas por área
-        function calcularEstadisticasPorArea() {
-            const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
-            const statsPorArea = {};
+function createGeneralCharts(stats) {
+    try {
+        // Validar que stats existe y tiene datos
+        if (!stats || !stats.solicitudes) {
+            console.error('❌ No hay datos para crear gráficos');
+            return;
+        }
+        
+        // Gráfico de estados
+        const ctxEstado = document.getElementById('estadoChart');
+        if (ctxEstado) {
+            // Destruir gráfico anterior si existe
+            if (chartInstances.estadoChart) {
+                chartInstances.estadoChart.destroy();
+            }
             
-            areas.forEach(area => {
-                const solicitudesArea = solicitudesPorArea[area] || [];
-                const tecnicosArea = cloudTecnicos.filter(t => normalizarArea(t.area) === area);
-                
-                const pendientes = solicitudesArea.filter(s => {
-                    const estado = (s.estado || 'PENDIENTE').toUpperCase();
-                    return estado === 'PENDIENTE' || (!s.tecnicoAsignado && estado !== 'COMPLETADA' && estado !== 'CANCELADA');
-                }).length;
-                
-                const asignadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'ASIGNADA').length;
-                const enProceso = solicitudesArea.filter(s => {
-                    const estado = (s.estado || '').toUpperCase();
-                    return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-                }).length;
-                const completadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length;
-                const canceladas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'CANCELADA').length;
-                
-                // Calcular errores de usuario
-                const erroresUsuario = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
-                ).length;
-                
-                // Calcular mantenimientos correctivos
-                const correctivos = solicitudesArea.filter(s => 
-                    s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
-                ).length;
-                
-                // Calcular tiempos promedio
-                let tiempoTotalMs = 0;
-                let solicitudesConTiempo = 0;
-                
-                solicitudesArea.forEach(s => {
-                    if (s.fechaCreacion && (s.estado === 'COMPLETADA' || s.estado === 'Completada')) {
-                        const fechaCreacion = new Date(s.fechaCreacion);
-                        const fechaFin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
-                        const tiempoMs = fechaFin - fechaCreacion;
-                        tiempoTotalMs += tiempoMs;
-                        solicitudesConTiempo++;
+            const data = [
+                stats.solicitudes.pendientes || 0,
+                stats.solicitudes.asignadas || 0,
+                stats.solicitudes.enProceso || 0,
+                stats.solicitudes.completadas || 0,
+                stats.solicitudes.canceladas || 0
+            ];
+            
+            // Solo crear el gráfico si hay datos
+            if (data.some(val => val > 0)) {
+                chartInstances.estadoChart = new Chart(ctxEstado.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Pendientes', 'Asignadas', 'En Proceso', 'Completadas', 'Canceladas'],
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                '#f59e0b',
+                                '#0ea5e9',
+                                '#8b5cf6',
+                                '#059669',
+                                '#ef4444'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
                     }
                 });
-                
-                const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-                const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-                const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-                
-                // Personal del área
-                const personalDisponible = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'disponible').length;
-                const personalOcupado = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'ocupado').length;
-                const personalInactivo = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'inactivo').length;
-                
-                statsPorArea[area] = {
-                    total: solicitudesArea.length,
-                    pendientes,
-                    asignadas,
-                    enProceso,
-                    completadas,
-                    canceladas,
-                    erroresUsuario,
-                    correctivos,
-                    porcentajeCompletadas: solicitudesArea.length > 0 ? ((completadas / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    porcentajeErrores: solicitudesArea.length > 0 ? ((erroresUsuario / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    porcentajeCorrectivos: solicitudesArea.length > 0 ? ((correctivos / solicitudesArea.length) * 100).toFixed(1) : 0,
-                    tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
-                    personal: {
-                        total: tecnicosArea.length,
-                        disponible: personalDisponible,
-                        ocupado: personalOcupado,
-                        inactivo: personalInactivo
-                    },
-                    eficiencia: solicitudesArea.length > 0 ? (((completadas + canceladas) / solicitudesArea.length) * 100).toFixed(1) : 0
-                };
-            });
-            
-            return statsPorArea;
+            }
         }
+        
+        // Gráfico de áreas
+        const ctxArea = document.getElementById('areaChart');
+        if (ctxArea) {
+            // Destruir gráfico anterior si existe
+            if (chartInstances.areaChart) {
+                chartInstances.areaChart.destroy();
+            }
+            
+            const areaData = [
+                stats.solicitudes.porArea?.INGENIERIA_BIOMEDICA || 0,
+                stats.solicitudes.porArea?.MECANICA || 0,
+                stats.solicitudes.porArea?.INFRAESTRUCTURA || 0
+            ];
+            
+            // Solo crear el gráfico si hay datos
+            if (areaData.some(val => val > 0)) {
+                chartInstances.areaChart = new Chart(ctxArea.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura'],
+                        datasets: [{
+                            label: 'Solicitudes por Área',
+                            data: areaData,
+                            backgroundColor: [
+                                '#059669',
+                                '#f59e0b',
+                                '#8b5cf6'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    } catch (error) {
+        console.error('❌ Error creando gráficos:', error);
+    }
+}
+        // FUNCIÓN: Calcular estadísticas por área
+        function calcularEstadisticasPorArea() {
+    console.log('📊 Calculando estadísticas por área...');
+    
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const statsPorArea = {};
+    
+    // Verificar que solicitudesPorArea esté actualizado
+    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
+        clasificarSolicitudesPorArea();
+    }
+    
+    areas.forEach(area => {
+        const solicitudesArea = solicitudesPorArea[area] || [];
+        console.log(`📊 Área ${area}: ${solicitudesArea.length} solicitudes`);
+        
+        const tecnicosArea = cloudTecnicos.filter(t => normalizarArea(t.area) === area);
+        
+        const pendientes = solicitudesArea.filter(s => {
+            const estado = (s.estado || 'PENDIENTE').toUpperCase();
+            return estado === 'PENDIENTE' || (!s.tecnicoAsignado && estado !== 'COMPLETADA' && estado !== 'CANCELADA');
+        }).length;
+        
+        const asignadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'ASIGNADA').length;
+        const enProceso = solicitudesArea.filter(s => {
+            const estado = (s.estado || '').toUpperCase();
+            return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+        }).length;
+        const completadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length;
+        const canceladas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'CANCELADA').length;
+        
+        const erroresUsuario = solicitudesArea.filter(s => 
+            s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+        ).length;
+        
+        const correctivos = solicitudesArea.filter(s => 
+            s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
+        ).length;
+        
+        // Calcular tiempos promedio
+        let tiempoTotalMs = 0;
+        let solicitudesConTiempo = 0;
+        
+        solicitudesArea.forEach(s => {
+            if (s.fechaCreacion && (s.estado === 'COMPLETADA' || s.estado === 'Completada')) {
+                const fechaCreacion = new Date(s.fechaCreacion);
+                const fechaFin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
+                const tiempoMs = fechaFin - fechaCreacion;
+                if (!isNaN(tiempoMs) && tiempoMs > 0) {
+                    tiempoTotalMs += tiempoMs;
+                    solicitudesConTiempo++;
+                }
+            }
+        });
+        
+        const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
+        const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
+        const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
+        
+        // Personal del área
+        const personalDisponible = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'disponible').length;
+        const personalOcupado = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'ocupado').length;
+        const personalInactivo = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'inactivo').length;
+        
+        statsPorArea[area] = {
+            total: solicitudesArea.length,
+            pendientes,
+            asignadas,
+            enProceso,
+            completadas,
+            canceladas,
+            erroresUsuario,
+            correctivos,
+            porcentajeCompletadas: solicitudesArea.length > 0 ? ((completadas / solicitudesArea.length) * 100).toFixed(1) : 0,
+            porcentajeErrores: solicitudesArea.length > 0 ? ((erroresUsuario / solicitudesArea.length) * 100).toFixed(1) : 0,
+            porcentajeCorrectivos: solicitudesArea.length > 0 ? ((correctivos / solicitudesArea.length) * 100).toFixed(1) : 0,
+            tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
+            personal: {
+                total: tecnicosArea.length,
+                disponible: personalDisponible,
+                ocupado: personalOcupado,
+                inactivo: personalInactivo
+            },
+            eficiencia: solicitudesArea.length > 0 ? (((completadas + canceladas) / solicitudesArea.length) * 100).toFixed(1) : 0
+        };
+    });
+    
+    console.log('✅ Estadísticas por área calculadas:', statsPorArea);
+    return statsPorArea;
+}
 
         // FUNCIÓN: Generar HTML de estadísticas generales
         function generateGeneralStats(stats) {
@@ -7056,7 +7271,44 @@ async function notifyTechnician(technicianId, requestNumber) {
             showView('solicitudes');
             updateSolicitudesList();
         }
-
+// Agregar al final del archivo portal-gestion.html
+window.debugEstadisticas = function() {
+    console.log('🔍 DEBUG DE ESTADÍSTICAS');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 Total solicitudes:', cloudSolicitudes.length);
+    console.log('👥 Total técnicos:', cloudTecnicos.length);
+    console.log('👤 Total usuarios:', cloudUsuarios.length);
+    console.log('🔐 Total solicitudes acceso:', cloudSolicitudesAcceso.length);
+    
+    console.log('\n📊 Solicitudes por área:');
+    console.log('   Biomédica:', solicitudesPorArea.BIOMEDICA?.length || 0);
+    console.log('   Mecánica:', solicitudesPorArea.MECANICA?.length || 0);
+    console.log('   Infraestructura:', solicitudesPorArea.INFRAESTRUCTURA?.length || 0);
+    
+    console.log('\n📊 Estados:');
+    const estados = {};
+    cloudSolicitudes.forEach(s => {
+        const estado = s.estado || 'SIN_ESTADO';
+        estados[estado] = (estados[estado] || 0) + 1;
+    });
+    Object.entries(estados).forEach(([estado, count]) => {
+        console.log(`   ${estado}: ${count}`);
+    });
+    
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    
+    return {
+        solicitudes: cloudSolicitudes.length,
+        tecnicos: cloudTecnicos.length,
+        usuarios: cloudUsuarios.length,
+        porArea: {
+            biomedica: solicitudesPorArea.BIOMEDICA?.length || 0,
+            mecanica: solicitudesPorArea.MECANICA?.length || 0,
+            infraestructura: solicitudesPorArea.INFRAESTRUCTURA?.length || 0
+        },
+        estados: estados
+    };
+};
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (Con Análisis por Áreas)');
