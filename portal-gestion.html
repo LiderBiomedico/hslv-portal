@@ -2016,11 +2016,11 @@
         }
 
         // 🔄 Funciones de carga de datos desde Airtable
-        async function loadAllDataFromCloud() {
+       async function loadAllDataFromCloud() {
     console.log('🌐 Cargando todos los datos desde Airtable...');
     
     try {
-        updateConnectionStatus('connecting', 'Sincronizando... (puede tomar más tiempo con muchos registros)');
+        updateConnectionStatus('connecting', 'Sincronizando...');
         
         const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
             window.airtableAPI.getSolicitudes(),
@@ -2029,18 +2029,29 @@
             window.airtableAPI.getSolicitudesAcceso()
         ]);
         
-        cloudSolicitudes = solicitudes;
+        // Validación de datos antes de asignar
+        if (solicitudes.length > 1000) {
+            console.warn(`⚠️ Se obtuvieron ${solicitudes.length} solicitudes - verificando duplicados...`);
+            
+            // Eliminar duplicados por ID
+            const uniqueSolicitudes = new Map();
+            solicitudes.forEach(s => {
+                if (!uniqueSolicitudes.has(s.id)) {
+                    uniqueSolicitudes.set(s.id, s);
+                }
+            });
+            
+            cloudSolicitudes = Array.from(uniqueSolicitudes.values());
+            console.log(`✅ Solicitudes únicas después de limpieza: ${cloudSolicitudes.length}`);
+        } else {
+            cloudSolicitudes = solicitudes;
+        }
+        
         cloudTecnicos = tecnicos;
         cloudUsuarios = usuarios;
         cloudSolicitudesAcceso = solicitudesAcceso;
         
-        // Mensaje mejorado con total real
-        console.log(`✅ Datos cargados COMPLETOS: ${solicitudes.length} solicitudes (TOTAL REAL), ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
-        
-        // Si hay más de 100 solicitudes, mostrar alerta de éxito
-        if (solicitudes.length > 100) {
-            console.log(`🎉 ¡Paginación exitosa! Se cargaron ${solicitudes.length} solicitudes (más de 100)`);
-        }
+        console.log(`✅ Datos cargados: ${cloudSolicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios`);
         
         // Clasificar solicitudes por área
         clasificarSolicitudesPorArea();

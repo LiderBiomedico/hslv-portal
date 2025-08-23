@@ -928,13 +928,15 @@ async getSolicitudesAcceso() {
         }
     }
 
-    async getSolicitudes() {
+   async getSolicitudes() {
     console.log('📋 Obteniendo TODAS las solicitudes con paginación...');
     
     try {
-        let allRecords = [];
+        // Usar Map para evitar duplicados
+        const recordsMap = new Map();
         let offset = null;
         let pageCount = 0;
+        let duplicatesFound = 0;
         
         do {
             // Construir URL con offset si existe
@@ -943,32 +945,57 @@ async getSolicitudesAcceso() {
                 endpoint += `?offset=${offset}`;
             }
             
-            console.log(`📄 Obteniendo página ${pageCount + 1}...`);
+            console.log(`🔄 Obteniendo página ${pageCount + 1}...`);
             const result = await this.makeRequest(endpoint);
             
-            // Agregar registros de esta página
+            // Agregar registros de esta página (evitando duplicados)
             if (result.records && result.records.length > 0) {
-                const pageRecords = result.records.map(record => ({
-                    id: record.id,
-                    ...record.fields
-                }));
-                allRecords = allRecords.concat(pageRecords);
-                console.log(`✅ Página ${pageCount + 1}: ${result.records.length} registros`);
+                result.records.forEach(record => {
+                    if (!recordsMap.has(record.id)) {
+                        recordsMap.set(record.id, {
+                            id: record.id,
+                            ...record.fields
+                        });
+                    } else {
+                        duplicatesFound++;
+                        console.warn(`⚠️ Duplicado detectado y omitido: ${record.id}`);
+                    }
+                });
+                console.log(`✅ Página ${pageCount + 1}: ${result.records.length} registros (${duplicatesFound} duplicados omitidos)`);
             }
             
             // Actualizar offset para siguiente página
             offset = result.offset || null;
             pageCount++;
             
-            // Prevención de bucle infinito (máximo 50 páginas = 5000 registros)
-            if (pageCount > 50) {
-                console.warn('⚠️ Se alcanzó el límite máximo de páginas (50)');
+            // Prevención más estricta - máximo 20 páginas (2000 registros)
+            if (pageCount > 20) {
+                console.warn('⚠️ Se alcanzó el límite máximo de páginas (20)');
+                break;
+            }
+            
+            // Si no hay offset, salir del bucle
+            if (!offset) {
+                console.log('✅ No hay más páginas disponibles');
                 break;
             }
             
         } while (offset);
         
-        console.log(`✅ Total de solicitudes obtenidas: ${allRecords.length} en ${pageCount} página(s)`);
+        // Convertir Map a array
+        const allRecords = Array.from(recordsMap.values());
+        
+        console.log(`✅ Total REAL de solicitudes: ${allRecords.length} (únicos)`);
+        console.log(`📊 Páginas procesadas: ${pageCount}`);
+        if (duplicatesFound > 0) {
+            console.log(`⚠️ Total de duplicados detectados y eliminados: ${duplicatesFound}`);
+        }
+        
+        // Validación adicional
+        if (allRecords.length > 1000) {
+            console.warn(`⚠️ ADVERTENCIA: Se obtuvieron ${allRecords.length} solicitudes, verificar si es correcto`);
+        }
+        
         return allRecords;
         
     } catch (error) {
