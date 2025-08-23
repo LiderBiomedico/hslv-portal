@@ -2017,39 +2017,45 @@
 
         // 🔄 Funciones de carga de datos desde Airtable
         async function loadAllDataFromCloud() {
-            console.log('🌐 Cargando todos los datos desde Airtable...');
-            
-            try {
-                updateConnectionStatus('connecting', 'Sincronizando...');
-                
-                const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
-                    window.airtableAPI.getSolicitudes(),
-                    window.airtableAPI.getTecnicos(),
-                    window.airtableAPI.getUsuarios(),
-                    window.airtableAPI.getSolicitudesAcceso()
-                ]);
-                
-                cloudSolicitudes = solicitudes;
-                cloudTecnicos = tecnicos;
-                cloudUsuarios = usuarios;
-                cloudSolicitudesAcceso = solicitudesAcceso;
-                
-                // Clasificar solicitudes por área
-                clasificarSolicitudesPorArea();
-                
-                console.log(`✅ Datos cargados: ${solicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
-                
-                updateAccessRequestsList();
-                updateAllCounters();
-                updateAllDisplays();
-                updateConnectionStatus('connected');
-                
-            } catch (error) {
-                console.error('❌ Error cargando datos desde Airtable:', error);
-                updateConnectionStatus('fallback');
-                loadDataFromLocalStorage();
-            }
+    console.log('🌐 Cargando todos los datos desde Airtable...');
+    
+    try {
+        updateConnectionStatus('connecting', 'Sincronizando... (puede tomar más tiempo con muchos registros)');
+        
+        const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+            window.airtableAPI.getSolicitudes(),
+            window.airtableAPI.getTecnicos(),
+            window.airtableAPI.getUsuarios(),
+            window.airtableAPI.getSolicitudesAcceso()
+        ]);
+        
+        cloudSolicitudes = solicitudes;
+        cloudTecnicos = tecnicos;
+        cloudUsuarios = usuarios;
+        cloudSolicitudesAcceso = solicitudesAcceso;
+        
+        // Mensaje mejorado con total real
+        console.log(`✅ Datos cargados COMPLETOS: ${solicitudes.length} solicitudes (TOTAL REAL), ${tecnicos.length} personal, ${usuarios.length} usuarios, ${solicitudesAcceso.length} solicitudes de acceso`);
+        
+        // Si hay más de 100 solicitudes, mostrar alerta de éxito
+        if (solicitudes.length > 100) {
+            console.log(`🎉 ¡Paginación exitosa! Se cargaron ${solicitudes.length} solicitudes (más de 100)`);
         }
+        
+        // Clasificar solicitudes por área
+        clasificarSolicitudesPorArea();
+        
+        updateAccessRequestsList();
+        updateAllCounters();
+        updateAllDisplays();
+        updateConnectionStatus('connected');
+        
+    } catch (error) {
+        console.error('❌ Error cargando datos desde Airtable:', error);
+        updateConnectionStatus('fallback');
+        loadDataFromLocalStorage();
+    }
+}
 
         function loadDataFromLocalStorage() {
             console.log('📱 Cargando datos desde localStorage (modo fallback)...');

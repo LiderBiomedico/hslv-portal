@@ -731,7 +731,84 @@ class AirtableAPI {
             throw new Error('No se pudo crear la solicitud. Por favor contacte al administrador.');
         }
     }
-
+	async getUsuarios() {
+    console.log('👤 Obteniendo TODOS los usuarios con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            let endpoint = this.tables.usuarios;
+            if (offset) {
+                endpoint += `?offset=${offset}`;
+            }
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            if (pageCount > 20) break;
+            
+        } while (offset);
+        
+        console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo usuarios:', error);
+        return [];
+    }
+}
+async getSolicitudesAcceso() {
+    console.log('🔐 Obteniendo TODAS las solicitudes de acceso con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            let endpoint = this.tables.solicitudesAcceso;
+            if (offset) {
+                endpoint += `?offset=${offset}`;
+            }
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            if (pageCount > 20) break;
+            
+        } while (offset);
+        
+        console.log(`✅ Total de solicitudes de acceso obtenidas: ${allRecords.length}`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo solicitudes de acceso:', error);
+        return [];
+    }
+}
     // 🔐 MÉTODO: Aprobar solicitud y crear usuario
     async approveAccessRequestAndCreateUser(requestId) {
         console.log('✅ Iniciando aprobación de solicitud:', requestId);
@@ -852,56 +929,96 @@ class AirtableAPI {
     }
 
     async getSolicitudes() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudes);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo solicitudes:', error);
-            return [];
-        }
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            // Construir URL con offset si existe
+            let endpoint = this.tables.solicitudes;
+            if (offset) {
+                endpoint += `?offset=${offset}`;
+            }
+            
+            console.log(`📄 Obteniendo página ${pageCount + 1}...`);
+            const result = await this.makeRequest(endpoint);
+            
+            // Agregar registros de esta página
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+                console.log(`✅ Página ${pageCount + 1}: ${result.records.length} registros`);
+            }
+            
+            // Actualizar offset para siguiente página
+            offset = result.offset || null;
+            pageCount++;
+            
+            // Prevención de bucle infinito (máximo 50 páginas = 5000 registros)
+            if (pageCount > 50) {
+                console.warn('⚠️ Se alcanzó el límite máximo de páginas (50)');
+                break;
+            }
+            
+        } while (offset);
+        
+        console.log(`✅ Total de solicitudes obtenidas: ${allRecords.length} en ${pageCount} página(s)`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo solicitudes:', error);
+        return [];
     }
+}
 
     async getTecnicos() {
-        try {
-            const result = await this.makeRequest(this.tables.tecnicos);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo técnicos:', error);
-            return [];
-        }
+    console.log('👥 Obteniendo TODOS los técnicos con paginación...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        
+        do {
+            let endpoint = this.tables.tecnicos;
+            if (offset) {
+                endpoint += `?offset=${offset}`;
+            }
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                allRecords = allRecords.concat(pageRecords);
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            if (pageCount > 20) {
+                console.warn('⚠️ Límite de páginas alcanzado para técnicos');
+                break;
+            }
+            
+        } while (offset);
+        
+        console.log(`✅ Total de técnicos obtenidos: ${allRecords.length}`);
+        return allRecords;
+        
+    } catch (error) {
+        console.error('❌ Error obteniendo técnicos:', error);
+        return [];
     }
-
-    async getUsuarios() {
-        try {
-            const result = await this.makeRequest(this.tables.usuarios);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo usuarios:', error);
-            return [];
-        }
-    }
-
-    async getSolicitudesAcceso() {
-        try {
-            const result = await this.makeRequest(this.tables.solicitudesAcceso);
-            return result.records.map(record => ({
-                id: record.id,
-                ...record.fields
-            }));
-        } catch (error) {
-            console.error('❌ Error obteniendo solicitudes de acceso:', error);
-            return [];
-        }
-    }
+}
 
     async validateUserCredentials(email, codigoAcceso) {
         try {
@@ -1671,7 +1788,7 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
         console.error('❌ Error actualizando área:', error);
         throw new Error(`Error al redirigir solicitud: ${error.message}`);
     }
-}/////////////////////////////////////////////////////////////////////////////////////////////////////
+}
     // 🔓 MÉTODO: Liberar técnico asignado
     // 🔓 MÉTODO: Liberar técnico asignado
 async liberarTecnicoAsignado(solicitudId) {
@@ -1743,7 +1860,7 @@ async liberarTecnicoAsignado(solicitudId) {
         };
     }
 }
-//////////////////////////////////////////////////////////////////////////////////////////////
+
     async updateSolicitudAcceso(requestId, updateData) {
         const cleanData = {};
         Object.keys(updateData).forEach(key => {
