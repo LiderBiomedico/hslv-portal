@@ -2900,7 +2900,60 @@ window.debugContadores = debugContadores;
 
         // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas
        
+// Función de debug mejorada
+async function debugSolicitudes() {
+    console.log('🔍 DEBUG DETALLADO DE SOLICITUDES');
+    console.log('════════════════════════════════════════');
+    
+    // Forzar recarga completa
+    console.log('📡 Obteniendo datos frescos de Airtable...');
+    
+    try {
+        const solicitudes = await window.airtableAPI.getSolicitudes();
+        
+        console.log(`📊 TOTAL DE SOLICITUDES: ${solicitudes.length}`);
+        
+        // Análisis por área
+        const porArea = {};
+        solicitudes.forEach(s => {
+            const area = s.servicioIngenieria || 'SIN_AREA';
+            porArea[area] = (porArea[area] || 0) + 1;
+        });
+        
+        console.log('\n📊 DISTRIBUCIÓN POR ÁREA:');
+        Object.entries(porArea)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([area, count]) => {
+                console.log(`   ${area}: ${count} solicitudes`);
+            });
+        
+        // Verificar duplicados
+        const ids = solicitudes.map(s => s.id);
+        const uniqueIds = new Set(ids);
+        if (ids.length !== uniqueIds.size) {
+            console.warn(`⚠️ HAY DUPLICADOS: ${ids.length - uniqueIds.size} registros duplicados`);
+        }
+        
+        // Comparar con datos en memoria
+        console.log('\n📊 COMPARACIÓN CON MEMORIA:');
+        console.log(`   En memoria: ${cloudSolicitudes.length}`);
+        console.log(`   Recién obtenidos: ${solicitudes.length}`);
+        console.log(`   Diferencia: ${solicitudes.length - cloudSolicitudes.length}`);
+        
+        return {
+            total: solicitudes.length,
+            porArea: porArea,
+            duplicados: ids.length - uniqueIds.size
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en debug:', error);
+        return null;
+    }
+}
 
+// Hacer la función global
+window.debugSolicitudes = debugSolicitudes;
 	   // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
 // 📊 FUNCIÓN MEJORADA: Estadísticas avanzadas por áreas con análisis temporal
 async function showAdvancedStatisticsModal() {

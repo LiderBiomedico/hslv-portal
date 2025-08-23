@@ -938,14 +938,25 @@ async getSolicitudes() {
         const pageSize = 100; // Airtable devuelve máximo 100 por página
         
         do {
-            // Construir URL con pageSize y offset
-            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}`;
+            // Construir URL con pageSize, sort y offset
+            // IMPORTANTE: Agregar sort para paginación consistente
+            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}&sort%5B0%5D%5Bfield%5D=numero&sort%5B0%5D%5Bdirection%5D=asc`;
+            
             if (offset) {
                 endpoint += `&offset=${offset}`;
             }
             
             console.log(`🔄 Obteniendo página ${pageCount + 1}...`);
+            console.log(`📡 Endpoint: ${endpoint}`);
+            
             const result = await this.makeRequest(endpoint);
+            
+            // Logging detallado
+            console.log(`📊 Respuesta página ${pageCount + 1}:`, {
+                records: result.records ? result.records.length : 0,
+                offset: result.offset || 'ninguno',
+                hasMore: !!result.offset
+            });
             
             // Agregar registros de esta página
             if (result.records && result.records.length > 0) {
@@ -963,13 +974,20 @@ async getSolicitudes() {
             
             // Si hay offset, significa que hay más páginas
             if (offset) {
-                console.log(`📄 Hay más páginas disponibles, continuando...`);
+                console.log(`🔄 Hay más páginas disponibles, continuando con offset: ${offset}`);
+            } else {
+                console.log(`✅ No hay más páginas, paginación completa`);
             }
             
             // Prevención de bucle infinito (máximo 100 páginas = 10,000 registros)
             if (pageCount > 100) {
                 console.warn('⚠️ Se alcanzó el límite máximo de páginas (100)');
                 break;
+            }
+            
+            // Pequeña pausa entre requests para no sobrecargar
+            if (offset) {
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
             
         } while (offset); // Continuar mientras haya offset
@@ -982,15 +1000,117 @@ async getSolicitudes() {
         
         const finalRecords = Array.from(uniqueRecords.values());
         
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`✅ TOTAL FINAL DE SOLICITUDES: ${finalRecords.length}`);
-        console.log(`📊 Páginas procesadas: ${pageCount}`);
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        // Análisis por área para debug
+        const areaCount = {};
+        finalRecords.forEach(record => {
+            const area = record.servicioIngenieria || 'SIN_AREA';
+            areaCount[area] = (areaCount[area] || 0) + 1;
+        });
+        
+        console.log('┌──────────────────────────────────────┐');
+        console.log('│   RESUMEN FINAL DE SOLICITUDES       │');
+        console.log('├──────────────────────────────────────┤');
+        console.log(`│ ✅ TOTAL FINAL: ${finalRecords.length} solicitudes`);
+        console.log(`│ 📊 Páginas procesadas: ${pageCount}`);
+        console.log('├──────────────────────────────────────┤');
+        console.log('│ 📊 Distribución por áreas:           │');
+        Object.entries(areaCount)
+            .sort((a, b) => b[1] - a[1])
+            .forEach(([area, count]) => {
+                console.log(`│   ${area}: ${count}`);
+            });
+        console.log('└──────────────────────────────────────┘');
         
         return finalRecords;
         
     } catch (error) {
         console.error('❌ Error obteniendo solicitudes:', error);
+        
+        // Si el error es por el sort, intentar sin él
+        if (error.message && error.message.includes('sort')) {
+            console.log('🔄 Reintentando sin parámetro sort...');
+            return this.getSolicitudesWithoutSort();
+        }
+        
+        return [];
+    }
+}
+
+// Método alternativo sin sort (backup)
+async getSolicitudesWithoutSort() {
+    console.log('📋 Obteniendo solicitudes sin sort (método alternativo)...');
+    
+    try {
+        let allRecords = [];
+        let offset = null;
+        let pageCount = 0;
+        const pageSize = 100;
+        let previousTotal = 0;
+        let sameCountAttempts = 0;
+        
+        do {
+            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}`;
+            
+            if (offset) {
+                endpoint += `&offset=${offset}`;
+            }
+            
+            console.log(`🔄 Página ${pageCount + 1} (sin sort)...`);
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records && result.records.length > 0) {
+                const pageRecords = result.records.map(record => ({
+                    id: record.id,
+                    ...record.fields
+                }));
+                
+                // Verificar si hay duplicados antes de agregar
+                const currentIds = new Set(allRecords.map(r => r.id));
+                const newRecords = pageRecords.filter(r => !currentIds.has(r.id));
+                
+                allRecords = allRecords.concat(newRecords);
+                console.log(`✅ Página ${pageCount + 1}: ${newRecords.length} nuevos registros (Total: ${allRecords.length})`);
+                
+                // Verificar si estamos obteniendo registros nuevos
+                if (allRecords.length === previousTotal) {
+                    sameCountAttempts++;
+                    if (sameCountAttempts >= 3) {
+                        console.log('⚠️ No se están obteniendo nuevos registros, finalizando...');
+                        break;
+                    }
+                } else {
+                    sameCountAttempts = 0;
+                }
+                previousTotal = allRecords.length;
+            }
+            
+            offset = result.offset || null;
+            pageCount++;
+            
+            // Límite de seguridad
+            if (pageCount > 50) {
+                console.warn('⚠️ Límite de páginas alcanzado');
+                break;
+            }
+            
+            // Pausa entre requests
+            if (offset) {
+                await new Promise(resolve => setTimeout(resolve, 150));
+            }
+            
+        } while (offset);
+        
+        // Eliminar duplicados finales
+        const uniqueRecords = new Map();
+        allRecords.forEach(record => {
+            uniqueRecords.set(record.id, record);
+        });
+        
+        return Array.from(uniqueRecords.values());
+        
+    } catch (error) {
+        console.error('❌ Error en método alternativo:', error);
         return [];
     }
 }
