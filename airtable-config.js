@@ -929,134 +929,245 @@ async getSolicitudesAcceso() {
     }
 
 async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes (método optimizado)...');
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
     
     try {
         const allRecordsMap = new Map();
         let offset = null;
         let pageCount = 0;
-        let consecutiveEmptyPages = 0;
+        let totalRecordsProcessed = 0;
         
-        // Intentar primero sin ordenamiento
-        const useSort = false;
+        // Configuración mejorada
+        const MAX_PAGES = 100; // Aumentar límite de páginas
+        const PAGE_SIZE = 100; // Mantener tamaño de página en 100
         
-        while (true) {
-            // Construir endpoint - SIN sort que puede estar causando el problema
-            let endpoint = `${this.tables.solicitudes}?pageSize=100`;
+        while (pageCount < MAX_PAGES) {
+            // Construir endpoint sin sort para evitar problemas
+            let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
             
-            // Solo agregar offset si existe
+            // Agregar offset si existe
             if (offset) {
                 endpoint += `&offset=${encodeURIComponent(offset)}`;
             }
             
             pageCount++;
-            console.log(`🔄 Página ${pageCount} - Offset: ${offset || 'inicial'}`);
+            console.log(`📄 Obteniendo página ${pageCount}...`);
             
             try {
                 const result = await this.makeRequest(endpoint);
                 
-                // Verificar si recibimos datos
+                // Verificar si hay registros
                 if (!result.records || result.records.length === 0) {
-                    consecutiveEmptyPages++;
-                    console.log(`⚠️ Página vacía (${consecutiveEmptyPages}/3)`);
-                    
-                    if (consecutiveEmptyPages >= 3) {
-                        console.log('✅ Fin de datos - 3 páginas vacías consecutivas');
-                        break;
-                    }
-                } else {
-                    consecutiveEmptyPages = 0;
-                    let newRecords = 0;
-                    
-                    // Procesar cada registro
-                    result.records.forEach(record => {
-                        const recordId = record.id;
-                        
-                        if (!allRecordsMap.has(recordId)) {
-                            allRecordsMap.set(recordId, {
-                                id: recordId,
-                                ...record.fields
-                            });
-                            newRecords++;
-                        }
-                    });
-                    
-                    console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total: ${allRecordsMap.size})`);
-                    
-                    // IMPORTANTE: Verificar si el offset cambió
-                    const newOffset = result.offset;
-                    
-                    if (newOffset === offset) {
-                        console.warn('⚠️ Offset no cambió, posible fin de datos');
-                        break;
-                    }
-                    
-                    // Si no hay nuevos registros en 2 páginas consecutivas, parar
-                    if (newRecords === 0 && pageCount > 1) {
-                        console.log('✅ No hay nuevos registros, fin de paginación');
-                        break;
-                    }
-                    
-                    offset = newOffset;
-                    
-                    // Si no hay offset, hemos terminado
-                    if (!offset) {
-                        console.log('✅ Sin offset - fin de datos');
-                        break;
-                    }
-                }
-                
-                // Límite de seguridad
-                if (pageCount > 20) {
-                    console.warn('⚠️ Límite de seguridad alcanzado (20 páginas)');
+                    console.log(`✅ Página ${pageCount} vacía - fin de datos`);
                     break;
                 }
                 
-                // Verificación especial para 233 registros esperados
-                if (allRecordsMap.size >= 233) {
-                    console.log('✅ Se alcanzó el número esperado de registros');
-                    // Continuar una página más para asegurar
-                    if (!offset) break;
+                // Procesar registros
+                let newRecords = 0;
+                result.records.forEach(record => {
+                    const recordId = record.id;
+                    
+                    if (!allRecordsMap.has(recordId)) {
+                        allRecordsMap.set(recordId, {
+                            id: recordId,
+                            ...record.fields
+                        });
+                        newRecords++;
+                        totalRecordsProcessed++;
+                    }
+                });
+                
+                console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total acumulado: ${allRecordsMap.size})`);
+                
+                // Obtener siguiente offset
+                offset = result.offset;
+                
+                // Si no hay offset, hemos terminado
+                if (!offset) {
+                    console.log('✅ No hay más páginas - paginación completa');
+                    break;
                 }
                 
-                // Pequeña pausa entre requests
-                await new Promise(resolve => setTimeout(resolve, 200));
+                // Pequeña pausa entre requests para no sobrecargar
+                await new Promise(resolve => setTimeout(resolve, 100));
                 
             } catch (pageError) {
-                console.error(`❌ Error en página ${pageCount}:`, pageError);
+                console.error(`❌ Error en página ${pageCount}:`, pageError.message);
                 
-                // Si es un error de timeout o red, reintentar
+                // Si es un error de red, reintentar
                 if (pageError.message && pageError.message.includes('fetch')) {
                     console.log('🔄 Reintentando página...');
                     await new Promise(resolve => setTimeout(resolve, 1000));
+                    pageCount--; // Decrementar para reintentar la misma página
                     continue;
                 }
                 
+                // Para otros errores, continuar con la siguiente página
                 break;
             }
         }
         
-        // Si tenemos muy pocos registros, intentar método alternativo
-        if (allRecordsMap.size < 200) {
-            console.warn(`⚠️ Solo ${allRecordsMap.size} registros obtenidos, intentando método alternativo...`);
-            return await this.getSolicitudesAlternativo();
-        }
-        
         const finalRecords = Array.from(allRecordsMap.values());
         
-        // Análisis detallado
-        this.analizarSolicitudes(finalRecords);
+        // Análisis detallado de los resultados
+        console.log('╔══════════════════════════════════════════╗');
+        console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
+        console.log('╠══════════════════════════════════════════╣');
+        console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
+        console.log(`║ 📄 Páginas procesadas: ${pageCount}`);
+        console.log('╚══════════════════════════════════════════╝');
+        
+        // Análisis por área
+        this.analizarSolicitudesPorArea(finalRecords);
         
         return finalRecords;
         
     } catch (error) {
         console.error('❌ Error crítico obteniendo solicitudes:', error);
-        
-        // Intentar método alternativo
-        return await this.getSolicitudesAlternativo();
+        throw error;
     }
 }
 
+// Agregar este método auxiliar después del método getSolicitudes
+analizarSolicitudesPorArea(records) {
+    const porArea = {};
+    const porEstado = {};
+    
+    records.forEach(r => {
+        // Por área
+        const area = r.servicioIngenieria || 'SIN_AREA';
+        porArea[area] = (porArea[area] || 0) + 1;
+        
+        // Por estado
+        const estado = r.estado || 'SIN_ESTADO';
+        porEstado[estado] = (porEstado[estado] || 0) + 1;
+    });
+    
+    console.log('╔══════════════════════════════════════════╗');
+    console.log('║   ANÁLISIS DETALLADO POR ÁREA           ║');
+    console.log('╠══════════════════════════════════════════╣');
+    
+    // Análisis específico de áreas principales
+    let totalBiomedica = 0;
+    let totalMecanica = 0;
+    let totalInfraestructura = 0;
+    let sinArea = 0;
+    
+    Object.entries(porArea).forEach(([area, count]) => {
+        const areaLower = area.toLowerCase();
+        
+        if (area === 'INGENIERIA_BIOMEDICA' || 
+            area === 'Ingeniería Biomédica' ||
+            areaLower.includes('biomed') || 
+            areaLower.includes('bioméd')) {
+            totalBiomedica += count;
+            console.log(`║ 🏥 ${area}: ${count}`);
+        } else if (area === 'MECANICA' || 
+                   area === 'Mecánica' ||
+                   areaLower.includes('mecán') ||
+                   areaLower.includes('mecan')) {
+            totalMecanica += count;
+            console.log(`║ ⚙️ ${area}: ${count}`);
+        } else if (area === 'INFRAESTRUCTURA' || 
+                   area === 'Infraestructura' ||
+                   areaLower.includes('infra')) {
+            totalInfraestructura += count;
+            console.log(`║ 🏗️ ${area}: ${count}`);
+        } else if (area === 'SIN_AREA') {
+            sinArea = count;
+            console.log(`║ ❓ Sin área definida: ${count}`);
+        } else {
+            console.log(`║ 📋 ${area}: ${count}`);
+        }
+    });
+    
+    console.log('╠══════════════════════════════════════════╣');
+    console.log('║   TOTALES POR CATEGORÍA                 ║');
+    console.log('╠══════════════════════════════════════════╣');
+    console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
+    console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
+    console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
+    if (sinArea > 0) {
+        console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
+    }
+    console.log(`║ 📊 GRAN TOTAL: ${records.length}`);
+    console.log('╚══════════════════════════════════════════╝');
+    
+    // Análisis por estado (top 5)
+    console.log('\n📊 TOP 5 ESTADOS:');
+    Object.entries(porEstado)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .forEach(([estado, count]) => {
+            console.log(`   ${estado}: ${count}`);
+        });
+}
+// Función de diagnóstico mejorada
+window.diagnosticarSolicitudes = async function() {
+    console.log('🔍 DIAGNÓSTICO COMPLETO DE SOLICITUDES');
+    console.log('════════════════════════════════════════');
+    
+    try {
+        // Forzar recarga completa
+        console.log('📡 Obteniendo datos frescos de Airtable...');
+        
+        const solicitudes = await window.airtableAPI.getSolicitudes();
+        
+        console.log(`\n📊 RESULTADO FINAL:`);
+        console.log(`   Total obtenido: ${solicitudes.length} solicitudes`);
+        console.log(`   Esperado: 233 solicitudes`);
+        console.log(`   Diferencia: ${233 - solicitudes.length}`);
+        
+        if (solicitudes.length < 233) {
+            console.warn('⚠️ FALTAN SOLICITUDES - Verificar paginación');
+            console.log('💡 Ejecuta window.forzarRecargaCompleta() para intentar otra vez');
+        } else if (solicitudes.length === 233) {
+            console.log('✅ TODAS LAS SOLICITUDES CARGADAS CORRECTAMENTE');
+        } else if (solicitudes.length > 233) {
+            console.log('📈 Se encontraron MÁS solicitudes de las esperadas');
+        }
+        
+        return {
+            total: solicitudes.length,
+            esperado: 233,
+            diferencia: 233 - solicitudes.length,
+            solicitudes: solicitudes
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en diagnóstico:', error);
+        return null;
+    }
+};
+
+// Función para forzar recarga completa
+window.forzarRecargaCompleta = async function() {
+    console.log('🔄 FORZANDO RECARGA COMPLETA DE DATOS...');
+    
+    try {
+        // Limpiar datos en memoria
+        if (window.airtableAPI) {
+            console.log('🧹 Limpiando caché...');
+            
+            // Obtener nuevos datos
+            const solicitudes = await window.airtableAPI.getSolicitudes();
+            
+            console.log(`✅ Recarga completa exitosa`);
+            console.log(`📊 Total de solicitudes: ${solicitudes.length}`);
+            
+            // Si estás en el portal de gestión, actualizar la interfaz
+            if (typeof loadAllDataFromCloud === 'function') {
+                console.log('🔄 Actualizando interfaz...');
+                await loadAllDataFromCloud();
+            }
+            
+            return solicitudes.length;
+        }
+    } catch (error) {
+        console.error('❌ Error en recarga:', error);
+        return null;
+    }
+};
 // Método alternativo usando filtros
 async getSolicitudesAlternativo() {
     console.log('🔄 Usando método alternativo con múltiples consultas...');
