@@ -6487,7 +6487,84 @@ function toggleErrorUsuarioOption(estado) {
         }
     }
 }
+// Agregar esta función en el portal-gestion.html
+async function diagnosticarProblema() {
+    console.log('🔍 DIAGNÓSTICO COMPLETO DEL PROBLEMA');
+    console.log('════════════════════════════════════');
+    
+    // Forzar recarga sin caché
+    cloudSolicitudes = [];
+    
+    console.log('1️⃣ Limpiando caché y recargando...');
+    
+    try {
+        // Obtener datos frescos
+        cloudSolicitudes = await window.airtableAPI.getSolicitudes();
+        
+        console.log(`✅ Solicitudes obtenidas: ${cloudSolicitudes.length}`);
+        
+        // Actualizar todo
+        clasificarSolicitudesPorArea();
+        updateAllCounters();
+        updateAllDisplays();
+        
+        // Mostrar resultados
+        console.log('\n📊 RESULTADOS:');
+        console.log(`   Total en memoria: ${cloudSolicitudes.length}`);
+        console.log(`   Biomédica: ${solicitudesPorArea.BIOMEDICA.length}`);
+        console.log(`   Mecánica: ${solicitudesPorArea.MECANICA.length}`);
+        console.log(`   Infraestructura: ${solicitudesPorArea.INFRAESTRUCTURA.length}`);
+        
+        // Verificar el DOM
+        console.log('\n📊 VALORES EN PANTALLA:');
+        console.log(`   Contador Total: ${document.getElementById('metric-total').textContent}`);
+        console.log(`   Contador Biomédica: ${document.getElementById('metric-biomedica').textContent}`);
+        console.log(`   Contador Mecánica: ${document.getElementById('metric-mecanica').textContent}`);
+        console.log(`   Contador Infraestructura: ${document.getElementById('metric-infraestructura').textContent}`);
+        
+        return {
+            total: cloudSolicitudes.length,
+            esperado: 233,
+            diferencia: 233 - cloudSolicitudes.length,
+            estado: cloudSolicitudes.length >= 233 ? '✅ CORRECTO' : '❌ FALTAN DATOS'
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en diagnóstico:', error);
+        return null;
+    }
+}
 
+// Hacer global
+window.diagnosticarProblema = diagnosticarProblema;
+
+// Función para forzar actualización completa
+async function forzarActualizacionCompleta() {
+    console.log('🔄 FORZANDO ACTUALIZACIÓN COMPLETA...');
+    
+    // Detener auto-refresh temporalmente
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        clearInterval(autoRefreshCountdown);
+    }
+    
+    // Limpiar todo
+    cloudSolicitudes = [];
+    cloudTecnicos = [];
+    cloudUsuarios = [];
+    cloudSolicitudesAcceso = [];
+    
+    // Recargar todo
+    await loadAllDataFromCloud();
+    
+    // Reiniciar auto-refresh
+    startAutoRefresh();
+    
+    console.log('✅ Actualización completa finalizada');
+    console.log(`📊 Total solicitudes: ${cloudSolicitudes.length}`);
+}
+
+window.forzarActualizacionCompleta = forzarActualizacionCompleta;
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }

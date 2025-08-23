@@ -929,199 +929,320 @@ async getSolicitudesAcceso() {
     }
 
 async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes con detección de duplicados...');
+    console.log('📋 Obteniendo TODAS las solicitudes (método optimizado)...');
     
     try {
-        const allRecordsMap = new Map(); // Usar Map para evitar duplicados desde el inicio
+        const allRecordsMap = new Map();
         let offset = null;
         let pageCount = 0;
-        const pageSize = 100;
-        let consecutiveDuplicatePages = 0;
-        const maxConsecutiveDuplicates = 3; // Si 3 páginas consecutivas son duplicados, parar
+        let consecutiveEmptyPages = 0;
         
-        do {
-            // Construir URL - QUITAR el sort que puede estar causando problemas
-            let endpoint = `${this.tables.solicitudes}?pageSize=${pageSize}`;
+        // Intentar primero sin ordenamiento
+        const useSort = false;
+        
+        while (true) {
+            // Construir endpoint - SIN sort que puede estar causando el problema
+            let endpoint = `${this.tables.solicitudes}?pageSize=100`;
             
+            // Solo agregar offset si existe
             if (offset) {
-                endpoint += `&offset=${offset}`;
+                endpoint += `&offset=${encodeURIComponent(offset)}`;
             }
             
-            console.log(`🔄 Obteniendo página ${pageCount + 1}...`);
+            pageCount++;
+            console.log(`🔄 Página ${pageCount} - Offset: ${offset || 'inicial'}`);
             
             try {
                 const result = await this.makeRequest(endpoint);
                 
-                let newRecordsCount = 0;
-                let duplicatesInPage = 0;
-                
-                // Procesar registros de esta página
-                if (result.records && result.records.length > 0) {
+                // Verificar si recibimos datos
+                if (!result.records || result.records.length === 0) {
+                    consecutiveEmptyPages++;
+                    console.log(`⚠️ Página vacía (${consecutiveEmptyPages}/3)`);
+                    
+                    if (consecutiveEmptyPages >= 3) {
+                        console.log('✅ Fin de datos - 3 páginas vacías consecutivas');
+                        break;
+                    }
+                } else {
+                    consecutiveEmptyPages = 0;
+                    let newRecords = 0;
+                    
+                    // Procesar cada registro
                     result.records.forEach(record => {
-                        if (!allRecordsMap.has(record.id)) {
-                            // Es un registro nuevo
-                            allRecordsMap.set(record.id, {
-                                id: record.id,
+                        const recordId = record.id;
+                        
+                        if (!allRecordsMap.has(recordId)) {
+                            allRecordsMap.set(recordId, {
+                                id: recordId,
                                 ...record.fields
                             });
-                            newRecordsCount++;
-                        } else {
-                            // Es un duplicado
-                            duplicatesInPage++;
+                            newRecords++;
                         }
                     });
                     
-                    console.log(`📊 Página ${pageCount + 1}: ${result.records.length} registros (${newRecordsCount} nuevos, ${duplicatesInPage} duplicados)`);
-                    console.log(`✅ Total únicos acumulados: ${allRecordsMap.size}`);
+                    console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total: ${allRecordsMap.size})`);
                     
-                    // Verificar si toda la página son duplicados
-                    if (newRecordsCount === 0 && result.records.length > 0) {
-                        consecutiveDuplicatePages++;
-                        console.warn(`⚠️ Página completa de duplicados (${consecutiveDuplicatePages}/${maxConsecutiveDuplicates})`);
-                        
-                        if (consecutiveDuplicatePages >= maxConsecutiveDuplicates) {
-                            console.log('🛑 Deteniendo paginación: múltiples páginas de duplicados consecutivos');
-                            break;
-                        }
-                    } else {
-                        consecutiveDuplicatePages = 0; // Resetear contador si hay nuevos registros
+                    // IMPORTANTE: Verificar si el offset cambió
+                    const newOffset = result.offset;
+                    
+                    if (newOffset === offset) {
+                        console.warn('⚠️ Offset no cambió, posible fin de datos');
+                        break;
                     }
                     
-                    // Verificación adicional: si tenemos más del doble de lo esperado, algo anda mal
-                    if (allRecordsMap.size > 500) {
-                        console.warn('⚠️ Más de 500 registros únicos detectados, verificando integridad...');
-                        
-                        // Si empezamos a ver muchos duplicados, probablemente hay un problema
-                        if (duplicatesInPage > newRecordsCount && pageCount > 5) {
-                            console.log('🛑 Deteniendo: proporción alta de duplicados detectada');
-                            break;
-                        }
+                    // Si no hay nuevos registros en 2 páginas consecutivas, parar
+                    if (newRecords === 0 && pageCount > 1) {
+                        console.log('✅ No hay nuevos registros, fin de paginación');
+                        break;
                     }
-                }
-                
-                // Actualizar offset
-                offset = result.offset || null;
-                pageCount++;
-                
-                // Límite de seguridad mejorado
-                if (pageCount > 10 && allRecordsMap.size < pageCount * 10) {
-                    console.warn('⚠️ Posible problema de paginación: muchas páginas pero pocos registros únicos');
-                    console.log(`📊 Páginas: ${pageCount}, Registros únicos: ${allRecordsMap.size}`);
                     
-                    if (pageCount > 20) {
-                        console.log('🛑 Límite de seguridad alcanzado');
+                    offset = newOffset;
+                    
+                    // Si no hay offset, hemos terminado
+                    if (!offset) {
+                        console.log('✅ Sin offset - fin de datos');
                         break;
                     }
                 }
                 
-                // Límite absoluto
-                if (pageCount > 50) {
-                    console.error('❌ Límite máximo de páginas alcanzado (50)');
+                // Límite de seguridad
+                if (pageCount > 20) {
+                    console.warn('⚠️ Límite de seguridad alcanzado (20 páginas)');
                     break;
                 }
                 
-                // Si no hay offset, hemos terminado
-                if (!offset) {
-                    console.log('✅ No hay más páginas (sin offset)');
-                    break;
+                // Verificación especial para 233 registros esperados
+                if (allRecordsMap.size >= 233) {
+                    console.log('✅ Se alcanzó el número esperado de registros');
+                    // Continuar una página más para asegurar
+                    if (!offset) break;
                 }
                 
-                // Pausa entre requests
-                await new Promise(resolve => setTimeout(resolve, 100));
+                // Pequeña pausa entre requests
+                await new Promise(resolve => setTimeout(resolve, 200));
                 
             } catch (pageError) {
-                console.error(`❌ Error en página ${pageCount + 1}:`, pageError);
+                console.error(`❌ Error en página ${pageCount}:`, pageError);
                 
-                // Si hay un error, intentar continuar con las páginas siguientes
-                if (offset && pageCount < 10) {
-                    console.log('🔄 Intentando continuar con siguiente página...');
-                    pageCount++;
+                // Si es un error de timeout o red, reintentar
+                if (pageError.message && pageError.message.includes('fetch')) {
+                    console.log('🔄 Reintentando página...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     continue;
-                } else {
-                    break;
                 }
+                
+                break;
             }
-            
-        } while (offset && consecutiveDuplicatePages < maxConsecutiveDuplicates);
+        }
         
-        // Convertir Map a Array
+        // Si tenemos muy pocos registros, intentar método alternativo
+        if (allRecordsMap.size < 200) {
+            console.warn(`⚠️ Solo ${allRecordsMap.size} registros obtenidos, intentando método alternativo...`);
+            return await this.getSolicitudesAlternativo();
+        }
+        
         const finalRecords = Array.from(allRecordsMap.values());
         
-        // Análisis final por área
-        const areaCount = {};
-        const areaDetails = {
-            'BIOMEDICA': [],
-            'MECANICA': [],
-            'INFRAESTRUCTURA': [],
-            'OTROS': []
-        };
-        
-        finalRecords.forEach(record => {
-            const area = record.servicioIngenieria || 'SIN_AREA';
-            areaCount[area] = (areaCount[area] || 0) + 1;
-            
-            // Clasificar por categorías principales
-            const areaUpper = area.toUpperCase();
-            if (areaUpper.includes('BIOMED')) {
-                areaDetails.BIOMEDICA.push(area);
-            } else if (areaUpper.includes('MECAN') || areaUpper.includes('MEC')) {
-                areaDetails.MECANICA.push(area);
-            } else if (areaUpper.includes('INFRA')) {
-                areaDetails.INFRAESTRUCTURA.push(area);
-            } else {
-                areaDetails.OTROS.push(area);
-            }
-        });
-        
-        console.log('╔════════════════════════════════════════╗');
-        console.log('║   RESUMEN FINAL DE CARGA               ║');
-        console.log('╠════════════════════════════════════════╣');
-        console.log(`║ ✅ TOTAL ÚNICO: ${finalRecords.length} solicitudes`);
-        console.log(`║ 📊 Páginas procesadas: ${pageCount}`);
-        console.log(`║ 📊 Registros únicos: ${allRecordsMap.size}`);
-        console.log('╠════════════════════════════════════════╣');
-        console.log('║ 📊 DISTRIBUCIÓN POR ÁREA:              ║');
-        
-        // Mostrar totales por categoría
-        console.log(`║   🏥 Biomédica: ${areaDetails.BIOMEDICA.length}`);
-        console.log(`║   ⚙️ Mecánica: ${areaDetails.MECANICA.length}`);
-        console.log(`║   🏗️ Infraestructura: ${areaDetails.INFRAESTRUCTURA.length}`);
-        console.log(`║   ❓ Otros/Sin clasificar: ${areaDetails.OTROS.length}`);
-        
-        console.log('╠════════════════════════════════════════╣');
-        console.log('║ 📊 DETALLE DE VALORES ÚNICOS:          ║');
-        
-        // Mostrar valores únicos de área encontrados
-        Object.entries(areaCount)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 10) // Mostrar solo los primeros 10
-            .forEach(([area, count]) => {
-                const areaDisplay = area.length > 30 ? area.substring(0, 27) + '...' : area;
-                console.log(`║   ${areaDisplay}: ${count}`);
-            });
-            
-        if (Object.keys(areaCount).length > 10) {
-            console.log(`║   ... y ${Object.keys(areaCount).length - 10} valores más`);
-        }
-        
-        console.log('╚════════════════════════════════════════╝');
-        
-        // Advertencia si el total no coincide con lo esperado
-        const expectedTotal = 233; // Tu total esperado
-        if (Math.abs(finalRecords.length - expectedTotal) > 10) {
-            console.warn(`⚠️ ADVERTENCIA: Se esperaban ~${expectedTotal} registros pero se obtuvieron ${finalRecords.length}`);
-            console.log('🔍 Posibles causas:');
-            console.log('   1. Hay registros nuevos en Airtable');
-            console.log('   2. Algunos registros fueron eliminados');
-            console.log('   3. Problema con los permisos o filtros en Airtable');
-        }
+        // Análisis detallado
+        this.analizarSolicitudes(finalRecords);
         
         return finalRecords;
         
     } catch (error) {
-        console.error('❌ Error obteniendo solicitudes:', error);
+        console.error('❌ Error crítico obteniendo solicitudes:', error);
+        
+        // Intentar método alternativo
+        return await this.getSolicitudesAlternativo();
+    }
+}
+
+// Método alternativo usando filtros
+async getSolicitudesAlternativo() {
+    console.log('🔄 Usando método alternativo con múltiples consultas...');
+    
+    try {
+        const allRecords = new Map();
+        
+        // Intentar obtener por áreas específicas
+        const areas = [
+            'INGENIERIA_BIOMEDICA',
+            'BIOMEDICA', 
+            'MECANICA',
+            'INFRAESTRUCTURA'
+        ];
+        
+        for (const area of areas) {
+            console.log(`📋 Obteniendo solicitudes de ${area}...`);
+            
+            try {
+                // Intentar con filtro por área
+                const filterFormula = encodeURIComponent(`{servicioIngenieria}="${area}"`);
+                const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
+                
+                let offset = null;
+                let areaPageCount = 0;
+                
+                do {
+                    const finalEndpoint = offset ? `${endpoint}&offset=${encodeURIComponent(offset)}` : endpoint;
+                    const result = await this.makeRequest(finalEndpoint);
+                    
+                    if (result.records && result.records.length > 0) {
+                        result.records.forEach(record => {
+                            if (!allRecords.has(record.id)) {
+                                allRecords.set(record.id, {
+                                    id: record.id,
+                                    ...record.fields
+                                });
+                            }
+                        });
+                        
+                        console.log(`   Página ${++areaPageCount}: ${result.records.length} registros`);
+                    }
+                    
+                    offset = result.offset;
+                    
+                } while (offset && areaPageCount < 10);
+                
+                console.log(`   ✅ ${area}: ${allRecords.size} registros totales acumulados`);
+                
+            } catch (areaError) {
+                console.warn(`   ⚠️ Error obteniendo ${area}:`, areaError.message);
+            }
+        }
+        
+        // También intentar obtener registros sin área definida
+        try {
+            console.log('📋 Obteniendo solicitudes sin área definida...');
+            const filterFormula = encodeURIComponent('OR({servicioIngenieria}="",NOT({servicioIngenieria}))');
+            const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
+            
+            const result = await this.makeRequest(endpoint);
+            
+            if (result.records) {
+                result.records.forEach(record => {
+                    if (!allRecords.has(record.id)) {
+                        allRecords.set(record.id, {
+                            id: record.id,
+                            ...record.fields
+                        });
+                    }
+                });
+                console.log(`   ✅ Sin área: ${result.records.length} registros`);
+            }
+        } catch (e) {
+            console.warn('   ⚠️ No se pudieron obtener registros sin área');
+        }
+        
+        const finalRecords = Array.from(allRecords.values());
+        
+        console.log(`✅ TOTAL MÉTODO ALTERNATIVO: ${finalRecords.length} registros únicos`);
+        
+        // Si aún tenemos pocos registros, intentar sin filtros por lotes
+        if (finalRecords.length < 200) {
+            console.log('🔄 Intentando obtención por lotes temporales...');
+            return await this.getSolicitudesPorLotes();
+        }
+        
+        this.analizarSolicitudes(finalRecords);
+        return finalRecords;
+        
+    } catch (error) {
+        console.error('❌ Error en método alternativo:', error);
         return [];
     }
+}
+
+// Método por lotes temporales
+async getSolicitudesPorLotes() {
+    console.log('🔄 Obteniendo solicitudes por lotes temporales...');
+    
+    try {
+        const allRecords = new Map();
+        const ahora = new Date();
+        
+        // Intentar por meses hacia atrás
+        for (let monthsBack = 0; monthsBack < 12; monthsBack++) {
+            const fechaInicio = new Date(ahora.getFullYear(), ahora.getMonth() - monthsBack - 1, 1);
+            const fechaFin = new Date(ahora.getFullYear(), ahora.getMonth() - monthsBack, 0);
+            
+            const filterFormula = encodeURIComponent(
+                `AND(IS_AFTER({fechaCreacion}, "${fechaInicio.toISOString()}"), ` +
+                `IS_BEFORE({fechaCreacion}, "${fechaFin.toISOString()}"))`
+            );
+            
+            try {
+                const endpoint = `${this.tables.solicitudes}?filterByFormula=${filterFormula}&pageSize=100`;
+                const result = await this.makeRequest(endpoint);
+                
+                if (result.records) {
+                    result.records.forEach(record => {
+                        allRecords.set(record.id, {
+                            id: record.id,
+                            ...record.fields
+                        });
+                    });
+                    
+                    console.log(`   📅 ${fechaInicio.toLocaleDateString()} - ${fechaFin.toLocaleDateString()}: ${result.records.length} registros`);
+                }
+            } catch (e) {
+                console.warn(`   ⚠️ Error en lote temporal:`, e.message);
+            }
+            
+            // Si ya tenemos suficientes registros, parar
+            if (allRecords.size >= 233) {
+                console.log('✅ Se alcanzó el número esperado de registros');
+                break;
+            }
+        }
+        
+        const finalRecords = Array.from(allRecords.values());
+        console.log(`✅ TOTAL POR LOTES: ${finalRecords.length} registros`);
+        
+        this.analizarSolicitudes(finalRecords);
+        return finalRecords;
+        
+    } catch (error) {
+        console.error('❌ Error en obtención por lotes:', error);
+        return [];
+    }
+}
+
+// Función auxiliar para analizar solicitudes
+analizarSolicitudes(records) {
+    const porArea = {};
+    const porEstado = {};
+    
+    records.forEach(r => {
+        // Por área
+        const area = r.servicioIngenieria || 'SIN_AREA';
+        porArea[area] = (porArea[area] || 0) + 1;
+        
+        // Por estado
+        const estado = r.estado || 'SIN_ESTADO';
+        porEstado[estado] = (porEstado[estado] || 0) + 1;
+    });
+    
+    console.log('╔════════════════════════════════════════╗');
+    console.log('║   ANÁLISIS FINAL DE SOLICITUDES        ║');
+    console.log('╠════════════════════════════════════════╣');
+    console.log(`║ ✅ TOTAL: ${records.length} solicitudes`);
+    console.log('╠════════════════════════════════════════╣');
+    console.log('║ 📊 POR ÁREA:                           ║');
+    Object.entries(porArea)
+        .sort((a, b) => b[1] - a[1])
+        .forEach(([area, count]) => {
+            console.log(`║   ${area}: ${count}`);
+        });
+    console.log('╠════════════════════════════════════════╣');
+    console.log('║ 📊 POR ESTADO:                         ║');
+    Object.entries(porEstado)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5)
+        .forEach(([estado, count]) => {
+            console.log(`║   ${estado}: ${count}`);
+        });
+    console.log('╚════════════════════════════════════════╝');
 }
 // Método alternativo sin sort (backup)
 async getSolicitudesWithoutSort() {
