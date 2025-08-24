@@ -4144,7 +4144,59 @@ function formatMonth(monthKey) {
     const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
     return `${months[parseInt(month) - 1]} ${year}`;
 }
+// Función para forzar recarga completa y verificar
+async function verificarYRecargarSolicitudes() {
+    console.log('🔍 VERIFICACIÓN Y RECARGA COMPLETA');
+    console.log('════════════════════════════════════');
+    
+    try {
+        // Limpiar datos en memoria
+        cloudSolicitudes = [];
+        
+        console.log('1️⃣ Limpiando caché...');
+        console.log('2️⃣ Obteniendo datos frescos de Airtable...');
+        
+        // Obtener datos directamente
+        const solicitudes = await window.airtableAPI.getSolicitudes();
+        
+        console.log('═══════════════════════════════════');
+        console.log(`📊 RESULTADO FINAL:`);
+        console.log(`   Total obtenido: ${solicitudes.length} solicitudes`);
+        console.log(`   Esperado: 233 solicitudes`);
+        console.log(`   ${solicitudes.length >= 233 ? '✅ ÉXITO' : '❌ FALTAN ' + (233 - solicitudes.length) + ' SOLICITUDES'}`);
+        console.log('═══════════════════════════════════');
+        
+        // Actualizar datos globales
+        cloudSolicitudes = solicitudes;
+        
+        // Actualizar toda la interfaz
+        clasificarSolicitudesPorArea();
+        updateAllCounters();
+        updateAllDisplays();
+        
+        // Mostrar alerta con resultado
+        alert(`📊 RESULTADO DE VERIFICACIÓN\n\n` +
+              `Total obtenido: ${solicitudes.length} solicitudes\n` +
+              `Esperado: 233 solicitudes\n` +
+              `Estado: ${solicitudes.length >= 233 ? '✅ COMPLETO' : '⚠️ INCOMPLETO'}\n\n` +
+              `${solicitudes.length < 233 ? 'Verificar la consola para más detalles' : 'Todas las solicitudes cargadas correctamente'}`);
+        
+        return {
+            total: solicitudes.length,
+            esperado: 233,
+            completo: solicitudes.length >= 233,
+            solicitudes: solicitudes
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en verificación:', error);
+        alert('❌ Error al verificar: ' + error.message);
+        return null;
+    }
+}
 
+// Hacer la función global
+window.verificarYRecargarSolicitudes = verificarYRecargarSolicitudes;
 // NUEVA FUNCIÓN: Exportar análisis temporal
 async function exportTemporalAnalysis() {
     try {

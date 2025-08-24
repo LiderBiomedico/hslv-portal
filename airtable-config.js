@@ -931,105 +931,123 @@ class AirtableAPI {
         }
     }
 
-    async getSolicitudes() {
-        console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
+async getSolicitudes() {
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
+    
+    try {
+        const allRecordsMap = new Map();
+        let offset = null;
+        let pageCount = 0;
+        let continuar = true;
         
-        try {
-            const allRecordsMap = new Map();
-            let offset = null;
-            let pageCount = 0;
-            let totalRecordsProcessed = 0;
+        // Configuración para obtener TODOS los registros
+        const PAGE_SIZE = 100; // Máximo permitido por Airtable
+        
+        while (continuar) {
+            pageCount++;
+            console.log(`🔄 Obteniendo página ${pageCount}...`);
             
-            // Configuración mejorada
-            const MAX_PAGES = 100; // Aumentar límite de páginas
-            const PAGE_SIZE = 100; // Mantener tamaño de página en 100
-            
-            while (pageCount < MAX_PAGES) {
-                // Construir endpoint sin sort para evitar problemas
+            try {
+                // Construir endpoint con pageSize y offset
                 let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
                 
-                // Agregar offset si existe
+                // IMPORTANTE: Agregar offset si existe
                 if (offset) {
                     endpoint += `&offset=${encodeURIComponent(offset)}`;
+                    console.log(`📍 Usando offset: ${offset}`);
                 }
                 
-                pageCount++;
-                console.log(`🔄 Obteniendo página ${pageCount}...`);
+                // Hacer la solicitud
+                const result = await this.makeRequest(endpoint);
                 
-                try {
-                    const result = await this.makeRequest(endpoint);
-                    
-                    // Verificar si hay registros
-                    if (!result.records || result.records.length === 0) {
-                        console.log(`✅ Página ${pageCount} vacía - fin de datos`);
-                        break;
-                    }
-                    
-                    // Procesar registros
-                    let newRecords = 0;
-                    result.records.forEach(record => {
-                        const recordId = record.id;
-                        
-                        if (!allRecordsMap.has(recordId)) {
-                            allRecordsMap.set(recordId, {
-                                id: recordId,
-                                ...record.fields
-                            });
-                            newRecords++;
-                            totalRecordsProcessed++;
-                        }
-                    });
-                    
-                    console.log(`📊 Página ${pageCount}: ${result.records.length} registros, ${newRecords} nuevos (Total acumulado: ${allRecordsMap.size})`);
-                    
-                    // Obtener siguiente offset
-                    offset = result.offset;
-                    
-                    // Si no hay offset, hemos terminado
-                    if (!offset) {
-                        console.log('✅ No hay más páginas - paginación completa');
-                        break;
-                    }
-                    
-                    // Pequeña pausa entre requests para no sobrecargar
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    
-                } catch (pageError) {
-                    console.error(`❌ Error en página ${pageCount}:`, pageError.message);
-                    
-                    // Si es un error de red, reintentar
-                    if (pageError.message && pageError.message.includes('fetch')) {
-                        console.log('🔄 Reintentando página...');
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                        pageCount--; // Decrementar para reintentar la misma página
-                        continue;
-                    }
-                    
-                    // Para otros errores, continuar con la siguiente página
+                // Verificar si hay registros
+                if (!result.records || result.records.length === 0) {
+                    console.log(`✅ Página ${pageCount} vacía - fin de datos`);
+                    continuar = false;
                     break;
                 }
+                
+                // Procesar registros y agregar al Map para evitar duplicados
+                let nuevosRegistros = 0;
+                result.records.forEach(record => {
+                    const recordId = record.id;
+                    
+                    if (!allRecordsMap.has(recordId)) {
+                        allRecordsMap.set(recordId, {
+                            id: recordId,
+                            ...record.fields
+                        });
+                        nuevosRegistros++;
+                    }
+                });
+                
+                console.log(`📊 Página ${pageCount}: ${result.records.length} registros recibidos, ${nuevosRegistros} nuevos`);
+                console.log(`📊 Total acumulado: ${allRecordsMap.size} registros únicos`);
+                
+                // CRÍTICO: Verificar si hay más páginas
+                if (result.offset) {
+                    // Hay más registros, continuar con el siguiente offset
+                    offset = result.offset;
+                    console.log(`➡️ Hay más páginas, siguiente offset: ${offset}`);
+                } else {
+                    // No hay más registros
+                    console.log('✅ No hay más páginas - paginación completa');
+                    continuar = false;
+                }
+                
+                // Pequeña pausa para no sobrecargar la API
+                if (continuar) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+                
+            } catch (pageError) {
+                console.error(`❌ Error en página ${pageCount}:`, pageError.message);
+                
+                // Si es un error de red, reintentar
+                if (pageError.message && pageError.message.includes('fetch')) {
+                    console.log('🔄 Reintentando página después de error de red...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    continue;
+                }
+                
+                // Para otros errores, detener
+                continuar = false;
+                break;
             }
-            
-            const finalRecords = Array.from(allRecordsMap.values());
-            
-            // Análisis detallado de los resultados
-            console.log('╔══════════════════════════════════════════╗');
-            console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
-            console.log('╠══════════════════════════════════════════╣');
-            console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
-            console.log(`║ 🔄 Páginas procesadas: ${pageCount}`);
-            console.log('╚══════════════════════════════════════════╝');
-            
-            // Análisis por área
-            this.analizarSolicitudesPorArea(finalRecords);
-            
-            return finalRecords;
-            
-        } catch (error) {
-            console.error('❌ Error crítico obteniendo solicitudes:', error);
-            throw error;
         }
+        
+        // Convertir Map a Array
+        const finalRecords = Array.from(allRecordsMap.values());
+        
+        // Análisis detallado de los resultados
+        console.log('╔══════════════════════════════════════════╗');
+        console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
+        console.log('╠══════════════════════════════════════════╣');
+        console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
+        console.log(`║ 📄 Páginas procesadas: ${pageCount}`);
+        console.log(`║ 🎯 Objetivo: 233 solicitudes`);
+        console.log(`║ ${finalRecords.length >= 233 ? '✅ OBJETIVO ALCANZADO' : '⚠️ FALTAN SOLICITUDES'}`);
+        console.log('╚══════════════════════════════════════════╝');
+        
+        // Verificación adicional
+        if (finalRecords.length < 233) {
+            console.warn('⚠️ ADVERTENCIA: No se obtuvieron todas las solicitudes esperadas');
+            console.log('💡 Posibles causas:');
+            console.log('   1. Verificar permisos en Airtable');
+            console.log('   2. Verificar que los registros existan en la tabla');
+            console.log('   3. Verificar filtros o vistas en Airtable');
+        }
+        
+        // Análisis por área
+        this.analizarSolicitudesPorArea(finalRecords);
+        
+        return finalRecords;
+        
+    } catch (error) {
+        console.error('❌ Error crítico obteniendo solicitudes:', error);
+        throw error;
     }
+}
 
     // Agregar este método auxiliar después del método getSolicitudes
     analizarSolicitudesPorArea(records) {
