@@ -519,86 +519,77 @@ class AirtableAPI {
     }
 
     async makeRequest(endpoint, method = 'GET', data = null) {
-        console.log('📡 Request:', method, endpoint);
+    console.log('📡 Request:', method, endpoint);
+    
+    try {
+        let url, options;
         
-        try {
-            let url, options;
-            
-            if (this.useProxy) {
+        if (this.useProxy) {
+            // IMPORTANTE: Para el proxy, necesitamos enviar el endpoint completo
+            // Verificar si el endpoint ya incluye parámetros
+            if (endpoint.includes('?')) {
+                // Si tiene parámetros, usarlos tal cual
                 url = `${this.baseUrl}/${endpoint}`;
-                options = {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors',
-                    credentials: 'same-origin'
-                };
             } else {
                 url = `${this.baseUrl}/${endpoint}`;
-                options = {
-                    method: method,
-                    headers: {
-                        'Authorization': `Bearer ${this.directApiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors'
-                };
             }
             
-            if (data && (method === 'POST' || method === 'PATCH')) {
-                options.body = JSON.stringify(data);
-                console.log('📊 Datos enviados:', JSON.stringify(data, null, 2));
-            }
+            // Para debugging
+            console.log('🔗 URL completa al proxy:', url);
             
-            const response = await fetch(url, options);
-            
-            console.log('📨 Status:', response.status);
-            
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('❌ Error response:', errorText);
-                
-                if (response.status === 422) {
-                    console.error('🚨 ERROR 422 - Valores de campo inválidos');
-                    console.error('🔍 Datos enviados:', data);
-                    
-                    try {
-                        const errorData = JSON.parse(errorText);
-                        if (errorData.error && errorData.error.type === 'INVALID_MULTIPLE_CHOICE_OPTIONS') {
-                            const message = errorData.error.message || '';
-                            const fieldMatch = message.match(/field (\w+)/);
-                            const valueMatch = message.match(/option "(.+?)"/);
-                            
-                            if (fieldMatch && valueMatch) {
-                                const fieldName = fieldMatch[1];
-                                const invalidValue = valueMatch[1];
-                                console.error(`🎯 Campo: ${fieldName}, Valor inválido: "${invalidValue}"`);
-                                
-                                console.log('💡 SOLUCIÓN: Verificar valores válidos en Airtable para el campo', fieldName);
-                                console.log('💡 Valores detectados:', this.validSolicitudValues);
-                            }
-                        }
-                    } catch (parseError) {
-                        console.error('Error parseando respuesta 422:', parseError);
-                    }
-                    
-                    throw new Error(`HTTP 422: Valores inválidos. Verificar configuración de campos en Airtable.`);
-                }
-                
-                throw new Error(`HTTP ${response.status}: ${errorText}`);
-            }
-            
-            const result = await response.json();
-            console.log('✅ Request exitoso');
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ Request falló:', error);
-            throw error;
+            options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                    // Agregar el endpoint como header personalizado para el proxy
+                    'X-Airtable-Endpoint': endpoint
+                },
+                mode: 'cors',
+                credentials: 'same-origin'
+            };
+        } else {
+            url = `${this.baseUrl}/${endpoint}`;
+            options = {
+                method: method,
+                headers: {
+                    'Authorization': `Bearer ${this.directApiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                mode: 'cors'
+            };
         }
+        
+        if (data && (method === 'POST' || method === 'PATCH')) {
+            options.body = JSON.stringify(data);
+            console.log('📊 Datos enviados:', JSON.stringify(data, null, 2));
+        }
+        
+        const response = await fetch(url, options);
+        
+        console.log('📨 Status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('❌ Error response:', errorText);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        
+        // Verificar si el resultado tiene offset para debugging
+        if (result.offset) {
+            console.log('📍 Offset recibido en respuesta:', result.offset);
+        }
+        
+        console.log('✅ Request exitoso, registros:', result.records?.length || 0);
+        
+        return result;
+        
+    } catch (error) {
+        console.error('❌ Request falló:', error);
+        throw error;
     }
+}
 
     async testConnection() {
         console.log('🧪 Test de conexión...');
