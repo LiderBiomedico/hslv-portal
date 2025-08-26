@@ -127,7 +127,10 @@
             background: rgba(245, 158, 11, 0.3);
             color: #fef3c7;
         }
-
+/* Ocultar badge de sin asignar duplicado */
+.request-number .sin-asignar-badge {
+    display: none !important;
+}
         /* Auto-refresh indicator */
         .auto-refresh-indicator {
             position: absolute;
@@ -2759,8 +2762,8 @@ window.debugContadores = debugContadores;
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
             
             // Indicador de sin asignar
-            const sinAsignarBadge = !solicitud.tecnicoAsignado ? 
-                '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
+           const sinAsignarBadge = !solicitud.tecnicoAsignado ? 
+    '<span class="sin-asignar-badge" style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
 
             return `
                 <div class="${cardClass}">
