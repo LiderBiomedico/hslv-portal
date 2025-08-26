@@ -5609,52 +5609,69 @@ function calcularEstadisticasPorArea() {
             s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
         ).length;
         
-        // NUEVO: Análisis de servicios hospitalarios
-        const serviciosHospitalarios = {};
-        const serviciosDetalle = [];
+        // NUEVO: Análisis de ubicaciones
+        const ubicacionesAnalisis = {};
+        const ubicacionesDetalle = [];
         
         solicitudesArea.forEach(s => {
-            const servicio = s.servicioHospitalario || 'No especificado';
-            if (!serviciosHospitalarios[servicio]) {
-                serviciosHospitalarios[servicio] = {
+            const ubicacion = s.ubicacion || 'No especificada';
+            if (!ubicacionesAnalisis[ubicacion]) {
+                ubicacionesAnalisis[ubicacion] = {
                     total: 0,
                     pendientes: 0,
                     completadas: 0,
-                    erroresUsuario: 0
+                    enProceso: 0,
+                    erroresUsuario: 0,
+                    prioridadCritica: 0,
+                    prioridadAlta: 0
                 };
             }
             
-            serviciosHospitalarios[servicio].total++;
+            ubicacionesAnalisis[ubicacion].total++;
             
             const estado = (s.estado || 'PENDIENTE').toUpperCase();
             if (estado === 'PENDIENTE') {
-                serviciosHospitalarios[servicio].pendientes++;
+                ubicacionesAnalisis[ubicacion].pendientes++;
             } else if (estado === 'COMPLETADA') {
-                serviciosHospitalarios[servicio].completadas++;
+                ubicacionesAnalisis[ubicacion].completadas++;
+            } else if (estado === 'EN_PROCESO' || estado === 'EN PROCESO') {
+                ubicacionesAnalisis[ubicacion].enProceso++;
             }
             
             if (s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario') {
-                serviciosHospitalarios[servicio].erroresUsuario++;
+                ubicacionesAnalisis[ubicacion].erroresUsuario++;
+            }
+            
+            const prioridad = (s.prioridad || 'MEDIA').toUpperCase();
+            if (prioridad === 'CRITICA' || prioridad === 'CRÍTICA') {
+                ubicacionesAnalisis[ubicacion].prioridadCritica++;
+            } else if (prioridad === 'ALTA') {
+                ubicacionesAnalisis[ubicacion].prioridadAlta++;
             }
         });
         
         // Convertir a array ordenado por cantidad de solicitudes
-        Object.entries(serviciosHospitalarios).forEach(([nombre, stats]) => {
-            serviciosDetalle.push({
+        Object.entries(ubicacionesAnalisis).forEach(([nombre, stats]) => {
+            ubicacionesDetalle.push({
                 nombre: nombre,
                 total: stats.total,
                 pendientes: stats.pendientes,
                 completadas: stats.completadas,
+                enProceso: stats.enProceso,
                 erroresUsuario: stats.erroresUsuario,
+                prioridadCritica: stats.prioridadCritica,
+                prioridadAlta: stats.prioridadAlta,
                 porcentaje: solicitudesArea.length > 0 ? 
-                    ((stats.total / solicitudesArea.length) * 100).toFixed(1) : 0
+                    ((stats.total / solicitudesArea.length) * 100).toFixed(1) : 0,
+                tasaCompletado: stats.total > 0 ? 
+                    ((stats.completadas / stats.total) * 100).toFixed(1) : 0
             });
         });
         
         // Ordenar por total descendente
-        serviciosDetalle.sort((a, b) => b.total - a.total);
+        ubicacionesDetalle.sort((a, b) => b.total - a.total);
         
-        // Calcular tiempos promedio (código existente)
+        // Calcular tiempos promedio
         let tiempoTotalMs = 0;
         let solicitudesConTiempo = 0;
         
@@ -5674,7 +5691,7 @@ function calcularEstadisticasPorArea() {
         const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
         const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
         
-        // Personal del área (código existente)
+        // Personal del área
         const personalDisponible = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'disponible').length;
         const personalOcupado = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'ocupado').length;
         const personalInactivo = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'inactivo').length;
@@ -5699,13 +5716,13 @@ function calcularEstadisticasPorArea() {
                 inactivo: personalInactivo
             },
             eficiencia: solicitudesArea.length > 0 ? (((completadas + canceladas) / solicitudesArea.length) * 100).toFixed(1) : 0,
-            // NUEVO: Agregar servicios hospitalarios
-            serviciosHospitalarios: serviciosDetalle,
-            totalServicios: Object.keys(serviciosHospitalarios).length
+            // NUEVO: Agregar análisis de ubicaciones
+            ubicaciones: ubicacionesDetalle,
+            totalUbicaciones: Object.keys(ubicacionesAnalisis).length
         };
     });
     
-    console.log('✅ Estadísticas por área calculadas:', statsPorArea);
+    console.log('✅ Estadísticas por área calculadas con ubicaciones:', statsPorArea);
     return statsPorArea;
 }
 
@@ -5815,70 +5832,80 @@ function calcularEstadisticasPorArea() {
         
         <!-- Indicadores del área (código existente) -->
         <div class="stats-grid">
-            <!-- ... código existente de indicadores ... -->
+            <!-- ... mantén el código existente ... -->
         </div>
         
         <!-- Indicadores específicos (código existente) -->
         <div class="stats-grid" style="margin-top: 1.5rem;">
-            <!-- ... código existente ... -->
+            <!-- ... mantén el código existente ... -->
         </div>
         
         <!-- Personal del área (código existente) -->
         <div class="card" style="margin-top: 2rem;">
-            <!-- ... código existente de personal ... -->
+            <!-- ... mantén el código existente de personal ... -->
         </div>
         
-        <!-- NUEVO: Servicios Hospitalarios que envían solicitudes -->
+        <!-- NUEVO: Análisis de Ubicaciones -->
         <div class="card" style="margin-top: 2rem;">
             <div class="card-header">
-                <h3 class="card-title">🏥 Servicios Hospitalarios Solicitantes</h3>
+                <h3 class="card-title">📍 Ubicaciones con Mayor Demanda</h3>
                 <span style="background: ${areaColor}15; color: ${areaColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
-                    ${stats.totalServicios} servicios
+                    ${stats.totalUbicaciones} ubicaciones
                 </span>
             </div>
             <div class="card-content">
-                ${stats.serviciosHospitalarios && stats.serviciosHospitalarios.length > 0 ? `
+                ${stats.ubicaciones && stats.ubicaciones.length > 0 ? `
                     <div class="table-responsive">
                         <table class="stats-table">
                             <thead>
                                 <tr>
-                                    <th>Servicio Hospitalario</th>
+                                    <th>Ubicación</th>
                                     <th style="text-align: center;">Total</th>
                                     <th style="text-align: center;">Pendientes</th>
+                                    <th style="text-align: center;">En Proceso</th>
                                     <th style="text-align: center;">Completadas</th>
-                                    <th style="text-align: center;">Errores Usuario</th>
+                                    <th style="text-align: center;">Críticas/Altas</th>
                                     <th style="text-align: center;">% del Total</th>
+                                    <th style="text-align: center;">Tasa Completado</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                ${stats.serviciosHospitalarios.slice(0, 10).map((servicio, index) => `
+                                ${stats.ubicaciones.slice(0, 10).map((ubicacion, index) => `
                                     <tr ${index === 0 ? 'style="background: #f0fdf4;"' : ''}>
                                         <td style="font-weight: ${index === 0 ? 'bold' : 'normal'};">
-                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : ''}
-                                            ${servicio.nombre}
+                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📍'}
+                                            ${ubicacion.nombre}
                                         </td>
-                                        <td style="text-align: center; font-weight: bold;">${servicio.total}</td>
-                                        <td style="text-align: center; color: #f59e0b;">${servicio.pendientes}</td>
-                                        <td style="text-align: center; color: #059669;">${servicio.completadas}</td>
-                                        <td style="text-align: center; color: #ef4444;">${servicio.erroresUsuario}</td>
+                                        <td style="text-align: center; font-weight: bold;">${ubicacion.total}</td>
+                                        <td style="text-align: center; color: #f59e0b;">${ubicacion.pendientes}</td>
+                                        <td style="text-align: center; color: #8b5cf6;">${ubicacion.enProceso}</td>
+                                        <td style="text-align: center; color: #059669;">${ubicacion.completadas}</td>
+                                        <td style="text-align: center; color: #ef4444;">
+                                            ${ubicacion.prioridadCritica + ubicacion.prioridadAlta}
+                                        </td>
                                         <td style="text-align: center;">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
                                                 <div style="flex: 1; background: #e5e7eb; border-radius: 9999px; height: 8px; overflow: hidden;">
-                                                    <div style="height: 100%; background: ${areaColor}; width: ${servicio.porcentaje}%;"></div>
+                                                    <div style="height: 100%; background: ${areaColor}; width: ${ubicacion.porcentaje}%;"></div>
                                                 </div>
-                                                <span style="font-size: 0.75rem; font-weight: 600; color: ${areaColor};">
-                                                    ${servicio.porcentaje}%
+                                                <span style="font-size: 0.75rem; font-weight: 600;">
+                                                    ${ubicacion.porcentaje}%
                                                 </span>
                                             </div>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span style="color: ${ubicacion.tasaCompletado > 70 ? '#059669' : ubicacion.tasaCompletado > 40 ? '#f59e0b' : '#ef4444'}; font-weight: 600;">
+                                                ${ubicacion.tasaCompletado}%
+                                            </span>
                                         </td>
                                     </tr>
                                 `).join('')}
                             </tbody>
-                            ${stats.serviciosHospitalarios.length > 10 ? `
+                            ${stats.ubicaciones.length > 10 ? `
                                 <tfoot style="background: #f8fafc;">
                                     <tr>
-                                        <td colspan="6" style="text-align: center; font-style: italic; color: #6b7280;">
-                                            Mostrando los 10 servicios principales de ${stats.serviciosHospitalarios.length} totales
+                                        <td colspan="8" style="text-align: center; font-style: italic; color: #6b7280;">
+                                            Mostrando las 10 ubicaciones principales de ${stats.ubicaciones.length} totales
                                         </td>
                                     </tr>
                                 </tfoot>
@@ -5886,33 +5913,59 @@ function calcularEstadisticasPorArea() {
                         </table>
                     </div>
                     
-                    <!-- Resumen de servicios más demandantes -->
+                    <!-- Análisis de zonas críticas -->
                     <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, ${areaColor}10 0%, ${areaColor}05 100%); border-radius: 0.5rem;">
-                        <h5 style="color: ${areaColor}; margin-bottom: 0.75rem;">📊 Análisis de Demanda</h5>
+                        <h5 style="color: ${areaColor}; margin-bottom: 0.75rem;">🎯 Análisis de Zonas Críticas</h5>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
                             <div>
-                                <span style="color: #6b7280; font-size: 0.875rem;">Mayor demandante:</span>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Ubicación con más solicitudes:</span>
                                 <div style="font-weight: bold; color: #1f2937;">
-                                    ${stats.serviciosHospitalarios[0]?.nombre || 'N/A'}
+                                    ${stats.ubicaciones[0]?.nombre || 'N/A'}
                                 </div>
                                 <span style="color: ${areaColor}; font-size: 0.75rem;">
-                                    ${stats.serviciosHospitalarios[0]?.total || 0} solicitudes
+                                    ${stats.ubicaciones[0]?.total || 0} solicitudes (${stats.ubicaciones[0]?.porcentaje || 0}%)
                                 </span>
                             </div>
                             <div>
-                                <span style="color: #6b7280; font-size: 0.875rem;">Promedio por servicio:</span>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Ubicación con más pendientes:</span>
                                 <div style="font-weight: bold; color: #1f2937;">
-                                    ${stats.totalServicios > 0 ? (stats.total / stats.totalServicios).toFixed(1) : 0}
+                                    ${stats.ubicaciones.sort((a, b) => b.pendientes - a.pendientes)[0]?.nombre || 'N/A'}
+                                </div>
+                                <span style="color: #f59e0b; font-size: 0.75rem;">
+                                    ${stats.ubicaciones.sort((a, b) => b.pendientes - a.pendientes)[0]?.pendientes || 0} pendientes
+                                </span>
+                            </div>
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Promedio por ubicación:</span>
+                                <div style="font-weight: bold; color: #1f2937;">
+                                    ${stats.totalUbicaciones > 0 ? (stats.total / stats.totalUbicaciones).toFixed(1) : 0}
                                 </div>
                                 <span style="color: ${areaColor}; font-size: 0.75rem;">
-                                    solicitudes/servicio
+                                    solicitudes/ubicación
                                 </span>
                             </div>
                         </div>
+                        ${stats.ubicaciones.filter(u => u.erroresUsuario > 0).length > 0 ? `
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid ${areaColor}30;">
+                                <span style="color: #ef4444; font-size: 0.875rem; font-weight: 600;">
+                                    ⚠️ Ubicaciones con errores de usuario:
+                                </span>
+                                <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${stats.ubicaciones
+                                        .filter(u => u.erroresUsuario > 0)
+                                        .slice(0, 5)
+                                        .map(u => `
+                                            <span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                                                ${u.nombre}: ${u.erroresUsuario}
+                                            </span>
+                                        `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
                 ` : `
                     <p style="text-align: center; color: #6b7280; padding: 2rem;">
-                        No hay datos de servicios hospitalarios disponibles
+                        No hay datos de ubicaciones disponibles
                     </p>
                 `}
             </div>
@@ -5920,7 +5973,7 @@ function calcularEstadisticasPorArea() {
         
         <!-- Gráfico de estados del área (código existente) -->
         <div class="card" style="margin-top: 2rem;">
-            <!-- ... código existente del gráfico ... -->
+            <!-- ... mantén el código existente del gráfico ... -->
         </div>
     `;
 }
