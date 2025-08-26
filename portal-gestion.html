@@ -2135,7 +2135,13 @@
             }
             
             // Calcular contadores
-            const sinAsignar = solicitudesParaContar.filter(s => !s.tecnicoAsignado).length;
+            const sinAsignar = solicitudesParaContar.filter(s => {
+    const estado = (s.estado || 'PENDIENTE').toUpperCase();
+    // Solo contar como sin asignar si NO está completada/cancelada Y no tiene técnico
+    return !s.tecnicoAsignado && 
+           estado !== 'COMPLETADA' && 
+           estado !== 'CANCELADA';
+}).length;
             const pendientes = solicitudesParaContar.filter(s => {
                 const estado = (s.estado || 'PENDIENTE').toUpperCase();
                 return estado === 'PENDIENTE';
@@ -2195,9 +2201,15 @@
             
             // Aplicar filtro de estado
             switch(status) {
-                case 'SIN_ASIGNAR':
-                    filteredSolicitudes = baseSolicitudes.filter(s => !s.tecnicoAsignado);
-                    break;
+               case 'SIN_ASIGNAR':
+    filteredSolicitudes = baseSolicitudes.filter(s => {
+        const estado = (s.estado || 'PENDIENTE').toUpperCase();
+        // Solo mostrar sin asignar si NO está completada/cancelada
+        return !s.tecnicoAsignado && 
+               estado !== 'COMPLETADA' && 
+               estado !== 'CANCELADA';
+    });
+    break;
                 case 'PENDIENTE':
                     filteredSolicitudes = baseSolicitudes.filter(s => {
                         const estado = (s.estado || 'PENDIENTE').toUpperCase();
@@ -2759,8 +2771,11 @@ window.debugContadores = debugContadores;
                 '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">👤 ERROR DE USUARIO</span>' : '';
             
             // Indicador de sin asignar
-            const sinAsignarBadge = !solicitud.tecnicoAsignado ? 
-                '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
+            const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
+const sinAsignarBadge = (!solicitud.tecnicoAsignado && 
+                         estadoUpper !== 'COMPLETADA' && 
+                         estadoUpper !== 'CANCELADA') ? 
+    '<span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">🚨 SIN ASIGNAR</span>' : '';
 
             return `
                 <div class="${cardClass}">
@@ -2811,16 +2826,18 @@ window.debugContadores = debugContadores;
                         </div>
 						
                         <div class="request-detail">
-						<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
-						<div class="request-detail-value">
-						${solicitud.tecnicoAsignado ? 
-            `			<span style="color: ${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? '#059669' : '#2563eb'}; font-weight: 600;">
-						${solicitud.tecnicoAsignado}
-						${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? ' ✅' : ''}
-					</span>` : 
+					<div class="request-detail-label">👨‍🔧 Personal Asignado</div>
+<div class="request-detail-value">
+    ${solicitud.tecnicoAsignado ? 
+        `<span style="color: ${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? '#059669' : '#2563eb'}; font-weight: 600;">
+            ${solicitud.tecnicoAsignado}
+            ${(solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ? ' ✅' : ''}
+        </span>` : 
+        (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') ?
+            '<span style="color: #059669; font-weight: 600;">✅ Completada</span>' :
             '<span style="color: #f59e0b; font-weight: 600;">⚠️ Sin asignar</span>'
-        }
-    </div>
+    }
+</div>
 </div>
 						
                     </div>
@@ -2833,7 +2850,9 @@ window.debugContadores = debugContadores;
                     </div>
 
 					<div class="request-actions">
-						${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || !solicitud.tecnicoAsignado) ? `
+						${(solicitud.estado === 'PENDIENTE' || solicitud.estado === 'Pendiente' || 
+   (!solicitud.tecnicoAsignado && solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' && 
+    solicitud.estado !== 'CANCELADA' && solicitud.estado !== 'Cancelada')) ? `
 				<button class="btn btn-success btn-sm" onclick="showAssignPersonalModal('${solicitud.id}')">
 					🎯 Asignar Personal
 					</button>
