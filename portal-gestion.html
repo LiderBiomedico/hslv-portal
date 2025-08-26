@@ -22,7 +22,10 @@
             line-height: 1.6;
             min-height: 100vh;
         }
-
+/* Ocultar el contador de Sin Asignar en el resumen */
+.status-summary-card.sin-asignar {
+    display: none !important;
+}
         .container {
             max-width: 1400px;
             margin: 0 auto;
@@ -100,7 +103,10 @@
             text-align: center;
             font-style: italic;
         }
-
+/* Ocultar el botón de filtro Sin Asignar */
+.status-filter-btn[data-status-filter="SIN_ASIGNAR"] {
+    display: none !important;
+}
         /* Indicador de conexión Airtable */
         .connection-status {
             position: absolute;
