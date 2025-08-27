@@ -1478,8 +1478,8 @@
 <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
                             🔄 Actualizar
                         </button>
-<button class="btn btn-primary btn-sm" onclick="autoAssignPending()" style="display:none;">
-    🤖 Auto-asignar
+<button class="btn btn-info btn-sm" onclick="exportSolicitudesPorAreaPDF()">
+    📑 Exportar Solicitudes PDF
 </button>
 <button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
                             📊 Estadísticas
@@ -6222,7 +6222,317 @@ function calcularEstadisticasPorArea() {
                 alert('❌ Error al generar el PDF: ' + error.message);
             }
         }
+    // 📑 FUNCIÓN: Exportar solicitudes por área a PDF
+async function exportSolicitudesPorAreaPDF() {
+    try {
+        // Mostrar loading
+        const loadingModal = document.createElement('div');
+        loadingModal.style.cssText = `
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10000;
+        `;
+        loadingModal.innerHTML = `
+            <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
+                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                <p style="margin-top: 1rem;">Generando PDF de solicitudes por área...</p>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
 
+        // Crear contenido para PDF
+        const pdfContent = document.createElement('div');
+        pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
+        
+        // Clasificar solicitudes por área
+        const biomedica = solicitudesPorArea.BIOMEDICA || [];
+        const mecanica = solicitudesPorArea.MECANICA || [];
+        const infraestructura = solicitudesPorArea.INFRAESTRUCTURA || [];
+        
+        // Calcular estadísticas por área
+        const calcularEstadisticas = (solicitudes) => ({
+            total: solicitudes.length,
+            pendientes: solicitudes.filter(s => (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE').length,
+            enProceso: solicitudes.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+            }).length,
+            completadas: solicitudes.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length,
+            criticas: solicitudes.filter(s => {
+                const prioridad = (s.prioridad || '').toUpperCase();
+                return prioridad === 'CRITICA' || prioridad === 'CRÍTICA';
+            }).length
+        });
+
+        const statsBiomedica = calcularEstadisticas(biomedica);
+        const statsMecanica = calcularEstadisticas(mecanica);
+        const statsInfra = calcularEstadisticas(infraestructura);
+
+        pdfContent.innerHTML = `
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
+                <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
+                    HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
+                </h1>
+                <h2 style="color: #4b5563; font-size: 18px; margin-bottom: 10px;">
+                    Reporte de Solicitudes por Área
+                </h2>
+                <p style="color: #6b7280; font-size: 12px;">
+                    Fecha de generación: ${new Date().toLocaleString('es-CO')}
+                </p>
+            </div>
+
+            <!-- Resumen ejecutivo -->
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #0284c7; margin-bottom: 10px;">📊 Resumen Ejecutivo</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #1f2937;">${cloudSolicitudes.length}</div>
+                        <div style="color: #6b7280; font-size: 12px;">Total Solicitudes</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">
+                            ${cloudSolicitudes.filter(s => !s.tecnicoAsignado).length}
+                        </div>
+                        <div style="color: #6b7280; font-size: 12px;">Sin Asignar</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; font-weight: bold; color: #ef4444;">
+                            ${cloudSolicitudes.filter(s => {
+                                const p = (s.prioridad || '').toUpperCase();
+                                return p === 'CRITICA' || p === 'CRÍTICA';
+                            }).length}
+                        </div>
+                        <div style="color: #6b7280; font-size: 12px;">Prioridad Crítica</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ingeniería Biomédica -->
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
+                    <h3 style="margin: 0;">🏥 INGENIERÍA BIOMÉDICA</h3>
+                </div>
+                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="text-align: center;">
+                            <strong>${statsBiomedica.total}</strong><br>
+                            <small style="color: #6b7280;">Total</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #f59e0b;">${statsBiomedica.pendientes}</strong><br>
+                            <small style="color: #6b7280;">Pendientes</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #3b82f6;">${statsBiomedica.enProceso}</strong><br>
+                            <small style="color: #6b7280;">En Proceso</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #059669;">${statsBiomedica.completadas}</strong><br>
+                            <small style="color: #6b7280;">Completadas</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #ef4444;">${statsBiomedica.criticas}</strong><br>
+                            <small style="color: #6b7280;">Críticas</small>
+                        </div>
+                    </div>
+                    ${generateSolicitudesTable(biomedica.slice(0, 10))}
+                    ${biomedica.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
+                        Mostrando 10 de ${biomedica.length} solicitudes
+                    </p>` : ''}
+                </div>
+            </div>
+
+            <!-- Mecánica -->
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
+                    <h3 style="margin: 0;">⚙️ MECÁNICA</h3>
+                </div>
+                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="text-align: center;">
+                            <strong>${statsMecanica.total}</strong><br>
+                            <small style="color: #6b7280;">Total</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #f59e0b;">${statsMecanica.pendientes}</strong><br>
+                            <small style="color: #6b7280;">Pendientes</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #3b82f6;">${statsMecanica.enProceso}</strong><br>
+                            <small style="color: #6b7280;">En Proceso</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #059669;">${statsMecanica.completadas}</strong><br>
+                            <small style="color: #6b7280;">Completadas</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #ef4444;">${statsMecanica.criticas}</strong><br>
+                            <small style="color: #6b7280;">Críticas</small>
+                        </div>
+                    </div>
+                    ${generateSolicitudesTable(mecanica.slice(0, 10))}
+                    ${mecanica.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
+                        Mostrando 10 de ${mecanica.length} solicitudes
+                    </p>` : ''}
+                </div>
+            </div>
+
+            <!-- Infraestructura -->
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
+                    <h3 style="margin: 0;">🏗️ INFRAESTRUCTURA</h3>
+                </div>
+                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="text-align: center;">
+                            <strong>${statsInfra.total}</strong><br>
+                            <small style="color: #6b7280;">Total</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #f59e0b;">${statsInfra.pendientes}</strong><br>
+                            <small style="color: #6b7280;">Pendientes</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #3b82f6;">${statsInfra.enProceso}</strong><br>
+                            <small style="color: #6b7280;">En Proceso</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #059669;">${statsInfra.completadas}</strong><br>
+                            <small style="color: #6b7280;">Completadas</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #ef4444;">${statsInfra.criticas}</strong><br>
+                            <small style="color: #6b7280;">Críticas</small>
+                        </div>
+                    </div>
+                    ${generateSolicitudesTable(infraestructura.slice(0, 10))}
+                    ${infraestructura.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
+                        Mostrando 10 de ${infraestructura.length} solicitudes
+                    </p>` : ''}
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(pdfContent);
+        
+        // Generar PDF
+        const canvas = await html2canvas(pdfContent, {
+            scale: 2,
+            logging: false,
+            useCORS: true
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const pageHeight = 295;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
+        
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
+        
+        // Limpiar y guardar
+        document.body.removeChild(pdfContent);
+        document.body.removeChild(loadingModal);
+        
+        pdf.save(`Solicitudes_Por_Area_${new Date().toISOString().split('T')[0]}.pdf`);
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        alert('Error al generar el PDF: ' + error.message);
+    }
+}
+
+// Función auxiliar para generar tabla de solicitudes
+function generateSolicitudesTable(solicitudes) {
+    if (solicitudes.length === 0) {
+        return '<p style="text-align: center; color: #6b7280; padding: 20px;">No hay solicitudes en esta área</p>';
+    }
+    
+    return `
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+            <thead>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">Prioridad</th>
+                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${solicitudes.map(s => `
+                    <tr>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.equipo || 'No especificado'}</td>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.ubicacion || 'No especificada'}</td>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
+                            <span style="color: ${getStatusColor(s.estado)}; font-weight: bold;">
+                                ${s.estado || 'PENDIENTE'}
+                            </span>
+                        </td>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
+                            <span style="color: ${getPriorityColor(s.prioridad)}; font-weight: bold;">
+                                ${s.prioridad || 'MEDIA'}
+                            </span>
+                        </td>
+                        <td style="padding: 6px; border: 1px solid #e5e7eb;">
+                            ${s.tecnicoAsignado || 'Sin asignar'}
+                        </td>
+                    </tr>
+                `).join('')}
+            </tbody>
+        </table>
+    `;
+}
+
+// Funciones auxiliares para colores
+function getStatusColor(status) {
+    const estado = (status || 'PENDIENTE').toUpperCase();
+    switch(estado) {
+        case 'COMPLETADA': return '#059669';
+        case 'EN_PROCESO':
+        case 'EN PROCESO': return '#8b5cf6';
+        case 'ASIGNADA': return '#0ea5e9';
+        case 'PENDIENTE': return '#f59e0b';
+        case 'CANCELADA': return '#ef4444';
+        default: return '#6b7280';
+    }
+}
+
+function getPriorityColor(priority) {
+    const prioridad = (priority || 'MEDIA').toUpperCase();
+    switch(prioridad) {
+        case 'CRITICA':
+        case 'CRÍTICA': return '#ef4444';
+        case 'ALTA': return '#f59e0b';
+        case 'MEDIA': return '#3b82f6';
+        case 'BAJA': return '#059669';
+        default: return '#6b7280';
+    }
+}
         // 🔍 Filtros
         function filterSolicitudes() {
             const estadoFilter = document.getElementById('filter-estado-solicitud').value;
