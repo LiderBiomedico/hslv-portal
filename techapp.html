@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechApp - Hospital Susana López</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#059669">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="TechApp">
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjMDU5NjY5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0xMiAyQzYuNDggMiAyIDYuNDggMiAxMnM0LjQ4IDEwIDEwIDEwIDEwLTQuNDggMTAtMTBTMTcuNTIgMiAxMiAyem0tMiAxNWwtNS01IDEuNDEtMS40MUwxMCAxNC4xN2w3LjU5LTcuNTlMMTkgOGwtOSA5eiIvPjwvc3ZnPg==">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            line-height: 1.6;
+            color: #1f2937;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            max-width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .app-title h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .app-title p {
+            font-size: 0.8rem;
+            opacity: 0.9;
+        }
+
+        .notification-btn {
+            position: relative;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin: 1rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10b981;
+        }
+
+        .offline .status-dot {
+            background: #ef4444;
+        }
+
+        .main-content {
+            padding: 1rem;
+            max-width: 100%;
+        }
+
+        .user-info {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            border-left: 4px solid #059669;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #059669, #10b981);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .user-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .user-area {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-top: 3px solid transparent;
+        }
+
+        .stat-card.assigned { border-top-color: #3b82f6; }
+        .stat-card.completed { border-top-color: #059669; }
+        .stat-card.pending { border-top-color: #f59e0b; }
+        .stat-card.overdue { border-top-color: #ef4444; }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .requests-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: between;
+            padding: 0.5rem 0 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+        }
+
+        .section-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1f2937;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+
+        .filter-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            background: #f3f4f6;
+            border: none;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6b7280;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+
+        .filter-tab.active {
+            background: #059669;
+            color: white;
+        }
+
+        .request-card {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #e5e7eb;
+            position: relative;
+        }
+
+        .request-card.urgent { border-left-color: #ef4444; }
+        .request-card.high { border-left-color: #f59e0b; }
+        .request-card.medium { border-left-color: #3b82f6; }
+        .request-card.low { border-left-color: #10b981; }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+
+        .request-number {
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .request-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-assigned { background: #dbeafe; color: #1e40af; }
+        .status-in-progress { background: #fef3c7; color: #d97706; }
+        .status-completed { background: #dcfce7; color: #166534; }
+
+        .request-info {
+            margin-bottom: 0.75rem;
+        }
+
+        .request-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .request-details {
+            font-size: 0.85rem;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .btn-primary {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .btn-sm {
+            padding: 0.4rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #059669;
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.4);
+            z-index: 50;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            width: 100%;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .photo-upload {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .photo-slot {
+            aspect-ratio: 1;
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fafafa;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .photo-slot:hover {
+            border-color: #059669;
+            background: #f0fdf4;
+        }
+
+        .photo-slot.has-photo {
+            border-color: #059669;
+            background: none;
+        }
+
+        .photo-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 6px;
+        }
+
+        .photo-placeholder {
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .hidden-input {
+            display: none;
+        }
+
+        .timeline {
+            margin-top: 1rem;
+        }
+
+        .timeline-item {
+            display: flex;
+            align-items: start;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .timeline-created { background: #dbeafe; color: #1e40af; }
+        .timeline-assigned { background: #fef3c7; color: #d97706; }
+        .timeline-progress { background: #e0f2fe; color: #0369a1; }
+        .timeline-completed { background: #dcfce7; color: #166534; }
+
+        .timeline-content {
+            flex: 1;
+        }
+
+        .timeline-title {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+        }
+
+        .timeline-time {
+            font-size: 0.8rem;
+            color: #6b7280;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #6b7280;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid #059669;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            z-index: 50;
+        }
+
+        .nav-item {
+            flex: 1;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            background: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .nav-item.active {
+            color: #059669;
+            background: #f0fdf4;
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+        }
+
+        .nav-label {
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 375px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .photo-upload {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🔧</div>
+                <div class="app-title">
+                    <h1>TechApp</h1>
+                    <p>Hospital Susana López</p>
+                </div>
+            </div>
+            <button class="notification-btn" onclick="showNotifications()">
+                🔔
+                <span class="notification-badge" id="notificationCount">0</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Connection Status -->
+    <div class="status-indicator" id="connectionStatus">
+        <div class="status-dot"></div>
+        <span>Conectado al sistema</span>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- User Info -->
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">JD</div>
+            <div class="user-name" id="userName">Juan Pérez</div>
+            <div class="user-area" id="userArea">Ingeniería Biomédica • Disponible</div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card assigned">
+                <div class="stat-number" id="assignedCount">5</div>
+                <div class="stat-label">Asignadas</div>
+            </div>
+            <div class="stat-card completed">
+                <div class="stat-number" id="completedCount">12</div>
+                <div class="stat-label">Completadas</div>
+            </div>
+            <div class="stat-card pending">
+                <div class="stat-number" id="pendingCount">3</div>
+                <div class="stat-label">En Proceso</div>
+            </div>
+            <div class="stat-card overdue">
+                <div class="stat-number" id="overdueCount">1</div>
+                <div class="stat-label">Vencidas</div>
+            </div>
+        </div>
+
+        <!-- Requests Section -->
+        <div class="requests-section">
+            <div class="section-header">
+                <h2 class="section-title">Mis Solicitudes</h2>
+            </div>
+            
+            <div class="filter-tabs">
+                <button class="filter-tab active" data-filter="all">Todas</button>
+                <button class="filter-tab" data-filter="assigned">Asignadas</button>
+                <button class="filter-tab" data-filter="in-progress">En Proceso</button>
+                <button class="filter-tab" data-filter="urgent">Urgentes</button>
+            </div>
+
+            <div id="requestsList">
+                <!-- Requests will be loaded here -->
+                <div class="loading">
+                    <div class="spinner"></div>
+                    Cargando solicitudes...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Request Details -->
+    <div class="modal" id="requestModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Detalles de Solicitud</h3>
+                <button class="modal-close" onclick="closeModal('requestModal')">×</button>
+            </div>
+            <div id="modalContent">
+                <!-- Dynamic content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Updating Status -->
+    <div class="modal" id="statusModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Actualizar Solicitud</h3>
+                <button class="modal-close" onclick="closeModal('statusModal')">×</button>
+            </div>
+            <form id="statusUpdateForm">
+                <div class="form-group">
+                    <label class="form-label">Estado</label>
+                    <select id="statusSelect" class="form-input">
+                        <option value="EN_PROCESO">En Proceso</option>
+                        <option value="COMPLETADA">Completada</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Comentarios del trabajo realizado</label>
+                    <textarea id="workComments" class="form-textarea" placeholder="Describe el trabajo realizado..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Evidencia Fotográfica</label>
+                    <p style="font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem;">
+                        Sube 2 fotos como evidencia del trabajo completado
+                    </p>
+                    <div class="photo-upload">
+                        <div class="photo-slot" onclick="selectPhoto(1)">
+                            <div class="photo-placeholder" id="photoPlaceholder1">
+                                📷<br>Foto 1
+                            </div>
+                            <img id="photoPreview1" class="photo-preview" style="display: none;">
+                            <input type="file" id="photoInput1" class="hidden-input" accept="image/*" capture="environment" onchange="handlePhotoUpload(1, event)">
+                        </div>
+                        <div class="photo-slot" onclick="selectPhoto(2)">
+                            <div class="photo-placeholder" id="photoPlaceholder2">
+                                📷<br>Foto 2
+                            </div>
+                            <img id="photoPreview2" class="photo-preview" style="display: none;">
+                            <input type="file" id="photoInput2" class="hidden-input" accept="image/*" capture="environment" onchange="handlePhotoUpload(2, event)">
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('statusModal')">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Actualizar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <button class="nav-item active" data-tab="home" onclick="switchTab('home')">
+            <div class="nav-icon">🏠</div>
+            <div class="nav-label">Inicio</div>
+        </button>
+        <button class="nav-item" data-tab="requests" onclick="switchTab('requests')">
+            <div class="nav-icon">📋</div>
+            <div class="nav-label">Solicitudes</div>
+        </button>
+        <button class="nav-item" data-tab="completed" onclick="switchTab('completed')">
+            <div class="nav-icon">✅</div>
+            <div class="nav-label">Completadas</div>
+        </button>
+        <button class="nav-item" data-tab="profile" onclick="switchTab('profile')">
+            <div class="nav-icon">👤</div>
+            <div class="nav-label">Perfil</div>
+        </button>
+    </div>
+
+    <!-- Service Worker Registration -->
+    <script>
+        // Global variables
+        let currentUser = null;
+        let userRequests = [];
+        let selectedRequestId = null;
+        let uploadedPhotos = {};
+
+        // Sample data - replace with actual API calls
+        const sampleRequests = [
+            {
+                id: 'req1',
+                number: 'SOLBIO00123',
+                title: 'Mantenimiento Correctivo - Monitor Signos Vitales',
+                location: 'UCI - Habitación 203',
+                priority: 'urgent',
+                status: 'assigned',
+                description: 'Monitor de signos vitales presenta error en lectura de presión arterial',
+                assignedDate: '2024-01-15T10:00:00Z',
+                dueDate: '2024-01-15T18:00:00Z'
+            },
+            {
+                id: 'req2',
+                number: 'SOLBIO00124',
+                title: 'Calibración - Bomba de Infusión',
+                location: 'Emergencias - Box 5',
+                priority: 'high',
+                status: 'in-progress',
+                description: 'Calibración mensual de bomba de infusión Modelo XYZ',
+                assignedDate: '2024-01-15T08:00:00Z',
+                dueDate: '2024-01-16T16:00:00Z'
+            },
+            {
+                id: 'req3',
+                number: 'SOLBIO00125',
+                title: 'Instalación - Equipo Rayos X Portátil',
+                location: 'Radiología - Sala 2',
+                priority: 'medium',
+                status: 'assigned',
+                description: 'Instalación y configuración inicial de equipo de rayos X portátil nuevo',
+                assignedDate: '2024-01-15T14:00:00Z',
+                dueDate: '2024-01-17T12:00:00Z'
+            }
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+            loadUserRequests();
+            setupEventListeners();
+            registerServiceWorker();
+            requestNotificationPermission();
+        });
+
+        async function initializeApp() {
+            console.log('TechApp initialized');
+            
+            // Load user info (from localStorage or API)
+            const savedUser = localStorage.getItem('techapp_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                updateUserDisplay();
+            } else {
+                // Redirect to login or show login modal
+                // For demo purposes, use sample user
+                currentUser = {
+                    id: 'tech1',
+                    name: 'Juan Pérez',
+                    area: 'Ingeniería Biomédica',
+                    status: 'disponible'
+                };
+                updateUserDisplay();
+            }
+        }
+
+        function updateUserDisplay() {
+            if (!currentUser) return;
+            
+            document.getElementById('userName').textContent = currentUser.name;
+            document.getElementById('userArea').textContent = `${currentUser.area} • ${currentUser.status}`;
+            
+            // Update avatar with initials
+            const initials = currentUser.name.split(' ').map(n => n[0]).join('');
+            document.getElementById('userAvatar').textContent = initials;
+        }
+
+        function loadUserRequests() {
+            // Simulate API call delay
+            setTimeout(() => {
+                userRequests = sampleRequests;
+                updateStatistics();
+                renderRequests();
+            }, 1000);
+        }
+
+        function updateStatistics() {
+            const stats = {
+                assigned: userRequests.filter(r => r.status === 'assigned').length,
+                completed: 12, // From API
+                pending: userRequests.filter(r => r.status === 'in-progress').length,
+                overdue: userRequests.filter(r => isOverdue(r)).length
+            };
+
+            document.getElementById('assignedCount').textContent = stats.assigned;
+            document.getElementById('completedCount').textContent = stats.completed;
+            document.getElementById('pendingCount').textContent = stats.pending;
+            document.getElementById('overdueCount').textContent = stats.overdue;
+            
+            // Update notification count
+            const totalPending = stats.assigned + stats.overdue;
+            document.getElementById('notificationCount').textContent = totalPending;
+        }
+
+        function isOverdue(request) {
+            if (!request.dueDate) return false;
+            return new Date() > new Date(request.dueDate);
+        }
+
+        function renderRequests() {
+            const container = document.getElementById('requestsList');
+            
+            if (userRequests.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">📋</div>
+                        <p>No tienes solicitudes asignadas</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const requestsHTML = userRequests.map(request => `
+                <div class="request-card ${request.priority}" onclick="showRequestDetails('${request.id}')">
+                    <div class="request-header">
+                        <span class="request-number">${request.number}</span>
+                        <span class="request-status status-${request.status.replace('-', '')}">${getStatusText(request.status)}</span>
+                    </div>
+                    <div class="request-info">
+                        <div class="request-title">${request.title}</div>
+                        <div class="request-details">
+                            📍 ${request.location}<br>
+                            📝 ${request.description}
+                        </div>
+                    </div>
+                    <div class="request-actions" onclick="event.stopPropagation()">
+                        ${request.status === 'assigned' ? `
+                            <button class="btn btn-primary btn-sm" onclick="startWork('${request.id}')">
+                                ▶️ Iniciar
+                            </button>
+                        ` : ''}
+                        ${request.status === 'in-progress' ? `
+                            <button class="btn btn-primary btn-sm" onclick="updateStatus('${request.id}')">
+                                📝 Actualizar
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-secondary btn-sm" onclick="showRequestDetails('${request.id}')">
+                            👁️ Ver
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = requestsHTML;
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'assigned': 'Asignada',
+                'in-progress': 'En Proceso',
+                'completed': 'Completada'
+            };
+            return statusMap[status] || status;
+        }
+
+        function setupEventListeners() {
+            // Filter tabs
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    filterRequests(e.target.dataset.filter);
+                });
+            });
+
+            // Form submission
+            document.getElementById('statusUpdateForm').addEventListener('submit', handleStatusUpdate);
+
+            // Modal close on outside click
+            document.querySelectorAll('.modal').forEach(modal => {
+                modal.addEventListener('click', (e) => {
+                    if (e.target === modal) {
+                        closeModal(modal.id);
+                    }
+                });
+            });
+        }
+
+        function filterRequests(filter) {
+            let filteredRequests = userRequests;
+            
+            switch (filter) {
+                case 'assigned':
+                    filteredRequests = userRequests.filter(r => r.status === 'assigned');
+                    break;
+                case 'in-progress':
+                    filteredRequests = userRequests.filter(r => r.status === 'in-progress');
+                    break;
+                case 'urgent':
+                    filteredRequests = userRequests.filter(r => r.priority === 'urgent');
+                    break;
+                default:
+                    filteredRequests = userRequests;
+            }
+
+            const container = document.getElementById('requestsList');
+            if (filteredRequests.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <p>No hay solicitudes en esta categoría</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const requestsHTML = filteredRequests.map(request => `
+                <div class="request-card ${request.priority}" onclick="showRequestDetails('${request.id}')">
+                    <div class="request-header">
+                        <span class="request-number">${request.number}</span>
+                        <span class="request-status status-${request.status.replace('-', '')}">${getStatusText(request.status)}</span>
+                    </div>
+                    <div class="request-info">
+                        <div class="request-title">${request.title}</div>
+                        <div class="request-details">
+                            📍 ${request.location}<br>
+                            📝 ${request.description}
+                        </div>
+                    </div>
+                    <div class="request-actions" onclick="event.stopPropagation()">
+                        ${request.status === 'assigned' ? `
+                            <button class="btn btn-primary btn-sm" onclick="startWork('${request.id}')">
+                                ▶️ Iniciar
+                            </button>
+                        ` : ''}
+                        ${request.status === 'in-progress' ? `
+                            <button class="btn btn-primary btn-sm" onclick="updateStatus('${request.id}')">
+                                📝 Actualizar
+                            </button>
+                        ` : ''}
+                        <button class="btn btn-secondary btn-sm" onclick="showRequestDetails('${request.id}')">
+                            👁️ Ver
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = requestsHTML;
+        }
+
+        function showRequestDetails(requestId) {
+            const request = userRequests.find(r => r.id === requestId);
+            if (!request) return;
+
+            const modal = document.getElementById('requestModal');
+            const title = document.getElementById('modalTitle');
+            const content = document.getElementById('modalContent');
+
+            title.textContent = `Solicitud ${request.number}`;
+
+            content.innerHTML = `
+                <div class="form-group">
+                    <strong>Título:</strong><br>
+                    ${request.title}
+                </div>
+                <div class="form-group">
+                    <strong>Ubicación:</strong><br>
+                    📍 ${request.location}
+                </div>
+                <div class="form-group">
+                    <strong>Prioridad:</strong><br>
+                    <span class="request-status" style="background: ${getPriorityColor(request.priority)};">
+                        ${getPriorityText(request.priority)}
+                    </span>
+                </div>
+                <div class="form-group">
+                    <strong>Estado:</strong><br>
+                    <span class="request-status status-${request.status.replace('-', '')}">${getStatusText(request.status)}</span>
+                </div>
+                <div class="form-group">
+                    <strong>Descripción:</strong><br>
+                    ${request.description}
+                </div>
+                <div class="form-group">
+                    <strong>Fecha Asignación:</strong><br>
+                    ${formatDate(request.assignedDate)}
+                </div>
+                <div class="form-group">
+                    <strong>Fecha Límite:</strong><br>
+                    ${formatDate(request.dueDate)} ${isOverdue(request) ? '⚠️ <span style="color: #ef4444;">VENCIDA</span>' : ''}
+                </div>
+                
+                <div class="timeline">
+                    <h4 style="margin-bottom: 1rem;">Historial</h4>
+                    <div class="timeline-item">
+                        <div class="timeline-icon timeline-created">📝</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Solicitud creada</div>
+                            <div class="timeline-time">${formatDateTime(request.assignedDate)}</div>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-icon timeline-assigned">👤</div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Asignada a ${currentUser.name}</div>
+                            <div class="timeline-time">${formatDateTime(request.assignedDate)}</div>
+                        </div>
+                    </div>
+                    ${request.status === 'in-progress' ? `
+                        <div class="timeline-item">
+                            <div class="timeline-icon timeline-progress">⚙️</div>
+                            <div class="timeline-content">
+                                <div class="timeline-title">Trabajo iniciado</div>
+                                <div class="timeline-time">En proceso</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <div style="display: flex; gap: 0.5rem; margin-top: 1.5rem; justify-content: flex-end;">
+                    ${request.status === 'assigned' ? `
+                        <button class="btn btn-primary" onclick="startWork('${request.id}')">
+                            ▶️ Iniciar Trabajo
+                        </button>
+                    ` : ''}
+                    ${request.status === 'in-progress' ? `
+                        <button class="btn btn-primary" onclick="updateStatus('${request.id}')">
+                            📝 Actualizar Estado
+                        </button>
+                    ` : ''}
+                    <button class="btn btn-secondary" onclick="closeModal('requestModal')">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+
+            modal.classList.add('active');
+        }
+
+        function getPriorityColor(priority) {
+            const colors = {
+                'urgent': '#fee2e2; color: #dc2626',
+                'high': '#fef3c7; color: #d97706',
+                'medium': '#dbeafe; color: #1e40af',
+                'low': '#dcfce7; color: #166534'
+            };
+            return colors[priority] || colors.medium;
+        }
+
+        function getPriorityText(priority) {
+            const texts = {
+                'urgent': '🔴 Crítica',
+                'high': '🟡 Alta',
+                'medium': '🔵 Media',
+                'low': '🟢 Baja'
+            };
+            return texts[priority] || texts.medium;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function startWork(requestId) {
+            const request = userRequests.find(r => r.id === requestId);
+            if (!request) return;
+
+            // Update request status
+            request.status = 'in-progress';
+            
+            // Update in backend
+            try {
+                await updateRequestInBackend(requestId, 'EN_PROCESO', 'Trabajo iniciado por técnico');
+                
+                // Refresh display
+                updateStatistics();
+                renderRequests();
+                closeModal('requestModal');
+                
+                showToast('Trabajo iniciado correctamente', 'success');
+            } catch (error) {
+                console.error('Error starting work:', error);
+                showToast('Error al iniciar trabajo', 'error');
+            }
+        }
+
+        function updateStatus(requestId) {
+            selectedRequestId = requestId;
+            const request = userRequests.find(r => r.id === requestId);
+            
+            // Reset form
+            document.getElementById('statusSelect').value = 'EN_PROCESO';
+            document.getElementById('workComments').value = '';
+            resetPhotoUploads();
+            
+            // Close request modal if open
+            closeModal('requestModal');
+            
+            // Show status modal
+            document.getElementById('statusModal').classList.add('active');
+        }
+
+        async function handleStatusUpdate(e) {
+            e.preventDefault();
+            
+            if (!selectedRequestId) return;
+            
+            const status = document.getElementById('statusSelect').value;
+            const comments = document.getElementById('workComments').value;
+            
+            // Validate photos for completion
+            if (status === 'COMPLETADA' && (!uploadedPhotos.photo1 || !uploadedPhotos.photo2)) {
+                showToast('Se requieren 2 fotos para completar la solicitud', 'error');
+                return;
+            }
+            
+            try {
+                // Show loading
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.textContent;
+                submitBtn.textContent = 'Actualizando...';
+                submitBtn.disabled = true;
+                
+                // Upload photos if completing
+                let photoUrls = [];
+                if (status === 'COMPLETADA' && (uploadedPhotos.photo1 || uploadedPhotos.photo2)) {
+                    photoUrls = await uploadPhotosToServer();
+                }
+                
+                // Update request status
+                await updateRequestInBackend(selectedRequestId, status, comments, photoUrls);
+                
+                // Update local data
+                const request = userRequests.find(r => r.id === selectedRequestId);
+                if (request) {
+                    request.status = status.toLowerCase().replace('_', '-');
+                    if (status === 'COMPLETADA') {
+                        request.completedDate = new Date().toISOString();
+                        request.photos = photoUrls;
+                    }
+                }
+                
+                // Refresh display
+                updateStatistics();
+                renderRequests();
+                closeModal('statusModal');
+                
+                showToast(
+                    status === 'COMPLETADA' ? 'Solicitud completada exitosamente' : 'Estado actualizado',
+                    'success'
+                );
+                
+            } catch (error) {
+                console.error('Error updating status:', error);
+                showToast('Error al actualizar estado', 'error');
+            } finally {
+                // Reset button
+                const submitBtn = e.target.querySelector('button[type="submit"]');
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        }
+
+        function selectPhoto(photoNumber) {
+            document.getElementById(`photoInput${photoNumber}`).click();
+        }
+
+        function handlePhotoUpload(photoNumber, event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('La imagen es muy grande. Máximo 5MB', 'error');
+                return;
+            }
+            
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(`photoPreview${photoNumber}`);
+                const placeholder = document.getElementById(`photoPlaceholder${photoNumber}`);
+                const slot = placeholder.parentElement;
+                
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+                slot.classList.add('has-photo');
+                
+                // Store file for upload
+                uploadedPhotos[`photo${photoNumber}`] = file;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+
+        function resetPhotoUploads() {
+            uploadedPhotos = {};
+            for (let i = 1; i <= 2; i++) {
+                const preview = document.getElementById(`photoPreview${i}`);
+                const placeholder = document.getElementById(`photoPlaceholder${i}`);
+                const input = document.getElementById(`photoInput${i}`);
+                const slot = placeholder.parentElement;
+                
+                preview.style.display = 'none';
+                placeholder.style.display = 'block';
+                slot.classList.remove('has-photo');
+                input.value = '';
+            }
+        }
+
+        async function uploadPhotosToServer() {
+            const photoUrls = [];
+            
+            for (const [key, file] of Object.entries(uploadedPhotos)) {
+                if (file) {
+                    try {
+                        // Convert to base64 for now - replace with actual upload logic
+                        const base64 = await fileToBase64(file);
+                        photoUrls.push({
+                            filename: `${selectedRequestId}_${key}_${Date.now()}.jpg`,
+                            data: base64,
+                            type: file.type
+                        });
+                    } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        throw new Error('Error subiendo fotografías');
+                    }
+                }
+            }
+            
+            return photoUrls;
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function updateRequestInBackend(requestId, status, comments, photos = []) {
+            // This would integrate with your existing Airtable API
+            const payload = {
+                requestId: requestId,
+                status: status,
+                comments: comments,
+                photos: photos,
+                technicianId: currentUser.id,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('Updating request:', payload);
+            
+            // For now, simulate API call
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    resolve({ success: true });
+                }, 1000);
+            });
+            
+            /*
+            // Actual API call would be:
+            const response = await fetch('/.netlify/functions/update-request-status', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Error updating request');
+            }
+            
+            return await response.json();
+            */
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+            selectedRequestId = null;
+        }
+
+        function switchTab(tab) {
+            // Update active tab
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            // Handle tab content switching if needed
+            console.log('Switched to tab:', tab);
+        }
+
+        function showNotifications() {
+            const notifications = [
+                'Nueva solicitud asignada: SOLBIO00126',
+                'Solicitud SOLBIO00123 próxima a vencer',
+                '2 solicitudes pendientes de completar'
+            ];
+            
+            alert('Notificaciones:\n\n' + notifications.join('\n'));
+        }
+
+        function showToast(message, type = 'info') {
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${type === 'success' ? '#059669' : type === 'error' ? '#ef4444' : '#3b82f6'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 8px;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                z-index: 9999;
+                max-width: 90vw;
+                text-align: center;
+            `;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+
+        async function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker registered:', registration);
+                } catch (error) {
+                    console.log('Service Worker registration failed:', error);
+                }
+            }
+        }
+
+        async function requestNotificationPermission() {
+            if ('Notification' in window) {
+                if (Notification.permission !== 'granted') {
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                        console.log('Notification permission granted');
+                    }
+                }
+            }
+        }
+
+        // Periodically check for new assignments
+        setInterval(async () => {
+            try {
+                // This would check for new assignments from the server
+                // const newRequests = await fetchNewAssignments();
+                // if (newRequests.length > 0) {
+                //     showNewAssignmentNotification(newRequests);
+                // }
+            } catch (error) {
+                console.log('Error checking for updates:', error);
+            }
+        }, 30000); // Check every 30 seconds
+
+        function showNewAssignmentNotification(requests) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('Nueva solicitud asignada', {
+                    body: `Tienes ${requests.length} nueva(s) solicitud(es) asignada(s)`,
+                    icon: '/icon-192x192.png',
+                    tag: 'new-assignment'
+                });
+            }
+        }
+    </script>
+</body>
+</html>
