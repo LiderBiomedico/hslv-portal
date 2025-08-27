@@ -6942,17 +6942,6 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
         function showAddPersonalModal() {
             document.getElementById('add-personal-modal').classList.add('show');
             document.getElementById('add-personal-form').reset();
-			// Agregar después de crear el personal en Airtable
-			const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
-			await window.airtableAPI.updateTecnico(personalId, {
-			codigoAcceso: codigoAcceso
-			});
-
-alert(`✅ Personal agregado exitosamente\n\n` +
-      `👤 ${nombre}\n` +
-      `📧 ${email}\n` +
-      `🔑 Código de acceso: ${codigoAcceso}\n\n` +
-      `⚠️ IMPORTANTE: Anote este código, el técnico lo necesitará para acceder a la app móvil`);
         }
 
         function closeAddPersonalModal() {
@@ -7014,9 +7003,7 @@ alert(`✅ Personal agregado exitosamente\n\n` +
                 alert('❌ Personal no encontrado');
                 return;
             }
-			<button class="btn btn-redirect btn-sm" onclick="window.open('/tech-login.html', '_blank')">
-    📱 Abrir App Móvil
-</button>
+
             const modal = document.getElementById('edit-personal-modal');
             const content = document.getElementById('edit-personal-content');
             
@@ -7485,30 +7472,24 @@ async function notifyTechnician(technicianId, requestNumber) {
 
         // Otras funciones
         function showView(viewName) {
-    document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
-    const targetView = document.getElementById(viewName + '-view');
-    if (targetView) targetView.classList.remove('hidden');
-    
-    document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-    const activeTab = document.querySelector(`[data-view="${viewName}"]`);
-    if (activeTab) activeTab.classList.add('active');
-    
-    // Solo ejecutar si las funciones están cargadas
-    if (typeof updateSolicitudesList !== 'undefined') {
-        switch(viewName) {
-            case 'solicitudes':
-                updateSolicitudesList();
-                break;
-            case 'personal':
-                updateTechniciansList();
-                break;
-            case 'accesos':
-                updateAccessRequestsList();
-                break;
+            document.querySelectorAll('.view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(viewName + '-view').classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelector(`[data-view="${viewName}"]`).classList.add('active');
+            
+            switch(viewName) {
+                case 'solicitudes':
+                    updateSolicitudesList();
+                    break;
+                case 'personal':
+                    updateTechniciansList();
+                    break;
+                case 'accesos':
+                    updateAccessRequestsList();
+                    break;
+            }
         }
-    }
-}
-
 
         function showNotifications() {
             const pendingAccess = cloudSolicitudesAcceso.filter(s => {
