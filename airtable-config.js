@@ -1717,7 +1717,88 @@ async getSolicitudes() {
             throw new Error(`Error actualizando estado: ${error.message}`);
         }
     }
-
+async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
+    console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
+    
+    try {
+        const solicitudes = await this.getSolicitudes();
+        const solicitud = solicitudes.find(s => s.id === solicitudId);
+        
+        if (!solicitud) {
+            throw new Error('Solicitud no encontrada');
+        }
+        
+        console.log('📋 Solicitud encontrada:', solicitud);
+        console.log('🏥 Área actual:', solicitud.servicioIngenieria);
+        console.log('🔄 Nueva área solicitada:', nuevaArea);
+        
+        // Mapeo específico para redirección
+        let areaMapeada;
+        switch(nuevaArea) {
+            case 'INGENIERIA_BIOMEDICA':
+                areaMapeada = 'INGENIERIA_BIOMEDICA';
+                break;
+            case 'MECANICA':
+                areaMapeada = 'MECANICA';
+                break;
+            case 'INFRAESTRUCTURA':
+                areaMapeada = 'INFRAESTRUCTURA';
+                break;
+            default:
+                areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
+                break;
+        }
+        
+        console.log('🗺️ Área mapeada final:', areaMapeada);
+        
+        // Generar nuevo número
+        const nuevoNumero = await this.generateAreaSpecificNumber(areaMapeada);
+        console.log('📋 Nuevo número generado:', nuevoNumero);
+        
+        // Datos de actualización
+        const updateData = {
+            servicioIngenieria: areaMapeada,
+            numero: nuevoNumero,
+            estado: 'PENDIENTE',
+            tecnicoAsignado: '',
+            fechaAsignacion: '',
+            observacionesAsignacion: ''
+        };
+        
+        // Agregar observaciones
+        const fechaActual = new Date().toLocaleString('es-CO');
+        const observacionRedireccion = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
+            `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
+            `- Nueva área: ${nuevaArea}\n` +
+            `- Motivo: ${motivo}\n` +
+            `- Número anterior: ${solicitud.numero}\n` +
+            `- Nuevo número: ${nuevoNumero}`;
+        
+        updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
+        
+        console.log('📝 Enviando actualización:', updateData);
+        
+        // Hacer la actualización
+        const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+            fields: updateData
+        });
+        
+        console.log('✅ Área actualizada exitosamente');
+        
+        return {
+            success: true,
+            solicitud: { ...solicitud, ...updateData },
+            nuevoNumero: nuevoNumero,
+            areaAnterior: solicitud.servicioIngenieria,
+            nuevaArea: areaMapeada,
+            mensaje: `Solicitud redirigida exitosamente`
+        };
+        
+    } catch (error) {
+        console.error('❌ Error en updateRequestArea:', error);
+        throw new Error(`Error al redirigir solicitud: ${error.message}`);
+    }
+}
     // 🆕 NUEVO MÉTODO: Actualizar estado con cambio de tipo de servicio
     async updateRequestStatusWithServiceType(solicitudId, nuevoEstado, nuevoTipoServicio = null, observaciones = '') {
         console.log('🔄 Actualizando estado y tipo de servicio de solicitud:', { solicitudId, nuevoEstado, nuevoTipoServicio });
