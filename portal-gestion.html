@@ -10,84 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-		.floating-export-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1000;
-    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.floating-export-btn:hover {
-    background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
-}
-
-.floating-export-btn:active {
-    transform: translateY(0);
-}
-
-.floating-export-btn .tooltip {
-    position: absolute;
-    right: 70px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: #1f2937;
-    color: white;
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    white-space: nowrap;
-    opacity: 0;
-    visibility: hidden;
-    transition: all 0.3s ease;
-    pointer-events: none;
-}
-
-.floating-export-btn .tooltip::after {
-    content: '';
-    position: absolute;
-    left: 100%;
-    top: 50%;
-    transform: translateY(-50%);
-    border: 6px solid transparent;
-    border-left-color: #1f2937;
-}
-
-.floating-export-btn:hover .tooltip {
-    opacity: 1;
-    visibility: visible;
-}
-
-@media (max-width: 768px) {
-    .floating-export-btn {
-        bottom: 90px; /* Para no interferir con controles móviles */
-        width: 50px;
-        height: 50px;
-        font-size: 20px;
-    }
- <!-- HTML del botón flotante (agregar antes del cierre de </body>) -->
-<button class="floating-export-btn" onclick="exportAllSolicitudesToPDF()" title="Exportar todas las solicitudes a PDF">
-    <span class="tooltip">Exportar todas las solicitudes a PDF</span>
-    📄
-</button>   
-    .floating-export-btn .tooltip {
-        display: none; /* Ocultar tooltip en móviles */
-    }
-}
         * {
             margin: 0;
             padding: 0;
@@ -1472,10 +1394,6 @@
                         📊 Estadísticas Avanzadas
                     </button>
                     </button>
-					<!-- Y agrega DESPUÉS de ella este botón: -->
-<button class="btn btn-info btn-sm" onclick="exportAllSolicitudesToPDF()">
-    📄 Exportar Todas las Solicitudes
-</button>
 <button class="btn btn-secondary btn-sm" onclick="toggleAutoRefresh()" style="display:none;">
 <span id="auto-refresh-toggle-text">⏸️ Pausar Auto-Refresh</span>
 </button>
@@ -1557,19 +1475,15 @@
 <div class="card-header">
 <h2 class="card-title">📋 Gestión de Solicitudes por Área</h2>
 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-<div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-    <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
-        🔄 Actualizar
-    </button>
-    <button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
-        🤖 Auto-asignar
-    </button>
-    <button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
-        📊 Estadísticas
-    </button>
-    <button class="btn btn-info btn-sm" onclick="exportAllSolicitudesToPDF()">
-        📄 Exportar a PDF
-    </button>
+<button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
+                            🔄 Actualizar
+                        </button>
+<button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
+                            🤖 Auto-asignar
+                        </button>
+<button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
+                            📊 Estadísticas
+                        </button>
 </div>
 </div>
 <div class="card-content">
