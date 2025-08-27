@@ -2533,6 +2533,7 @@ window.debugContadores = debugContadores;
 window.debugContadores = debugContadores;
 
 // 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF
+// 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF - VERSIÓN CORREGIDA
 async function exportFilteredSolicitudesPDF() {
     try {
         // Mostrar loading
@@ -2552,7 +2553,7 @@ async function exportFilteredSolicitudesPDF() {
         loadingModal.innerHTML = `
             <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
                 <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                <p style="margin-top: 1rem;">Generando PDF con filtros aplicados...</p>
+                <p style="margin-top: 1rem;">Generando PDF con ${filteredSolicitudes.length || cloudSolicitudes.length} solicitudes...</p>
             </div>
         `;
         document.body.appendChild(loadingModal);
@@ -2564,9 +2565,11 @@ async function exportFilteredSolicitudesPDF() {
         const prioridadFilter = document.getElementById('filter-prioridad-solicitud')?.value || '';
         const tipoServicioFilter = document.getElementById('filter-tipo-servicio')?.value || '';
         
-        // Determinar qué solicitudes exportar
+        // Determinar qué solicitudes exportar - IMPORTANTE: usar las filtradas actualmente
         const solicitudesParaExportar = filteredSolicitudes.length > 0 ? 
-            filteredSolicitudes : cloudSolicitudes;
+            [...filteredSolicitudes] : [...cloudSolicitudes];
+
+        console.log(`Exportando ${solicitudesParaExportar.length} solicitudes al PDF`);
 
         // Calcular estadísticas
         const stats = {
@@ -2604,11 +2607,15 @@ async function exportFilteredSolicitudesPDF() {
         const filtrosTexto = filtrosAplicados.length > 0 ? 
             filtrosAplicados.join(' | ') : 'Sin filtros - Todas las solicitudes';
 
-        // Crear contenido para PDF
+        // Dividir solicitudes en páginas de 30 registros para mejor visualización
+        const solicitudesPorPagina = 30;
+        const totalPaginas = Math.ceil(solicitudesParaExportar.length / solicitudesPorPagina);
+
+        // Crear contenido para PDF con TODAS las solicitudes
         const pdfContent = document.createElement('div');
         pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
         
-        pdfContent.innerHTML = `
+        let htmlContent = `
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
                 <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
                     HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
@@ -2622,46 +2629,129 @@ async function exportFilteredSolicitudesPDF() {
             </div>
 
             <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0369a1; margin-bottom: 10px;">🔍 Filtros Aplicados</h3>
+                <h3 style="color: #0369a1; margin-bottom: 10px;">Filtros Aplicados</h3>
                 <p style="color: #0c4a6e; font-weight: 500;">${filtrosTexto}</p>
+                <p style="color: #075985; font-size: 14px; margin-top: 10px;">
+                    Total de solicitudes en este reporte: <strong>${solicitudesParaExportar.length}</strong>
+                </p>
             </div>
 
             <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0284c7; margin-bottom: 10px;">📊 Resumen</h3>
-                <p>Total: ${stats.total} | Pendientes: ${stats.pendientes} | Completadas: ${stats.completadas}</p>
+                <h3 style="color: #0284c7; margin-bottom: 10px;">Resumen Estadístico</h3>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
+                    <div>Total: <strong>${stats.total}</strong></div>
+                    <div>Pendientes: <strong>${stats.pendientes}</strong></div>
+                    <div>En Proceso: <strong>${stats.enProceso}</strong></div>
+                    <div>Completadas: <strong>${stats.completadas}</strong></div>
+                    <div>Críticas: <strong>${stats.criticas}</strong></div>
+                    <div>Sin Asignar: <strong>${stats.sinAsignar}</strong></div>
+                </div>
             </div>
+        `;
 
-            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        // Generar tabla con TODAS las solicitudes
+        htmlContent += `
+            <h3 style="color: #1f2937; margin: 20px 0 10px 0;">Detalle de Solicitudes</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
                 <thead>
                     <tr style="background: #f8fafc;">
-                        <th style="padding: 6px; border: 1px solid #e5e7eb;">N°</th>
-                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Fecha</th>
-                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Equipo</th>
-                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Estado</th>
-                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Asignado</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">#</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Fecha</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Área</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Prior.</th>
+                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
                     </tr>
                 </thead>
                 <tbody>
-                    ${solicitudesParaExportar.slice(0, 50).map(s => `
-                        <tr>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.fechaCreacion ? new Date(s.fechaCreacion).toLocaleDateString('es-CO') : 'N/D'}</td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.equipo || 'No especificado'}</td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.estado || 'PENDIENTE'}</td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.tecnicoAsignado || 'Sin asignar'}</td>
-                        </tr>
-                    `).join('')}
+        `;
+
+        // Agregar TODAS las solicitudes, no solo las primeras 50
+        solicitudesParaExportar.forEach((s, index) => {
+            const fecha = s.fechaCreacion ? 
+                new Date(s.fechaCreacion).toLocaleDateString('es-CO') : 'N/D';
+            
+            // Agregar salto de página cada 30 registros para mejor legibilidad
+            if (index > 0 && index % solicitudesPorPagina === 0) {
+                htmlContent += `
+                    </tbody>
+                    </table>
+                    <div style="page-break-before: always; margin-top: 20px;">
+                        <p style="text-align: center; color: #6b7280; font-size: 10px;">
+                            Página ${Math.floor(index / solicitudesPorPagina) + 1} de ${totalPaginas}
+                        </p>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">#</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Fecha</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Área</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Prior.</th>
+                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+            }
+
+            htmlContent += `
+                <tr>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${index + 1}</td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${fecha}</td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
+                        ${getAreaName(s.servicioIngenieria).substring(0, 10)}
+                    </td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
+                        ${(s.equipo || 'N/E').substring(0, 20)}${s.equipo && s.equipo.length > 20 ? '...' : ''}
+                    </td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
+                        ${(s.ubicacion || 'N/E').substring(0, 15)}${s.ubicacion && s.ubicacion.length > 15 ? '...' : ''}
+                    </td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; text-align: center;">
+                        <span style="color: ${getStatusColor(s.estado)}; font-weight: bold;">
+                            ${(s.estado || 'PEND').substring(0, 8)}
+                        </span>
+                    </td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; text-align: center;">
+                        <span style="color: ${getPriorityColor(s.prioridad)}; font-weight: bold;">
+                            ${(s.prioridad || 'MED').substring(0, 4)}
+                        </span>
+                    </td>
+                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
+                        ${s.tecnicoAsignado ? s.tecnicoAsignado.substring(0, 12) : 'Sin asignar'}
+                    </td>
+                </tr>
+            `;
+        });
+
+        htmlContent += `
                 </tbody>
             </table>
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
+                <p>Total de registros exportados: ${solicitudesParaExportar.length} solicitudes</p>
+                <p>Reporte generado el ${new Date().toLocaleString('es-CO')}</p>
+            </div>
         `;
-        
+
+        pdfContent.innerHTML = htmlContent;
         document.body.appendChild(pdfContent);
         
         // Generar PDF
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
-            useCORS: true
+            useCORS: true,
+            height: pdfContent.scrollHeight,
+            windowHeight: pdfContent.scrollHeight
         });
         
         const imgData = canvas.toDataURL('image/png');
@@ -2672,9 +2762,20 @@ async function exportFilteredSolicitudesPDF() {
         });
         
         const imgWidth = 210;
+        const pageHeight = 295;
         const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        let heightLeft = imgHeight;
+        let position = 0;
         
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+        
+        while (heightLeft >= 0) {
+            position = heightLeft - imgHeight;
+            pdf.addPage();
+            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+        }
         
         // Limpiar
         document.body.removeChild(pdfContent);
@@ -2682,16 +2783,21 @@ async function exportFilteredSolicitudesPDF() {
         
         // Guardar
         const fecha = new Date().toISOString().split('T')[0];
-        pdf.save(`Solicitudes_Filtradas_${fecha}.pdf`);
+        const nombreArchivo = `Solicitudes_${currentAreaFilter}_${solicitudesParaExportar.length}_registros_${fecha}.pdf`;
+        pdf.save(nombreArchivo);
+        
+        console.log(`PDF generado exitosamente con ${solicitudesParaExportar.length} solicitudes`);
         
     } catch (error) {
         console.error('Error generando PDF:', error);
-        alert('Error al generar el PDF: ' + error.message);
+        alert(`Error al generar el PDF: ${error.message}\nIntente con menos registros o contacte soporte.`);
         // Limpiar modal si hay error
         const modal = document.querySelector('div[style*="position: fixed"]');
         if (modal) modal.remove();
     }
 }
+
+
 
 // Hacer la función global para que sea accesible desde el HTML
 window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
