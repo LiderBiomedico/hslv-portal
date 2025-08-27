@@ -2529,6 +2529,172 @@ function debugContadores() {
 
 // Hacer la función global para poder llamarla desde la consola
 window.debugContadores = debugContadores;
+// Hacer la función global
+window.debugContadores = debugContadores;
+
+// 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF
+async function exportFilteredSolicitudesPDF() {
+    try {
+        // Mostrar loading
+        const loadingModal = document.createElement('div');
+        loadingModal.style.cssText = `
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            z-index: 10000;
+        `;
+        loadingModal.innerHTML = `
+            <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
+                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
+                <p style="margin-top: 1rem;">Generando PDF con filtros aplicados...</p>
+            </div>
+        `;
+        document.body.appendChild(loadingModal);
+
+        // Obtener filtros activos
+        const mesFilter = document.getElementById('filter-mes')?.value || '';
+        const anioFilter = document.getElementById('filter-anio')?.value || '';
+        const estadoFilter = document.getElementById('filter-estado-solicitud')?.value || '';
+        const prioridadFilter = document.getElementById('filter-prioridad-solicitud')?.value || '';
+        const tipoServicioFilter = document.getElementById('filter-tipo-servicio')?.value || '';
+        
+        // Determinar qué solicitudes exportar
+        const solicitudesParaExportar = filteredSolicitudes.length > 0 ? 
+            filteredSolicitudes : cloudSolicitudes;
+
+        // Calcular estadísticas
+        const stats = {
+            total: solicitudesParaExportar.length,
+            pendientes: solicitudesParaExportar.filter(s => 
+                (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE'
+            ).length,
+            enProceso: solicitudesParaExportar.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+            }).length,
+            completadas: solicitudesParaExportar.filter(s => 
+                (s.estado || '').toUpperCase() === 'COMPLETADA'
+            ).length,
+            criticas: solicitudesParaExportar.filter(s => {
+                const prioridad = (s.prioridad || '').toUpperCase();
+                return prioridad === 'CRITICA' || prioridad === 'CRÍTICA';
+            }).length,
+            sinAsignar: solicitudesParaExportar.filter(s => !s.tecnicoAsignado).length
+        };
+
+        // Construir descripción de filtros
+        let filtrosAplicados = [];
+        if (currentAreaFilter !== 'TODAS') filtrosAplicados.push(`Área: ${currentAreaFilter}`);
+        if (mesFilter) {
+            const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+            filtrosAplicados.push(`Mes: ${meses[parseInt(mesFilter)]}`);
+        }
+        if (anioFilter) filtrosAplicados.push(`Año: ${anioFilter}`);
+        if (estadoFilter) filtrosAplicados.push(`Estado: ${estadoFilter}`);
+        if (prioridadFilter) filtrosAplicados.push(`Prioridad: ${prioridadFilter}`);
+        if (tipoServicioFilter) filtrosAplicados.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
+
+        const filtrosTexto = filtrosAplicados.length > 0 ? 
+            filtrosAplicados.join(' | ') : 'Sin filtros - Todas las solicitudes';
+
+        // Crear contenido para PDF
+        const pdfContent = document.createElement('div');
+        pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
+        
+        pdfContent.innerHTML = `
+            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
+                <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
+                    HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
+                </h1>
+                <h2 style="color: #4b5563; font-size: 18px; margin-bottom: 10px;">
+                    Reporte de Solicitudes Filtradas
+                </h2>
+                <p style="color: #6b7280; font-size: 12px;">
+                    Fecha: ${new Date().toLocaleString('es-CO')}
+                </p>
+            </div>
+
+            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #0369a1; margin-bottom: 10px;">🔍 Filtros Aplicados</h3>
+                <p style="color: #0c4a6e; font-weight: 500;">${filtrosTexto}</p>
+            </div>
+
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <h3 style="color: #0284c7; margin-bottom: 10px;">📊 Resumen</h3>
+                <p>Total: ${stats.total} | Pendientes: ${stats.pendientes} | Completadas: ${stats.completadas}</p>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+                <thead>
+                    <tr style="background: #f8fafc;">
+                        <th style="padding: 6px; border: 1px solid #e5e7eb;">N°</th>
+                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Fecha</th>
+                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Equipo</th>
+                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Estado</th>
+                        <th style="padding: 6px; border: 1px solid #e5e7eb;">Asignado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${solicitudesParaExportar.slice(0, 50).map(s => `
+                        <tr>
+                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
+                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.fechaCreacion ? new Date(s.fechaCreacion).toLocaleDateString('es-CO') : 'N/D'}</td>
+                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.equipo || 'No especificado'}</td>
+                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.estado || 'PENDIENTE'}</td>
+                            <td style="padding: 5px; border: 1px solid #e5e7eb;">${s.tecnicoAsignado || 'Sin asignar'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+        
+        document.body.appendChild(pdfContent);
+        
+        // Generar PDF
+        const canvas = await html2canvas(pdfContent, {
+            scale: 2,
+            logging: false,
+            useCORS: true
+        });
+        
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jspdf.jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const imgWidth = 210;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        
+        // Limpiar
+        document.body.removeChild(pdfContent);
+        document.body.removeChild(loadingModal);
+        
+        // Guardar
+        const fecha = new Date().toISOString().split('T')[0];
+        pdf.save(`Solicitudes_Filtradas_${fecha}.pdf`);
+        
+    } catch (error) {
+        console.error('Error generando PDF:', error);
+        alert('Error al generar el PDF: ' + error.message);
+        // Limpiar modal si hay error
+        const modal = document.querySelector('div[style*="position: fixed"]');
+        if (modal) modal.remove();
+    }
+}
+
+// Hacer la función global para que sea accesible desde el HTML
+window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
         function updateAllDisplays() {
             updatePersonnelSummaries();
             updateSolicitudesList();
@@ -6467,256 +6633,8 @@ async function exportSolicitudesPorAreaPDF() {
                 </div>
             </div>
         `;
-    // 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF
-async function exportFilteredSolicitudesPDF() {
-    try {
-        // Mostrar loading
-        const loadingModal = document.createElement('div');
-        loadingModal.style.cssText = `
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 10000;
-        `;
-        loadingModal.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
-                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                <p style="margin-top: 1rem;">Generando PDF con filtros aplicados...</p>
-            </div>
-        `;
-        document.body.appendChild(loadingModal);
 
-        // Obtener filtros activos
-        const mesFilter = document.getElementById('filter-mes').value;
-        const anioFilter = document.getElementById('filter-anio').value;
-        const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-        const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-        const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
-        
-        // Determinar qué solicitudes exportar
-        const solicitudesParaExportar = filteredSolicitudes.length > 0 ? 
-            filteredSolicitudes : cloudSolicitudes;
 
-        // Calcular estadísticas de las solicitudes filtradas
-        const stats = {
-            total: solicitudesParaExportar.length,
-            pendientes: solicitudesParaExportar.filter(s => 
-                (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE'
-            ).length,
-            enProceso: solicitudesParaExportar.filter(s => {
-                const estado = (s.estado || '').toUpperCase();
-                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-            }).length,
-            completadas: solicitudesParaExportar.filter(s => 
-                (s.estado || '').toUpperCase() === 'COMPLETADA'
-            ).length,
-            criticas: solicitudesParaExportar.filter(s => {
-                const prioridad = (s.prioridad || '').toUpperCase();
-                return prioridad === 'CRITICA' || prioridad === 'CRÍTICA';
-            }).length,
-            sinAsignar: solicitudesParaExportar.filter(s => !s.tecnicoAsignado).length
-        };
-
-        // Agrupar por área para el reporte
-        const solicitudesPorAreaFiltered = {
-            BIOMEDICA: [],
-            MECANICA: [],
-            INFRAESTRUCTURA: []
-        };
-
-        solicitudesParaExportar.forEach(solicitud => {
-            const area = normalizarArea(solicitud.servicioIngenieria);
-            if (solicitudesPorAreaFiltered[area]) {
-                solicitudesPorAreaFiltered[area].push(solicitud);
-            }
-        });
-
-        // Construir descripción de filtros
-        let filtrosAplicados = [];
-        if (currentAreaFilter !== 'TODAS') filtrosAplicados.push(`Área: ${currentAreaFilter}`);
-        if (mesFilter) {
-            const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            filtrosAplicados.push(`Mes: ${meses[parseInt(mesFilter)]}`);
-        }
-        if (anioFilter) filtrosAplicados.push(`Año: ${anioFilter}`);
-        if (estadoFilter) filtrosAplicados.push(`Estado: ${estadoFilter}`);
-        if (prioridadFilter) filtrosAplicados.push(`Prioridad: ${prioridadFilter}`);
-        if (tipoServicioFilter) filtrosAplicados.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
-        if (currentStatusFilter !== 'TODAS') filtrosAplicados.push(`Filtro detallado: ${currentStatusFilter}`);
-
-        const filtrosTexto = filtrosAplicados.length > 0 ? 
-            filtrosAplicados.join(' | ') : 'Sin filtros - Todas las solicitudes';
-
-        // Crear contenido para PDF
-        const pdfContent = document.createElement('div');
-        pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
-        
-        pdfContent.innerHTML = `
-            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
-                <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
-                    HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
-                </h1>
-                <h2 style="color: #4b5563; font-size: 18px; margin-bottom: 10px;">
-                    Reporte de Solicitudes - Vista Filtrada
-                </h2>
-                <p style="color: #6b7280; font-size: 12px;">
-                    Fecha de generación: ${new Date().toLocaleString('es-CO')}
-                </p>
-            </div>
-
-            <!-- Filtros aplicados -->
-            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #0ea5e9;">
-                <h3 style="color: #0369a1; margin-bottom: 10px;">🔍 Filtros Aplicados</h3>
-                <p style="color: #0c4a6e; font-weight: 500;">${filtrosTexto}</p>
-            </div>
-
-            <!-- Resumen ejecutivo -->
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0284c7; margin-bottom: 10px;">📊 Resumen de Resultados</h3>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #1f2937;">${stats.total}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Total Solicitudes</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">${stats.pendientes}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Pendientes</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #059669;">${stats.completadas}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Completadas</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #8b5cf6;">${stats.enProceso}</div>
-                        <div style="color: #6b7280; font-size: 12px;">En Proceso</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #ef4444;">${stats.criticas}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Críticas</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #f97316;">${stats.sinAsignar}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Sin Asignar</div>
-                    </div>
-                </div>
-            </div>
-
-            ${currentAreaFilter === 'TODAS' ? `
-                <!-- Detalle por áreas si es vista general -->
-                <div style="margin-bottom: 30px;">
-                    <h3 style="color: #1f2937; margin-bottom: 15px;">📋 Detalle por Áreas</h3>
-                    
-                    <!-- Ingeniería Biomédica -->
-                    ${solicitudesPorAreaFiltered.BIOMEDICA.length > 0 ? `
-                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                            <div style="background: #059669; color: white; padding: 8px 12px; border-radius: 6px 6px 0 0;">
-                                <strong>🥼 INGENIERÍA BIOMÉDICA (${solicitudesPorAreaFiltered.BIOMEDICA.length})</strong>
-                            </div>
-                            <div style="border: 1px solid #e5e7eb; border-top: none;">
-                                ${generateFilteredSolicitudesTable(solicitudesPorAreaFiltered.BIOMEDICA.slice(0, 15))}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Mecánica -->
-                    ${solicitudesPorAreaFiltered.MECANICA.length > 0 ? `
-                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                            <div style="background: #f59e0b; color: white; padding: 8px 12px; border-radius: 6px 6px 0 0;">
-                                <strong>⚙️ MECÁNICA (${solicitudesPorAreaFiltered.MECANICA.length})</strong>
-                            </div>
-                            <div style="border: 1px solid #e5e7eb; border-top: none;">
-                                ${generateFilteredSolicitudesTable(solicitudesPorAreaFiltered.MECANICA.slice(0, 15))}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    <!-- Infraestructura -->
-                    ${solicitudesPorAreaFiltered.INFRAESTRUCTURA.length > 0 ? `
-                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                            <div style="background: #8b5cf6; color: white; padding: 8px 12px; border-radius: 6px 6px 0 0;">
-                                <strong>🏗️ INFRAESTRUCTURA (${solicitudesPorAreaFiltered.INFRAESTRUCTURA.length})</strong>
-                            </div>
-                            <div style="border: 1px solid #e5e7eb; border-top: none;">
-                                ${generateFilteredSolicitudesTable(solicitudesPorAreaFiltered.INFRAESTRUCTURA.slice(0, 15))}
-                            </div>
-                        </div>
-                    ` : ''}
-                </div>
-            ` : `
-                <!-- Detalle del área específica -->
-                <div style="margin-bottom: 30px;">
-                    <h3 style="color: #1f2937; margin-bottom: 15px;">📋 Solicitudes de ${currentAreaFilter}</h3>
-                    ${generateFilteredSolicitudesTable(solicitudesParaExportar.slice(0, 50))}
-                    ${solicitudesParaExportar.length > 50 ? `
-                        <p style="text-align: center; color: #6b7280; margin-top: 10px; font-style: italic;">
-                            Mostrando 50 de ${solicitudesParaExportar.length} solicitudes
-                        </p>
-                    ` : ''}
-                </div>
-            `}
-
-            <!-- Pie de página -->
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 11px;">
-                <p>Este reporte fue generado automáticamente desde el Portal de Gestión Cloud</p>
-                <p>Total de registros en el reporte: ${solicitudesParaExportar.length} solicitudes</p>
-            </div>
-        `;
-        
-        document.body.appendChild(pdfContent);
-        
-        // Generar PDF
-        const canvas = await html2canvas(pdfContent, {
-            scale: 2,
-            logging: false,
-            useCORS: true
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-        
-        // Limpiar y guardar
-        document.body.removeChild(pdfContent);
-        document.body.removeChild(loadingModal);
-        
-        // Generar nombre de archivo con información de filtros
-        const fecha = new Date().toISOString().split('T')[0];
-        const tipoReporte = currentAreaFilter === 'TODAS' ? 'General' : currentAreaFilter;
-        const nombreArchivo = `Solicitudes_${tipoReporte}_Filtrado_${fecha}.pdf`;
-        
-        pdf.save(nombreArchivo);
-        
-    } catch (error) {
-        console.error('Error generando PDF:', error);
-        alert('Error al generar el PDF: ' + error.message);
-    }
-}
 
 // Función auxiliar para generar tabla de solicitudes filtradas
 function generateFilteredSolicitudesTable(solicitudes) {
