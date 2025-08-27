@@ -1717,153 +1717,7 @@ async getSolicitudes() {
             throw new Error(`Error actualizando estado: ${error.message}`);
         }
     }
-async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
-    console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
-    
-    try {
-        const solicitudes = await this.getSolicitudes();
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
-        
-        if (!solicitud) {
-            throw new Error('Solicitud no encontrada');
-        }
-        
-        console.log('📋 Solicitud encontrada:', solicitud);
-        console.log('🏥 Área actual:', solicitud.servicioIngenieria);
-        console.log('🔄 Nueva área solicitada:', nuevaArea);
-        
-        // Mapeo específico para redirección
-        let areaMapeada;
-        switch(nuevaArea) {
-            case 'INGENIERIA_BIOMEDICA':
-                areaMapeada = 'INGENIERIA_BIOMEDICA';
-                break;
-            case 'MECANICA':
-                areaMapeada = 'MECANICA';
-                break;
-            case 'INFRAESTRUCTURA':
-                areaMapeada = 'INFRAESTRUCTURA';
-                break;
-            default:
-                areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
-                break;
-        }
-        
-        console.log('🗺️ Área mapeada final:', areaMapeada);
-        
-        // Generar nuevo número
-        const nuevoNumero = await this.generateAreaSpecificNumber(areaMapeada);
-        console.log('📋 Nuevo número generado:', nuevoNumero);
-        
-        // CORRECCIÓN: Usar null en lugar de cadenas vacías para campos de fecha
-        const updateData = {
-            servicioIngenieria: areaMapeada,
-            numero: nuevoNumero,
-            estado: 'PENDIENTE',
-            tecnicoAsignado: null,  // Cambiar de '' a null
-            fechaAsignacion: null,  // IMPORTANTE: null en lugar de ''
-            observacionesAsignacion: null  // null en lugar de ''
-        };
-        
-        // Agregar observaciones
-        const fechaActual = new Date().toLocaleString('es-CO');
-        const observacionRedireccion = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
-            `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
-            `- Nueva área: ${nuevaArea}\n` +
-            `- Motivo: ${motivo}\n` +
-            `- Número anterior: ${solicitud.numero}\n` +
-            `- Nuevo número: ${nuevoNumero}`;
-        
-        updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
-        
-        console.log('📝 Enviando actualización (con campos null):', updateData);
-        
-        try {
-            // Hacer la actualización
-            const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-                fields: updateData
-            });
-            
-            console.log('✅ Área actualizada exitosamente');
-            
-            return {
-                success: true,
-                solicitud: { ...solicitud, ...updateData },
-                nuevoNumero: nuevoNumero,
-                areaAnterior: solicitud.servicioIngenieria,
-                nuevaArea: areaMapeada,
-                mensaje: `Solicitud redirigida exitosamente`
-            };
-            
-        } catch (updateError) {
-            console.error('❌ Error en PATCH request:', updateError);
-            
-            // Si sigue fallando, intentar sin los campos problemáticos
-            if (updateError.message.includes('422') || updateError.message.includes('fechaAsignacion')) {
-                console.log('⚠️ Intentando sin campos de fecha...');
-                
-                const minimalUpdateData = {
-                    servicioIngenieria: areaMapeada,
-                    numero: nuevoNumero,
-                    estado: 'PENDIENTE',
-                    observaciones: updateData.observaciones
-                };
-                
-                // Solo limpiar tecnicoAsignado si existe
-                if (solicitud.tecnicoAsignado) {
-                    minimalUpdateData.tecnicoAsignado = null;
-                }
-                
-                console.log('📝 Datos mínimos:', minimalUpdateData);
-                
-                const resultMinimal = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-                    fields: minimalUpdateData
-                });
-                
-                console.log('✅ Área actualizada con datos mínimos');
-                
-                return {
-                    success: true,
-                    solicitud: { ...solicitud, ...minimalUpdateData },
-                    nuevoNumero: nuevoNumero,
-                    areaAnterior: solicitud.servicioIngenieria,
-                    nuevaArea: areaMapeada,
-                    mensaje: `Solicitud redirigida exitosamente (modo mínimo)`
-                };
-            }
-            
-            throw updateError;
-        }
-        
-    } catch (error) {
-        console.error('❌ Error en updateRequestArea:', error);
-        throw new Error(`Error al redirigir solicitud: ${error.message}`);
-    }
-}
 
-// FUNCIÓN AUXILIAR: Limpiar campos de fecha correctamente
-function cleanDateField(value) {
-    // Si el valor está vacío, retornar null
-    if (!value || value === '' || value === 'null' || value === 'undefined') {
-        return null;
-    }
-    
-    // Si es una fecha válida, retornarla como string ISO
-    if (value instanceof Date) {
-        return value.toISOString();
-    }
-    
-    // Si es un string de fecha, validarlo
-    if (typeof value === 'string') {
-        const date = new Date(value);
-        if (isNaN(date.getTime())) {
-            return null; // Fecha inválida
-        }
-        return date.toISOString();
-    }
-    
-    return null;
-}
     // 🆕 NUEVO MÉTODO: Actualizar estado con cambio de tipo de servicio
     async updateRequestStatusWithServiceType(solicitudId, nuevoEstado, nuevoTipoServicio = null, observaciones = '') {
         console.log('🔄 Actualizando estado y tipo de servicio de solicitud:', { solicitudId, nuevoEstado, nuevoTipoServicio });
@@ -2004,141 +1858,73 @@ function cleanDateField(value) {
     }
 
     // 🔄 MÉTODO: Actualizar área de una solicitud (redirección)
-		async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
-    console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
-    
-    try {
-        // Obtener la solicitud actual
-        const solicitudes = await this.getSolicitudes();
-        const solicitud = solicitudes.find(s => s.id === solicitudId);
+    async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
+        console.log('🔄 Actualizando área de solicitud:', { solicitudId, nuevaArea, motivo });
         
-        if (!solicitud) {
-            throw new Error('Solicitud no encontrada');
-        }
-        
-        console.log('📋 Solicitud actual:', solicitud);
-        console.log('🏥 Área actual:', solicitud.servicioIngenieria);
-        console.log('🔄 Nueva área solicitada:', nuevaArea);
-        
-        // CORRECCIÓN: Mapear correctamente el área nueva
-        let areaMapeada;
-        
-        // Mapeo específico para redirección
-        switch(nuevaArea) {
-            case 'INGENIERIA_BIOMEDICA':
-                areaMapeada = 'INGENIERIA_BIOMEDICA';
-                break;
-            case 'MECANICA':
-                areaMapeada = 'MECANICA';
-                break;
-            case 'INFRAESTRUCTURA':
-                areaMapeada = 'INFRAESTRUCTURA';
-                break;
-            default:
-                // Usar el mapeo estándar si no coincide
-                areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
-                break;
-        }
-        
-        console.log('🗺️ Área mapeada:', areaMapeada);
-        
-        // Generar nuevo número para el área
-        console.log('🔢 Generando nuevo número...');
-        const nuevoNumero = await this.generateAreaSpecificNumber(areaMapeada);
-        console.log('📋 Nuevo número generado:', nuevoNumero);
-        
-        // Preparar datos de actualización
-        const updateData = {
-            servicioIngenieria: areaMapeada,
-            numero: nuevoNumero,
-            estado: 'PENDIENTE', // Resetear a pendiente
-            tecnicoAsignado: '', // Limpiar asignación
-            fechaAsignacion: '', // Limpiar fecha de asignación
-            observacionesAsignacion: '' // Limpiar observaciones de asignación
-        };
-        
-        // Agregar al historial de observaciones
-        const fechaActual = new Date().toLocaleString('es-CO');
-        const observacionRedireccion = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
-            `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
-            `- Nueva área: ${nuevaArea} (${areaMapeada})\n` +
-            `- Motivo: ${motivo}\n` +
-            `- Número anterior: ${solicitud.numero}\n` +
-            `- Nuevo número: ${nuevoNumero}`;
-        
-        updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
-        
-        console.log('📝 Datos a actualizar:', updateData);
-        
-        // CORRECCIÓN: Hacer la actualización con manejo de errores
         try {
+            const solicitudes = await this.getSolicitudes();
+            const solicitud = solicitudes.find(s => s.id === solicitudId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud no encontrada');
+            }
+            
+            console.log('📋 Solicitud actual:', solicitud);
+            console.log('🏥 Área actual:', solicitud.servicioIngenieria);
+            console.log('🔄 Nueva área solicitada:', nuevaArea);
+            
+            // Mapear el área nueva
+            const areaMapeada = this.mapFieldValue('servicioIngenieria', nuevaArea);
+            console.log('🗺️ Área mapeada:', areaMapeada);
+            
+            // Generar nuevo número para el área
+            const nuevoNumero = await this.generateAreaSpecificNumber(nuevaArea);
+            console.log('📋 Nuevo número generado:', nuevoNumero);
+            
+            // Preparar datos de actualización
+            const updateData = {
+                servicioIngenieria: areaMapeada,
+                numero: nuevoNumero,
+                estado: 'PENDIENTE', // Resetear a pendiente
+                tecnicoAsignado: '', // Limpiar asignación
+                fechaAsignacion: null,
+                observacionesAsignacion: ''
+            };
+            
+            // Agregar al historial de observaciones
+            const fechaActual = new Date().toLocaleString('es-CO');
+            const observacionRedireccion = `[${fechaActual}] REDIRECCIÓN DE ÁREA:\n` +
+                `- Área anterior: ${areaAnterior || solicitud.servicioIngenieria}\n` +
+                `- Nueva área: ${nuevaArea}\n` +
+                `- Motivo: ${motivo}\n` +
+                `- Número anterior: ${solicitud.numero}\n` +
+                `- Nuevo número: ${nuevoNumero}`;
+            
+            updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
+            
+            console.log('🔍 Datos a actualizar:', updateData);
+            
+            // Hacer la actualización
             const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
                 fields: updateData
             });
             
-            console.log('✅ Área actualizada exitosamente en Airtable');
-            console.log('📊 Respuesta:', result);
+            console.log('✅ Área actualizada exitosamente');
             
             return {
                 success: true,
                 solicitud: { ...solicitud, ...updateData },
                 nuevoNumero: nuevoNumero,
                 areaAnterior: solicitud.servicioIngenieria,
-                nuevaArea: areaMapeada,
-                mensaje: `Solicitud redirigida de ${solicitud.servicioIngenieria} a ${areaMapeada}`
+                nuevaArea: nuevaArea,
+                mensaje: `Solicitud redirigida de ${solicitud.servicioIngenieria} a ${nuevaArea}`
             };
             
-        } catch (updateError) {
-            console.error('❌ Error en PATCH request:', updateError);
-            
-            // Si es error 422, intentar con valores alternativos
-            if (updateError.message.includes('422')) {
-                console.log('⚠️ Error 422 detectado, intentando con mapeo alternativo...');
-                
-                // Intentar con valores alternativos conocidos
-                const areasAlternativas = {
-                    'INGENIERIA_BIOMEDICA': ['IngenierÃ­a BiomÃ©dica', 'Ingenieria Biomedica'],
-                    'MECANICA': ['MecÃ¡nica', 'Mecanica'],
-                    'INFRAESTRUCTURA': ['Infraestructura']
-                };
-                
-                const alternativas = areasAlternativas[areaMapeada] || [];
-                
-                for (const areaAlt of alternativas) {
-                    try {
-                        console.log(`🔄 Intentando con área alternativa: ${areaAlt}`);
-                        updateData.servicioIngenieria = areaAlt;
-                        
-                        const resultAlt = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-                            fields: updateData
-                        });
-                        
-                        console.log(`✅ Área actualizada con valor alternativo: ${areaAlt}`);
-                        
-                        return {
-                            success: true,
-                            solicitud: { ...solicitud, ...updateData },
-                            nuevoNumero: nuevoNumero,
-                            areaAnterior: solicitud.servicioIngenieria,
-                            nuevaArea: areaAlt,
-                            mensaje: `Solicitud redirigida de ${solicitud.servicioIngenieria} a ${areaAlt}`
-                        };
-                        
-                    } catch (altError) {
-                        console.warn(`❌ Falló con ${areaAlt}:`, altError.message);
-                        continue;
-                    }
-                }
-            }
-            
-            throw updateError;
+        } catch (error) {
+            console.error('❌ Error actualizando área:', error);
+            throw new Error(`Error al redirigir solicitud: ${error.message}`);
         }
-        
-    } catch (error) {
-        console.error('❌ Error en updateRequestArea:', error);
-        throw new Error(`Error al redirigir solicitud: ${error.message}`);
     }
-}
 
     // 🔓 MÉTODO: Liberar técnico asignado
     async liberarTecnicoAsignado(solicitudId) {

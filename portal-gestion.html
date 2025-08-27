@@ -1898,19 +1898,6 @@
 <div id="edit-personal-content">
 <!-- Contenido dinámico del modal de edición -->
 </div>
-<!-- Modal de Redirección de Área (AGREGAR ESTE CÓDIGO) -->
-<div class="modal" id="redirect-area-modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 class="modal-title">🔄 Redirigir Área de Solicitud</h3>
-            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
-        </div>
-        <div id="redirect-area-content">
-            <!-- Contenido dinámico del modal -->
-        </div>
-    </div>
-</div>
-
 </div>
 </div>
 <!-- Modal de Estadísticas Avanzadas MEJORADO -->
@@ -5471,58 +5458,56 @@ async function handleRedirectArea(event, solicitudId) {
     const motivo = document.getElementById('redirect-reason').value.trim();
     
     if (!nuevaArea || !motivo) {
-        alert('⚠️ Por favor complete todos los campos requeridos');
+        alert('❌ Por favor complete todos los campos requeridos');
         return;
     }
 
-    const confirmed = confirm('¿Está seguro que desea redirigir esta solicitud?\n\nEsto generará un nuevo número y liberará el personal asignado.');
+    const confirmed = confirm('¿Está seguro que desea redirigir esta solicitud a otra área?\n\nEsto generará un nuevo número y liberará cualquier personal asignado.');
     if (!confirmed) return;
 
     try {
         const submitBtn = event.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
         submitBtn.disabled = true;
         submitBtn.innerHTML = '⏳ Redirigiendo...';
 
+        // Obtener la solicitud actual
         const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
         if (!solicitud) {
             throw new Error('Solicitud no encontrada');
         }
 
-        console.log('🔄 Iniciando redirección:', { solicitudId, nuevaArea, motivo });
-
-        // Liberar técnico si existe
+        // Si hay técnico asignado, liberarlo primero
         if (solicitud.tecnicoAsignado) {
-            console.log('🔓 Liberando técnico...');
+            console.log('🔓 Liberando técnico asignado antes de redirigir...');
             await window.airtableAPI.liberarTecnicoAsignado(solicitudId);
         }
 
-        // Redirigir área
-        console.log('📞 Llamando a updateRequestArea...');
+        // Actualizar el área de la solicitud
         const result = await window.airtableAPI.updateRequestArea(
             solicitudId,
             nuevaArea,
             motivo,
-            solicitud.servicioIngenieria
+            solicitud.servicioIngenieria // Área anterior
         );
 
-        console.log('📊 Resultado:', result);
-
-        if (result && result.success) {
+        if (result.success) {
             await refreshFromCloud();
             closeRedirectAreaModal();
             
             alert(`✅ Solicitud redirigida exitosamente\n\n` +
                   `📋 Número anterior: ${solicitud.numero}\n` +
-                  `📋 Nuevo número: ${result.nuevoNumero}\n` +
-                  `🏥 De: ${getAreaName(solicitud.servicioIngenieria)}\n` +
-                  `🔄 A: ${getAreaName(nuevaArea)}`);
+                  `📋 Nuevo número: ${result.nuevoNumero || 'Mantenido'}\n` +
+                  `🏥 Área anterior: ${getAreaName(solicitud.servicioIngenieria)}\n` +
+                  `🔄 Nueva área: ${getAreaName(nuevaArea)}\n\n` +
+                  `La solicitud ahora aparecerá en el área de ${getAreaName(nuevaArea)}`);
         } else {
-            throw new Error('Error en la redirección');
+            throw new Error(result.mensaje || 'Error al redirigir');
         }
 
     } catch (error) {
-        console.error('❌ Error redirigiendo:', error);
-        alert('❌ Error al redirigir: ' + error.message);
+        console.error('❌ Error redirigiendo solicitud:', error);
+        alert('❌ Error al redirigir solicitud: ' + error.message);
     } finally {
         const submitBtn = event.target.querySelector('button[type="submit"]');
         if (submitBtn) {
@@ -5533,11 +5518,7 @@ async function handleRedirectArea(event, solicitudId) {
 }
 
 function closeRedirectAreaModal() {
-    const modal = document.getElementById('redirect-area-modal');
-    if (modal) {
-        modal.classList.remove('show');
-        console.log('🔒 Modal de redirección cerrado');
-    }
+    document.getElementById('redirect-area-modal').classList.remove('show');
 }
 // NUEVA FUNCIÓN: Crear gráfico trimestral
 function createQuarterlyChart(area, datosTrimestral) {
