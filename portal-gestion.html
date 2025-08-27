@@ -1561,41 +1561,89 @@
 </div>
 
 <!-- Filtros de Solicitudes existentes -->
+<!-- Filtros de Solicitudes existentes -->
 <div class="filters-section">
-<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
-<div class="filters-grid">
-<div>
-<label class="form-label">Estado:</label>
-<select class="form-select" id="filter-estado-solicitud" onchange="filterSolicitudes()">
-<option value="">Todos los estados</option>
-<option value="PENDIENTE">⏳ Pendiente</option>
-<option value="ASIGNADA">🎯 Asignada</option>
-<option value="EN_PROCESO">🔄 En Proceso</option>
-<option value="COMPLETADA">✅ Completada</option>
-<option value="CANCELADA">❌ Cancelada</option>
-</select>
-</div>
-<div>
-<!-- Modal de Redirección de Área -->
-<div class="modal" id="redirect-area-modal">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3 class="modal-title">🔄 Redirigir Solicitud a Otra Área</h3>
-            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
+    <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
+    <div class="filters-grid">
+        <!-- NUEVO: Filtro de Mes y Año -->
+        <div>
+            <label class="form-label">📅 Mes:</label>
+            <select class="form-select" id="filter-mes" onchange="filterSolicitudes()">
+                <option value="">Todos los meses</option>
+                <option value="01">Enero</option>
+                <option value="02">Febrero</option>
+                <option value="03">Marzo</option>
+                <option value="04">Abril</option>
+                <option value="05">Mayo</option>
+                <option value="06">Junio</option>
+                <option value="07">Julio</option>
+                <option value="08">Agosto</option>
+                <option value="09">Septiembre</option>
+                <option value="10">Octubre</option>
+                <option value="11">Noviembre</option>
+                <option value="12">Diciembre</option>
+            </select>
         </div>
-        <div id="redirect-area-content">
-            <!-- Contenido dinámico del modal -->
+        
+        <div>
+            <label class="form-label">📆 Año:</label>
+            <select class="form-select" id="filter-anio" onchange="filterSolicitudes()">
+                <option value="">Todos los años</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="form-label">Estado:</label>
+            <select class="form-select" id="filter-estado-solicitud" onchange="filterSolicitudes()">
+                <option value="">Todos los estados</option>
+                <option value="PENDIENTE">⏳ Pendiente</option>
+                <option value="ASIGNADA">🎯 Asignada</option>
+                <option value="EN_PROCESO">🔄 En Proceso</option>
+                <option value="COMPLETADA">✅ Completada</option>
+                <option value="CANCELADA">❌ Cancelada</option>
+            </select>
+        </div>
+        
+        <div>
+            <label class="form-label">Prioridad:</label>
+            <select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
+                <option value="">Todas las prioridades</option>
+                <option value="CRITICA">🚨 Crítica</option>
+                <option value="ALTA">🔴 Alta</option>
+                <option value="MEDIA">🟡 Media</option>
+                <option value="BAJA">🟢 Baja</option>
+            </select>
+        </div>
+        
+        <div>
+            <label class="form-label">Tipo de Servicio:</label>
+            <select class="form-select" id="filter-tipo-servicio" onchange="filterSolicitudes()">
+                <option value="">Todos los tipos</option>
+                <option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
+                <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
+                <option value="REPARACION">Reparación</option>
+                <option value="INSTALACION">Instalación</option>
+                <option value="ERROR_USUARIO">Error de Usuario</option>
+            </select>
+        </div>
+        
+        <div>
+            <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
+                🗑️ Limpiar Filtros
+            </button>
         </div>
     </div>
-</div>
-<label class="form-label">Prioridad:</label>
-<select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
-<option value="">Todas las prioridades</option>
-<option value="CRITICA">🚨 Crítica</option>
-<option value="ALTA">🔴 Alta</option>
-<option value="MEDIA">🟡 Media</option>
-<option value="BAJA">🟢 Baja</option>
-</select>
+    
+    <!-- Indicador de filtros activos -->
+    <div id="active-filters-indicator" style="margin-top: 1rem; display: none;">
+        <div style="background: #dbeafe; padding: 0.75rem; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
+            <strong style="color: #1e40af;">🔍 Filtros activos:</strong>
+            <span id="active-filters-text" style="color: #1e3a8a; margin-left: 0.5rem;"></span>
+        </div>
+    </div>
 </div>
 <div>
 <label class="form-label">Tipo de Servicio:</label>
@@ -6534,48 +6582,121 @@ function getPriorityColor(priority) {
     }
 }
         // 🔍 Filtros
-        function filterSolicitudes() {
-            const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-            const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-            const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
+       function filterSolicitudes() {
+    const mesFilter = document.getElementById('filter-mes').value;
+    const anioFilter = document.getElementById('filter-anio').value;
+    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
+    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
+    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
+    
+    // Empezar con todas las solicitudes o las del área actual
+    if (currentAreaFilter === 'TODAS') {
+        filteredSolicitudes = [...cloudSolicitudes];
+    } else {
+        filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
+    }
+    
+    // Aplicar filtro de mes y año
+    if (mesFilter || anioFilter) {
+        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+            if (!solicitud.fechaCreacion) return false;
             
-            // Empezar con las solicitudes del área actual
-            if (currentAreaFilter === 'TODAS') {
-                filteredSolicitudes = [...cloudSolicitudes];
-            } else {
-                filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
+            const fecha = new Date(solicitud.fechaCreacion);
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = String(fecha.getFullYear());
+            
+            if (mesFilter && anioFilter) {
+                return mes === mesFilter && anio === anioFilter;
+            } else if (mesFilter) {
+                return mes === mesFilter;
+            } else if (anioFilter) {
+                return anio === anioFilter;
             }
-            
-            // Aplicar filtro de estado actual
-            if (currentStatusFilter !== 'TODAS') {
-                filterByDetailedStatus(currentStatusFilter);
-                return;
-            }
-            
-            // Aplicar filtros
-            if (estadoFilter) {
-                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-                    const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
-                    return solicitudEstado === estadoFilter;
-                });
-            }
-            
-            if (prioridadFilter) {
-                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-                    const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
-                    return solicitudPrioridad === prioridadFilter;
-                });
-            }
-            
-            if (tipoServicioFilter) {
-                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-                    const solicitudTipo = solicitud.tipoServicio ? solicitud.tipoServicio.toUpperCase() : '';
-                    return solicitudTipo === tipoServicioFilter;
-                });
-            }
-            
-            updateSolicitudesList();
+            return true;
+        });
+    }
+    
+    // Aplicar otros filtros existentes
+    if (estadoFilter) {
+        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+            const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
+            return solicitudEstado === estadoFilter;
+        });
+    }
+    
+    if (prioridadFilter) {
+        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+            const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
+            return solicitudPrioridad === prioridadFilter;
+        });
+    }
+    
+    if (tipoServicioFilter) {
+        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+            const solicitudTipo = solicitud.tipoServicio ? solicitud.tipoServicio.toUpperCase() : '';
+            return solicitudTipo === tipoServicioFilter;
+        });
+    }
+    
+    // Actualizar indicador de filtros activos
+    updateActiveFiltersIndicator();
+    
+    // Actualizar la lista
+    updateSolicitudesList();
+}
+
+// Nueva función para mostrar los filtros activos
+function updateActiveFiltersIndicator() {
+    const mesFilter = document.getElementById('filter-mes').value;
+    const anioFilter = document.getElementById('filter-anio').value;
+    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
+    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
+    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
+    
+    const indicator = document.getElementById('active-filters-indicator');
+    const text = document.getElementById('active-filters-text');
+    
+    let activeFilters = [];
+    
+    if (mesFilter) {
+        const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        activeFilters.push(`Mes: ${meses[parseInt(mesFilter)]}`);
+    }
+    if (anioFilter) activeFilters.push(`Año: ${anioFilter}`);
+    if (estadoFilter) activeFilters.push(`Estado: ${estadoFilter}`);
+    if (prioridadFilter) activeFilters.push(`Prioridad: ${prioridadFilter}`);
+    if (tipoServicioFilter) activeFilters.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
+    if (currentAreaFilter !== 'TODAS') activeFilters.push(`Área: ${currentAreaFilter}`);
+    
+    if (activeFilters.length > 0) {
+        indicator.style.display = 'block';
+        text.textContent = activeFilters.join(' | ');
+    } else {
+        indicator.style.display = 'none';
+    }
+}
+
+// Actualizar la función clearSolicitudesFilters()
+function clearSolicitudesFilters() {
+    document.getElementById('filter-mes').value = '';
+    document.getElementById('filter-anio').value = '';
+    document.getElementById('filter-estado-solicitud').value = '';
+    document.getElementById('filter-prioridad-solicitud').value = '';
+    document.getElementById('filter-tipo-servicio').value = '';
+    
+    currentStatusFilter = 'TODAS';
+    document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.statusFilter === 'TODAS') {
+            btn.classList.add('active');
         }
+    });
+    
+    // Mantener el área actual pero limpiar otros filtros
+    filterSolicitudesByArea(currentAreaFilter);
+    updateActiveFiltersIndicator();
+}
 
         function clearSolicitudesFilters() {
             document.getElementById('filter-estado-solicitud').value = '';
