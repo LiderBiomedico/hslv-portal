@@ -6942,6 +6942,17 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
         function showAddPersonalModal() {
             document.getElementById('add-personal-modal').classList.add('show');
             document.getElementById('add-personal-form').reset();
+			// Agregar después de crear el personal en Airtable
+			const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
+			await window.airtableAPI.updateTecnico(personalId, {
+			codigoAcceso: codigoAcceso
+			});
+
+alert(`✅ Personal agregado exitosamente\n\n` +
+      `👤 ${nombre}\n` +
+      `📧 ${email}\n` +
+      `🔑 Código de acceso: ${codigoAcceso}\n\n` +
+      `⚠️ IMPORTANTE: Anote este código, el técnico lo necesitará para acceder a la app móvil`);
         }
 
         function closeAddPersonalModal() {
@@ -7003,7 +7014,9 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
                 alert('❌ Personal no encontrado');
                 return;
             }
-
+			<button class="btn btn-redirect btn-sm" onclick="window.open('/tech-login.html', '_blank')">
+    📱 Abrir App Móvil
+</button>
             const modal = document.getElementById('edit-personal-modal');
             const content = document.getElementById('edit-personal-content');
             

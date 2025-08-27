@@ -1166,7 +1166,23 @@
                 showToast('Error al iniciar trabajo', 'error');
             }
         }
-
+async function loadUserRequests() {
+    try {
+        const user = JSON.parse(localStorage.getItem('techapp_user'));
+        const solicitudes = await window.airtableAPI.getSolicitudes();
+        
+        // Filtrar solo las asignadas a este técnico
+        userRequests = solicitudes.filter(s => 
+            s.tecnicoAsignado === user.nombre && 
+            s.estado !== 'COMPLETADA'
+        );
+        
+        updateStatistics();
+        renderRequests();
+    } catch (error) {
+        console.error('Error cargando solicitudes:', error);
+    }
+}
         function updateStatus(requestId) {
             selectedRequestId = requestId;
             const request = userRequests.find(r => r.id === requestId);
