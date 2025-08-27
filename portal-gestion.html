@@ -1328,37 +1328,6 @@
                 break-inside: avoid;
             }
         }
-		/* Estilos para el Asistente IA */
-.ai-panel-container {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 400px;
-    height: 600px;
-    background: white;
-    border-radius: 1rem;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-}
-
-.ai-message {
-    margin-bottom: 1rem;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-}
-
-.ai-message.assistant {
-    background: white;
-    border-left: 3px solid #2563eb;
-}
-
-.ai-message.user {
-    background: #e0f2fe;
-    border-left: 3px solid #0ea5e9;
-    margin-left: 2rem;
-}
     </style>
 </head>
 <body>
@@ -7509,243 +7478,6 @@ async function forzarActualizacionCompleta() {
 }
 
 window.forzarActualizacionCompleta = forzarActualizacionCompleta;
-const AIAssistant = {
-    // Agregar esto después de las funciones de estadísticas en tu código
-
-// Configuración del Asistente IA
-const AIAssistant = {
-    // Inicializar el asistente
-    init: function() {
-        this.addAIButton();
-        this.createAIPanel();
-    },
-
-    // Agregar botón de IA en el header
-    addAIButton: function() {
-        const userInfo = document.querySelector('.user-info');
-        const aiButton = document.createElement('button');
-        aiButton.className = 'btn btn-primary';
-        aiButton.innerHTML = '🤖 Asistente IA';
-        aiButton.onclick = () => this.toggleAIPanel();
-        userInfo.appendChild(aiButton);
-    },
-
-    // Crear panel del asistente
-    createAIPanel: function() {
-        const panel = document.createElement('div');
-        panel.id = 'ai-assistant-panel';
-        panel.innerHTML = `
-            <div class="ai-panel-container" style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                width: 400px;
-                height: 600px;
-                background: white;
-                border-radius: 1rem;
-                box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-                z-index: 1000;
-                display: none;
-                flex-direction: column;
-            ">
-                <div style="
-                    background: linear-gradient(135deg, #2563eb 0%, #059669 100%);
-                    color: white;
-                    padding: 1rem;
-                    border-radius: 1rem 1rem 0 0;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                ">
-                    <h3 style="margin: 0;">🤖 Asistente IA Hospital</h3>
-                    <button onclick="AIAssistant.toggleAIPanel()" style="
-                        background: none;
-                        border: none;
-                        color: white;
-                        font-size: 1.5rem;
-                        cursor: pointer;
-                    ">×</button>
-                </div>
-                
-                <div style="padding: 1rem;">
-                    <div class="ai-quick-actions" style="
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 0.5rem;
-                        margin-bottom: 1rem;
-                    ">
-                        <button class="btn btn-sm btn-primary" onclick="AIAssistant.analyzePendingRequests()">
-                            📊 Analizar Pendientes
-                        </button>
-                        <button class="btn btn-sm btn-success" onclick="AIAssistant.suggestAssignments()">
-                            🎯 Sugerir Asignaciones
-                        </button>
-                        <button class="btn btn-sm btn-warning" onclick="AIAssistant.predictMaintenanceNeeds()">
-                            🔮 Predecir Mantenimientos
-                        </button>
-                        <button class="btn btn-sm btn-info" onclick="AIAssistant.generateDailyReport()">
-                            📄 Reporte del Día
-                        </button>
-                    </div>
-                </div>
-                
-                <div id="ai-chat-container" style="
-                    flex: 1;
-                    overflow-y: auto;
-                    padding: 1rem;
-                    background: #f8fafc;
-                ">
-                    <div id="ai-messages"></div>
-                </div>
-                
-                <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
-                    <form onsubmit="AIAssistant.sendMessage(event)" style="display: flex; gap: 0.5rem;">
-                        <input type="text" id="ai-input" placeholder="Pregunta algo al asistente..." 
-                            style="flex: 1; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem;">
-                        <button type="submit" class="btn btn-primary">Enviar</button>
-                    </form>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(panel);
-    },
-
-    // Toggle panel visibility
-    toggleAIPanel: function() {
-        const panel = document.getElementById('ai-assistant-panel');
-        const container = panel.querySelector('.ai-panel-container');
-        container.style.display = container.style.display === 'none' ? 'flex' : 'none';
-    },
-
-    // Analizar solicitudes pendientes con IA
-    analyzePendingRequests: async function() {
-        const pendientes = cloudSolicitudes.filter(s => 
-            (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE'
-        );
-        
-        const prompt = `Analiza estas ${pendientes.length} solicitudes pendientes del hospital y proporciona:
-        1. Cuáles son más críticas y por qué
-        2. Patrones detectados (áreas problemáticas, equipos recurrentes)
-        3. Recomendaciones de priorización
-        
-        Datos: ${JSON.stringify(pendientes.slice(0, 10).map(s => ({
-            numero: s.numero,
-            area: s.servicioIngenieria,
-            equipo: s.equipo,
-            ubicacion: s.ubicacion,
-            prioridad: s.prioridad,
-            tipoServicio: s.tipoServicio,
-            descripcion: s.descripcion
-        })))}`;
-
-        const response = await this.callClaudeAPI(prompt);
-        this.displayAIMessage(response, 'ai');
-    },
-
-    // Sugerir asignaciones inteligentes
-    suggestAssignments: async function() {
-        const pendientes = cloudSolicitudes.filter(s => !s.tecnicoAsignado);
-        const disponibles = cloudTecnicos.filter(t => t.estado === 'disponible');
-        
-        const prompt = `Con ${pendientes.length} solicitudes sin asignar y ${disponibles.length} técnicos disponibles, sugiere las mejores asignaciones considerando:
-        - Especialidad del técnico vs tipo de solicitud
-        - Carga de trabajo equilibrada
-        - Prioridad de las solicitudes
-        - Ubicación/área del servicio
-        
-        Técnicos disponibles: ${JSON.stringify(disponibles.map(t => ({
-            nombre: t.nombre,
-            area: t.area,
-            especialidad: t.especialidad,
-            tipo: t.tipo
-        })))}`;
-
-        const response = await this.callClaudeAPI(prompt);
-        this.displayAIMessage(response, 'ai');
-    },
-
-    // Llamar a Claude API
-	callClaudeAPI: async function(prompt, systemPrompt = null) {
-    try {
-        const response = await fetch("/.netlify/functions/claude-api", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                prompt: prompt,
-                systemPrompt: systemPrompt || "Eres un asistente especializado en gestión de mantenimiento hospitalario. Ayudas a optimizar la asignación de recursos, priorizar solicitudes y mejorar la eficiencia del departamento de mantenimiento."
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error('Error en la respuesta del servidor');
-        }
-
-        const data = await response.json();
-        return data.content[0].text;
-    } catch (error) {
-        console.error('Error llamando a Claude:', error);
-        return "Error al procesar la solicitud. Por favor intenta nuevamente.";
-    }
-},
-
-    // Mostrar mensaje en el chat
-    displayAIMessage: function(message, sender = 'user') {
-        const messagesContainer = document.getElementById('ai-messages');
-        const messageDiv = document.createElement('div');
-        messageDiv.style.cssText = `
-            margin-bottom: 1rem;
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            ${sender === 'ai' ? 
-                'background: white; border-left: 3px solid #2563eb;' : 
-                'background: #e0f2fe; border-left: 3px solid #0ea5e9; margin-left: 2rem;'}
-        `;
-        messageDiv.innerHTML = `
-            <div style="font-weight: 600; color: #1f2937; margin-bottom: 0.25rem;">
-                ${sender === 'ai' ? '🤖 Asistente' : '👤 Tú'}
-            </div>
-            <div style="color: #4b5563; white-space: pre-wrap;">${message}</div>
-        `;
-        messagesContainer.appendChild(messageDiv);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    },
-
-    // Enviar mensaje del usuario
-    sendMessage: async function(event) {
-        event.preventDefault();
-        const input = document.getElementById('ai-input');
-        const message = input.value.trim();
-        if (!message) return;
-
-        this.displayAIMessage(message, 'user');
-        input.value = '';
-
-        // Contexto del sistema actual
-        const context = `
-        Estado actual del sistema:
-        - Total solicitudes: ${cloudSolicitudes.length}
-        - Pendientes: ${cloudSolicitudes.filter(s => s.estado === 'PENDIENTE').length}
-        - Personal disponible: ${cloudTecnicos.filter(t => t.estado === 'disponible').length}
-        - Áreas: Biomédica, Mecánica, Infraestructura
-        
-        Pregunta del usuario: ${message}`;
-
-        const response = await this.callClaudeAPI(context);
-        this.displayAIMessage(response, 'ai');
-    }
-};
-
-// Inicializar el asistente cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', function() {
-/*   
-   setTimeout(() => {
-        AIAssistant.init();
-    }, 2000);
-	*/
-});
-};
         function closeStatusModal() {
             document.getElementById('status-modal').classList.remove('show');
         }
@@ -8622,37 +8354,30 @@ window.debugEstadisticas = function() {
 };
         // 🚀 Inicialización
         document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (Con Análisis por Áreas)');
-    
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('modal')) {
-            e.target.classList.remove('show');
-        }
-    });
-    
-    document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
-    
-    // AGREGAR ESTA LÍNEA PARA INICIALIZAR EL ASISTENTE IA
-    setTimeout(() => {
-        if (typeof AIAssistant !== 'undefined') {
-            AIAssistant.init();
-            console.log('🤖 Asistente IA inicializado');
-        }
-    }, 2000);
-    
-    setTimeout(async () => {
-        if (window.airtableAPI) {
-            console.log('🔗 Conectando con Airtable...');
-            await loadAllDataFromCloud();
-            console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
-            startAutoRefresh();
-        } else {
-            console.error('❌ No se pudo cargar airtable-config.js');
-            updateConnectionStatus('disconnected');
-            loadDataFromLocalStorage();
-        }
-    }, 1000);
-});
+            console.log('🚀 Portal de Gestión Cloud - Hospital Susana López de Valencia (Con Análisis por Áreas)');
+            
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('modal')) {
+                    e.target.classList.remove('show');
+                }
+            });
+            
+            document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
+            
+            setTimeout(async () => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                    
+                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+                    startAutoRefresh();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                    loadDataFromLocalStorage();
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
