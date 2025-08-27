@@ -1755,14 +1755,14 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
         const nuevoNumero = await this.generateAreaSpecificNumber(areaMapeada);
         console.log('📋 Nuevo número generado:', nuevoNumero);
         
-        // Datos de actualización
+        // CORRECCIÓN: Usar null en lugar de cadenas vacías para campos de fecha
         const updateData = {
             servicioIngenieria: areaMapeada,
             numero: nuevoNumero,
             estado: 'PENDIENTE',
-            tecnicoAsignado: '',
-            fechaAsignacion: '',
-            observacionesAsignacion: ''
+            tecnicoAsignado: null,  // Cambiar de '' a null
+            fechaAsignacion: null,  // IMPORTANTE: null en lugar de ''
+            observacionesAsignacion: null  // null en lugar de ''
         };
         
         // Agregar observaciones
@@ -1776,28 +1776,93 @@ async updateRequestArea(solicitudId, nuevaArea, motivo, areaAnterior = '') {
         
         updateData.observaciones = (solicitud.observaciones || '') + '\n\n' + observacionRedireccion;
         
-        console.log('📝 Enviando actualización:', updateData);
+        console.log('📝 Enviando actualización (con campos null):', updateData);
         
-        // Hacer la actualización
-        const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
-            fields: updateData
-        });
-        
-        console.log('✅ Área actualizada exitosamente');
-        
-        return {
-            success: true,
-            solicitud: { ...solicitud, ...updateData },
-            nuevoNumero: nuevoNumero,
-            areaAnterior: solicitud.servicioIngenieria,
-            nuevaArea: areaMapeada,
-            mensaje: `Solicitud redirigida exitosamente`
-        };
+        try {
+            // Hacer la actualización
+            const result = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                fields: updateData
+            });
+            
+            console.log('✅ Área actualizada exitosamente');
+            
+            return {
+                success: true,
+                solicitud: { ...solicitud, ...updateData },
+                nuevoNumero: nuevoNumero,
+                areaAnterior: solicitud.servicioIngenieria,
+                nuevaArea: areaMapeada,
+                mensaje: `Solicitud redirigida exitosamente`
+            };
+            
+        } catch (updateError) {
+            console.error('❌ Error en PATCH request:', updateError);
+            
+            // Si sigue fallando, intentar sin los campos problemáticos
+            if (updateError.message.includes('422') || updateError.message.includes('fechaAsignacion')) {
+                console.log('⚠️ Intentando sin campos de fecha...');
+                
+                const minimalUpdateData = {
+                    servicioIngenieria: areaMapeada,
+                    numero: nuevoNumero,
+                    estado: 'PENDIENTE',
+                    observaciones: updateData.observaciones
+                };
+                
+                // Solo limpiar tecnicoAsignado si existe
+                if (solicitud.tecnicoAsignado) {
+                    minimalUpdateData.tecnicoAsignado = null;
+                }
+                
+                console.log('📝 Datos mínimos:', minimalUpdateData);
+                
+                const resultMinimal = await this.makeRequest(`${this.tables.solicitudes}/${solicitudId}`, 'PATCH', {
+                    fields: minimalUpdateData
+                });
+                
+                console.log('✅ Área actualizada con datos mínimos');
+                
+                return {
+                    success: true,
+                    solicitud: { ...solicitud, ...minimalUpdateData },
+                    nuevoNumero: nuevoNumero,
+                    areaAnterior: solicitud.servicioIngenieria,
+                    nuevaArea: areaMapeada,
+                    mensaje: `Solicitud redirigida exitosamente (modo mínimo)`
+                };
+            }
+            
+            throw updateError;
+        }
         
     } catch (error) {
         console.error('❌ Error en updateRequestArea:', error);
         throw new Error(`Error al redirigir solicitud: ${error.message}`);
     }
+}
+
+// FUNCIÓN AUXILIAR: Limpiar campos de fecha correctamente
+function cleanDateField(value) {
+    // Si el valor está vacío, retornar null
+    if (!value || value === '' || value === 'null' || value === 'undefined') {
+        return null;
+    }
+    
+    // Si es una fecha válida, retornarla como string ISO
+    if (value instanceof Date) {
+        return value.toISOString();
+    }
+    
+    // Si es un string de fecha, validarlo
+    if (typeof value === 'string') {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) {
+            return null; // Fecha inválida
+        }
+        return date.toISOString();
+    }
+    
+    return null;
 }
     // 🆕 NUEVO MÉTODO: Actualizar estado con cambio de tipo de servicio
     async updateRequestStatusWithServiceType(solicitudId, nuevoEstado, nuevoTipoServicio = null, observaciones = '') {
