@@ -1180,11 +1180,11 @@ function updateCloudStatus(status) {
     if (status === 'connected') {
         iconSpan.textContent = '??';
         textSpan.textContent = 'Conectado';
-        isCloudConnected = true; // AGREGAR ESTA L赤NEA
+        isCloudConnected = true; // AGREGAR ESTA L  NEA
     } else {
         iconSpan.textContent = '??';
-        textSpan.textContent = 'Sin conexi車n (Modo local)';
-        isCloudConnected = false; // AGREGAR ESTA L赤NEA
+        textSpan.textContent = 'Sin conexi  n (Modo local)';
+        isCloudConnected = false; // AGREGAR ESTA L  NEA
     }
 }
 
@@ -1570,8 +1570,8 @@ function updateCloudStatus(status) {
 
         // Agregar funci籀n de test al objeto window para uso en consola
         window.testValueMapping = testValueMapping;
-		// Funci車n para mostrar mis solicitudes
-// Funci車n para mostrar mis solicitudes
+		// Funci  n para mostrar mis solicitudes
+// Funci  n para mostrar mis solicitudes
 async function showMyRequests() {
     console.log('?? Mostrando solicitudes del usuario:', currentUser.email);
     
@@ -1632,7 +1632,7 @@ async function showMyRequests() {
     }
 }
 
-// Funci車n para mostrar las solicitudes del usuario
+// Funci  n para mostrar las solicitudes del usuario
 function displayUserRequests(requests) {
     const content = document.getElementById('my-requests-content');
     
@@ -1641,7 +1641,7 @@ function displayUserRequests(requests) {
             <div class="no-requests-message">
                 <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
                 <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No tienes solicitudes</h3>
-                <p>Tus solicitudes de mantenimiento aparecer芍n aqu赤 una vez que las env赤es</p>
+                <p>Tus solicitudes de mantenimiento aparecer  n aqu   una vez que las env  es</p>
                 <button class="btn btn-primary" onclick="closeMyRequestsModal()" style="margin-top: 1rem;">
                     ? Entendido
                 </button>
@@ -1650,7 +1650,7 @@ function displayUserRequests(requests) {
         return;
     }
     
-    // Calcular estad赤sticas
+    // Calcular estad  sticas
     const total = requests.length;
     const pendientes = requests.filter(r => (r.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE').length;
     const enProceso = requests.filter(r => {
@@ -1660,7 +1660,7 @@ function displayUserRequests(requests) {
     const completadas = requests.filter(r => (r.estado || '').toUpperCase() === 'COMPLETADA').length;
     const sinAsignar = requests.filter(r => !r.tecnicoAsignado).length;
     
-    // Ordenar por fecha de creaci車n (m芍s recientes primero)
+    // Ordenar por fecha de creaci  n (m  s recientes primero)
     const sortedRequests = requests.sort((a, b) => {
         const dateA = new Date(a.fechaCreacion || 0);
         const dateB = new Date(b.fechaCreacion || 0);
@@ -1669,7 +1669,7 @@ function displayUserRequests(requests) {
     
     content.innerHTML = `
         <div style="padding: 1.5rem;">
-            <!-- Resumen estad赤stico -->
+            <!-- Resumen estad  stico -->
             <div class="requests-summary">
                 <div class="summary-item">
                     <div class="summary-number" style="color: #2563eb;">${total}</div>
@@ -1698,11 +1698,11 @@ function displayUserRequests(requests) {
                 <table class="requests-table">
                     <thead>
                         <tr>
-                            <th>N迆mero</th>
+                            <th>N  mero</th>
                             <th>Fecha</th>
-                            <th>芍rea</th>
+                            <th>  rea</th>
                             <th>Equipo</th>
-                            <th>Ubicaci車n</th>
+                            <th>Ubicaci  n</th>
                             <th>Estado</th>
                             <th>Prioridad</th>
                             <th>Personal Asignado</th>
@@ -1727,7 +1727,7 @@ function displayUserRequests(requests) {
     `;
 }
 
-// Funci車n para crear fila de solicitud
+// Funci  n para crear fila de solicitud
 function createRequestRow(request) {
     const fechaCreacion = request.fechaCreacion ? 
         new Date(request.fechaCreacion).toLocaleString('es-CO', {
@@ -1800,7 +1800,7 @@ function getStatusIcon(estado) {
 function getPriorityIcon(prioridad) {
     const icons = {
         'CRITICA': '??',
-        'CR赤TICA': '??',
+        'CR  TICA': '??',
         'ALTA': '??',
         'MEDIA': '??', 
         'BAJA': '??'
@@ -1809,23 +1809,23 @@ function getPriorityIcon(prioridad) {
 }
 
 function getAreaDisplayName(area) {
-    if (!area) return 'Sin 芍rea';
+    if (!area) return 'Sin   rea';
     
     const names = {
-        'INGENIERIA_BIOMEDICA': '?? Biom谷dica',
-        'MECANICA': '?? Mec芍nica', 
+        'INGENIERIA_BIOMEDICA': '?? Biom  dica',
+        'MECANICA': '?? Mec  nica', 
         'INFRAESTRUCTURA': '??? Infraestructura'
     };
     
     return names[area] || area;
 }
 
-// Funci車n para cerrar modal
+// Funci  n para cerrar modal
 function closeMyRequestsModal() {
     document.getElementById('my-requests-modal').classList.remove('show');
 }
 
-// Funci車n para refrescar solicitudes
+// Funci  n para refrescar solicitudes
 async function refreshMyRequests() {
     await showMyRequests();
 }
@@ -1835,10 +1835,10 @@ async function refreshMyRequests() {
     <div class="modal-content" style="max-width: 1000px; width: 95%;">
         <div class="modal-header">
             <h3 class="modal-title">?? Mis Solicitudes de Mantenimiento</h3>
-            <button class="modal-close" onclick="closeMyRequestsModal()">℅</button>
+            <button class="modal-close" onclick="closeMyRequestsModal()">  </button>
         </div>
         <div id="my-requests-content">
-            <!-- Contenido din芍mico -->
+            <!-- Contenido din  mico -->
         </div>
     </div>
 </div>
