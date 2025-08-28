@@ -1016,10 +1016,10 @@
 
                <div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
     <button type="submit" class="btn btn-primary" id="submit-btn">
-        ?? Enviar Solicitud
+         Enviar Solicitud
     </button>
     <button type="button" class="btn btn-secondary" onclick="resetForm()">
-        ?? Limpiar Formulario
+        Limpiar Formulario
     </button>
     <button type="button" class="btn btn-info" onclick="showMyRequests()">
     Ver Mis Solicitudes
@@ -1178,11 +1178,11 @@ function updateCloudStatus(status) {
     statusDiv.className = `cloud-status ${status}`;
     
     if (status === 'connected') {
-        iconSpan.textContent = '??';
+        iconSpan.textContent = '';
         textSpan.textContent = 'Conectado';
         isCloudConnected = true; // AGREGAR ESTA L  NEA
     } else {
-        iconSpan.textContent = '??';
+        iconSpan.textContent = '';
         textSpan.textContent = 'Sin conexi  n (Modo local)';
         isCloudConnected = false; // AGREGAR ESTA L  NEA
     }
@@ -1573,7 +1573,7 @@ function updateCloudStatus(status) {
 		// Funci  n para mostrar mis solicitudes
 // Funci  n para mostrar mis solicitudes
 async function showMyRequests() {
-    console.log('?? Mostrando solicitudes del usuario:', currentUser.email);
+    console.log(' Mostrando solicitudes del usuario:', currentUser.email);
     
     try {
         const modal = document.getElementById('my-requests-modal');
@@ -1582,7 +1582,7 @@ async function showMyRequests() {
         // Mostrar loading
         content.innerHTML = `
     <div class="no-requests-message">
-        <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+        <div style="font-size: 4rem; margin-bottom: 1rem;"></div>
         <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No tienes solicitudes</h3>
         <p>Tus solicitudes de mantenimiento apareceran aqui una vez que las envies</p>
         <button class="btn btn-primary" onclick="closeMyRequestsModal()" style="margin-top: 1rem;">
@@ -1598,7 +1598,7 @@ async function showMyRequests() {
         
         if (window.airtableAPI && isCloudConnected) {
             // Obtener desde Airtable
-            console.log('?? Obteniendo solicitudes desde Airtable...');
+            console.log('Obteniendo solicitudes desde Airtable...');
             const allRequests = await window.airtableAPI.getSolicitudes();
             userRequests = allRequests.filter(request => {
                 return request.emailSolicitante === currentUser.email || 
@@ -1607,7 +1607,7 @@ async function showMyRequests() {
             });
         } else {
             // Obtener desde localStorage
-            console.log('?? Obteniendo solicitudes desde localStorage...');
+            console.log(' Obteniendo solicitudes desde localStorage...');
             const localRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
             userRequests = localRequests.filter(request => {
                 return request.emailSolicitante === currentUser.email || 
@@ -1616,7 +1616,7 @@ async function showMyRequests() {
             });
         }
         
-        console.log(`?? Encontradas ${userRequests.length} solicitudes del usuario`);
+        console.log(` Encontradas ${userRequests.length} solicitudes del usuario`);
         
         // Mostrar solicitudes
         displayUserRequests(userRequests);
@@ -1629,7 +1629,7 @@ async function showMyRequests() {
                 <h4>? Error al cargar solicitudes</h4>
                 <p>${error.message}</p>
                 <button class="btn btn-primary" onclick="showMyRequests()">
-                    ?? Reintentar
+                     Reintentar
                 </button>
             </div>
         `;
@@ -1643,7 +1643,7 @@ function displayUserRequests(requests) {
     if (requests.length === 0) {
         content.innerHTML = `
             <div class="no-requests-message">
-                <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                <div style="font-size: 4rem; margin-bottom: 1rem;"></div>
                 <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No tienes solicitudes</h3>
                 <p>Tus solicitudes de mantenimiento aparecer  n aqu   una vez que las env  es</p>
                 <button class="btn btn-primary" onclick="closeMyRequestsModal()" style="margin-top: 1rem;">
@@ -1774,13 +1774,13 @@ function createRequestRow(request) {
             </td>
             <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">
                 ${tecnico === 'Sin asignar' ? 
-                    '<span style="color: #f59e0b; font-weight: 600;">?? Sin asignar</span>' : 
-                    `<span style="color: #059669; font-weight: 600;">????? ${tecnico}</span>`
+                    '<span style="color: #f59e0b; font-weight: 600;"> Sin asignar</span>' : 
+                    `<span style="color: #059669; font-weight: 600;"> ${tecnico}</span>`
                 }
             </td>
             <td>
                 ${isErrorUsuario ? 
-                    '<span style="color: #dc2626; font-weight: bold; font-size: 0.8rem;">?? ERROR USUARIO</span>' :
+                    '<span style="color: #dc2626; font-weight: bold; font-size: 0.8rem;"> ERROR USUARIO</span>' :
                     (request.tipoServicio || 'No especificado').replace('_', ' ')
                 }
             </td>
@@ -1791,20 +1791,20 @@ function createRequestRow(request) {
 // Funciones auxiliares
 function getStatusIcon(estado) {
     const icons = {
-        'PENDIENTE': '?',
+       'PENDIENTE': '?',
         'ASIGNADA': '??', 
         'EN_PROCESO': '??',
         'EN PROCESO': '??',
         'COMPLETADA': '?',
         'CANCELADA': '?'
     };
-    return icons[estado.toUpperCase()] || '??'; // CORREGIDO: usar 'estado' en lugar de 'prioridad'
+     return icons[estado.toUpperCase()] || '??';; // CORREGIDO: usar 'estado' en lugar de 'prioridad'
 }
 
 function getPriorityIcon(prioridad) {
      const icons = {
-        'CRITICA': '??',
-        'CR¨ªTICA': '??',
+         'CRITICA': '??',
+        'CR  TICA': '??',
         'ALTA': '??',
         'MEDIA': '??', 
         'BAJA': '??'
@@ -1838,7 +1838,7 @@ async function refreshMyRequests() {
 <div class="modal" id="my-requests-modal">
     <div class="modal-content" style="max-width: 1000px; width: 95%;">
         <div class="modal-header">
-            <h3 class="modal-title">?? Mis Solicitudes de Mantenimiento</h3>
+            <h3 class="modal-title"> Mis Solicitudes de Mantenimiento</h3>
             <button class="modal-close" onclick="closeMyRequestsModal()">  </button>
         </div>
         <div id="my-requests-content">
