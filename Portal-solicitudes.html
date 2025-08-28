@@ -1791,25 +1791,25 @@ function createRequestRow(request) {
 // Funciones auxiliares
 function getStatusIcon(estado) {
     const icons = {
-       'PENDIENTE': '',
-        'ASIGNADA': '', 
-        'EN_PROCESO': '',
-        'EN PROCESO': '',
-        'COMPLETADA': '',
-        'CANCELADA': ''
+        'PENDIENTE': '?',
+        'ASIGNADA': '??', 
+        'EN_PROCESO': '??',
+        'EN PROCESO': '??',
+        'COMPLETADA': '?',
+        'CANCELADA': '?'
     };
-    return icons[prioridad.toUpperCase()] || '';
+    return icons[estado.toUpperCase()] || '??'; // CORREGIDO: usar 'estado' en lugar de 'prioridad'
 }
 
 function getPriorityIcon(prioridad) {
-    const icons = {
-         'CRITICA': '',
-        'CR¨ªTICA': '',
-        'ALTA': '',
-        'MEDIA': '', 
-        'BAJA': ''
+     const icons = {
+        'CRITICA': '??',
+        'CR¨ªTICA': '??',
+        'ALTA': '??',
+        'MEDIA': '??', 
+        'BAJA': '??'
     };
-    return icons[prioridad.toUpperCase()] || '';
+    return icons[prioridad.toUpperCase()] || '?';
 }
 
 function getAreaDisplayName(area) {
