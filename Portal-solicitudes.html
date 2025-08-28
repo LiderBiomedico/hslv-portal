@@ -1170,21 +1170,23 @@
             }
         }
 
-        function updateCloudStatus(status) {
-            const statusDiv = document.getElementById('cloud-status');
-            const iconSpan = document.getElementById('cloud-icon');
-            const textSpan = document.getElementById('cloud-text');
-            
-            statusDiv.className = `cloud-status ${status}`;
-            
-            if (status === 'connected') {
-                iconSpan.textContent = '鈽侊笍';
-                textSpan.textContent = 'Conectado';
-            } else {
-                iconSpan.textContent = '馃摯';
-                textSpan.textContent = 'Sin conexi贸n (Modo local)';
-            }
-        }
+function updateCloudStatus(status) {
+    const statusDiv = document.getElementById('cloud-status');
+    const iconSpan = document.getElementById('cloud-icon');
+    const textSpan = document.getElementById('cloud-text');
+    
+    statusDiv.className = `cloud-status ${status}`;
+    
+    if (status === 'connected') {
+        iconSpan.textContent = '??';
+        textSpan.textContent = 'Conectado';
+        isCloudConnected = true; // AGREGAR ESTA LíNEA
+    } else {
+        iconSpan.textContent = '??';
+        textSpan.textContent = 'Sin conexión (Modo local)';
+        isCloudConnected = false; // AGREGAR ESTA LíNEA
+    }
+}
 
         // Gesti贸n de pesta帽as de autenticaci贸n
         function showAuthTab(tab) {
@@ -1569,6 +1571,7 @@
         // Agregar funci贸n de test al objeto window para uso en consola
         window.testValueMapping = testValueMapping;
 		// Función para mostrar mis solicitudes
+// Función para mostrar mis solicitudes
 async function showMyRequests() {
     console.log('?? Mostrando solicitudes del usuario:', currentUser.email);
     
@@ -1589,7 +1592,7 @@ async function showMyRequests() {
         // Obtener solicitudes del usuario
         let userRequests = [];
         
-        if (window.airtableAPI && isConnectedToAirtable) {
+        if (window.airtableAPI && isCloudConnected) {
             // Obtener desde Airtable
             console.log('?? Obteniendo solicitudes desde Airtable...');
             const allRequests = await window.airtableAPI.getSolicitudes();
@@ -1616,6 +1619,7 @@ async function showMyRequests() {
         
     } catch (error) {
         console.error('? Error cargando solicitudes:', error);
+        const content = document.getElementById('my-requests-content');
         content.innerHTML = `
             <div class="alert alert-danger">
                 <h4>? Error al cargar solicitudes</h4>
