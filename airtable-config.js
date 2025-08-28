@@ -32,6 +32,8 @@ const AIRTABLE_VALUE_MAPPING = {
         'Calibración': 'CALIBRACION',
         'INSPECCION': 'INSPECCION',
         'Inspección': 'INSPECCION',
+		'CAPACITACION': 'CAPACITACION',
+        'Capacitación': 'CAPACITACION',
         'ACTUALIZACION': 'ACTUALIZACION',
         'Actualización': 'ACTUALIZACION',
         'EMERGENCIA': 'EMERGENCIA',
@@ -213,7 +215,7 @@ class AirtableAPI {
         // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
             servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
-            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'ERROR_USUARIO'],
+            tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'CAPACITACION','ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
             availableFields: []
