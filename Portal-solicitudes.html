@@ -830,7 +830,7 @@
                             </h4>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> /span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Revisión por administrador</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
@@ -842,7 +842,7 @@
                                     <span>Sistema con mapeo seguro</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> /span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Respuesta en 24-48 horas</span>
                                 </div>
                             </div>
@@ -1178,11 +1178,11 @@ function updateCloudStatus(status) {
     statusDiv.className = `cloud-status ${status}`;
     
     if (status === 'connected') {
-        iconSpan.textContent = '';
+       iconSpan.textContent = '✅';
         textSpan.textContent = 'Conectado';
         isCloudConnected = true; // AGREGAR ESTA L  NEA
     } else {
-        iconSpan.textContent = '';
+        iconSpan.textContent = '✅';
         textSpan.textContent = 'Sin conexi  n (Modo local)';
         isCloudConnected = false; // AGREGAR ESTA L  NEA
     }
@@ -1798,8 +1798,7 @@ function getStatusIcon(estado) {
         'COMPLETADA': '✅',
         'CANCELADA': '❌'
     };
-     return icons[estado.toUpperCase()] || '📋';// CORREGIDO: usar 'estado' en lugar de 'prioridad';
-}
+     return icons[estado.toUpperCase()] || '📋';
 
 function getPriorityIcon(prioridad) {
      const icons = {
