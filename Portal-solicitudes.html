@@ -1182,8 +1182,8 @@ function updateCloudStatus(status) {
         textSpan.textContent = 'Conectado';
         isCloudConnected = true; // AGREGAR ESTA L  NEA
     } else {
-        iconSpan.textContent = '✅';
-        textSpan.textContent = 'Sin conexi  n (Modo local)';
+        iconSpan.textContent = '❌';
+        textSpan.textContent = 'Sin conexión (Modo local)';
         isCloudConnected = false; // AGREGAR ESTA L  NEA
     }
 }
@@ -1799,7 +1799,7 @@ function getStatusIcon(estado) {
         'CANCELADA': '❌'
     };
      return icons[estado.toUpperCase()] || '📋';
-
+}
 function getPriorityIcon(prioridad) {
      const icons = {
         'CRITICA': '🔥',
