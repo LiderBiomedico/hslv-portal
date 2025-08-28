@@ -1022,8 +1022,8 @@
         ?? Limpiar Formulario
     </button>
     <button type="button" class="btn btn-info" onclick="showMyRequests()">
-        ?? Ver Mis Solicitudes
-    </button>
+    Ver Mis Solicitudes
+</button>
 </div>
             </form>
         </div>
@@ -1581,11 +1581,15 @@ async function showMyRequests() {
         
         // Mostrar loading
         content.innerHTML = `
-            <div style="text-align: center; padding: 3rem;">
-                <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
-                <p style="color: #6b7280;">Cargando tus solicitudes...</p>
-            </div>
-        `;
+    <div class="no-requests-message">
+        <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+        <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No tienes solicitudes</h3>
+        <p>Tus solicitudes de mantenimiento apareceran aqui una vez que las envies</p>
+        <button class="btn btn-primary" onclick="closeMyRequestsModal()" style="margin-top: 1rem;">
+            Entendido
+        </button>
+    </div>
+`;
         
         modal.classList.add('show');
         
@@ -1698,15 +1702,15 @@ function displayUserRequests(requests) {
                 <table class="requests-table">
                     <thead>
                         <tr>
-                            <th>N  mero</th>
-                            <th>Fecha</th>
-                            <th>  rea</th>
-                            <th>Equipo</th>
-                            <th>Ubicaci  n</th>
-                            <th>Estado</th>
-                            <th>Prioridad</th>
-                            <th>Personal Asignado</th>
-                            <th>Tipo</th>
+                            <th>Numero</th>
+        <th>Fecha</th>
+        <th>Area</th>
+        <th>Equipo</th>
+        <th>Ubicacion</th>
+        <th>Estado</th>
+        <th>Prioridad</th>
+        <th>Personal Asignado</th>
+        <th>Tipo</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1716,13 +1720,13 @@ function displayUserRequests(requests) {
             </div>
             
             <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
-                <button class="btn btn-secondary" onclick="closeMyRequestsModal()">
-                    ?? Cerrar
-                </button>
-                <button class="btn btn-primary" onclick="refreshMyRequests()" style="margin-left: 1rem;">
-                    ?? Actualizar
-                </button>
-            </div>
+    <button class="btn btn-secondary" onclick="closeMyRequestsModal()">
+        Cerrar
+    </button>
+    <button class="btn btn-primary" onclick="refreshMyRequests()" style="margin-left: 1rem;">
+        Actualizar
+    </button>
+</div>
         </div>
     `;
 }
@@ -1787,34 +1791,34 @@ function createRequestRow(request) {
 // Funciones auxiliares
 function getStatusIcon(estado) {
     const icons = {
-        'PENDIENTE': '?',
-        'ASIGNADA': '??', 
-        'EN_PROCESO': '??',
-        'EN PROCESO': '??',
-        'COMPLETADA': '?',
-        'CANCELADA': '?'
+       'PENDIENTE': '',
+        'ASIGNADA': '', 
+        'EN_PROCESO': '',
+        'EN PROCESO': '',
+        'COMPLETADA': '',
+        'CANCELADA': ''
     };
-    return icons[estado.toUpperCase()] || '??';
+    return icons[prioridad.toUpperCase()] || '';
 }
 
 function getPriorityIcon(prioridad) {
     const icons = {
-        'CRITICA': '??',
-        'CR  TICA': '??',
-        'ALTA': '??',
-        'MEDIA': '??', 
-        'BAJA': '??'
+         'CRITICA': '',
+        'CR¨ªTICA': '',
+        'ALTA': '',
+        'MEDIA': '', 
+        'BAJA': ''
     };
-    return icons[prioridad.toUpperCase()] || '??';
+    return icons[prioridad.toUpperCase()] || '';
 }
 
 function getAreaDisplayName(area) {
-    if (!area) return 'Sin   rea';
+    if (!area) return 'Sin area';
     
     const names = {
-        'INGENIERIA_BIOMEDICA': '?? Biom  dica',
-        'MECANICA': '?? Mec  nica', 
-        'INFRAESTRUCTURA': '??? Infraestructura'
+        'INGENIERIA_BIOMEDICA': 'Biomedica',
+        'MECANICA': 'Mecanica', 
+        'INFRAESTRUCTURA': 'Infraestructura'
     };
     
     return names[area] || area;
