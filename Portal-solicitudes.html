@@ -1159,14 +1159,14 @@
             window.addEventListener('airtableConnectionUpdate', function(event) {
                 console.log('🔄 Estado de conexión actualizado:', event.detail);
                 isCloudConnected = event.detail.connected;
-                updateCloudStatus(event.detail.connected  'connected' : 'disconnected');
+                updateCloudStatus(event.detail.connected ? 'connected' : 'disconnected');
             });
             
             // Check inicial
             if (window.airtableAPI) {
                 const status = window.airtableAPI.getStatus();
                 isCloudConnected = status.isConnected;
-                updateCloudStatus(isCloudConnected  'connected' : 'disconnected');
+               updateCloudStatus(isCloudConnected ? 'connected' : 'disconnected');
             }
         }
 
@@ -1193,7 +1193,7 @@ function updateCloudStatus(status) {
             document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
             document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
             
-            document.getElementById('login-form').style.display = tab === 'login'  'block' : 'none';
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
             document.getElementById('request-form').style.display = tab === 'request'  'block' : 'none';
         }
 
