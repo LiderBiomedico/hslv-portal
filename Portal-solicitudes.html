@@ -1180,11 +1180,11 @@ function updateCloudStatus(status) {
     if (status === 'connected') {
        iconSpan.textContent = '✅';
         textSpan.textContent = 'Conectado';
-        isCloudConnected = true; // AGREGAR ESTA L  NEA
+        isCloudConnected = true; 
     } else {
         iconSpan.textContent = '❌';
         textSpan.textContent = 'Sin conexión (Modo local)';
-        isCloudConnected = false; // AGREGAR ESTA L  NEA
+        isCloudConnected = false; 
     }
 }
 
@@ -1808,7 +1808,7 @@ function getPriorityIcon(prioridad) {
         'MEDIA': '🟡', 
         'BAJA': '🟢'
     };
-    return icons[prioridad.toUpperCase()] || '?';
+    return icons[prioridad.toUpperCase()] || '❓';
 }
 
 function getAreaDisplayName(area) {
