@@ -24,7 +24,99 @@
             margin: 0 auto;
             padding: 0 1rem;
         }
+/* Estilos para el modal de solicitudes */
+.requests-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+    margin-top: 1rem;
+}
 
+.requests-table th,
+.requests-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.requests-table th {
+    background: #f8fafc;
+    font-weight: 600;
+    color: #374151;
+    position: sticky;
+    top: 0;
+}
+
+.requests-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.request-status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-pendiente { background: #fef3c7; color: #d97706; }
+.status-asignada { background: #e0f2fe; color: #0369a1; }
+.status-en-proceso { background: #f3e8ff; color: #7c3aed; }
+.status-completada { background: #dcfce7; color: #166534; }
+.status-cancelada { background: #fee2e2; color: #dc2626; }
+
+.request-priority-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.priority-critica { 
+    background: #fee2e2; 
+    color: #dc2626;
+    animation: pulse-critical 1.5s infinite;
+}
+.priority-alta { background: #fed7aa; color: #ea580c; }
+.priority-media { background: #dbeafe; color: #1e40af; }
+.priority-baja { background: #d1fae5; color: #059669; }
+
+.no-requests-message {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.requests-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+}
+
+.summary-item {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.summary-number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+}
         /* Header */
         .header {
             background: linear-gradient(135deg, #059669 0%, #2563eb 100%);
@@ -922,14 +1014,17 @@
                               placeholder="InformaciÃ³n adicional que pueda ser Ãºtil (opcional)"></textarea>
                 </div>
 
-                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
-                    <button type="submit" class="btn btn-primary" id="submit-btn">
-                        ðŸ“¤ Enviar Solicitud
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
-                        ðŸ”„ Limpiar Formulario
-                    </button>
-                </div>
+               <div style="display: flex; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;">
+    <button type="submit" class="btn btn-primary" id="submit-btn">
+        ?? Enviar Solicitud
+    </button>
+    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+        ?? Limpiar Formulario
+    </button>
+    <button type="button" class="btn btn-info" onclick="showMyRequests()">
+        ?? Ver Mis Solicitudes
+    </button>
+</div>
             </form>
         </div>
     </main>
@@ -1473,6 +1568,275 @@
 
         // Agregar funciÃ³n de test al objeto window para uso en consola
         window.testValueMapping = testValueMapping;
+		// Funci¨®n para mostrar mis solicitudes
+async function showMyRequests() {
+    console.log('?? Mostrando solicitudes del usuario:', currentUser.email);
+    
+    try {
+        const modal = document.getElementById('my-requests-modal');
+        const content = document.getElementById('my-requests-content');
+        
+        // Mostrar loading
+        content.innerHTML = `
+            <div style="text-align: center; padding: 3rem;">
+                <div class="loading-spinner" style="margin: 0 auto 1rem;"></div>
+                <p style="color: #6b7280;">Cargando tus solicitudes...</p>
+            </div>
+        `;
+        
+        modal.classList.add('show');
+        
+        // Obtener solicitudes del usuario
+        let userRequests = [];
+        
+        if (window.airtableAPI && isConnectedToAirtable) {
+            // Obtener desde Airtable
+            console.log('?? Obteniendo solicitudes desde Airtable...');
+            const allRequests = await window.airtableAPI.getSolicitudes();
+            userRequests = allRequests.filter(request => {
+                return request.emailSolicitante === currentUser.email || 
+                       request.solicitante === currentUser.nombreCompleto ||
+                       request.solicitante === currentUser.email;
+            });
+        } else {
+            // Obtener desde localStorage
+            console.log('?? Obteniendo solicitudes desde localStorage...');
+            const localRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+            userRequests = localRequests.filter(request => {
+                return request.emailSolicitante === currentUser.email || 
+                       request.solicitante === currentUser.nombreCompleto ||
+                       request.solicitante === currentUser.email;
+            });
+        }
+        
+        console.log(`?? Encontradas ${userRequests.length} solicitudes del usuario`);
+        
+        // Mostrar solicitudes
+        displayUserRequests(userRequests);
+        
+    } catch (error) {
+        console.error('? Error cargando solicitudes:', error);
+        content.innerHTML = `
+            <div class="alert alert-danger">
+                <h4>? Error al cargar solicitudes</h4>
+                <p>${error.message}</p>
+                <button class="btn btn-primary" onclick="showMyRequests()">
+                    ?? Reintentar
+                </button>
+            </div>
+        `;
+    }
+}
+
+// Funci¨®n para mostrar las solicitudes del usuario
+function displayUserRequests(requests) {
+    const content = document.getElementById('my-requests-content');
+    
+    if (requests.length === 0) {
+        content.innerHTML = `
+            <div class="no-requests-message">
+                <div style="font-size: 4rem; margin-bottom: 1rem;">??</div>
+                <h3 style="color: #1f2937; margin-bottom: 0.5rem;">No tienes solicitudes</h3>
+                <p>Tus solicitudes de mantenimiento aparecer¨¢n aqu¨ª una vez que las env¨ªes</p>
+                <button class="btn btn-primary" onclick="closeMyRequestsModal()" style="margin-top: 1rem;">
+                    ? Entendido
+                </button>
+            </div>
+        `;
+        return;
+    }
+    
+    // Calcular estad¨ªsticas
+    const total = requests.length;
+    const pendientes = requests.filter(r => (r.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE').length;
+    const enProceso = requests.filter(r => {
+        const estado = (r.estado || '').toUpperCase();
+        return estado === 'EN_PROCESO' || estado === 'EN PROCESO' || estado === 'ASIGNADA';
+    }).length;
+    const completadas = requests.filter(r => (r.estado || '').toUpperCase() === 'COMPLETADA').length;
+    const sinAsignar = requests.filter(r => !r.tecnicoAsignado).length;
+    
+    // Ordenar por fecha de creaci¨®n (m¨¢s recientes primero)
+    const sortedRequests = requests.sort((a, b) => {
+        const dateA = new Date(a.fechaCreacion || 0);
+        const dateB = new Date(b.fechaCreacion || 0);
+        return dateB - dateA;
+    });
+    
+    content.innerHTML = `
+        <div style="padding: 1.5rem;">
+            <!-- Resumen estad¨ªstico -->
+            <div class="requests-summary">
+                <div class="summary-item">
+                    <div class="summary-number" style="color: #2563eb;">${total}</div>
+                    <div class="summary-label">Total</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" style="color: #f59e0b;">${pendientes}</div>
+                    <div class="summary-label">Pendientes</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" style="color: #8b5cf6;">${enProceso}</div>
+                    <div class="summary-label">En Proceso</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" style="color: #059669;">${completadas}</div>
+                    <div class="summary-label">Completadas</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-number" style="color: #ef4444;">${sinAsignar}</div>
+                    <div class="summary-label">Sin Asignar</div>
+                </div>
+            </div>
+            
+            <!-- Tabla de solicitudes -->
+            <div style="overflow-x: auto;">
+                <table class="requests-table">
+                    <thead>
+                        <tr>
+                            <th>N¨²mero</th>
+                            <th>Fecha</th>
+                            <th>¨¢rea</th>
+                            <th>Equipo</th>
+                            <th>Ubicaci¨®n</th>
+                            <th>Estado</th>
+                            <th>Prioridad</th>
+                            <th>Personal Asignado</th>
+                            <th>Tipo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedRequests.map(request => createRequestRow(request)).join('')}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e5e7eb;">
+                <button class="btn btn-secondary" onclick="closeMyRequestsModal()">
+                    ?? Cerrar
+                </button>
+                <button class="btn btn-primary" onclick="refreshMyRequests()" style="margin-left: 1rem;">
+                    ?? Actualizar
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+// Funci¨®n para crear fila de solicitud
+function createRequestRow(request) {
+    const fechaCreacion = request.fechaCreacion ? 
+        new Date(request.fechaCreacion).toLocaleString('es-CO', {
+            day: '2-digit',
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        }) : 'No disponible';
+    
+    const estado = request.estado || 'PENDIENTE';
+    const prioridad = request.prioridad || 'MEDIA';
+    const area = getAreaDisplayName(request.servicioIngenieria);
+    const tecnico = request.tecnicoAsignado || 'Sin asignar';
+    
+    // Determinar si es error de usuario
+    const isErrorUsuario = request.tipoServicio === 'ERROR_USUARIO' || 
+                          request.tipoServicio === 'Error de Usuario';
+    
+    return `
+        <tr ${isErrorUsuario ? 'style="background: #fef2f2;"' : ''}>
+            <td style="font-weight: 600;">${request.numero || 'S/N'}</td>
+            <td style="font-size: 0.8rem;">${fechaCreacion}</td>
+            <td>${area}</td>
+            <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
+                ${request.equipo || 'No especificado'}
+            </td>
+            <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">
+                ${request.ubicacion || 'No especificada'}
+            </td>
+            <td>
+                <span class="request-status-badge status-${estado.toLowerCase().replace(' ', '-').replace('_', '-')}">
+                    ${getStatusIcon(estado)} ${estado}
+                </span>
+            </td>
+            <td>
+                <span class="request-priority-badge priority-${prioridad.toLowerCase()}">
+                    ${getPriorityIcon(prioridad)} ${prioridad}
+                </span>
+            </td>
+            <td style="max-width: 120px; overflow: hidden; text-overflow: ellipsis;">
+                ${tecnico === 'Sin asignar' ? 
+                    '<span style="color: #f59e0b; font-weight: 600;">?? Sin asignar</span>' : 
+                    `<span style="color: #059669; font-weight: 600;">????? ${tecnico}</span>`
+                }
+            </td>
+            <td>
+                ${isErrorUsuario ? 
+                    '<span style="color: #dc2626; font-weight: bold; font-size: 0.8rem;">?? ERROR USUARIO</span>' :
+                    (request.tipoServicio || 'No especificado').replace('_', ' ')
+                }
+            </td>
+        </tr>
+    `;
+}
+
+// Funciones auxiliares
+function getStatusIcon(estado) {
+    const icons = {
+        'PENDIENTE': '?',
+        'ASIGNADA': '??', 
+        'EN_PROCESO': '??',
+        'EN PROCESO': '??',
+        'COMPLETADA': '?',
+        'CANCELADA': '?'
+    };
+    return icons[estado.toUpperCase()] || '??';
+}
+
+function getPriorityIcon(prioridad) {
+    const icons = {
+        'CRITICA': '??',
+        'CR¨ªTICA': '??',
+        'ALTA': '??',
+        'MEDIA': '??', 
+        'BAJA': '??'
+    };
+    return icons[prioridad.toUpperCase()] || '??';
+}
+
+function getAreaDisplayName(area) {
+    if (!area) return 'Sin ¨¢rea';
+    
+    const names = {
+        'INGENIERIA_BIOMEDICA': '?? Biom¨¦dica',
+        'MECANICA': '?? Mec¨¢nica', 
+        'INFRAESTRUCTURA': '??? Infraestructura'
+    };
+    
+    return names[area] || area;
+}
+
+// Funci¨®n para cerrar modal
+function closeMyRequestsModal() {
+    document.getElementById('my-requests-modal').classList.remove('show');
+}
+
+// Funci¨®n para refrescar solicitudes
+async function refreshMyRequests() {
+    await showMyRequests();
+}
     </script>
+	<!-- Modal de Mis Solicitudes -->
+<div class="modal" id="my-requests-modal">
+    <div class="modal-content" style="max-width: 1000px; width: 95%;">
+        <div class="modal-header">
+            <h3 class="modal-title">?? Mis Solicitudes de Mantenimiento</h3>
+            <button class="modal-close" onclick="closeMyRequestsModal()">¡Á</button>
+        </div>
+        <div id="my-requests-content">
+            <!-- Contenido din¨¢mico -->
+        </div>
+    </div>
+</div>
 </body>
 </html>
