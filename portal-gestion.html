@@ -5917,9 +5917,301 @@ function createGeneralCharts(stats) {
         console.error('❌ Error creando gráficos:', error);
     }
 }
-        // FUNCIÓN: Calcular estadísticas por área
+ // 🎨 FUNCIONES AUXILIARES para colores (agregar al portal-gestion.html)
+
+// Funciones auxiliares para colores de estado
+function getStatusColor(status) {
+    const estado = (status || 'PENDIENTE').toUpperCase();
+    switch(estado) {
+        case 'COMPLETADA': return '#059669';
+        case 'EN_PROCESO':
+        case 'EN PROCESO': return '#8b5cf6';
+        case 'ASIGNADA': return '#0ea5e9';
+        case 'PENDIENTE': return '#f59e0b';
+        case 'CANCELADA': return '#ef4444';
+        default: return '#6b7280';
+    }
+}
+
+function getPriorityColor(priority) {
+    const prioridad = (priority || 'MEDIA').toUpperCase();
+    switch(prioridad) {
+        case 'CRITICA':
+        case 'CRÍTICA': return '#ef4444';
+        case 'ALTA': return '#f59e0b';
+        case 'MEDIA': return '#3b82f6';
+        case 'BAJA': return '#059669';
+        default: return '#6b7280';
+    }
+}
+
+// ⚠️ INSTRUCCIONES DE INTEGRACIÓN:
+
+/*
+Para integrar estas mejoras en tu portal-gestion.html, sigue estos pasos:
+
+1. REEMPLAZA la función calcularEstadisticasPorArea() existente con la nueva versión que incluye:
+   - Cálculo de tiempos de respuesta por área
+   - Análisis por prioridad y tipo de servicio  
+   - Percentiles de tiempo
+   - Indicadores de rendimiento
+
+2. REEMPLAZA la función generateAreaSpecificStats() existente con la nueva versión que incluye:
+   - Sección completa de tiempos de respuesta
+   - Análisis por prioridad con colores
+   - Percentiles visualizados
+   - Top de solicitudes más demoradas
+   - Análisis por tipo de servicio
+   - Indicadores de rendimiento adicionales
+
+3. AGREGA las funciones auxiliares (calcularPercentil, formatearTiempo, getStatusColor, getPriorityColor) 
+   si no existen ya en tu código.
+
+4. OPCIONAL: Si quieres gráficos de tiempo, puedes agregar un gráfico adicional para cada área:
+*/
+
+// 📊 FUNCIÓN OPCIONAL: Crear gráfico de tiempos por área
+function createTimeAnalysisChart(area, tiemposData) {
+    const ctx = document.getElementById(`timeChart-${area}`);
+    if (!ctx) return;
+    
+    const chartId = `timeChart-${area}`;
+    if (chartInstances[chartId]) {
+        chartInstances[chartId].destroy();
+    }
+    
+    // Preparar datos de percentiles para el gráfico
+    const percentiles = tiemposData.percentiles;
+    if (!percentiles) return;
+    
+    chartInstances[chartId] = new Chart(ctx.getContext('2d'), {
+        type: 'bar',
+        data: {
+            labels: ['50% resuelve en', '75% resuelve en', '90% resuelve en'],
+            datasets: [{
+                label: 'Tiempo de Respuesta',
+                data: [
+                    percentiles.p50?.ms / (1000 * 60 * 60) || 0, // Convertir a horas
+                    percentiles.p75?.ms / (1000 * 60 * 60) || 0,
+                    percentiles.p90?.ms / (1000 * 60 * 60) || 0
+                ],
+                backgroundColor: [
+                    'rgba(5, 150, 105, 0.7)',
+                    'rgba(245, 158, 11, 0.7)', 
+                    'rgba(239, 68, 68, 0.7)'
+                ],
+                borderColor: [
+                    '#059669',
+                    '#f59e0b',
+                    '#ef4444'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const horas = Math.floor(context.parsed.y);
+                            const minutos = Math.floor((context.parsed.y % 1) * 60);
+                            return `${horas}h ${minutos}m`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Horas'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return Math.floor(value) + 'h';
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+/*
+5. Para usar el gráfico opcional, agrega este canvas al HTML de cada área:
+   <canvas id="timeChart-BIOMEDICA"></canvas>
+   <canvas id="timeChart-MECANICA"></canvas>
+   <canvas id="timeChart-INFRAESTRUCTURA"></canvas>
+
+6. MODIFICA la función showAreaStats() para crear los gráficos de tiempo:
+*/
+
+// Modificar la función showAreaStats() existente
+function showAreaStats(area) {
+    currentAreaStats = area;
+    
+    // Actualizar pestañas activas
+    document.querySelectorAll('.area-tab[data-area-stats]').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.dataset.areaStats === area) {
+            tab.classList.add('active');
+        }
+    });
+    
+    // Ocultar todas las secciones
+    document.querySelectorAll('.area-stats-section').forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Mostrar sección seleccionada
+    const section = document.getElementById(`stats-${area}`);
+    if (section) {
+        section.classList.add('active');
+        
+        // Crear gráficos si es un área específica
+        if (area !== 'todas') {
+            setTimeout(() => {
+                const statsPorArea = calcularEstadisticasPorArea();
+                const areaStats = statsPorArea[area.toUpperCase()];
+                
+                // Crear gráfico de estados por área (existente)
+                createAreaCharts(area.toUpperCase(), areaStats);
+                
+                // 🆕 NUEVO: Crear gráfico de tiempos si hay datos
+                if (areaStats && areaStats.tiemposRespuesta && areaStats.tiemposRespuesta.percentiles) {
+                    createTimeAnalysisChart(area.toUpperCase(), areaStats.tiemposRespuesta);
+                }
+            }, 100);
+        }
+    }
+}
+
+/*
+7. EJEMPLO DE USO COMPLETO:
+
+Una vez integradas todas las funciones, cuando el usuario seleccione una área específica 
+(Biomédica, Mecánica, o Infraestructura) en las estadísticas avanzadas, verá:
+
+✅ Tiempo promedio de respuesta del área
+✅ Percentiles de tiempo (50%, 75%, 90%)  
+✅ Análisis por prioridad (crítica, alta, media, baja)
+✅ Análisis por tipo de servicio
+✅ Top 5 solicitudes más demoradas
+✅ Indicadores de rendimiento (>24h, >72h)
+✅ Tasa de puntualidad
+✅ Solicitudes vencidas vs en tiempo
+
+8. ESTRUCTURA FINAL DE DATOS:
+
+El objeto de estadísticas por área tendrá esta estructura:
+{
+  total: 50,
+  completadas: 35,
+  // ... otros campos existentes
+  tiemposRespuesta: {
+    totalSolicitudes: 50,
+    solicitudesConTiempo: 35,
+    tiempoPromedio: "24h 15m",
+    tiempoPromedioDias: "1.0",
+    percentiles: {
+      p50: { formato: "18h 30m", descripcion: "..." },
+      p75: { formato: "28h 45m", descripcion: "..." },
+      p90: { formato: "45h 20m", descripcion: "..." }
+    },
+    promediosPorPrioridad: {
+      CRITICA: { formato: "8h 15m", totalSolicitudes: 5 },
+      ALTA: { formato: "16h 30m", totalSolicitudes: 12 },
+      // ...
+    },
+    promediosPorTipo: {
+      "MANTENIMIENTO_CORRECTIVO": { formato: "22h 10m", totalSolicitudes: 20 },
+      "ERROR_USUARIO": { formato: "2h 45m", totalSolicitudes: 3 },
+      // ...
+    },
+    tiemposMasDemorados: [
+      { numero: "SOLBIO00123", estado: "COMPLETADA", formato: "72h 30m", dias: 3 },
+      // ... top 5
+    ],
+    indicadores: {
+      tasaCompletacion: "85.2",
+      tasaPuntualidad: "78.5", 
+      solicitudesMasDe24h: 15,
+      solicitudesMasDe72h: 3
+    }
+  }
+}
+
+9. BENEFICIOS DE ESTA IMPLEMENTACIÓN:
+
+✨ Análisis detallado de rendimiento por área
+✨ Identificación de cuellos de botella
+✨ Comparación entre áreas
+✨ Métricas de calidad de servicio
+✨ Identificación de tipos de servicio problemáticos
+✨ Seguimiento de SLAs por prioridad
+✨ Datos para toma de decisiones
+
+10. CONSIDERACIONES IMPORTANTES:
+
+⚠️ Los cálculos de tiempo solo incluyen solicitudes con fechas válidas
+⚠️ Solo se promedian solicitudes completadas para tiempos de respuesta
+⚠️ Las solicitudes en curso muestran tiempo transcurrido, no tiempo final
+⚠️ Los percentiles se calculan solo con solicitudes completadas
+⚠️ Se manejan casos donde no hay suficientes datos
+
+NOTA: Esta implementación es compatible con el sistema existente y 
+agrega funcionalidad sin romper características previas.
+*/
+
+// 🔧 FUNCIÓN DE DEBUGGING para verificar datos de tiempo
+function debugTiemposRespuesta(area) {
+    console.log(`🔍 DEBUG TIEMPOS DE RESPUESTA - ${area}`);
+    console.log('════════════════════════════════════════');
+    
+    if (!solicitudesPorArea[area]) {
+        console.log('❌ No hay solicitudes para esta área');
+        return;
+    }
+    
+    const solicitudes = solicitudesPorArea[area];
+    const tiempos = calcularTiemposRespuestaArea(solicitudes);
+    
+    console.log(`📊 Total solicitudes: ${tiempos.totalSolicitudes}`);
+    console.log(`⏱️ Con tiempo registrado: ${tiempos.solicitudesConTiempo}`);
+    console.log(`📈 Tiempo promedio: ${tiempos.tiempoPromedio}`);
+    console.log(`🎯 Tasa completación: ${tiempos.indicadores?.tasaCompletacion}%`);
+    console.log(`⚡ Solicitudes >24h: ${tiempos.indicadores?.solicitudesMasDe24h}`);
+    console.log(`🚨 Solicitudes >72h: ${tiempos.indicadores?.solicitudesMasDe72h}`);
+    
+    if (tiempos.percentiles) {
+        console.log('\n📊 PERCENTILES:');
+        console.log(`   50%: ${tiempos.percentiles.p50?.formato}`);
+        console.log(`   75%: ${tiempos.percentiles.p75?.formato}`);
+        console.log(`   90%: ${tiempos.percentiles.p90?.formato}`);
+    }
+    
+    if (tiempos.promediosPorPrioridad) {
+        console.log('\n⚡ TIEMPOS POR PRIORIDAD:');
+        Object.entries(tiempos.promediosPorPrioridad).forEach(([prioridad, datos]) => {
+            console.log(`   ${prioridad}: ${datos.formato} (${datos.totalSolicitudes} solicitudes)`);
+        });
+    }
+    
+    console.log('════════════════════════════════════════');
+    return tiempos;
+}
+
+// Hacer la función global para debugging
+window.debugTiemposRespuesta = debugTiemposRespuesta;
+// FUNCIÓN MEJORADA: Calcular estadísticas por área con tiempos de respuesta detallados
 function calcularEstadisticasPorArea() {
-    console.log('📊 Calculando estadísticas por área...');
+    console.log('📊 Calculando estadísticas por área con tiempos de respuesta...');
     
     const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
     const statsPorArea = {};
@@ -5955,6 +6247,9 @@ function calcularEstadisticasPorArea() {
         const correctivos = solicitudesArea.filter(s => 
             s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
         ).length;
+        
+        // ⏱️ NUEVO: Cálculo detallado de tiempos de respuesta por área
+        const tiemposRespuesta = calcularTiemposRespuestaArea(solicitudesArea);
         
         // NUEVO: Análisis de ubicaciones
         const ubicacionesAnalisis = {};
@@ -6018,26 +6313,6 @@ function calcularEstadisticasPorArea() {
         // Ordenar por total descendente
         ubicacionesDetalle.sort((a, b) => b.total - a.total);
         
-        // Calcular tiempos promedio
-        let tiempoTotalMs = 0;
-        let solicitudesConTiempo = 0;
-        
-        solicitudesArea.forEach(s => {
-            if (s.fechaCreacion && (s.estado === 'COMPLETADA' || s.estado === 'Completada')) {
-                const fechaCreacion = new Date(s.fechaCreacion);
-                const fechaFin = s.fechaCompletado ? new Date(s.fechaCompletado) : new Date();
-                const tiempoMs = fechaFin - fechaCreacion;
-                if (!isNaN(tiempoMs) && tiempoMs > 0) {
-                    tiempoTotalMs += tiempoMs;
-                    solicitudesConTiempo++;
-                }
-            }
-        });
-        
-        const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
-        const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
-        const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
-        
         // Personal del área
         const personalDisponible = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'disponible').length;
         const personalOcupado = tecnicosArea.filter(t => (t.estado || '').toLowerCase() === 'ocupado').length;
@@ -6055,7 +6330,6 @@ function calcularEstadisticasPorArea() {
             porcentajeCompletadas: solicitudesArea.length > 0 ? ((completadas / solicitudesArea.length) * 100).toFixed(1) : 0,
             porcentajeErrores: solicitudesArea.length > 0 ? ((erroresUsuario / solicitudesArea.length) * 100).toFixed(1) : 0,
             porcentajeCorrectivos: solicitudesArea.length > 0 ? ((correctivos / solicitudesArea.length) * 100).toFixed(1) : 0,
-            tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
             personal: {
                 total: tecnicosArea.length,
                 disponible: personalDisponible,
@@ -6063,15 +6337,873 @@ function calcularEstadisticasPorArea() {
                 inactivo: personalInactivo
             },
             eficiencia: solicitudesArea.length > 0 ? (((completadas + canceladas) / solicitudesArea.length) * 100).toFixed(1) : 0,
-            // NUEVO: Agregar análisis de ubicaciones
             ubicaciones: ubicacionesDetalle,
-            totalUbicaciones: Object.keys(ubicacionesAnalisis).length
+            totalUbicaciones: Object.keys(ubicacionesAnalisis).length,
+            // ⏱️ NUEVO: Agregar análisis completo de tiempos de respuesta
+            tiemposRespuesta: tiemposRespuesta
         };
     });
     
-    console.log('✅ Estadísticas por área calculadas con ubicaciones:', statsPorArea);
+    console.log('✅ Estadísticas por área calculadas con tiempos de respuesta:', statsPorArea);
     return statsPorArea;
 }
+
+// ⏱️ NUEVA FUNCIÓN: Calcular tiempos de respuesta específicos por área
+function calcularTiemposRespuestaArea(solicitudesArea) {
+    console.log(`⏱️ Calculando tiempos de respuesta para ${solicitudesArea.length} solicitudes...`);
+    
+    const tiemposDetalle = [];
+    let tiempoTotalMs = 0;
+    let solicitudesConTiempo = 0;
+    let tiemposPorPrioridad = {
+        'CRITICA': [],
+        'ALTA': [],
+        'MEDIA': [],
+        'BAJA': []
+    };
+    let tiemposPorTipo = {};
+    let solicitudesVencidas = 0;
+    let solicitudesEnTiempo = 0;
+    
+    // Procesar cada solicitud del área
+    solicitudesArea.forEach(solicitud => {
+        if (!solicitud.fechaCreacion) return;
+        
+        const fechaCreacion = new Date(solicitud.fechaCreacion);
+        let fechaFin = new Date();
+        let esCompletada = false;
+        
+        // Determinar fecha de fin según el estado
+        const estadoUpper = (solicitud.estado || 'PENDIENTE').toUpperCase();
+        if (estadoUpper === 'COMPLETADA' && solicitud.fechaCompletado) {
+            fechaFin = new Date(solicitud.fechaCompletado);
+            esCompletada = true;
+        } else if (estadoUpper === 'CANCELADA') {
+            fechaFin = solicitud.fechaCancelacion ? new Date(solicitud.fechaCancelacion) : new Date();
+            esCompletada = true;
+        }
+        
+        const tiempoMs = fechaFin - fechaCreacion;
+        if (tiempoMs < 0) return; // Evitar tiempos negativos
+        
+        const horas = Math.floor(tiempoMs / (1000 * 60 * 60));
+        const minutos = Math.floor((tiempoMs % (1000 * 60 * 60)) / (1000 * 60));
+        const dias = Math.floor(tiempoMs / (1000 * 60 * 60 * 24));
+        
+        const tiempoDetalle = {
+            numero: solicitud.numero || solicitud.id,
+            estado: solicitud.estado || 'PENDIENTE',
+            prioridad: solicitud.prioridad || 'MEDIA',
+            tipoServicio: solicitud.tipoServicio || 'No especificado',
+            horas: horas,
+            minutos: minutos,
+            dias: dias,
+            formato: `${horas}h ${minutos}m`,
+            formatoDias: dias > 0 ? `${dias}d ${horas % 24}h` : `${horas}h ${minutos}m`,
+            tiempoMs: tiempoMs,
+            esCompletada: esCompletada,
+            fechaCreacion: solicitud.fechaCreacion,
+            fechaFin: fechaFin.toISOString()
+        };
+        
+        // Verificar si está vencida (solo para no completadas)
+        if (!esCompletada && solicitud.tiempoRespuestaMaximo) {
+            const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
+            if (new Date() > fechaMaxima) {
+                tiempoDetalle.vencida = true;
+                solicitudesVencidas++;
+            } else {
+                tiempoDetalle.vencida = false;
+                solicitudesEnTiempo++;
+            }
+        }
+        
+        tiemposDetalle.push(tiempoDetalle);
+        
+        // Solo incluir en promedios las solicitudes completadas
+        if (esCompletada) {
+            tiempoTotalMs += tiempoMs;
+            solicitudesConTiempo++;
+            
+            // Agrupar por prioridad
+            const prioridad = (solicitud.prioridad || 'MEDIA').toUpperCase();
+            if (tiemposPorPrioridad[prioridad]) {
+                tiemposPorPrioridad[prioridad].push(tiempoMs);
+            }
+            
+            // Agrupar por tipo de servicio
+            const tipo = solicitud.tipoServicio || 'No especificado';
+            if (!tiemposPorTipo[tipo]) {
+                tiemposPorTipo[tipo] = [];
+            }
+            tiemposPorTipo[tipo].push(tiempoMs);
+        }
+    });
+    
+    // Calcular promedios
+    const tiempoPromedioMs = solicitudesConTiempo > 0 ? tiempoTotalMs / solicitudesConTiempo : 0;
+    const horasPromedio = Math.floor(tiempoPromedioMs / (1000 * 60 * 60));
+    const minutosPromedio = Math.floor((tiempoPromedioMs % (1000 * 60 * 60)) / (1000 * 60));
+    const diasPromedio = tiempoPromedioMs / (1000 * 60 * 60 * 24);
+    
+    // Calcular promedios por prioridad
+    const promediosPorPrioridad = {};
+    Object.entries(tiemposPorPrioridad).forEach(([prioridad, tiempos]) => {
+        if (tiempos.length > 0) {
+            const promedio = tiempos.reduce((a, b) => a + b, 0) / tiempos.length;
+            const horas = Math.floor(promedio / (1000 * 60 * 60));
+            const minutos = Math.floor((promedio % (1000 * 60 * 60)) / (1000 * 60));
+            const dias = promedio / (1000 * 60 * 60 * 24);
+            
+            promediosPorPrioridad[prioridad] = {
+                totalSolicitudes: tiempos.length,
+                promedioMs: promedio,
+                formato: `${horas}h ${minutos}m`,
+                formatoDias: dias > 1 ? `${dias.toFixed(1)}d` : `${horas}h ${minutos}m`,
+                dias: dias
+            };
+        }
+    });
+    
+    // Calcular promedios por tipo de servicio
+    const promediosPorTipo = {};
+    Object.entries(tiemposPorTipo).forEach(([tipo, tiempos]) => {
+        if (tiempos.length > 0) {
+            const promedio = tiempos.reduce((a, b) => a + b, 0) / tiempos.length;
+            const horas = Math.floor(promedio / (1000 * 60 * 60));
+            const minutos = Math.floor((promedio % (1000 * 60 * 60)) / (1000 * 60));
+            
+            promediosPorTipo[tipo] = {
+                totalSolicitudes: tiempos.length,
+                promedioMs: promedio,
+                formato: `${horas}h ${minutos}m`,
+                dias: promedio / (1000 * 60 * 60 * 24)
+            };
+        }
+    });
+    
+    // Ordenar solicitudes por tiempo descendente para mostrar las más demoradas
+    tiemposDetalle.sort((a, b) => b.tiempoMs - a.tiempoMs);
+    
+    // Calcular percentiles
+    const tiemposOrdenados = tiemposDetalle
+        .filter(t => t.esCompletada)
+        .map(t => t.tiempoMs)
+        .sort((a, b) => a - b);
+    
+    const percentil50 = calcularPercentil(tiemposOrdenados, 50);
+    const percentil75 = calcularPercentil(tiemposOrdenados, 75);
+    const percentil90 = calcularPercentil(tiemposOrdenados, 90);
+    
+    return {
+        // Resumen general
+        totalSolicitudes: solicitudesArea.length,
+        solicitudesConTiempo: solicitudesConTiempo,
+        solicitudesVencidas: solicitudesVencidas,
+        solicitudesEnTiempo: solicitudesEnTiempo,
+        
+        // Promedios generales
+        tiempoPromedioMs: tiempoPromedioMs,
+        tiempoPromedio: `${horasPromedio}h ${minutosPromedio}m`,
+        tiempoPromedioDias: diasPromedio.toFixed(1),
+        tiempoPromedioFormato: diasPromedio > 1 ? 
+            `${diasPromedio.toFixed(1)} días` : 
+            `${horasPromedio}h ${minutosPromedio}m`,
+        
+        // Análisis detallado
+        tiemposDetalle: tiemposDetalle,
+        tiemposMasDemorados: tiemposDetalle.slice(0, 5), // Top 5 más demoradas
+        
+        // Por prioridad
+        promediosPorPrioridad: promediosPorPrioridad,
+        
+        // Por tipo de servicio
+        promediosPorTipo: promediosPorTipo,
+        
+        // Percentiles
+        percentiles: {
+            p50: {
+                ms: percentil50,
+                formato: formatearTiempo(percentil50),
+                descripcion: "50% de las solicitudes se resuelven en menos tiempo"
+            },
+            p75: {
+                ms: percentil75,
+                formato: formatearTiempo(percentil75),
+                descripcion: "75% de las solicitudes se resuelven en menos tiempo"
+            },
+            p90: {
+                ms: percentil90,
+                formato: formatearTiempo(percentil90),
+                descripcion: "90% de las solicitudes se resuelven en menos tiempo"
+            }
+        },
+        
+        // Indicadores de rendimiento
+        indicadores: {
+            tasaCompletacion: solicitudesArea.length > 0 ? 
+                ((tiemposDetalle.filter(t => t.esCompletada).length / solicitudesArea.length) * 100).toFixed(1) : 0,
+            tasaPuntualidad: (solicitudesEnTiempo + solicitudesVencidas) > 0 ? 
+                ((solicitudesEnTiempo / (solicitudesEnTiempo + solicitudesVencidas)) * 100).toFixed(1) : 0,
+            solicitudesMasDe24h: tiemposDetalle.filter(t => t.dias >= 1).length,
+            solicitudesMasDe72h: tiemposDetalle.filter(t => t.dias >= 3).length
+        }
+    };
+}
+
+// 📊 FUNCIÓN AUXILIAR: Calcular percentil
+function calcularPercentil(arrayOrdenado, percentil) {
+    if (arrayOrdenado.length === 0) return 0;
+    
+    const index = (percentil / 100) * (arrayOrdenado.length - 1);
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    const weight = index % 1;
+    
+    if (upper >= arrayOrdenado.length) return arrayOrdenado[arrayOrdenado.length - 1];
+    if (lower === upper) return arrayOrdenado[lower];
+    
+    return arrayOrdenado[lower] * (1 - weight) + arrayOrdenado[upper] * weight;
+}
+
+// 📊 FUNCIÓN AUXILIAR: Formatear tiempo
+function formatearTiempo(tiempoMs) {
+    if (!tiempoMs) return '0h 0m';
+    
+    const horas = Math.floor(tiempoMs / (1000 * 60 * 60));
+    const minutos = Math.floor((tiempoMs % (1000 * 60 * 60)) / (1000 * 60));
+    const dias = tiempoMs / (1000 * 60 * 60 * 24);
+    
+    if (dias > 1) {
+        return `${dias.toFixed(1)} días`;
+    } else {
+        return `${horas}h ${minutos}m`;
+    }
+}
+
+
+
+
+ // FUNCIÓN: Calcular estadísticas por área
+// FUNCIÓN: Generar HTML de estadísticas específicas por área CON TIEMPOS DE RESPUESTA
+function generateAreaSpecificStats(area, stats) {
+    const areaNames = {
+        'BIOMEDICA': 'Ingeniería Biomédica',
+        'MECANICA': 'Mecánica',
+        'INFRAESTRUCTURA': 'Infraestructura'
+    };
+    
+    const areaColors = {
+        'BIOMEDICA': '#059669',
+        'MECANICA': '#f59e0b',
+        'INFRAESTRUCTURA': '#8b5cf6'
+    };
+    
+    const areaName = areaNames[area];
+    const areaColor = areaColors[area];
+    
+    // Obtener datos de tiempos de respuesta si están disponibles
+    const tiempos = stats.tiemposRespuesta || {};
+    
+    return `
+        <h3 style="color: ${areaColor}; margin-bottom: 1.5rem;">📊 Estadísticas de ${areaName}</h3>
+        
+        <!-- Indicadores principales del área -->
+        <div class="stats-grid">
+            <div class="stat-card" style="border-top: 4px solid ${areaColor};">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">📋 Total Solicitudes</span>
+                    <span style="font-size: 1.5rem;">📊</span>
+                </div>
+                <div class="stat-card-value" style="color: ${areaColor};">
+                    ${stats.total}
+                </div>
+                <div class="stat-card-description">
+                    Solicitudes gestionadas
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">✅ Tasa Completado</span>
+                    <span style="font-size: 1.5rem;">📈</span>
+                </div>
+                <div class="stat-card-value" style="color: #059669;">
+                    ${stats.porcentajeCompletadas}%
+                </div>
+                <div class="stat-card-description">
+                    ${stats.completadas} de ${stats.total} completadas
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">🔧 Mantenimientos Correctivos</span>
+                    <span style="font-size: 1.5rem;">⚙️</span>
+                </div>
+                <div class="stat-card-value" style="color: #f59e0b;">
+                    ${stats.porcentajeCorrectivos}%
+                </div>
+                <div class="stat-card-description">
+                    ${stats.correctivos} correctivos
+                </div>
+            </div>
+            
+            <div class="stat-card" ${stats.erroresUsuario > 0 ? 'style="border: 2px solid #ef4444;"' : ''}>
+                <div class="stat-card-header">
+                    <span class="stat-card-title">👤 Errores Usuario</span>
+                    <span style="font-size: 1.5rem;">⚠️</span>
+                </div>
+                <div class="stat-card-value" style="color: #ef4444;">
+                    ${stats.porcentajeErrores}%
+                </div>
+                <div class="stat-card-description">
+                    ${stats.erroresUsuario} errores detectados
+                </div>
+            </div>
+        </div>
+
+        <!-- ⏱️ NUEVA SECCIÓN: Análisis de Tiempos de Respuesta -->
+        ${tiempos.totalSolicitudes ? `
+            <div class="card" style="margin-top: 2rem; border-left: 4px solid ${areaColor};">
+                <div class="card-header">
+                    <h3 class="card-title">⏱️ Tiempos de Respuesta - ${areaName}</h3>
+                    <span style="background: ${areaColor}15; color: ${areaColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                        ${tiempos.solicitudesConTiempo} solicitudes analizadas
+                    </span>
+                </div>
+                <div class="card-content">
+                    <!-- Indicadores principales de tiempo -->
+                    <div class="stats-grid" style="margin-bottom: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">📊 Tiempo Promedio</span>
+                            </div>
+                            <div class="stat-card-value" style="color: #2563eb;">
+                                ${tiempos.tiempoPromedioFormato || tiempos.tiempoPromedio || 'N/A'}
+                            </div>
+                            <div class="stat-card-description">
+                                Tiempo promedio de resolución
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">🎯 Puntualidad</span>
+                            </div>
+                            <div class="stat-card-value" style="color: ${tiempos.indicadores?.tasaPuntualidad > 70 ? '#059669' : tiempos.indicadores?.tasaPuntualidad > 40 ? '#f59e0b' : '#ef4444'};">
+                                ${tiempos.indicadores?.tasaPuntualidad || 0}%
+                            </div>
+                            <div class="stat-card-description">
+                                Solicitudes resueltas a tiempo
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">⚠️ Vencidas</span>
+                            </div>
+                            <div class="stat-card-value" style="color: ${tiempos.solicitudesVencidas > 0 ? '#ef4444' : '#059669'};">
+                                ${tiempos.solicitudesVencidas || 0}
+                            </div>
+                            <div class="stat-card-description">
+                                Solicitudes fuera de tiempo
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card">
+                            <div class="stat-card-header">
+                                <span class="stat-card-title">📈 Eficiencia</span>
+                            </div>
+                            <div class="stat-card-value" style="color: ${stats.eficiencia > 70 ? '#059669' : stats.eficiencia > 40 ? '#f59e0b' : '#ef4444'};">
+                                ${stats.eficiencia}%
+                            </div>
+                            <div class="stat-card-description">
+                                Solicitudes gestionadas
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Análisis por prioridad -->
+                    ${tiempos.promediosPorPrioridad && Object.keys(tiempos.promediosPorPrioridad).length > 0 ? `
+                        <div style="background: ${areaColor}08; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem;">
+                            <h4 style="color: ${areaColor}; margin-bottom: 1rem;">⚡ Tiempos por Prioridad</h4>
+                            <div class="stats-grid">
+                                ${Object.entries(tiempos.promediosPorPrioridad).map(([prioridad, datos]) => {
+                                    const prioridadColors = {
+                                        'CRITICA': '#ef4444',
+                                        'ALTA': '#f59e0b', 
+                                        'MEDIA': '#3b82f6',
+                                        'BAJA': '#059669'
+                                    };
+                                    const prioridadIcons = {
+                                        'CRITICA': '🚨',
+                                        'ALTA': '🔴',
+                                        'MEDIA': '🟡', 
+                                        'BAJA': '🟢'
+                                    };
+                                    return `
+                                        <div class="stat-card">
+                                            <div class="stat-card-header">
+                                                <span class="stat-card-title">${prioridadIcons[prioridad] || '📋'} ${prioridad}</span>
+                                            </div>
+                                            <div class="stat-card-value" style="color: ${prioridadColors[prioridad] || '#6b7280'};">
+                                                ${datos.formatoDias || datos.formato}
+                                            </div>
+                                            <div class="stat-card-description">
+                                                ${datos.totalSolicitudes} solicitudes
+                                            </div>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Percentiles de tiempo -->
+                    ${tiempos.percentiles ? `
+                        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem;">
+                            <h4 style="color: #1f2937; margin-bottom: 1rem;">📊 Distribución de Tiempos</h4>
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-card-header">
+                                        <span class="stat-card-title">75% Resuelve en</span>
+                                    </div>
+                                    <div class="stat-card-value" style="color: #f59e0b;">
+                                        ${tiempos.percentiles.p75?.formato || 'N/A'}
+                                    </div>
+                                    <div class="stat-card-description">
+                                        Percentil 75
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-card-header">
+                                        <span class="stat-card-title">90% Resuelve en</span>
+                                    </div>
+                                    <div class="stat-card-value" style="color: #ef4444;">
+                                        ${tiempos.percentiles.p90?.formato || 'N/A'}
+                                    </div>
+                                    <div class="stat-card-description">
+                                        Percentil 90
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Top solicitudes más demoradas -->
+                    ${tiempos.tiemposMasDemorados && tiempos.tiemposMasDemorados.length > 0 ? `
+                        <div style="background: #fef2f2; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem; border-left: 4px solid #ef4444;">
+                            <h4 style="color: #dc2626; margin-bottom: 1rem;">⏰ Solicitudes con Mayor Tiempo de Respuesta</h4>
+                            <div class="table-responsive">
+                                <table class="stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Tipo</th>
+                                            <th>Tiempo</th>
+                                            <th>Días</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tiempos.tiemposMasDemorados.slice(0, 5).map(tiempo => `
+                                            <tr>
+                                                <td><strong>${tiempo.numero}</strong></td>
+                                                <td>
+                                                    <span style="color: ${getStatusColor(tiempo.estado)}; font-weight: 600;">
+                                                        ${tiempo.estado}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span style="color: ${getPriorityColor(tiempo.prioridad)}; font-weight: 600;">
+                                                        ${tiempo.prioridad}
+                                                    </span>
+                                                </td>
+                                                <td style="font-size: 0.875rem;">
+                                                    ${tiempo.tipoServicio.replace('_', ' ')}
+                                                </td>
+                                                <td style="font-weight: bold; color: ${tiempo.dias > 3 ? '#ef4444' : tiempo.dias > 1 ? '#f59e0b' : '#6b7280'};">
+                                                    ${tiempo.formato}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span style="color: ${tiempo.dias > 7 ? '#ef4444' : tiempo.dias > 3 ? '#f59e0b' : '#6b7280'}; font-weight: bold;">
+                                                        ${tiempo.dias}d
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            ${tiempos.tiemposMasDemorados.length > 5 ? `
+                                <p style="text-align: center; color: #6b7280; margin-top: 1rem; font-size: 0.875rem;">
+                                    Mostrando las 5 solicitudes más demoradas de ${tiempos.tiemposMasDemorados.length} analizadas
+                                </p>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+
+                    <!-- Análisis por tipo de servicio -->
+                    ${tiempos.promediosPorTipo && Object.keys(tiempos.promediosPorTipo).length > 0 ? `
+                        <div style="background: #f0f9ff; padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 2rem;">
+                            <h4 style="color: #0284c7; margin-bottom: 1rem;">🔧 Tiempos por Tipo de Servicio</h4>
+                            <div class="table-responsive">
+                                <table class="stats-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tipo de Servicio</th>
+                                            <th>Solicitudes</th>
+                                            <th>Tiempo Promedio</th>
+                                            <th>Días Promedio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${Object.entries(tiempos.promediosPorTipo)
+                                            .sort((a, b) => b[1].promedioMs - a[1].promedioMs)
+                                            .map(([tipo, datos]) => `
+                                                <tr>
+                                                    <td style="font-weight: 600;">
+                                                        ${tipo.replace('_', ' ')}
+                                                        ${tipo === 'ERROR_USUARIO' ? ' ⚠️' : ''}
+                                                    </td>
+                                                    <td style="text-align: center;">${datos.totalSolicitudes}</td>
+                                                    <td style="font-weight: bold; color: ${datos.dias > 2 ? '#ef4444' : datos.dias > 1 ? '#f59e0b' : '#059669'};">
+                                                        ${datos.formato}
+                                                    </td>
+                                                    <td style="text-align: center;">
+                                                        <span style="color: ${datos.dias > 3 ? '#ef4444' : datos.dias > 1.5 ? '#f59e0b' : '#059669'};">
+                                                            ${datos.dias.toFixed(1)}d
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <!-- Indicadores de rendimiento adicionales -->
+                    ${tiempos.indicadores ? `
+                        <div style="background: linear-gradient(135deg, ${areaColor}10 0%, ${areaColor}05 100%); padding: 1.5rem; border-radius: 0.75rem;">
+                            <h4 style="color: ${areaColor}; margin-bottom: 1rem;">📈 Indicadores de Rendimiento</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                                <div>
+                                    <span style="color: #6b7280; font-size: 0.875rem;">Solicitudes > 24 horas:</span>
+                                    <div style="font-weight: bold; color: ${tiempos.indicadores.solicitudesMasDe24h > 0 ? '#f59e0b' : '#059669'};">
+                                        ${tiempos.indicadores.solicitudesMasDe24h || 0}
+                                    </div>
+                                    <span style="color: ${areaColor}; font-size: 0.75rem;">
+                                        ${tiempos.totalSolicitudes > 0 ? ((tiempos.indicadores.solicitudesMasDe24h / tiempos.totalSolicitudes) * 100).toFixed(1) : 0}% del total
+                                    </span>
+                                </div>
+                                <div>
+                                    <span style="color: #6b7280; font-size: 0.875rem;">Solicitudes > 72 horas:</span>
+                                    <div style="font-weight: bold; color: ${tiempos.indicadores.solicitudesMasDe72h > 0 ? '#ef4444' : '#059669'};">
+                                        ${tiempos.indicadores.solicitudesMasDe72h || 0}
+                                    </div>
+                                    <span style="color: ${areaColor}; font-size: 0.75rem;">
+                                        ${tiempos.totalSolicitudes > 0 ? ((tiempos.indicadores.solicitudesMasDe72h / tiempos.totalSolicitudes) * 100).toFixed(1) : 0}% del total
+                                    </span>
+                                </div>
+                                <div>
+                                    <span style="color: #6b7280; font-size: 0.875rem;">Tasa de completación:</span>
+                                    <div style="font-weight: bold; color: ${tiempos.indicadores.tasaCompletacion > 70 ? '#059669' : tiempos.indicadores.tasaCompletacion > 40 ? '#f59e0b' : '#ef4444'};">
+                                        ${tiempos.indicadores.tasaCompletacion}%
+                                    </div>
+                                    <span style="color: ${areaColor}; font-size: 0.75rem;">
+                                        ${tiempos.solicitudesConTiempo} completadas
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        ` : `
+            <!-- Mensaje cuando no hay datos de tiempo -->
+            <div class="card" style="margin-top: 2rem;">
+                <div class="card-header">
+                    <h3 class="card-title">⏱️ Tiempos de Respuesta - ${areaName}</h3>
+                </div>
+                <div class="card-content">
+                    <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                        No hay suficientes datos de tiempo para generar estadísticas.<br>
+                        Se requieren solicitudes completadas para calcular tiempos de respuesta.
+                    </p>
+                </div>
+            </div>
+        `}
+
+        <!-- Indicadores específicos del área -->
+        <div class="stats-grid" style="margin-top: 1.5rem;">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">⚡ Prioridad Crítica</span>
+                    <span style="font-size: 1.5rem;">🚨</span>
+                </div>
+                <div class="stat-card-value" style="color: #ef4444;">
+                    ${stats.priocriticas || 0}
+                </div>
+                <div class="stat-card-description">
+                    Solicitudes críticas
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">⏳ Pendientes</span>
+                    <span style="font-size: 1.5rem;">⏰</span>
+                </div>
+                <div class="stat-card-value" style="color: #f59e0b;">
+                    ${stats.pendientes}
+                </div>
+                <div class="stat-card-description">
+                    Sin asignar o procesar
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">🔄 En Proceso</span>
+                    <span style="font-size: 1.5rem;">⚙️</span>
+                </div>
+                <div class="stat-card-value" style="color: #8b5cf6;">
+                    ${stats.enProceso}
+                </div>
+                <div class="stat-card-description">
+                    Siendo atendidas
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-title">📊 Eficiencia General</span>
+                    <span style="font-size: 1.5rem;">🎯</span>
+                </div>
+                <div class="stat-card-value" style="color: ${stats.eficiencia > 70 ? '#059669' : stats.eficiencia > 40 ? '#f59e0b' : '#ef4444'};">
+                    ${stats.eficiencia}%
+                </div>
+                <div class="stat-card-description">
+                    Solicitudes gestionadas
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal del área (código existente) -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title">👥 Personal de ${areaName}</h3>
+                <span style="background: ${areaColor}15; color: ${areaColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                    ${stats.personal.total} personas
+                </span>
+            </div>
+            <div class="card-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">🟢 Disponibles</span>
+                        </div>
+                        <div class="stat-card-value" style="color: #059669;">
+                            ${stats.personal.disponible}
+                        </div>
+                        <div class="stat-card-description">
+                            Listos para asignar
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">🟡 Ocupados</span>
+                        </div>
+                        <div class="stat-card-value" style="color: #f59e0b;">
+                            ${stats.personal.ocupado}
+                        </div>
+                        <div class="stat-card-description">
+                            Con solicitudes asignadas
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">🔴 Inactivos</span>
+                        </div>
+                        <div class="stat-card-value" style="color: #ef4444;">
+                            ${stats.personal.inactivo}
+                        </div>
+                        <div class="stat-card-description">
+                            No disponibles
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-card-header">
+                            <span class="stat-card-title">📊 Tasa Ocupación</span>
+                        </div>
+                        <div class="stat-card-value" style="color: ${stats.personal.total > 0 ? (stats.personal.ocupado / stats.personal.total > 0.7 ? '#ef4444' : stats.personal.ocupado / stats.personal.total > 0.4 ? '#f59e0b' : '#059669') : '#6b7280'};">
+                            ${stats.personal.total > 0 ? Math.round((stats.personal.ocupado / stats.personal.total) * 100) : 0}%
+                        </div>
+                        <div class="stat-card-description">
+                            Personal ocupado
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN: Análisis de Ubicaciones (código existente mejorado) -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title">📍 Ubicaciones con Mayor Demanda</h3>
+                <span style="background: ${areaColor}15; color: ${areaColor}; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600;">
+                    ${stats.totalUbicaciones} ubicaciones
+                </span>
+            </div>
+            <div class="card-content">
+                ${stats.ubicaciones && stats.ubicaciones.length > 0 ? `
+                    <div class="table-responsive">
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Ubicación</th>
+                                    <th style="text-align: center;">Total</th>
+                                    <th style="text-align: center;">Pendientes</th>
+                                    <th style="text-align: center;">En Proceso</th>
+                                    <th style="text-align: center;">Completadas</th>
+                                    <th style="text-align: center;">Críticas/Altas</th>
+                                    <th style="text-align: center;">% del Total</th>
+                                    <th style="text-align: center;">Tasa Completado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${stats.ubicaciones.slice(0, 10).map((ubicacion, index) => `
+                                    <tr ${index === 0 ? 'style="background: #f0fdf4;"' : ''}>
+                                        <td style="font-weight: ${index === 0 ? 'bold' : 'normal'};">
+                                            ${index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '📍'}
+                                            ${ubicacion.nombre}
+                                        </td>
+                                        <td style="text-align: center; font-weight: bold;">${ubicacion.total}</td>
+                                        <td style="text-align: center; color: #f59e0b;">${ubicacion.pendientes}</td>
+                                        <td style="text-align: center; color: #8b5cf6;">${ubicacion.enProceso}</td>
+                                        <td style="text-align: center; color: #059669;">${ubicacion.completadas}</td>
+                                        <td style="text-align: center; color: #ef4444;">
+                                            ${ubicacion.prioridadCritica + ubicacion.prioridadAlta}
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <div style="flex: 1; background: #e5e7eb; border-radius: 9999px; height: 8px; overflow: hidden;">
+                                                    <div style="height: 100%; background: ${areaColor}; width: ${ubicacion.porcentaje}%;"></div>
+                                                </div>
+                                                <span style="font-size: 0.75rem; font-weight: 600;">
+                                                    ${ubicacion.porcentaje}%
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span style="color: ${ubicacion.tasaCompletado > 70 ? '#059669' : ubicacion.tasaCompletado > 40 ? '#f59e0b' : '#ef4444'}; font-weight: 600;">
+                                                ${ubicacion.tasaCompletado}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                            ${stats.ubicaciones.length > 10 ? `
+                                <tfoot style="background: #f8fafc;">
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; font-style: italic; color: #6b7280;">
+                                            Mostrando las 10 ubicaciones principales de ${stats.ubicaciones.length} totales
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            ` : ''}
+                        </table>
+                    </div>
+                    
+                    <!-- Análisis de zonas críticas -->
+                    <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, ${areaColor}10 0%, ${areaColor}05 100%); border-radius: 0.5rem;">
+                        <h5 style="color: ${areaColor}; margin-bottom: 0.75rem;">🎯 Análisis de Zonas Críticas</h5>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Ubicación con más solicitudes:</span>
+                                <div style="font-weight: bold; color: #1f2937;">
+                                    ${stats.ubicaciones[0]?.nombre || 'N/A'}
+                                </div>
+                                <span style="color: ${areaColor}; font-size: 0.75rem;">
+                                    ${stats.ubicaciones[0]?.total || 0} solicitudes (${stats.ubicaciones[0]?.porcentaje || 0}%)
+                                </span>
+                            </div>
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Ubicación con más pendientes:</span>
+                                <div style="font-weight: bold; color: #1f2937;">
+                                    ${stats.ubicaciones.sort((a, b) => b.pendientes - a.pendientes)[0]?.nombre || 'N/A'}
+                                </div>
+                                <span style="color: #f59e0b; font-size: 0.75rem;">
+                                    ${stats.ubicaciones.sort((a, b) => b.pendientes - a.pendientes)[0]?.pendientes || 0} pendientes
+                                </span>
+                            </div>
+                            <div>
+                                <span style="color: #6b7280; font-size: 0.875rem;">Promedio por ubicación:</span>
+                                <div style="font-weight: bold; color: #1f2937;">
+                                    ${stats.totalUbicaciones > 0 ? (stats.total / stats.totalUbicaciones).toFixed(1) : 0}
+                                </div>
+                                <span style="color: ${areaColor}; font-size: 0.75rem;">
+                                    solicitudes/ubicación
+                                </span>
+                            </div>
+                        </div>
+                        ${stats.ubicaciones.filter(u => u.erroresUsuario > 0).length > 0 ? `
+                            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid ${areaColor}30;">
+                                <span style="color: #ef4444; font-size: 0.875rem; font-weight: 600;">
+                                    ⚠️ Ubicaciones con errores de usuario:
+                                </span>
+                                <div style="margin-top: 0.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    ${stats.ubicaciones
+                                        .filter(u => u.erroresUsuario > 0)
+                                        .slice(0, 5)
+                                        .map(u => `
+                                            <span style="background: #fee2e2; color: #dc2626; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem;">
+                                                ${u.nombre}: ${u.erroresUsuario}
+                                            </span>
+                                        `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : `
+                    <p style="text-align: center; color: #6b7280; padding: 2rem;">
+                        No hay datos de ubicaciones disponibles
+                    </p>
+                `}
+            </div>
+        </div>
+
+        <!-- Gráfico de estados del área (código existente) -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="card-header">
+                <h3 class="card-title">📊 Distribución de Estados - ${areaName}</h3>
+            </div>
+            <div class="card-content">
+                <div class="chart-container">
+                    <canvas id="estadoChart${area}"></canvas>
+                </div>
+            </div>
+        </div>
+    `;card-title">50% Resuelve en</span>
+                                    </div>
+                                    <div class="stat-card-value" style="color: #059669;">
+                                        ${tiempos.percentiles.p50?.formato || 'N/A'}
+                                    </div>
+                                    <div class="stat-card-description">
+                                        Mediana de tiempos
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-card">
+                                    <div class="stat-card-header">
+                                        <span class="stat-
 
         // FUNCIÓN: Generar HTML de estadísticas generales
         function generateGeneralStats(stats) {
