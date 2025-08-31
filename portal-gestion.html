@@ -6729,6 +6729,90 @@ function calcularEstadisticasPorArea() {
         
         // ⏱️ MEJORADO: Cálculo detallado de tiempos de respuesta por área
         const tiemposRespuesta = calcularTiemposRespuestaArea(solicitudesArea);
+
+        // Función auxiliar para formatear tiempo
+        function formatearTiempo(tiempoMs) {
+            const horas = Math.floor(tiempoMs / (1000 * 60 * 60));
+            const minutos = Math.floor((tiempoMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (horas < 1) {
+                return `${minutos} min`;
+            } else if (horas < 24) {
+                return `${horas}h ${minutos}min`;
+            } else {
+                const dias = Math.floor(horas / 24);
+                const horasRestantes = horas % 24;
+                return `${dias}d ${horasRestantes}h`;
+            }
+        }
+
+        // Función auxiliar para calcular percentiles
+        function calcularPercentiles(valores) {
+            if (valores.length === 0) return null;
+            
+            const sorted = valores.slice().sort((a, b) => a - b);
+            const getPercentile = (p) => {
+                const index = Math.ceil((p / 100) * sorted.length) - 1;
+                return sorted[Math.max(0, index)];
+            };
+
+            return {
+                p50: {
+                    valor: getPercentile(50),
+                    formato: formatearTiempo(getPercentile(50))
+                },
+                p75: {
+                    valor: getPercentile(75),
+                    formato: formatearTiempo(getPercentile(75))
+                },
+                p90: {
+                    valor: getPercentile(90),
+                    formato: formatearTiempo(getPercentile(90))
+                }
+            };
+        }
+
+        // FUNCIÓN: Calcular estadísticas por área
+function calcularEstadisticasPorArea() {
+    console.log('📊 Calculando estadísticas por área con tiempos de respuesta...');
+    
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const statsPorArea = {};
+    
+    // Verificar que solicitudesPorArea esté actualizado
+    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
+        clasificarSolicitudesPorArea();
+    }
+    
+    areas.forEach(area => {
+        const solicitudesArea = solicitudesPorArea[area] || [];
+        console.log(`📊 Área ${area}: ${solicitudesArea.length} solicitudes`);
+        
+        const tecnicosArea = cloudTecnicos.filter(t => normalizarArea(t.area) === area);
+        
+        const pendientes = solicitudesArea.filter(s => {
+            const estado = (s.estado || 'PENDIENTE').toUpperCase();
+            return estado === 'PENDIENTE' || (!s.tecnicoAsignado && estado !== 'COMPLETADA' && estado !== 'CANCELADA');
+        }).length;
+        
+        const asignadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'ASIGNADA').length;
+        const enProceso = solicitudesArea.filter(s => {
+            const estado = (s.estado || '').toUpperCase();
+            return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+        }).length;
+        const completadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length;
+        const canceladas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'CANCELADA').length;
+        
+        const erroresUsuario = solicitudesArea.filter(s => 
+            s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+        ).length;
+        
+        const correctivos = solicitudesArea.filter(s => 
+            s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
+        ).length;
+        
+        // ⏱️ MEJORADO: Cálculo detallado de tiempos de respuesta por área
+        const tiemposRespuesta = calcularTiemposRespuestaArea(solicitudesArea);
 }
 // Funciones auxiliares para colores de estado y prioridad
 function getStatusColor(status) {
