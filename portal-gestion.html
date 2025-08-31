@@ -6509,6 +6509,226 @@ function generateAreaSpecificStats(area, stats) {
             </div>
         </div>
     `;
+// NUEVA FUNCIÓN: Calcular tiempos de respuesta por área
+        function calcularTiemposRespuestaArea(solicitudesArea) {
+            if (!solicitudesArea || solicitudesArea.length === 0) {
+                return {
+                    totalSolicitudes: 0,
+                    solicitudesConTiempo: 0,
+                    tiempoPromedio: 'N/A',
+                    tiempoPromedioFormato: 'N/A',
+                    solicitudesVencidas: 0,
+                    percentiles: null,
+                    promediosPorPrioridad: {},
+                    promediosPorTipo: {},
+                    tiemposMasDemorados: [],
+                    indicadores: {
+                        tasaPuntualidad: 0,
+                        tasaCompletacion: 0,
+                        solicitudesMasDe24h: 0,
+                        solicitudesMasDe72h: 0
+                    }
+                };
+            }
+
+            const ahora = new Date();
+            const solicitudesConFecha = solicitudesArea.filter(s => s.fechaCreacion);
+            const solicitudesCompletadas = solicitudesArea.filter(s => {
+                const estado = (s.estado || '').toUpperCase();
+                return estado === 'COMPLETADA' && s.fechaCreacion && s.fechaCompletado;
+            });
+
+            if (solicitudesCompletadas.length === 0) {
+                return {
+                    totalSolicitudes: solicitudesConFecha.length,
+                    solicitudesConTiempo: 0,
+                    tiempoPromedio: 'N/A',
+                    tiempoPromedioFormato: 'Sin datos',
+                    solicitudesVencidas: 0,
+                    percentiles: null,
+                    promediosPorPrioridad: {},
+                    promediosPorTipo: {},
+                    tiemposMasDemorados: [],
+                    indicadores: {
+                        tasaPuntualidad: 0,
+                        tasaCompletacion: 0,
+                        solicitudesMasDe24h: 0,
+                        solicitudesMasDe72h: 0
+                    }
+                };
+            }
+
+            // Calcular tiempos de respuesta
+            const tiempos = solicitudesCompletadas.map(s => {
+                const inicio = new Date(s.fechaCreacion);
+                const fin = new Date(s.fechaCompletado);
+                const tiempoMs = fin - inicio;
+                const tiempoHoras = tiempoMs / (1000 * 60 * 60);
+                const tiempoDias = tiempoMs / (1000 * 60 * 60 * 24);
+
+                return {
+                    solicitud: s,
+                    tiempoMs,
+                    tiempoHoras,
+                    tiempoDias,
+                    numero: s.numero,
+                    estado: s.estado,
+                    prioridad: s.prioridad || 'MEDIA',
+                    tipoServicio: s.tipoServicio || 'NO_ESPECIFICADO',
+                    formato: formatearTiempo(tiempoMs),
+                    dias: Math.ceil(tiempoDias)
+                };
+            }).sort((a, b) => b.tiempoMs - a.tiempoMs);
+
+            // Calcular estadísticas básicas
+            const tiempoPromedioMs = tiempos.reduce((sum, t) => sum + t.tiempoMs, 0) / tiempos.length;
+            const tiempoPromedioHoras = tiempoPromedioMs / (1000 * 60 * 60);
+            const tiempoPromedioDias = tiempoPromedioMs / (1000 * 60 * 60 * 24);
+
+            // Calcular percentiles
+            const percentiles = calcularPercentiles(tiempos.map(t => t.tiempoMs));
+
+            // Promedios por prioridad
+            const promediosPorPrioridad = {};
+            const prioridades = ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
+            prioridades.forEach(prioridad => {
+                const tiemposPrioridad = tiempos.filter(t => t.prioridad.toUpperCase() === prioridad);
+                if (tiemposPrioridad.length > 0) {
+                    const promedioMs = tiemposPrioridad.reduce((sum, t) => sum + t.tiempoMs, 0) / tiemposPrioridad.length;
+                    promediosPorPrioridad[prioridad] = {
+                        totalSolicitudes: tiemposPrioridad.length,
+                        promedioMs,
+                        formato: formatearTiempo(promedioMs),
+                        dias: promedioMs / (1000 * 60 * 60 * 24),
+                        formatoDias: `${(promedioMs / (1000 * 60 * 60 * 24)).toFixed(1)} días`
+                    };
+                }
+            });
+
+            // Promedios por tipo de servicio
+            const promediosPorTipo = {};
+            const tiposUnicos = [...new Set(tiempos.map(t => t.tipoServicio))];
+            tiposUnicos.forEach(tipo => {
+                const tiemposTipo = tiempos.filter(t => t.tipoServicio === tipo);
+                if (tiemposTipo.length > 0) {
+                    const promedioMs = tiemposTipo.reduce((sum, t) => sum + t.tiempoMs, 0) / tiemposTipo.length;
+                    promediosPorTipo[tipo] = {
+                        totalSolicitudes: tiemposTipo.length,
+                        promedioMs,
+                        formato: formatearTiempo(promedioMs),
+                        dias: promedioMs / (1000 * 60 * 60 * 24)
+                    };
+                }
+            });
+
+            // Indicadores adicionales
+            const solicitudesMasDe24h = tiempos.filter(t => t.tiempoHoras > 24).length;
+            const solicitudesMasDe72h = tiempos.filter(t => t.tiempoHoras > 72).length;
+            const tasaCompletacion = solicitudesConFecha.length > 0 ? 
+                ((solicitudesCompletadas.length / solicitudesConFecha.length) * 100).toFixed(1) : 0;
+
+            return {
+                totalSolicitudes: solicitudesConFecha.length,
+                solicitudesConTiempo: solicitudesCompletadas.length,
+                tiempoPromedio: formatearTiempo(tiempoPromedioMs),
+                tiempoPromedioFormato: `${tiempoPromedioHoras.toFixed(1)} horas (${tiempoPromedioDias.toFixed(1)} días)`,
+                solicitudesVencidas: 0, // Se calculará después si es necesario
+                percentiles,
+                promediosPorPrioridad,
+                promediosPorTipo,
+                tiemposMasDemorados: tiempos.slice(0, 10),
+                indicadores: {
+                    tasaPuntualidad: Math.max(0, 100 - ((solicitudesMasDe72h / tiempos.length) * 100)).toFixed(1),
+                    tasaCompletacion,
+                    solicitudesMasDe24h,
+                    solicitudesMasDe72h
+                }
+            };
+        }
+
+        // Función auxiliar para formatear tiempo
+        function formatearTiempo(tiempoMs) {
+            const horas = Math.floor(tiempoMs / (1000 * 60 * 60));
+            const minutos = Math.floor((tiempoMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (horas < 1) {
+                return `${minutos} min`;
+            } else if (horas < 24) {
+                return `${horas}h ${minutos}min`;
+            } else {
+                const dias = Math.floor(horas / 24);
+                const horasRestantes = horas % 24;
+                return `${dias}d ${horasRestantes}h`;
+            }
+        }
+
+        // Función auxiliar para calcular percentiles
+        function calcularPercentiles(valores) {
+            if (valores.length === 0) return null;
+            
+            const sorted = valores.slice().sort((a, b) => a - b);
+            const getPercentile = (p) => {
+                const index = Math.ceil((p / 100) * sorted.length) - 1;
+                return sorted[Math.max(0, index)];
+            };
+
+            return {
+                p50: {
+                    valor: getPercentile(50),
+                    formato: formatearTiempo(getPercentile(50))
+                },
+                p75: {
+                    valor: getPercentile(75),
+                    formato: formatearTiempo(getPercentile(75))
+                },
+                p90: {
+                    valor: getPercentile(90),
+                    formato: formatearTiempo(getPercentile(90))
+                }
+            };
+        }
+
+        // FUNCIÓN: Calcular estadísticas por área
+function calcularEstadisticasPorArea() {
+    console.log('📊 Calculando estadísticas por área con tiempos de respuesta...');
+    
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const statsPorArea = {};
+    
+    // Verificar que solicitudesPorArea esté actualizado
+    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
+        clasificarSolicitudesPorArea();
+    }
+    
+    areas.forEach(area => {
+        const solicitudesArea = solicitudesPorArea[area] || [];
+        console.log(`📊 Área ${area}: ${solicitudesArea.length} solicitudes`);
+        
+        const tecnicosArea = cloudTecnicos.filter(t => normalizarArea(t.area) === area);
+        
+        const pendientes = solicitudesArea.filter(s => {
+            const estado = (s.estado || 'PENDIENTE').toUpperCase();
+            return estado === 'PENDIENTE' || (!s.tecnicoAsignado && estado !== 'COMPLETADA' && estado !== 'CANCELADA');
+        }).length;
+        
+        const asignadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'ASIGNADA').length;
+        const enProceso = solicitudesArea.filter(s => {
+            const estado = (s.estado || '').toUpperCase();
+            return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
+        }).length;
+        const completadas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length;
+        const canceladas = solicitudesArea.filter(s => (s.estado || '').toUpperCase() === 'CANCELADA').length;
+        
+        const erroresUsuario = solicitudesArea.filter(s => 
+            s.tipoServicio === 'ERROR_USUARIO' || s.tipoServicio === 'Error de Usuario'
+        ).length;
+        
+        const correctivos = solicitudesArea.filter(s => 
+            s.tipoServicio === 'MANTENIMIENTO_CORRECTIVO' || s.tipoServicio === 'Mantenimiento Correctivo'
+        ).length;
+        
+        // ⏱️ MEJORADO: Cálculo detallado de tiempos de respuesta por área
+        const tiemposRespuesta = calcularTiemposRespuestaArea(solicitudesArea);
 }
 // Funciones auxiliares para colores de estado y prioridad
 function getStatusColor(status) {
