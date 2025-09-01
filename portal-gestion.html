@@ -1559,7 +1559,27 @@
 <span class="count" id="count-completada">0</span>
 </button>
 </div>
-
+<div class="modal" id="redirect-area-modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">🔄 Redirigir Solicitud a Otra Área</h3>
+            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
+        </div>
+        <div id="redirect-area-content">
+            <!-- Contenido dinámico del modal -->
+        </div>
+    </div>
+</div>
+<label class="form-label">Prioridad:</label>
+<select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
+<option value="">Todas las prioridades</option>
+<option value="CRITICA">🚨 Crítica</option>
+<option value="ALTA">🔴 Alta</option>
+<option value="MEDIA">🟡 Media</option>
+<option value="BAJA">🟢 Baja</option>
+</select>
+</div>
+<div>
 <!-- Filtros de Solicitudes existentes -->
 <!-- Filtros de Solicitudes existentes -->
 <div class="filters-section">
