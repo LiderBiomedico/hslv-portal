@@ -1478,9 +1478,9 @@
 <button class="btn btn-success btn-sm" onclick="refreshFromCloud()">
                             🔄 Actualizar
                         </button>
-<button class="btn btn-info btn-sm" onclick="exportFilteredSolicitudesPDF()">
-    📑 Exportar Vista Actual a PDF
-</button>
+<button class="btn btn-primary btn-sm" onclick="autoAssignPending()">
+                            🤖 Auto-asignar
+                        </button>
 <button class="btn btn-warning btn-sm" onclick="showAdvancedStatisticsModal()">
                             📊 Estadísticas
                         </button>
@@ -1561,89 +1561,41 @@
 </div>
 
 <!-- Filtros de Solicitudes existentes -->
-<!-- Filtros de Solicitudes existentes -->
 <div class="filters-section">
-    <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
-    <div class="filters-grid">
-        <!-- NUEVO: Filtro de Mes y Año -->
-        <div>
-            <label class="form-label">📅 Mes:</label>
-            <select class="form-select" id="filter-mes" onchange="filterSolicitudes()">
-                <option value="">Todos los meses</option>
-                <option value="01">Enero</option>
-                <option value="02">Febrero</option>
-                <option value="03">Marzo</option>
-                <option value="04">Abril</option>
-                <option value="05">Mayo</option>
-                <option value="06">Junio</option>
-                <option value="07">Julio</option>
-                <option value="08">Agosto</option>
-                <option value="09">Septiembre</option>
-                <option value="10">Octubre</option>
-                <option value="11">Noviembre</option>
-                <option value="12">Diciembre</option>
-            </select>
+<h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
+<div class="filters-grid">
+<div>
+<label class="form-label">Estado:</label>
+<select class="form-select" id="filter-estado-solicitud" onchange="filterSolicitudes()">
+<option value="">Todos los estados</option>
+<option value="PENDIENTE">⏳ Pendiente</option>
+<option value="ASIGNADA">🎯 Asignada</option>
+<option value="EN_PROCESO">🔄 En Proceso</option>
+<option value="COMPLETADA">✅ Completada</option>
+<option value="CANCELADA">❌ Cancelada</option>
+</select>
+</div>
+<div>
+<!-- Modal de Redirección de Área -->
+<div class="modal" id="redirect-area-modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3 class="modal-title">🔄 Redirigir Solicitud a Otra Área</h3>
+            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
         </div>
-        
-        <div>
-            <label class="form-label">📆 Año:</label>
-            <select class="form-select" id="filter-anio" onchange="filterSolicitudes()">
-                <option value="">Todos los años</option>
-                <option value="2025">2025</option>
-                <option value="2024">2024</option>
-                <option value="2023">2023</option>
-            </select>
-        </div>
-
-        <div>
-            <label class="form-label">Estado:</label>
-            <select class="form-select" id="filter-estado-solicitud" onchange="filterSolicitudes()">
-                <option value="">Todos los estados</option>
-                <option value="PENDIENTE">⏳ Pendiente</option>
-                <option value="ASIGNADA">🎯 Asignada</option>
-                <option value="EN_PROCESO">🔄 En Proceso</option>
-                <option value="COMPLETADA">✅ Completada</option>
-                <option value="CANCELADA">❌ Cancelada</option>
-            </select>
-        </div>
-        
-        <div>
-            <label class="form-label">Prioridad:</label>
-            <select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
-                <option value="">Todas las prioridades</option>
-                <option value="CRITICA">🚨 Crítica</option>
-                <option value="ALTA">🔴 Alta</option>
-                <option value="MEDIA">🟡 Media</option>
-                <option value="BAJA">🟢 Baja</option>
-            </select>
-        </div>
-        
-        <div>
-            <label class="form-label">Tipo de Servicio:</label>
-            <select class="form-select" id="filter-tipo-servicio" onchange="filterSolicitudes()">
-                <option value="">Todos los tipos</option>
-                <option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
-                <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
-                <option value="REPARACION">Reparación</option>
-                <option value="INSTALACION">Instalación</option>
-                <option value="ERROR_USUARIO">Error de Usuario</option>
-            </select>
-        </div>
-        
-        <div>
-            <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
-                🗑️ Limpiar Filtros
-            </button>
+        <div id="redirect-area-content">
+            <!-- Contenido dinámico del modal -->
         </div>
     </div>
-    
-    <!-- Indicador de filtros activos -->
-    <div id="active-filters-indicator" style="margin-top: 1rem; display: none;">
-        <div style="background: #dbeafe; padding: 0.75rem; border-radius: 0.5rem; border-left: 3px solid #2563eb;">
-            <strong style="color: #1e40af;">🔍 Filtros activos:</strong>
-            <span id="active-filters-text" style="color: #1e3a8a; margin-left: 0.5rem;"></span>
-        </div>
-    </div>
+</div>
+<label class="form-label">Prioridad:</label>
+<select class="form-select" id="filter-prioridad-solicitud" onchange="filterSolicitudes()">
+<option value="">Todas las prioridades</option>
+<option value="CRITICA">🚨 Crítica</option>
+<option value="ALTA">🔴 Alta</option>
+<option value="MEDIA">🟡 Media</option>
+<option value="BAJA">🟢 Baja</option>
+</select>
 </div>
 <div>
 <label class="form-label">Tipo de Servicio:</label>
@@ -2529,278 +2481,6 @@ function debugContadores() {
 
 // Hacer la función global para poder llamarla desde la consola
 window.debugContadores = debugContadores;
-// Hacer la función global
-window.debugContadores = debugContadores;
-
-// 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF
-// 📑 FUNCIÓN: Exportar solicitudes filtradas a PDF - VERSIÓN CORREGIDA
-async function exportFilteredSolicitudesPDF() {
-    try {
-        // Mostrar loading
-        const loadingModal = document.createElement('div');
-        loadingModal.style.cssText = `
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 10000;
-        `;
-        loadingModal.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
-                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                <p style="margin-top: 1rem;">Generando PDF con ${filteredSolicitudes.length || cloudSolicitudes.length} solicitudes...</p>
-            </div>
-        `;
-        document.body.appendChild(loadingModal);
-
-        // Obtener filtros activos
-        const mesFilter = document.getElementById('filter-mes')?.value || '';
-        const anioFilter = document.getElementById('filter-anio')?.value || '';
-        const estadoFilter = document.getElementById('filter-estado-solicitud')?.value || '';
-        const prioridadFilter = document.getElementById('filter-prioridad-solicitud')?.value || '';
-        const tipoServicioFilter = document.getElementById('filter-tipo-servicio')?.value || '';
-        
-        // Determinar qué solicitudes exportar - IMPORTANTE: usar las filtradas actualmente
-        const solicitudesParaExportar = filteredSolicitudes.length > 0 ? 
-            [...filteredSolicitudes] : [...cloudSolicitudes];
-
-        console.log(`Exportando ${solicitudesParaExportar.length} solicitudes al PDF`);
-
-        // Calcular estadísticas
-        const stats = {
-            total: solicitudesParaExportar.length,
-            pendientes: solicitudesParaExportar.filter(s => 
-                (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE'
-            ).length,
-            enProceso: solicitudesParaExportar.filter(s => {
-                const estado = (s.estado || '').toUpperCase();
-                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-            }).length,
-            completadas: solicitudesParaExportar.filter(s => 
-                (s.estado || '').toUpperCase() === 'COMPLETADA'
-            ).length,
-            criticas: solicitudesParaExportar.filter(s => {
-                const prioridad = (s.prioridad || '').toUpperCase();
-                return prioridad === 'CRITICA' || prioridad === 'CRÍTICA';
-            }).length,
-            sinAsignar: solicitudesParaExportar.filter(s => !s.tecnicoAsignado).length
-        };
-
-        // Construir descripción de filtros
-        let filtrosAplicados = [];
-        if (currentAreaFilter !== 'TODAS') filtrosAplicados.push(`Área: ${currentAreaFilter}`);
-        if (mesFilter) {
-            const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                          'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-            filtrosAplicados.push(`Mes: ${meses[parseInt(mesFilter)]}`);
-        }
-        if (anioFilter) filtrosAplicados.push(`Año: ${anioFilter}`);
-        if (estadoFilter) filtrosAplicados.push(`Estado: ${estadoFilter}`);
-        if (prioridadFilter) filtrosAplicados.push(`Prioridad: ${prioridadFilter}`);
-        if (tipoServicioFilter) filtrosAplicados.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
-
-        const filtrosTexto = filtrosAplicados.length > 0 ? 
-            filtrosAplicados.join(' | ') : 'Sin filtros - Todas las solicitudes';
-
-        // Dividir solicitudes en páginas de 30 registros para mejor visualización
-        const solicitudesPorPagina = 30;
-        const totalPaginas = Math.ceil(solicitudesParaExportar.length / solicitudesPorPagina);
-
-        // Crear contenido para PDF con TODAS las solicitudes
-        const pdfContent = document.createElement('div');
-        pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
-        
-        let htmlContent = `
-            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
-                <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
-                    HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
-                </h1>
-                <h2 style="color: #4b5563; font-size: 18px; margin-bottom: 10px;">
-                    Reporte de Solicitudes Filtradas
-                </h2>
-                <p style="color: #6b7280; font-size: 12px;">
-                    Fecha: ${new Date().toLocaleString('es-CO')}
-                </p>
-            </div>
-
-            <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0369a1; margin-bottom: 10px;">Filtros Aplicados</h3>
-                <p style="color: #0c4a6e; font-weight: 500;">${filtrosTexto}</p>
-                <p style="color: #075985; font-size: 14px; margin-top: 10px;">
-                    Total de solicitudes en este reporte: <strong>${solicitudesParaExportar.length}</strong>
-                </p>
-            </div>
-
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0284c7; margin-bottom: 10px;">Resumen Estadístico</h3>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; font-size: 12px;">
-                    <div>Total: <strong>${stats.total}</strong></div>
-                    <div>Pendientes: <strong>${stats.pendientes}</strong></div>
-                    <div>En Proceso: <strong>${stats.enProceso}</strong></div>
-                    <div>Completadas: <strong>${stats.completadas}</strong></div>
-                    <div>Críticas: <strong>${stats.criticas}</strong></div>
-                    <div>Sin Asignar: <strong>${stats.sinAsignar}</strong></div>
-                </div>
-            </div>
-        `;
-
-        // Generar tabla con TODAS las solicitudes
-        htmlContent += `
-            <h3 style="color: #1f2937; margin: 20px 0 10px 0;">Detalle de Solicitudes</h3>
-            <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
-                <thead>
-                    <tr style="background: #f8fafc;">
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">#</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Fecha</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Área</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Prior.</th>
-                        <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
-                    </tr>
-                </thead>
-                <tbody>
-        `;
-
-        // Agregar TODAS las solicitudes, no solo las primeras 50
-        solicitudesParaExportar.forEach((s, index) => {
-            const fecha = s.fechaCreacion ? 
-                new Date(s.fechaCreacion).toLocaleDateString('es-CO') : 'N/D';
-            
-            // Agregar salto de página cada 30 registros para mejor legibilidad
-            if (index > 0 && index % solicitudesPorPagina === 0) {
-                htmlContent += `
-                    </tbody>
-                    </table>
-                    <div style="page-break-before: always; margin-top: 20px;">
-                        <p style="text-align: center; color: #6b7280; font-size: 10px;">
-                            Página ${Math.floor(index / solicitudesPorPagina) + 1} de ${totalPaginas}
-                        </p>
-                    </div>
-                    <table style="width: 100%; border-collapse: collapse; font-size: 9px;">
-                        <thead>
-                            <tr style="background: #f8fafc;">
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">#</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Fecha</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Área</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">Prior.</th>
-                                <th style="padding: 5px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-            }
-
-            htmlContent += `
-                <tr>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${index + 1}</td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb;">${fecha}</td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
-                        ${getAreaName(s.servicioIngenieria).substring(0, 10)}
-                    </td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
-                        ${(s.equipo || 'N/E').substring(0, 20)}${s.equipo && s.equipo.length > 20 ? '...' : ''}
-                    </td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
-                        ${(s.ubicacion || 'N/E').substring(0, 15)}${s.ubicacion && s.ubicacion.length > 15 ? '...' : ''}
-                    </td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; text-align: center;">
-                        <span style="color: ${getStatusColor(s.estado)}; font-weight: bold;">
-                            ${(s.estado || 'PEND').substring(0, 8)}
-                        </span>
-                    </td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; text-align: center;">
-                        <span style="color: ${getPriorityColor(s.prioridad)}; font-weight: bold;">
-                            ${(s.prioridad || 'MED').substring(0, 4)}
-                        </span>
-                    </td>
-                    <td style="padding: 4px; border: 1px solid #e5e7eb; font-size: 8px;">
-                        ${s.tecnicoAsignado ? s.tecnicoAsignado.substring(0, 12) : 'Sin asignar'}
-                    </td>
-                </tr>
-            `;
-        });
-
-        htmlContent += `
-                </tbody>
-            </table>
-            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 10px;">
-                <p>Total de registros exportados: ${solicitudesParaExportar.length} solicitudes</p>
-                <p>Reporte generado el ${new Date().toLocaleString('es-CO')}</p>
-            </div>
-        `;
-
-        pdfContent.innerHTML = htmlContent;
-        document.body.appendChild(pdfContent);
-        
-        // Generar PDF
-        const canvas = await html2canvas(pdfContent, {
-            scale: 2,
-            logging: false,
-            useCORS: true,
-            height: pdfContent.scrollHeight,
-            windowHeight: pdfContent.scrollHeight
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-        
-        // Limpiar
-        document.body.removeChild(pdfContent);
-        document.body.removeChild(loadingModal);
-        
-        // Guardar
-        const fecha = new Date().toISOString().split('T')[0];
-        const nombreArchivo = `Solicitudes_${currentAreaFilter}_${solicitudesParaExportar.length}_registros_${fecha}.pdf`;
-        pdf.save(nombreArchivo);
-        
-        console.log(`PDF generado exitosamente con ${solicitudesParaExportar.length} solicitudes`);
-        
-    } catch (error) {
-        console.error('Error generando PDF:', error);
-        alert(`Error al generar el PDF: ${error.message}\nIntente con menos registros o contacte soporte.`);
-        // Limpiar modal si hay error
-        const modal = document.querySelector('div[style*="position: fixed"]');
-        if (modal) modal.remove();
-    }
-}
-
-
-
-// Hacer la función global para que sea accesible desde el HTML
-window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
         function updateAllDisplays() {
             updatePersonnelSummaries();
             updateSolicitudesList();
@@ -6542,502 +6222,50 @@ function calcularEstadisticasPorArea() {
                 alert('❌ Error al generar el PDF: ' + error.message);
             }
         }
-    // 📑 FUNCIÓN: Exportar solicitudes por área a PDF
-async function exportSolicitudesPorAreaPDF() {
-    try {
-        // Mostrar loading
-        const loadingModal = document.createElement('div');
-        loadingModal.style.cssText = `
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            z-index: 10000;
-        `;
-        loadingModal.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 1rem; text-align: center;">
-                <div class="loading-spinner" style="width: 3rem; height: 3rem; margin: 0 auto;"></div>
-                <p style="margin-top: 1rem;">Generando PDF de solicitudes por área...</p>
-            </div>
-        `;
-        document.body.appendChild(loadingModal);
 
-        // Crear contenido para PDF
-        const pdfContent = document.createElement('div');
-        pdfContent.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px;';
-        
-        // Clasificar solicitudes por área
-        const biomedica = solicitudesPorArea.BIOMEDICA || [];
-        const mecanica = solicitudesPorArea.MECANICA || [];
-        const infraestructura = solicitudesPorArea.INFRAESTRUCTURA || [];
-        
-        // Calcular estadísticas por área
-        const calcularEstadisticas = (solicitudes) => ({
-            total: solicitudes.length,
-            pendientes: solicitudes.filter(s => (s.estado || 'PENDIENTE').toUpperCase() === 'PENDIENTE').length,
-            enProceso: solicitudes.filter(s => {
-                const estado = (s.estado || '').toUpperCase();
-                return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-            }).length,
-            completadas: solicitudes.filter(s => (s.estado || '').toUpperCase() === 'COMPLETADA').length,
-            criticas: solicitudes.filter(s => {
-                const prioridad = (s.prioridad || '').toUpperCase();
-                return prioridad === 'CRITICA' || prioridad === 'CRÍTICA';
-            }).length
-        });
-
-        const statsBiomedica = calcularEstadisticas(biomedica);
-        const statsMecanica = calcularEstadisticas(mecanica);
-        const statsInfra = calcularEstadisticas(infraestructura);
-
-        pdfContent.innerHTML = `
-            <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
-                <h1 style="color: #1f2937; font-size: 24px; margin-bottom: 10px;">
-                    HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.
-                </h1>
-                <h2 style="color: #4b5563; font-size: 18px; margin-bottom: 10px;">
-                    Reporte de Solicitudes por Área
-                </h2>
-                <p style="color: #6b7280; font-size: 12px;">
-                    Fecha de generación: ${new Date().toLocaleString('es-CO')}
-                </p>
-            </div>
-
-            <!-- Resumen ejecutivo -->
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <h3 style="color: #0284c7; margin-bottom: 10px;">📊 Resumen Ejecutivo</h3>
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #1f2937;">${cloudSolicitudes.length}</div>
-                        <div style="color: #6b7280; font-size: 12px;">Total Solicitudes</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">
-                            ${cloudSolicitudes.filter(s => !s.tecnicoAsignado).length}
-                        </div>
-                        <div style="color: #6b7280; font-size: 12px;">Sin Asignar</div>
-                    </div>
-                    <div style="text-align: center;">
-                        <div style="font-size: 24px; font-weight: bold; color: #ef4444;">
-                            ${cloudSolicitudes.filter(s => {
-                                const p = (s.prioridad || '').toUpperCase();
-                                return p === 'CRITICA' || p === 'CRÍTICA';
-                            }).length}
-                        </div>
-                        <div style="color: #6b7280; font-size: 12px;">Prioridad Crítica</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Ingeniería Biomédica -->
-            <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                <div style="background: linear-gradient(135deg, #059669 0%, #047857 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
-                    <h3 style="margin: 0;">🏥 INGENIERÍA BIOMÉDICA</h3>
-                </div>
-                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
-                        <div style="text-align: center;">
-                            <strong>${statsBiomedica.total}</strong><br>
-                            <small style="color: #6b7280;">Total</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #f59e0b;">${statsBiomedica.pendientes}</strong><br>
-                            <small style="color: #6b7280;">Pendientes</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #3b82f6;">${statsBiomedica.enProceso}</strong><br>
-                            <small style="color: #6b7280;">En Proceso</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #059669;">${statsBiomedica.completadas}</strong><br>
-                            <small style="color: #6b7280;">Completadas</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #ef4444;">${statsBiomedica.criticas}</strong><br>
-                            <small style="color: #6b7280;">Críticas</small>
-                        </div>
-                    </div>
-                    ${generateSolicitudesTable(biomedica.slice(0, 10))}
-                    ${biomedica.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
-                        Mostrando 10 de ${biomedica.length} solicitudes
-                    </p>` : ''}
-                </div>
-            </div>
-
-            <!-- Mecánica -->
-            <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
-                    <h3 style="margin: 0;">⚙️ MECÁNICA</h3>
-                </div>
-                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
-                        <div style="text-align: center;">
-                            <strong>${statsMecanica.total}</strong><br>
-                            <small style="color: #6b7280;">Total</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #f59e0b;">${statsMecanica.pendientes}</strong><br>
-                            <small style="color: #6b7280;">Pendientes</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #3b82f6;">${statsMecanica.enProceso}</strong><br>
-                            <small style="color: #6b7280;">En Proceso</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #059669;">${statsMecanica.completadas}</strong><br>
-                            <small style="color: #6b7280;">Completadas</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #ef4444;">${statsMecanica.criticas}</strong><br>
-                            <small style="color: #6b7280;">Críticas</small>
-                        </div>
-                    </div>
-                    ${generateSolicitudesTable(mecanica.slice(0, 10))}
-                    ${mecanica.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
-                        Mostrando 10 de ${mecanica.length} solicitudes
-                    </p>` : ''}
-                </div>
-            </div>
-
-            <!-- Infraestructura -->
-            <div style="margin-bottom: 30px; page-break-inside: avoid;">
-                <div style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
-                    <h3 style="margin: 0;">🏗️ INFRAESTRUCTURA</h3>
-                </div>
-                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
-                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
-                        <div style="text-align: center;">
-                            <strong>${statsInfra.total}</strong><br>
-                            <small style="color: #6b7280;">Total</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #f59e0b;">${statsInfra.pendientes}</strong><br>
-                            <small style="color: #6b7280;">Pendientes</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #3b82f6;">${statsInfra.enProceso}</strong><br>
-                            <small style="color: #6b7280;">En Proceso</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #059669;">${statsInfra.completadas}</strong><br>
-                            <small style="color: #6b7280;">Completadas</small>
-                        </div>
-                        <div style="text-align: center;">
-                            <strong style="color: #ef4444;">${statsInfra.criticas}</strong><br>
-                            <small style="color: #6b7280;">Críticas</small>
-                        </div>
-                    </div>
-                    ${generateSolicitudesTable(infraestructura.slice(0, 10))}
-                    ${infraestructura.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
-                        Mostrando 10 de ${infraestructura.length} solicitudes
-                    </p>` : ''}
-                </div>
-            </div>
-        `;
-
-
-
-// Función auxiliar para generar tabla de solicitudes filtradas
-function generateFilteredSolicitudesTable(solicitudes) {
-    if (solicitudes.length === 0) {
-        return '<p style="text-align: center; color: #6b7280; padding: 20px;">No hay solicitudes con los filtros aplicados</p>';
-    }
-    
-    return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-            <thead>
-                <tr style="background: #f8fafc;">
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">Fecha</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">Prioridad</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
-                    <th style="padding: 6px; border: 1px solid #e5e7eb; text-align: left;">Tipo</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${solicitudes.map(s => {
-                    const fecha = s.fechaCreacion ? 
-                        new Date(s.fechaCreacion).toLocaleDateString('es-CO') : 'N/D';
-                    const isErrorUsuario = s.tipoServicio === 'ERROR_USUARIO' || 
-                                          s.tipoServicio === 'Error de Usuario';
-                    
-                    return `
-                        <tr ${isErrorUsuario ? 'style="background: #fef2f2;"' : ''}>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${s.numero || 'S/N'}
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${fecha}
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${(s.equipo || 'No especificado').substring(0, 20)}${s.equipo && s.equipo.length > 20 ? '...' : ''}
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${(s.ubicacion || 'No especificada').substring(0, 15)}${s.ubicacion && s.ubicacion.length > 15 ? '...' : ''}
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">
-                                <span style="color: ${getStatusColor(s.estado)}; font-weight: bold; font-size: 9px;">
-                                    ${(s.estado || 'PENDIENTE').substring(0, 10)}
-                                </span>
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; text-align: center;">
-                                <span style="color: ${getPriorityColor(s.prioridad)}; font-weight: bold; font-size: 9px;">
-                                    ${(s.prioridad || 'MEDIA').substring(0, 8)}
-                                </span>
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${s.tecnicoAsignado ? s.tecnicoAsignado.substring(0, 15) : 'Sin asignar'}
-                            </td>
-                            <td style="padding: 5px; border: 1px solid #e5e7eb; font-size: 9px;">
-                                ${isErrorUsuario ? 
-                                    '<span style="color: #dc2626; font-weight: bold;">ERROR USU.</span>' : 
-                                    (s.tipoServicio || 'N/E').substring(0, 12)
-                                }
-                            </td>
-                        </tr>
-                    `;
-                }).join('')}
-            </tbody>
-        </table>
-    `;
-}    
-        document.body.appendChild(pdfContent);
-        
-        // Generar PDF
-        const canvas = await html2canvas(pdfContent, {
-            scale: 2,
-            logging: false,
-            useCORS: true
-        });
-        
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jspdf.jsPDF({
-            orientation: 'portrait',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        const imgWidth = 210;
-        const pageHeight = 295;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let heightLeft = imgHeight;
-        let position = 0;
-        
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-        
-        while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
-            pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-            heightLeft -= pageHeight;
-        }
-        
-        // Limpiar y guardar
-        document.body.removeChild(pdfContent);
-        document.body.removeChild(loadingModal);
-        
-        pdf.save(`Solicitudes_Por_Area_${new Date().toISOString().split('T')[0]}.pdf`);
-        
-    } catch (error) {
-        console.error('Error generando PDF:', error);
-        alert('Error al generar el PDF: ' + error.message);
-    }
-}
-
-// Función auxiliar para generar tabla de solicitudes
-function generateSolicitudesTable(solicitudes) {
-    if (solicitudes.length === 0) {
-        return '<p style="text-align: center; color: #6b7280; padding: 20px;">No hay solicitudes en esta área</p>';
-    }
-    
-    return `
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
-            <thead>
-                <tr style="background: #f8fafc;">
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">N°</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Equipo</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Ubicación</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">Estado</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: center;">Prioridad</th>
-                    <th style="padding: 8px; border: 1px solid #e5e7eb; text-align: left;">Asignado</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${solicitudes.map(s => `
-                    <tr>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.numero || 'S/N'}</td>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.equipo || 'No especificado'}</td>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb;">${s.ubicacion || 'No especificada'}</td>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
-                            <span style="color: ${getStatusColor(s.estado)}; font-weight: bold;">
-                                ${s.estado || 'PENDIENTE'}
-                            </span>
-                        </td>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">
-                            <span style="color: ${getPriorityColor(s.prioridad)}; font-weight: bold;">
-                                ${s.prioridad || 'MEDIA'}
-                            </span>
-                        </td>
-                        <td style="padding: 6px; border: 1px solid #e5e7eb;">
-                            ${s.tecnicoAsignado || 'Sin asignar'}
-                        </td>
-                    </tr>
-                `).join('')}
-            </tbody>
-        </table>
-    `;
-}
-
-// Funciones auxiliares para colores
-function getStatusColor(status) {
-    const estado = (status || 'PENDIENTE').toUpperCase();
-    switch(estado) {
-        case 'COMPLETADA': return '#059669';
-        case 'EN_PROCESO':
-        case 'EN PROCESO': return '#8b5cf6';
-        case 'ASIGNADA': return '#0ea5e9';
-        case 'PENDIENTE': return '#f59e0b';
-        case 'CANCELADA': return '#ef4444';
-        default: return '#6b7280';
-    }
-}
-
-function getPriorityColor(priority) {
-    const prioridad = (priority || 'MEDIA').toUpperCase();
-    switch(prioridad) {
-        case 'CRITICA':
-        case 'CRÍTICA': return '#ef4444';
-        case 'ALTA': return '#f59e0b';
-        case 'MEDIA': return '#3b82f6';
-        case 'BAJA': return '#059669';
-        default: return '#6b7280';
-    }
-}
         // 🔍 Filtros
-       function filterSolicitudes() {
-    const mesFilter = document.getElementById('filter-mes').value;
-    const anioFilter = document.getElementById('filter-anio').value;
-    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
-    
-    // Empezar con todas las solicitudes o las del área actual
-    if (currentAreaFilter === 'TODAS') {
-        filteredSolicitudes = [...cloudSolicitudes];
-    } else {
-        filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
-    }
-    
-    // Aplicar filtro de mes y año
-    if (mesFilter || anioFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            if (!solicitud.fechaCreacion) return false;
+        function filterSolicitudes() {
+            const estadoFilter = document.getElementById('filter-estado-solicitud').value;
+            const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
+            const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
             
-            const fecha = new Date(solicitud.fechaCreacion);
-            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-            const anio = String(fecha.getFullYear());
-            
-            if (mesFilter && anioFilter) {
-                return mes === mesFilter && anio === anioFilter;
-            } else if (mesFilter) {
-                return mes === mesFilter;
-            } else if (anioFilter) {
-                return anio === anioFilter;
+            // Empezar con las solicitudes del área actual
+            if (currentAreaFilter === 'TODAS') {
+                filteredSolicitudes = [...cloudSolicitudes];
+            } else {
+                filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
             }
-            return true;
-        });
-    }
-    
-    // Aplicar otros filtros existentes
-    if (estadoFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
-            return solicitudEstado === estadoFilter;
-        });
-    }
-    
-    if (prioridadFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
-            return solicitudPrioridad === prioridadFilter;
-        });
-    }
-    
-    if (tipoServicioFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudTipo = solicitud.tipoServicio ? solicitud.tipoServicio.toUpperCase() : '';
-            return solicitudTipo === tipoServicioFilter;
-        });
-    }
-    
-    // Actualizar indicador de filtros activos
-    updateActiveFiltersIndicator();
-    
-    // Actualizar la lista
-    updateSolicitudesList();
-}
-
-// Nueva función para mostrar los filtros activos
-function updateActiveFiltersIndicator() {
-    const mesFilter = document.getElementById('filter-mes').value;
-    const anioFilter = document.getElementById('filter-anio').value;
-    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
-    
-    const indicator = document.getElementById('active-filters-indicator');
-    const text = document.getElementById('active-filters-text');
-    
-    let activeFilters = [];
-    
-    if (mesFilter) {
-        const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        activeFilters.push(`Mes: ${meses[parseInt(mesFilter)]}`);
-    }
-    if (anioFilter) activeFilters.push(`Año: ${anioFilter}`);
-    if (estadoFilter) activeFilters.push(`Estado: ${estadoFilter}`);
-    if (prioridadFilter) activeFilters.push(`Prioridad: ${prioridadFilter}`);
-    if (tipoServicioFilter) activeFilters.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
-    if (currentAreaFilter !== 'TODAS') activeFilters.push(`Área: ${currentAreaFilter}`);
-    
-    if (activeFilters.length > 0) {
-        indicator.style.display = 'block';
-        text.textContent = activeFilters.join(' | ');
-    } else {
-        indicator.style.display = 'none';
-    }
-}
-
-// Actualizar la función clearSolicitudesFilters()
-function clearSolicitudesFilters() {
-    document.getElementById('filter-mes').value = '';
-    document.getElementById('filter-anio').value = '';
-    document.getElementById('filter-estado-solicitud').value = '';
-    document.getElementById('filter-prioridad-solicitud').value = '';
-    document.getElementById('filter-tipo-servicio').value = '';
-    
-    currentStatusFilter = 'TODAS';
-    document.querySelectorAll('.status-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.statusFilter === 'TODAS') {
-            btn.classList.add('active');
+            
+            // Aplicar filtro de estado actual
+            if (currentStatusFilter !== 'TODAS') {
+                filterByDetailedStatus(currentStatusFilter);
+                return;
+            }
+            
+            // Aplicar filtros
+            if (estadoFilter) {
+                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+                    const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
+                    return solicitudEstado === estadoFilter;
+                });
+            }
+            
+            if (prioridadFilter) {
+                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+                    const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
+                    return solicitudPrioridad === prioridadFilter;
+                });
+            }
+            
+            if (tipoServicioFilter) {
+                filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
+                    const solicitudTipo = solicitud.tipoServicio ? solicitud.tipoServicio.toUpperCase() : '';
+                    return solicitudTipo === tipoServicioFilter;
+                });
+            }
+            
+            updateSolicitudesList();
         }
-    });
-    
-    // Mantener el área actual pero limpiar otros filtros
-    filterSolicitudesByArea(currentAreaFilter);
-    updateActiveFiltersIndicator();
-}
 
         function clearSolicitudesFilters() {
             document.getElementById('filter-estado-solicitud').value = '';
