@@ -1001,7 +1001,7 @@
             'TRAMO_4': 'Tramo 4',
             'TRAMO_5': 'Tramo 5',
             // Administrativo
-            'TRAILER': 'Trailer'
+            'TRAILER': 'Trailer',
 			'SUMINISTROS': 'Suministros',
 			'ALMACEN': 'Almac  n',
 			'ARCHIVO': 'Archivo',
@@ -1050,7 +1050,7 @@
             'TRAMO_5': 'Tramo 5',
             'ADMINISTRATIVO': 'Administrativo',
             'MANTENIMIENTO': 'Mantenimiento',
-            'TRAILER': 'Trailer'
+            'TRAILER': 'Trailer',
 			'SUMINISTROS': 'Suministros',
 			'ALMACEN': 'Almac  n',
 			'ARCHIVO': 'Archivo',
@@ -1124,13 +1124,14 @@
         }
 
         // GestiÃ³n de pestaÃ±as de autenticaciÃ³n
-        function showAuthTab(tab) {
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-            
-            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
-            document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
-        }
+        // Gesti¨®n de pesta?as de autenticaci¨®n
+	function showAuthTab(tab) {
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+    
+    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+    document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
+	}
 
         // Verificar sesiÃ³n
         function checkSession() {
