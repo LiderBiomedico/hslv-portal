@@ -1982,8 +1982,7 @@
         // Variables para análisis temporal
         let currentAnalysisView = 'general';
         let currentAreaStats = 'todas';
-        let mobileAppEnabled = true;
-        let pushNotificationsSupported = false;
+       
 
         // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
@@ -3133,7 +3132,11 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
 
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
-
+            ${solicitud.observacionesTecnico ? `
+            <div class="technician-response-indicator">
+            📱 Respuesta Técnico
+            </div>
+            ` : ''}
             const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
             if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
