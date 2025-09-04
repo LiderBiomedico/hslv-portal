@@ -82,16 +82,7 @@
             max-width: 100%;
             text-align: center;
         }
-        /* Indicador de app móvil */
-.mobile-app-badge {
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    margin-left: 0.5rem;
-}
+
         .hospital-info p {
             font-size: 0.85rem;
             color: #e0f2fe;
@@ -102,30 +93,7 @@
             max-width: 100%;
             text-align: center;
         }
-.technician-response-indicator {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 600;
-    animation: bounce 2s infinite;
-}
 
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-    60% {
-        transform: translateY(-5px);
-    }
-}
         .developer-credit {
             font-size: 0.75rem;
             color: #bfdbfe;
@@ -1675,7 +1643,19 @@
             <strong style="color: #1e40af;">🔍 Filtros activos:</strong>
             <span id="active-filters-text" style="color: #1e3a8a; margin-left: 0.5rem;"></span>
         </div>
-    
+    </div>
+</div>
+<div>
+<label class="form-label">Tipo de Servicio:</label>
+<select class="form-select" id="filter-tipo-servicio" onchange="filterSolicitudes()">
+<option value="">Todos los tipos</option>
+<option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
+<option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
+<option value="REPARACION">Reparación</option>
+<option value="INSTALACION">Instalación</option>
+<option value="ERROR_USUARIO">Error de Usuario</option>
+</select>
+</div>
 <div>
 <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
                                     🗑️ Limpiar Filtros
@@ -1909,9 +1889,29 @@
 </div>
 </div>
 </div>
+<div class="modal" id="redirect-area-modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">🔄 Redirigir Solicitud a Otra Área</h3>
+            <button class="modal-close" onclick="closeRedirectAreaModal()">×</button>
+        </div>
+        <div id="redirect-area-content">
+            <!-- Contenido dinámico del modal -->
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="edit-personal-modal">
-<div class="modal-content" style="max-width: 500px;">
-<div class="modal-header">
+    <div class="modal-content" style="max-width: 500px;">
+        <div class="modal-header">
+            <h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
+            <button class="modal-close" onclick="closeEditPersonalModal()">×</button>
+        </div>
+        <div id="edit-personal-content">
+            <!-- Contenido dinámico del modal de edición -->
+        </div>
+    </div>
+</div>
 <h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
 <button class="modal-close" onclick="closeEditPersonalModal()">×</button>
 </div>
@@ -1936,8 +1936,6 @@
 <script src="airtable-config.js"></script>
 <script>
         // Variables globales para datos de la nube
-        let mobileAppEnabled = true;
-        let pushNotificationsSupported = false;
         let cloudSolicitudes = [];
         let cloudTecnicos = [];
         let cloudUsuarios = [];
@@ -1960,17 +1958,10 @@
 
         // Variables para gráficos
         let chartInstances = {};
-        // Verificar soporte para notificaciones push
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            pushNotificationsSupported = true;
-            console.log('📱 Soporte para notificaciones push: ✅');
-        } else {
-            console.log('📱 Soporte para notificaciones push: ❌');
-        }
+
         // Variables para análisis temporal
         let currentAnalysisView = 'general';
         let currentAreaStats = 'todas';
-       
 
         // 🔗 Funciones de conexión y estado
         function updateConnectionStatus(status, message) {
@@ -2151,36 +2142,7 @@
         loadDataFromLocalStorage();
     }
 }
-async function checkForTechnicianResponses() {
-    try {
-        // Obtener solicitudes que tengan respuestas nuevas de técnicos
-        const solicitudesConRespuestas = cloudSolicitudes.filter(s => 
-            s.observacionesTecnico && 
-            s.fechaRespuestaTecnico &&
-            new Date(s.fechaRespuestaTecnico) > new Date(Date.now() - 5 * 60 * 1000) // Últimos 5 minutos
-        );
 
-        if (solicitudesConRespuestas.length > 0) {
-            console.log(`📱 ${solicitudesConRespuestas.length} nuevas respuestas de técnicos detectadas`);
-            
-            // Mostrar notificación en el portal
-            const nombres = solicitudesConRespuestas.map(s => s.numero || 'S/N').join(', ');
-            
-            if ('Notification' in window && Notification.permission === 'granted') {
-                new Notification('🏥 Hospital - Nuevas Respuestas', {
-                    body: `Respuestas recibidas para solicitudes: ${nombres}`,
-                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📱</text></svg>'
-                });
-            }
-            
-            // Actualizar display automáticamente
-            updateSolicitudesList();
-        }
-        
-    } catch (error) {
-        console.error('❌ Error verificando respuestas de técnicos:', error);
-    }
-}
         function loadDataFromLocalStorage() {
             console.log('📱 Cargando datos desde localStorage (modo fallback)...');
             
@@ -3120,11 +3082,7 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
 
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
-            ${solicitud.observacionesTecnico ? `
-            <div class="technician-response-indicator">
-            📱 Respuesta Técnico
-            </div>
-            ` : ''}
+
             const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
             if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
@@ -3244,18 +3202,14 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
     <button class="btn btn-info btn-sm" onclick="viewRequestDetails('${solicitud.id}')">
         👁️ Ver Detalles
     </button>
-    ${solicitud.observacionesTecnico ? `
-    <button class="btn btn-success btn-sm" onclick="viewTechnicianResponse('${solicitud.id}')">
-        📱 Ver Respuesta Técnico
-    </button>
-` : ''}
+    
     ${solicitud.tecnicoAsignado && 
       solicitud.estado !== 'COMPLETADA' && solicitud.estado !== 'Completada' ? `
         <button class="btn btn-danger btn-sm" onclick="unassignPersonal('${solicitud.id}')">
             🔓 Liberar Personal
         </button>
     ` : ''}
-	${ //NUEVO: Mostrar quién completó la solicitud 
+	${/* NUEVO: Mostrar quién completó la solicitud */
       (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') && 
       solicitud.tecnicoAsignado ? `
         <div style="background: #dcfce7; padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
@@ -7243,121 +7197,57 @@ function clearSolicitudesFilters() {
                 alert('❌ Error al cargar modal de asignación: ' + error.message);
             }
         }
-async function viewTechnicianResponse(solicitudId) {
-    try {
-        const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-        if (!solicitud) {
-            alert('❌ Solicitud no encontrada');
-            return;
-        }
 
-        let responseInfo = `📋 RESPUESTA DEL TÉCNICO\n\n`;
-        responseInfo += `🔧 Técnico: ${solicitud.tecnicoAsignado || 'No asignado'}\n`;
-        responseInfo += `📊 Estado: ${solicitud.estado || 'PENDIENTE'}\n`;
-        
-        if (solicitud.observacionesTecnico) {
-            responseInfo += `💬 Comentarios:\n${solicitud.observacionesTecnico}\n\n`;
-        }
-        
-        if (solicitud.fechaRespuestaTecnico) {
-            responseInfo += `🕒 Fecha de respuesta: ${new Date(solicitud.fechaRespuestaTecnico).toLocaleString('es-CO')}\n`;
-        }
-        
-        if (solicitud.evidenciaFotografica && solicitud.evidenciaFotografica.length > 0) {
-            responseInfo += `\n📸 Evidencia fotográfica disponible (${solicitud.evidenciaFotografica.length} fotos)`;
-        }
-
-        alert(responseInfo);
-        
-    } catch (error) {
-        console.error('❌ Error viendo respuesta:', error);
-        alert('❌ Error al cargar respuesta del técnico');
-    }
-}
-async function handleAssignPersonal(event, solicitudId) {
-    event.preventDefault();
-    
-    const personalId = document.getElementById('selected-personal').value;
-    const observaciones = document.getElementById('assignment-notes').value.trim();
-    
-    if (!personalId) {
-        alert('❌ Por favor seleccione personal');
-        return;
-    }
-
-    try {
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '⏳ Asignando...';
-
-        const result = await window.airtableAPI.assignTechnicianToRequest(
-            solicitudId, 
-            personalId, 
-            observaciones
-        );
-
-        if (result.success) {
-            // 🆕 NUEVO: Enviar notificación push después de asignar
-            const solicitud = cloudSolicitudes.find(s => s.id === solicitudId);
-            if (solicitud && result.tecnico) {
-                await sendNotificationToTechnician(
-                    personalId, 
-                    solicitud.numero || 'S/N',
-                    result.tecnico.nombre
-                );
+        async function handleAssignPersonal(event, solicitudId) {
+            event.preventDefault();
+            
+            const personalId = document.getElementById('selected-personal').value;
+            const observaciones = document.getElementById('assignment-notes').value.trim();
+            
+            if (!personalId) {
+                alert('❌ Por favor seleccione personal');
+                return;
             }
 
-            await refreshFromCloud();
-            await syncTechniciansWithCloud();
-            
-            closeAssignmentModal();
-            
-            alert(`✅ Personal asignado exitosamente\n\n👤 Personal: ${result.tecnico.nombre}\n📋 Solicitud: ${result.solicitud.numero}\n\n📱 Notificación enviada al técnico`);
-        } else {
-            throw new Error('La asignación no fue exitosa');
-        }
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '⏳ Asignando...';
 
-    } catch (error) {
-        console.error('❌ Error asignando personal:', error);
-        alert('❌ Error al asignar personal: ' + error.message);
-    } finally {
-        const submitBtn = event.target.querySelector('button[type="submit"]');
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '🎯 Asignar Personal';
+                const result = await window.airtableAPI.assignTechnicianToRequest(
+                    solicitudId, 
+                    personalId, 
+                    observaciones
+                );
+
+                if (result.success) {
+                    await refreshFromCloud();
+                    await syncTechniciansWithCloud();
+                    
+                    closeAssignmentModal();
+                    
+                    alert(`✅ Personal asignado exitosamente\n\n👤 Personal: ${result.tecnico.nombre}\n📋 Solicitud: ${result.solicitud.numero}`);
+                } else {
+                    throw new Error('La asignación no fue exitosa');
+                }
+
+            } catch (error) {
+                console.error('❌ Error asignando personal:', error);
+                alert('❌ Error al asignar personal: ' + error.message);
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '🎯 Asignar Personal';
+                }
+            }
         }
-    }
-}
 
         function closeAssignmentModal() {
             document.getElementById('assignment-modal').classList.remove('show');
         }
-async function sendNotificationToTechnician(technicianId, requestNumber, technicianName) {
-    try {
-        console.log(`📱 Enviando notificación push a ${technicianName}`);
-        
-        const response = await fetch('/.netlify/functions/send-push-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                technicianId: technicianId,
-                requestNumber: requestNumber,
-                message: `Nueva solicitud ${requestNumber} asignada`
-            })
-        });
 
-        const result = await response.json();
-        
-        if (result.success) {
-            console.log(`✅ Notificación enviada a ${technicianName}`);
-        } else {
-            console.warn(`⚠️ Error enviando notificación: ${result.message}`);
-        }
-    } catch (error) {
-        console.error('❌ Error enviando notificación push:', error);
-    }
-}
        async function showChangeStatusModal(solicitudId) {
     console.log('🔄 Mostrando modal de cambio de estado para:', solicitudId);
     
@@ -7821,9 +7711,6 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
                             <button class="btn btn-warning btn-sm" onclick="deactivatePersonal('${tecnico.id}')">
                                 ⏸️ Desactivar
                             </button>
-                            <button class="btn btn-info btn-sm" onclick="openMobileApp()" style="display: ${pushNotificationsSupported ? 'inline-flex' : 'none'};">
-                            📱 App Móvil
-                            </button>  
                         `}
                         <button class="btn btn-info btn-sm" onclick="viewPersonalHistory('${tecnico.id}')">
                             📊 Historial
@@ -7835,13 +7722,6 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
 
         function filterPersonal() {
             updateTechniciansList();
-        }
-        function openMobileApp() {
-        const mobileUrl = window.location.origin + '/mobile-app.html';
-    
-        if (confirm('🔧 ¿Abrir la aplicación móvil para técnicos?\n\nEsto abrirá la app en una nueva pestaña. Los técnicos pueden agregar esta página a su pantalla de inicio para usarla como una app.')) {
-        window.open(mobileUrl, '_blank');
-         }
         }
 
         function clearPersonalFilters() {
@@ -8505,24 +8385,19 @@ window.debugEstadisticas = function() {
             document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
             
             setTimeout(async () => {
-    if (window.airtableAPI) {
-        console.log('🔗 Conectando con Airtable...');
-        await loadAllDataFromCloud();
-        
-        console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
-        startAutoRefresh();
-        
-        setInterval(async () => {
-            if (isConnectedToAirtable && mobileAppEnabled) {
-                await checkForTechnicianResponses();
-            }
-        }, 30000);
-    } else {
-        console.error('❌ No se pudo cargar airtable-config.js');
-        updateConnectionStatus('disconnected');
-        loadDataFromLocalStorage();
-    }
-}, 1000);
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    await loadAllDataFromCloud();
+                    
+                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+                    startAutoRefresh();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateConnectionStatus('disconnected');
+                    loadDataFromLocalStorage();
+                }
+            }, 1000);
+        });
     </script>
 </body>
 </html>
