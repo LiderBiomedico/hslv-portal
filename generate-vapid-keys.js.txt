@@ -1,0 +1,9 @@
+/ generate-vapid-keys.js
+const webpush = require('web-push');
+
+const vapidKeys = webpush.generateVAPIDKeys();
+
+console.log('VAPID Public Key:', vapidKeys.publicKey);
+console.log('VAPID Private Key:', vapidKeys.privateKey);
+
+// Save these keys and add them to your Netlify environment variables

@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital - Técnicos App</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Hospital Técnicos">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔧</text></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 100%;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: #2563eb;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Login Screen */
+        .login-screen {
+            padding: 2rem 1rem;
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .login-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .app-logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-logo .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        /* Main App */
+        .main-app {
+            display: none;
+            padding-bottom: 80px;
+        }
+
+        .main-app.active {
+            display: block;
+        }
+
+        /* Request Cards */
+        .requests-section {
+            padding: 1rem;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            text-align: center;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .request-card {
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border-left: 4px solid #2563eb;
+        }
+
+        .request-card.urgent {
+            border-left-color: #ef4444;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .request-number {
+            font-weight: 700;
+            color: #1f2937;
+            font-size: 1.1rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-assigned {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-in-progress {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .request-details {
+            margin-bottom: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #6b7280;
+            min-width: 80px;
+        }
+
+        .detail-value {
+            color: #1f2937;
+            flex: 1;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .request-actions .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        /* Response Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            padding: 1rem;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #1f2937;
+        }
+
+        /* Photo Upload */
+        .photo-upload-section {
+            margin: 1.5rem 0;
+        }
+
+        .photo-upload {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 1rem;
+        }
+
+        .photo-upload:hover {
+            border-color: #2563eb;
+            background: #f8fafc;
+        }
+
+        .photo-upload.has-image {
+            border-color: #059669;
+            background: #f0fdf4;
+        }
+
+        .photo-preview {
+            width: 100%;
+            max-width: 200px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin: 0.5rem auto;
+            display: block;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            color: #6b7280;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-tab {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.5rem;
+            color: #6b7280;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-tab.active {
+            color: #2563eb;
+        }
+
+        .nav-tab-icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-tab-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: white;
+        }
+
+        .spinner {
+            width: 2rem;
+            height: 2rem;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: white;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.7;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-message {
+            opacity: 0.8;
+        }
+
+        /* Utilities */
+        .text-center { text-align: center; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .hidden { display: none !important; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .request-actions {
+                flex-direction: column;
+            }
+            
+            .request-actions .btn {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-screen">
+        <div class="login-card">
+            <div class="app-logo">
+                <div class="icon">🏥</div>
+                <h2>Hospital Técnicos</h2>
+                <p>Susana López de Valencia</p>
+            </div>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label class="form-label">📧 Email</label>
+                    <input type="email" id="login-email" class="form-input" required 
+                           placeholder="tu@hospital.com">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">🔐 Código de Acceso</label>
+                    <input type="text" id="login-code" class="form-input" required 
+                           placeholder="Código de 4 dígitos" maxlength="4">
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    🚀 Ingresar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="main-app">
+        <!-- Header -->
+        <div class="header">
+            <h1>🏥 Hospital Técnicos</h1>
+            <div class="user-info">
+                <span id="user-name">-</span> • <span id="user-area">-</span>
+            </div>
+        </div>
+
+        <!-- Assigned Requests -->
+        <div id="assigned-tab" class="tab-content">
+            <div class="requests-section">
+                <h2 class="section-title">🎯 Solicitudes Asignadas</h2>
+                <div id="assigned-requests">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Cargando solicitudes...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Requests -->
+        <div id="completed-tab" class="tab-content hidden">
+            <div class="requests-section">
+                <h2 class="section-title">✅ Trabajos Completados</h2>
+                <div id="completed-requests">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <span>Cargando historial...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile -->
+        <div id="profile-tab" class="tab-content hidden">
+            <div class="requests-section">
+                <h2 class="section-title">👤 Mi Perfil</h2>
+                <div class="request-card">
+                    <h3>Información Personal</h3>
+                    <div class="request-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Nombre:</span>
+                            <span class="detail-value" id="profile-name">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value" id="profile-email">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Área:</span>
+                            <span class="detail-value" id="profile-area">-</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Estado:</span>
+                            <span class="detail-value" id="profile-status">-</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger" onclick="logout()">
+                        🚪 Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-tabs">
+                <a href="#" class="nav-tab active" data-tab="assigned" onclick="showTab('assigned')">
+                    <div class="nav-tab-icon">🎯</div>
+                    <div class="nav-tab-label">Asignadas</div>
+                    <div class="badge hidden" id="assigned-count">0</div>
+                </a>
+                <a href="#" class="nav-tab" data-tab="completed" onclick="showTab('completed')">
+                    <div class="nav-tab-icon">✅</div>
+                    <div class="nav-tab-label">Completadas</div>
+                </a>
+                <a href="#" class="nav-tab" data-tab="profile" onclick="showTab('profile')">
+                    <div class="nav-tab-icon">👤</div>
+                    <div class="nav-tab-label">Perfil</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Response Modal -->
+    <div id="response-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">📝 Responder Solicitud</h3>
+            </div>
+            
+            <div id="modal-request-info" class="mb-2">
+                <!-- Request info will be inserted here -->
+            </div>
+            
+            <form id="response-form">
+                <div class="form-group">
+                    <label class="form-label">📋 Estado del Trabajo</label>
+                    <select id="work-status" class="form-input" required>
+                        <option value="">Seleccionar estado...</option>
+                        <option value="EN_PROCESO">🔄 En Proceso</option>
+                        <option value="COMPLETADA">✅ Completada</option>
+                        <option value="REQUIERE_REPUESTOS">🔧 Requiere Repuestos</option>
+                        <option value="NO_REPARABLE">❌ No Reparable</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">💬 Comentarios del Trabajo</label>
+                    <textarea id="work-comments" class="form-input" rows="4" 
+                              placeholder="Describe el trabajo realizado, problemas encontrados, etc."></textarea>
+                </div>
+
+                <div class="photo-upload-section">
+                    <label class="form-label">📸 Evidencia Fotográfica</label>
+                    
+                    <div class="photo-upload" onclick="selectPhoto(1)">
+                        <div id="photo-1-placeholder">
+                            <div class="upload-icon">📷</div>
+                            <div>Foto 1 - Antes/Problema</div>
+                            <div style="font-size: 0.8rem; color: #6b7280;">Toca para seleccionar</div>
+                        </div>
+                        <img id="photo-1-preview" class="photo-preview hidden" alt="Vista previa 1">
+                        <input type="file" id="photo-1-input" accept="image/*" capture="environment" class="hidden">
+                    </div>
+
+                    <div class="photo-upload" onclick="selectPhoto(2)">
+                        <div id="photo-2-placeholder">
+                            <div class="upload-icon">📷</div>
+                            <div>Foto 2 - Después/Solución</div>
+                            <div style="font-size: 0.8rem; color: #6b7280;">Toca para seleccionar</div>
+                        </div>
+                        <img id="photo-2-preview" class="photo-preview hidden" alt="Vista previa 2">
+                        <input type="file" id="photo-2-input" accept="image/*" capture="environment" class="hidden">
+                    </div>
+                </div>
+
+                <div class="request-actions">
+                    <button type="button" class="btn btn-danger" onclick="closeResponseModal()">
+                        ❌ Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        📤 Enviar Respuesta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentUser = null;
+        let currentRequests = [];
+        let completedRequests = [];
+        let currentRequestId = null;
+
+        // App initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Hospital Técnicos App iniciada');
+            
+            // Check if user is already logged in
+            const savedUser = localStorage.getItem('hospital_technician_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainApp();
+                loadAssignedRequests();
+            }
+
+            // Setup form handlers
+            document.getElementById('login-form').addEventListener('submit', handleLogin);
+            document.getElementById('response-form').addEventListener('submit', handleResponseSubmit);
+
+            // Setup photo inputs
+            document.getElementById('photo-1-input').addEventListener('change', (e) => handlePhotoSelect(e, 1));
+            document.getElementById('photo-2-input').addEventListener('change', (e) => handlePhotoSelect(e, 2));
+
+            // Register service worker for PWA
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered:', registration))
+                    .catch(error => console.log('SW registration failed:', error));
+            }
+
+            // Request notification permission
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        });
+
+        // Login handling
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+            
+            if (!email || !code) {
+                alert('❌ Por favor complete todos los campos');
+                return;
+            }
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '⏳ Verificando...';
+                submitBtn.disabled = true;
+
+                // Authenticate with backend
+                const response = await fetch('/.netlify/functions/technician-auth', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, code })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentUser = result.user;
+                    localStorage.setItem('hospital_technician_user', JSON.stringify(currentUser));
+                    
+                    showMainApp();
+                    loadAssignedRequests();
+                    
+                    // Register for push notifications
+                    registerForPushNotifications();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+
+            } catch (error) {
+                console.error('Login error:', error);
+                alert('❌ Error de conexión. Intente nuevamente.');
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '🚀 Ingresar';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Show main app
+        function showMainApp() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').classList.add('active');
+            
+            // Update user info in header
+            document.getElementById('user-name').textContent = currentUser.nombre;
+            document.getElementById('user-area').textContent = getAreaName(currentUser.area);
+            
+            // Update profile tab
+            document.getElementById('profile-name').textContent = currentUser.nombre;
+            document.getElementById('profile-email').textContent = currentUser.email;
+            document.getElementById('profile-area').textContent = getAreaName(currentUser.area);
+            document.getElementById('profile-status').textContent = currentUser.estado || 'ACTIVO';
+        }
+
+        // Load assigned requests
+        async function loadAssignedRequests() {
+            try {
+                const response = await fetch('/.netlify/functions/get-technician-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ technicianId: currentUser.id })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    currentRequests = result.requests.filter(r => {
+                        const estado = (r.estado || '').toUpperCase();
+                        return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
+                    });
+                    
+                    completedRequests = result.requests.filter(r => {
+                        const estado = (r.estado || '').toUpperCase();
+                        return estado === 'COMPLETADA';
+                    });
+
+                    updateRequestsDisplay();
+                    updateCompletedDisplay();
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error('Error loading requests:', error);
+                showEmptyState('assigned-requests', '❌', 'Error cargando solicitudes', 'Intente refrescar la aplicación');
+            }
+        }
+
+        // Update requests display
+        function updateRequestsDisplay() {
+            const container = document.getElementById('assigned-requests');
+            
+            if (currentRequests.length === 0) {
+                showEmptyState('assigned-requests', '🎯', 'No tienes solicitudes asignadas', 'Las nuevas asignaciones aparecerán aquí');
+                return;
+            }
+
+            container.innerHTML = currentRequests.map(request => `
+                <div class="request-card ${request.prioridad === 'CRITICA' ? 'urgent' : ''}">
+                    <div class="request-header">
+                        <div class="request-number">📋 ${request.numero || 'S/N'}</div>
+                        <div class="status-badge ${getStatusClass(request.estado)}">
+                            ${getStatusLabel(request.estado)}
+                        </div>
+                    </div>
+                    
+                    <div class="request-details">
+                        <div class="detail-item">
+                            <span class="detail-label">🏥 Área:</span>
+                            <span class="detail-value">${getAreaName(request.servicioIngenieria)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">🖥️ Equipo:</span>
+                            <span class="detail-value">${request.equipo || 'No especificado'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">📍 Ubicación:</span>
+                            <span class="detail-value">${request.ubicacion || 'No especificada'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">⚡ Prioridad:</span>
+                            <span class="detail-value">${getPriorityLabel(request.prioridad)}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">📝 Problema:</span>
+                            <span class="detail-value">${request.descripcion || 'No especificado'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="request-actions">
+                        <button class="btn btn-warning" onclick="startWork('${request.id}')">
+                            ▶️ Iniciar
+                        </button>
+                        <button class="btn btn-success" onclick="respondToRequest('${request.id}')">
+                            📝 Responder
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Update badge
+            const badge = document.getElementById('assigned-count');
+            if (currentRequests.length > 0) {
+                badge.textContent = currentRequests.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // Update completed display
+        function updateCompletedDisplay() {
+            const container = document.getElementById('completed-requests');
+            
+            if (completedRequests.length === 0) {
+                showEmptyState('completed-requests', '✅', 'No tienes trabajos completados', 'Los trabajos finalizados aparecerán aquí');
+                return;
+            }
+
+            container.innerHTML = completedRequests.slice(0, 20).map(request => `
+                <div class="request-card">
+                    <div class="request-header">
+                        <div class="request-number">📋 ${request.numero || 'S/N'}</div>
+                        <div class="status-badge status-completed">✅ Completada</div>
+                    </div>
+                    
+                    <div class="request-details">
+                        <div class="detail-item">
+                            <span class="detail-label">🖥️ Equipo:</span>
+                            <span class="detail-value">${request.equipo || 'No especificado'}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">📅 Completada:</span>
+                            <span class="detail-value">${formatDate(request.fechaCompletado)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Start work on a request
+        async function startWork(requestId) {
+            try {
+                const response = await fetch('/.netlify/functions/start-work', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        requestId: requestId,
+                        technicianId: currentUser.id 
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Trabajo iniciado correctamente');
+                    loadAssignedRequests();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+
+            } catch (error) {
+                console.error('Error starting work:', error);
+                alert('❌ Error al iniciar trabajo');
+            }
+        }
+
+        // Respond to request
+        function respondToRequest(requestId) {
+            const request = currentRequests.find(r => r.id === requestId);
+            if (!request) return;
+
+            currentRequestId = requestId;
+            
+            // Update modal with request info
+            document.getElementById('modal-request-info').innerHTML = `
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 0.5rem;">
+                    <h4>📋 ${request.numero || 'S/N'}</h4>
+                    <p><strong>🖥️ Equipo:</strong> ${request.equipo || 'No especificado'}</p>
+                    <p><strong>📍 Ubicación:</strong> ${request.ubicacion || 'No especificada'}</p>
+                </div>
+            `;
+            
+            // Reset form
+            document.getElementById('response-form').reset();
+            resetPhotoUpload(1);
+            resetPhotoUpload(2);
+            
+            document.getElementById('response-modal').classList.add('show');
+        }
+
+        // Handle response form submit
+        async function handleResponseSubmit(event) {
+            event.preventDefault();
+            
+            const status = document.getElementById('work-status').value;
+            const comments = document.getElementById('work-comments').value.trim();
+            const photo1 = document.getElementById('photo-1-input').files[0];
+            const photo2 = document.getElementById('photo-2-input').files[0];
+            
+            if (!status) {
+                alert('❌ Por favor seleccione el estado del trabajo');
+                return;
+            }
+
+            try {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '⏳ Enviando...';
+                submitBtn.disabled = true;
+
+                // Create form data for file upload
+                const formData = new FormData();
+                formData.append('requestId', currentRequestId);
+                formData.append('technicianId', currentUser.id);
+                formData.append('status', status);
+                formData.append('comments', comments);
+                
+                if (photo1) formData.append('photo1', photo1);
+                if (photo2) formData.append('photo2', photo2);
+
+                const response = await fetch('/.netlify/functions/submit-technician-response', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    alert('✅ Respuesta enviada correctamente');
+                    closeResponseModal();
+                    loadAssignedRequests();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+
+            } catch (error) {
+                console.error('Error submitting response:', error);
+                alert('❌ Error al enviar respuesta');
+            } finally {
+                const submitBtn = event.target.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '📤 Enviar Respuesta';
+                submitBtn.disabled = false;
+            }
+        }
+
+        // Photo handling
+        function selectPhoto(photoNumber) {
+            document.getElementById(`photo-${photoNumber}-input`).click();
+        }
+
+        function handlePhotoSelect(event, photoNumber) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById(`photo-${photoNumber}-preview`);
+                const placeholder = document.getElementById(`photo-${photoNumber}-placeholder`);
+                const uploadDiv = placeholder.parentElement;
+                
+                preview.src = e.target.result;
+                preview.classList.remove('hidden');
+                placeholder.classList.add('hidden');
+                uploadDiv.classList.add('has-image');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function resetPhotoUpload(photoNumber) {
+            const preview = document.getElementById(`photo-${photoNumber}-preview`);
+            const placeholder = document.getElementById(`photo-${photoNumber}-placeholder`);
+            const input = document.getElementById(`photo-${photoNumber}-input`);
+            const uploadDiv = placeholder.parentElement;
+            
+            preview.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            uploadDiv.classList.remove('has-image');
+            input.value = '';
+        }
+
+        // Navigation
+        function showTab(tabName) {
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+
+            // Load data if needed
+            if (tabName === 'assigned' && currentRequests.length === 0) {
+                loadAssignedRequests();
+            }
+        }
+
+        // Close modal
+        function closeResponseModal() {
+            document.getElementById('response-modal').classList.remove('show');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
+                localStorage.removeItem('hospital_technician_user');
+                location.reload();
+            }
+        }
+
+        // Utility functions
+        function showEmptyState(containerId, icon, title, message) {
+            document.getElementById(containerId).innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">${icon}</div>
+                    <div class="empty-title">${title}</div>
+                    <div class="empty-message">${message}</div>
+                </div>
+            `;
+        }
+
+        function getAreaName(area) {
+            const areas = {
+                'INGENIERIA_BIOMEDICA': '🏥 Ing. Biomédica',
+                'BIOMEDICA': '🏥 Ing. Biomédica',
+                'MECANICA': '⚙️ Mecánica',
+                'INFRAESTRUCTURA': '🏗️ Infraestructura'
+            };
+            return areas[area] || area || 'No especificada';
+        }
+
+        function getStatusClass(status) {
+            const statusClasses = {
+                'ASIGNADA': 'status-assigned',
+                'EN_PROCESO': 'status-in-progress'
+            };
+            return statusClasses[status] || 'status-assigned';
+        }
+
+        function getStatusLabel(status) {
+            const labels = {
+                'ASIGNADA': '🎯 Asignada',
+                'EN_PROCESO': '🔄 En Proceso'
+            };
+            return labels[status] || status || 'Pendiente';
+        }
+
+        function getPriorityLabel(priority) {
+            const labels = {
+                'CRITICA': '🚨 Crítica',
+                'ALTA': '🔴 Alta',
+                'MEDIA': '🟡 Media',
+                'BAJA': '🟢 Baja'
+            };
+            return labels[priority] || priority || 'Media';
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'No disponible';
+            return new Date(dateString).toLocaleDateString('es-CO');
+        }
+
+        // Push notifications
+        async function registerForPushNotifications() {
+            if ('serviceWorker' in navigator && 'PushManager' in window) {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    const subscription = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: 'YOUR_VAPID_PUBLIC_KEY' // You'll need to generate this
+                    });
+
+                    // Send subscription to server
+                    await fetch('/.netlify/functions/save-push-subscription', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            technicianId: currentUser.id,
+                            subscription: subscription
+                        })
+                    });
+
+                } catch (error) {
+                    console.log('Push notification registration failed:', error);
+                }
+            }
+        }
+
+        // Handle push notifications
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'NEW_REQUEST') {
+                    // Refresh requests when new assignment is received
+                    loadAssignedRequests();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
