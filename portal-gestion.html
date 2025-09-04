@@ -8517,24 +8517,24 @@ window.debugEstadisticas = function() {
             document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
             
             setTimeout(async () => {
-                if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
-                    await loadAllDataFromCloud();
-                    
-                    console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
-                    startAutoRefresh();
-                    setInterval(async () => {
-                    if (isConnectedToAirtable && mobileAppEnabled) {
-                    await checkForTechnicianResponses();
+    if (window.airtableAPI) {
+        console.log('🔗 Conectando con Airtable...');
+        await loadAllDataFromCloud();
+        
+        console.log('🔄 Iniciando auto-refresh cada 5 segundos...');
+        startAutoRefresh();
+        
+        setInterval(async () => {
+            if (isConnectedToAirtable && mobileAppEnabled) {
+                await checkForTechnicianResponses();
             }
         }, 30000);
-                } else {
-                    console.error('❌ No se pudo cargar airtable-config.js');
-                    updateConnectionStatus('disconnected');
-                    loadDataFromLocalStorage();
-                }
-            }, 1000);
-        });
+    } else {
+        console.error('❌ No se pudo cargar airtable-config.js');
+        updateConnectionStatus('disconnected');
+        loadDataFromLocalStorage();
+    }
+}, 1000);
     </script>
 </body>
 </html>
