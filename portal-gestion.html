@@ -1675,19 +1675,7 @@
             <strong style="color: #1e40af;">🔍 Filtros activos:</strong>
             <span id="active-filters-text" style="color: #1e3a8a; margin-left: 0.5rem;"></span>
         </div>
-    </div>
-</div>
-<div>
-<label class="form-label">Tipo de Servicio:</label>
-<select class="form-select" id="filter-tipo-servicio" onchange="filterSolicitudes()">
-<option value="">Todos los tipos</option>
-<option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
-<option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
-<option value="REPARACION">Reparación</option>
-<option value="INSTALACION">Instalación</option>
-<option value="ERROR_USUARIO">Error de Usuario</option>
-</select>
-</div>
+    
 <div>
 <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
                                     🗑️ Limpiar Filtros
@@ -3267,7 +3255,7 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             🔓 Liberar Personal
         </button>
     ` : ''}
-	${/* NUEVO: Mostrar quién completó la solicitud */
+	${ //NUEVO: Mostrar quién completó la solicitud 
       (solicitud.estado === 'COMPLETADA' || solicitud.estado === 'Completada') && 
       solicitud.tecnicoAsignado ? `
         <div style="background: #dcfce7; padding: 0.5rem; border-radius: 0.25rem; margin-top: 0.5rem;">
