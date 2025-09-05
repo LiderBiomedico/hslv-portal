@@ -3121,12 +3121,6 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
             
-            <div class="technician-response-indicator">
-            ${solicitud.observacionesTecnico ? `
-				<div class="technician-response-indicator">
-				ðŸ"± Respuesta Técnico
-			</div>
-`			 : ''}
             const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
             if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
@@ -3428,7 +3422,12 @@ async function showAdvancedStatisticsModal() {
                         📅 Análisis Temporal
                     </button>
                 </div>
-
+				<div class="technician-response-indicator">
+            ${solicitud.observacionesTecnico ? `
+				<div class="technician-response-indicator">
+				ðŸ"± Respuesta Técnico
+			</div>
+`			 : ''}
                 <!-- Contenido de Vista General -->
                 <div id="analysis-general" class="analysis-content" style="display: block;">
                     <!-- Pestañas de áreas -->
