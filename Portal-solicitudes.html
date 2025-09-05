@@ -595,6 +595,9 @@
                         <div>
                             <strong>Sistema Cloud Protegido</strong>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
+                                <span> ?Código aprobado</span>
+                                <span> ?Solicita acceso</span>
+                                <span> ?Sincronizado</span>
                             </div>
                         </div>
                     </div>
@@ -811,7 +814,6 @@
                             <option value="INSPECCION">Inspección</option>
                             <option value="ACTUALIZACION">Actualización</option>
                             <option value="EMERGENCIA">Emergencia</option>
-							<option value="CAPACITACION">Capacitación</option>
                         </select>
                     </div>
 
@@ -1406,8 +1408,7 @@
                 'CALIBRACION': 'Calibración',
                 'INSPECCION': 'Inspección',
                 'ACTUALIZACION': 'Actualización',
-                'EMERGENCIA': 'Emergencia',
-				'CAPACITACION': 'Capacitación'
+                'EMERGENCIA': 'Emergencia'
             };
             return tipoNames[tipo] || tipo;
         }
