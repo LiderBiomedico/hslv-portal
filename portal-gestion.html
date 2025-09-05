@@ -3123,9 +3123,10 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             
             <div class="technician-response-indicator">
             ${solicitud.observacionesTecnico ? `
-			📱 Respuesta Técnico
-            </div>
-            ` : ''}
+				<div class="technician-response-indicator">
+				ðŸ"± Respuesta Técnico
+			</div>
+`			 : ''}
             const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
             if (solicitud.tiempoRespuestaMaximo && estadoUpper !== 'COMPLETADA' && estadoUpper !== 'CANCELADA') {
                 const fechaMaxima = new Date(solicitud.tiempoRespuestaMaximo);
@@ -8525,6 +8526,7 @@ window.debugEstadisticas = function() {
         loadDataFromLocalStorage();
     }
 }, 1000);
+		});  // ← AGREGAR ESTA LÍNEA para cerrar document.addEventListener	
     </script>
 </body>
 </html>
