@@ -1560,8 +1560,34 @@
                 
                 if (window.airtableAPI && isCloudConnected) {
                     console.log('🌐 Cargando solicitudes desde Airtable...');
-                    // Obtener solicitudes del usuario actual
-                    solicitudes = await window.airtableAPI.getSolicitudesByUser(currentUser.email);
+                    // Obtener todas las solicitudes y filtrar por usuario
+                    try {
+                        const todasLasSolicitudes = await window.airtableAPI.getSolicitudes();
+                        solicitudes = todasLasSolicitudes.filter(s => 
+                            s.fields.emailSolicitante === currentUser.email ||
+                            s.fields.solicitante === currentUser.nombreCompleto ||
+                            s.fields.solicitante === currentUser.email
+                        ).map(record => ({
+                            id: record.id,
+                            numero: record.fields.numero,
+                            fechaCreacion: record.fields.fechaCreacion,
+                            servicioIngenieria: record.fields.servicioIngenieria,
+                            tipoServicio: record.fields.tipoServicio,
+                            equipo: record.fields.equipo,
+                            ubicacion: record.fields.ubicacion,
+                            prioridad: record.fields.prioridad,
+                            estado: record.fields.estado,
+                            asignadoA: record.fields.asignadoA,
+                            observacionesMantenimiento: record.fields.observacionesMantenimiento,
+                            descripcion: record.fields.descripcion,
+                            emailSolicitante: record.fields.emailSolicitante,
+                            solicitante: record.fields.solicitante,
+                            createdTime: record.createdTime
+                        }));
+                    } catch (apiError) {
+                        console.error('Error obteniendo solicitudes de Airtable:', apiError);
+                        throw new Error('No se pudieron cargar las solicitudes desde Airtable');
+                    }
                 } else {
                     console.log('📱 Cargando solicitudes locales...');
                     // Cargar solicitudes locales
