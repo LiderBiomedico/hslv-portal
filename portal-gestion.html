@@ -3120,9 +3120,10 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
 
             let timeIndicatorClass = 'ok';
             let timeText = `${horasTranscurridas}h ${minutosTranscurridos}m`;
-            ${solicitud.observacionesTecnico ? `
+            
             <div class="technician-response-indicator">
-            📱 Respuesta Técnico
+            ${solicitud.observacionesTecnico ? `
+			📱 Respuesta Técnico
             </div>
             ` : ''}
             const estadoUpper = solicitud.estado ? solicitud.estado.toUpperCase() : '';
