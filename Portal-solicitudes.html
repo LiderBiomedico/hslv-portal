@@ -595,6 +595,9 @@
                         <div>
                             <strong>Sistema Cloud Protegido</strong>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
+                                <span> ?Código aprobado</span>
+                                <span> ?Solicita acceso</span>
+                                <span> ?Sincronizado</span>
                             </div>
                         </div>
                     </div>
@@ -688,18 +691,10 @@
                                         <option value="TRAMO_5">📍 Tramo 5</option>
                                     </optgroup>
                                     <optgroup label="Áreas Administrativas">
-                                         <option value="ADMINISTRATIVO">📊 Administrativo</option>
-    					<option value="MANTENIMIENTO">🔧 Mantenimiento</option>
-   					<option value="TRAILER">🚛 Trailer</option>
-    					<option value="SUMINISTROS">📦 Suministros</option>
-    					<option value="ALMACEN">🏪 Almacén</option>
-    					<option value="ARCHIVO">📁 Archivo</option>
-   					<option value="SISTEMAS">💻 Sistemas</option>
-    					<option value="COSTOS">💰 Costos</option>
-    					<option value="FARMACIA">💊 Farmacia</option>
-    					<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
-    					<option value="INNOVACION">💡 Innovación</option>
-									</optgroup>
+                                        <option value="ADMINISTRATIVO">📊 Administrativo</option>
+                                        <option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+                                        <option value="TRAILER">🚛 Trailer</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             
@@ -745,22 +740,22 @@
                                 <span>📋</span> Proceso de Aprobación
                             </h4>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
-                               <div style="display: flex; align-items: start; gap: 0.25rem;">
-    				<span style="color: #059669;">🔍</span>
-    				<span>Revisión por administrador</span>
-				</div>
-				<div style="display: flex; align-items: start; gap: 0.25rem;">
-   				 <span style="color: #059669;">🔑</span>
-    				<span>Código único de 4 dígitos</span>
-				</div>
-				<div style="display: flex; align-items: start; gap: 0.25rem;">
-    				<span style="color: #059669;">🛡️</span>
-    				<span>Sistema con mapeo seguro</span>
-				</div>
-				<div style="display: flex; align-items: start; gap: 0.25rem;">
-    				<span style="color: #059669;">⏰</span>
-    				<span>Respuesta en 24-48 horas</span>
-				</div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;"> ?/span>
+                                    <span>Revisión por administrador</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;"> ?/span>
+                                    <span>Código único de 4 dígitos</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;"> ?/span>
+                                    <span>Sistema con mapeo seguro</span>
+                                </div>
+                                <div style="display: flex; align-items: start; gap: 0.25rem;">
+                                    <span style="color: #059669;"> ?/span>
+                                    <span>Respuesta en 24-48 horas</span>
+                                </div>
                             </div>
                         </div>
                         
@@ -819,7 +814,6 @@
                             <option value="INSPECCION">Inspección</option>
                             <option value="ACTUALIZACION">Actualización</option>
                             <option value="EMERGENCIA">Emergencia</option>
-							<option value="CAPACITACION">Capacitación</option>
                         </select>
                     </div>
 
@@ -887,14 +881,6 @@
                             </optgroup>
                             <optgroup label="Áreas Administrativas">
                                 <option value="TRAILER">🚛 Trailer</option>
-				<option value="SUMINISTROS">📦 Suministros</option>
-   				<option value="ALMACEN">🏪 Almacén</option>
-    				<option value="ARCHIVO">📁 Archivo</option>
-    				<option value="SISTEMAS">💻 Sistemas</option>
-    				<option value="COSTOS">💰 Costos</option>
-    				<option value="FARMACIA">💊 Farmacia</option>
-    				<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
-    				<option value="INNOVACION">💡 Innovación</option>
                             </optgroup>
                         </select>
                     </div>
@@ -1001,15 +987,7 @@
             'TRAMO_4': 'Tramo 4',
             'TRAMO_5': 'Tramo 5',
             // Administrativo
-            'TRAILER': 'Trailer',
-			'SUMINISTROS': 'Suministros',
-			'ALMACEN': 'Almac  n',
-			'ARCHIVO': 'Archivo',
-			'SISTEMAS': 'Sistemas',
-			'COSTOS': 'Costos',
-			'FARMACIA_GENERAL': 'Farmacia General',
-			'CENTRAL_GASES': 'Central de Gases',
-			'INNOVACION': 'Innovaci  n'
+            'TRAILER': 'Trailer'
         };
         
         const serviciosHospitalarios = {
@@ -1050,15 +1028,7 @@
             'TRAMO_5': 'Tramo 5',
             'ADMINISTRATIVO': 'Administrativo',
             'MANTENIMIENTO': 'Mantenimiento',
-            'TRAILER': 'Trailer',
-			'SUMINISTROS': 'Suministros',
-			'ALMACEN': 'Almac  n',
-			'ARCHIVO': 'Archivo',
-			'SISTEMAS': 'Sistemas',
-			'COSTOS': 'Costos',
-			'FARMACIA_GENERAL': 'Farmacia General',
-			'CENTRAL_GASES': 'Central de Gases',
-			'INNOVACION': 'Innovaci  n'
+            'TRAILER': 'Trailer'
         };
 
         // Inicializar al cargar
@@ -1124,14 +1094,13 @@
         }
 
         // Gestión de pestañas de autenticación
-        // Gesti  n de pesta?as de autenticaci  n
-	function showAuthTab(tab) {
-    document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-    document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
-    
-    document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
-	}
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
+        }
 
         // Verificar sesión
         function checkSession() {
@@ -1439,8 +1408,7 @@
                 'CALIBRACION': 'Calibración',
                 'INSPECCION': 'Inspección',
                 'ACTUALIZACION': 'Actualización',
-                'EMERGENCIA': 'Emergencia',
-				'CAPACITACION': 'Capacitación'
+                'EMERGENCIA': 'Emergencia'
             };
             return tipoNames[tipo] || tipo;
         }
