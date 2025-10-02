@@ -532,7 +532,7 @@
                     <div class="logo-img"><img src="logo-hslv-50x50.png" alt="Logo Hospital" style="width: 100%; height: 100%; object-fit: contain;" /></div>
                     <div class="hospital-info">
                         <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-                        <p>Portal de Solicitudes de Mantenimiento </p>
+                        <p>Portal de Solicitudes de Mantenimiento - Sistema Cloud</p>
                     </div>
                 </div>
                 <div class="user-actions" id="user-actions" style="display: none;">
@@ -595,9 +595,9 @@
                         <div>
                             <strong>Sistema Cloud Protegido</strong>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
-                                <span> ?Código aprobado</span>
-                                <span> ?Solicita acceso</span>
-                                <span> ?Sincronizado</span>
+                                <span>• Código aprobado</span>
+                                <span>• Solicita acceso</span>
+                                <span>• Sincronizado con Airtable</span>
                             </div>
                         </div>
                     </div>
@@ -658,11 +658,11 @@
                                         <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
                                         <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
                                        
-                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏 ?Hospitalización Pediatría</option>
+                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
                                         <option value="CIRUGIA">⚕️ Cirugía</option>
                                         <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
                                         <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
-                                        <option value="CONSULTA_EXTERNA">👨‍⚕ ?Consulta Externa</option>
+                                        <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
                                         <option value="SALA_PARTOS">👶 Sala de Partos</option>
                                         <option value="ENDOSCOPIA">🔍 Endoscopia</option>
                                     </optgroup>
@@ -703,8 +703,8 @@
                                 <select id="req-position" class="form-select" required style="font-size: 0.875rem;">
                                     <option value="">-- Seleccione --</option>
                                     <optgroup label="Personal Asistencial">
-                                        <option value="MEDICO">👨‍⚕ ?Médico</option>
-                                        <option value="ENFERMERO">👩‍⚕ ?Enfermero/a</option>
+                                        <option value="MEDICO">👨‍⚕️ Médico</option>
+                                        <option value="ENFERMERO">👩‍⚕️ Enfermero/a</option>
                                         <option value="AUXILIAR_ENFERMERIA">🏥 Auxiliar Enfermería</option>
                                     </optgroup>
                                     <optgroup label="Personal de Apoyo">
@@ -741,19 +741,19 @@
                             </h4>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> ?/span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Revisión por administrador</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> ?/span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Código único de 4 dígitos</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> ?/span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Sistema con mapeo seguro</span>
                                 </div>
                                 <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;"> ?/span>
+                                    <span style="color: #059669;">✓</span>
                                     <span>Respuesta en 24-48 horas</span>
                                 </div>
                             </div>
@@ -773,8 +773,7 @@
     <main class="main-content container" id="main-content" style="display: none;">
         <div class="welcome-section">
             <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
-            <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento  conectado</p>
-			 <p style="color: #6b7280;">Desarrollado por: <span>Ing. Paul Eduardo Muñoz R.</span>
+            <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento conectado a la nube</p>
         </div>
 
         <!-- Request Form -->
@@ -797,7 +796,7 @@
                             <option value="">Seleccione el área</option>
                             <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
                             <option value="MECANICA">⚙️ Mecánica</option>
-                            <option value="INFRAESTRUCTURA">🏗 ?Infraestructura</option>
+                            <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
                         </select>
                     </div>
 
@@ -818,7 +817,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">🖥 ?Equipo o Sistema *</label>
+                        <label class="form-label">🖥️ Equipo o Sistema *</label>
                         <input type="text" id="equipo" class="form-input" required 
                                placeholder="Ej: Ventilador mecánico, Aire acondicionado, etc.">
                     </div>
@@ -839,14 +838,14 @@
                                 <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
                             </optgroup>
                             <optgroup label="Áreas de Hospitalización">
-                                <option value="HOSPITALIZACION_PEDIATRIA">🛏 ?Hospitalización Pediatría</option>
+                                <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
                             </optgroup>
                             <optgroup label="Áreas Quirúrgicas">
                                 <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
                                 <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
                             </optgroup>
                             <optgroup label="Servicios de Consulta">
-                                <option value="CONSULTA_EXTERNA">👨‍⚕ ?Consulta Externa</option>
+                                <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
                             </optgroup>
                             <optgroup label="Servicios Especializados">
                                 <option value="SALA_PARTOS">👶 Sala de Partos</option>
@@ -887,7 +886,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label"> ?Prioridad *</label>
+                    <label class="form-label">⚡ Prioridad *</label>
                     <div class="priority-options">
                         <label class="priority-option">
                             <input type="radio" name="prioridad" value="CRITICA" required>
@@ -1034,7 +1033,7 @@
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log(' ?ACTUALIZACIÓN: Se agregó opción DESINSTALACIÓN en tipo de servicio');
+            console.log('✨ ACTUALIZACIÓN: Se agregó opción DESINSTALACIÓN en tipo de servicio');
             console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
             
             // Verificar sesión
@@ -1054,7 +1053,7 @@
                     console.log('🔗 Conectando con Airtable...');
                     monitorCloudConnection();
                 } else {
-                    console.error(' ?No se pudo cargar airtable-config.js');
+                    console.error('❌ No se pudo cargar airtable-config.js');
                     updateCloudStatus('disconnected');
                 }
             }, 1000);
@@ -1086,7 +1085,7 @@
             
             if (status === 'connected') {
                 iconSpan.textContent = '☁️';
-                textSpan.textContent = 'Conectado';
+                textSpan.textContent = 'Conectado a Airtable';
             } else {
                 iconSpan.textContent = '📴';
                 textSpan.textContent = 'Sin conexión (Modo local)';
@@ -1121,7 +1120,7 @@
             const loginBtn = document.getElementById('login-btn');
             
             loginBtn.disabled = true;
-            loginBtn.innerHTML = ' ?Verificando...';
+            loginBtn.innerHTML = '⏳ Verificando...';
             
             try {
                 let validationResult;
@@ -1139,18 +1138,18 @@
                 if (validationResult.valid) {
                     currentUser = validationResult.user;
                     localStorage.setItem('hospital_user', JSON.stringify(currentUser));
-                    showAlert(alertDiv, 'success', ' ?¡Bienvenido al sistema!');
+                    showAlert(alertDiv, 'success', '✅ ¡Bienvenido al sistema!');
                     
                     setTimeout(() => {
                         showMainContent();
                     }, 1000);
                 } else {
-                    showAlert(alertDiv, 'error', ` ?${validationResult.error || 'Credenciales inválidas'}`);
+                    showAlert(alertDiv, 'error', `❌ ${validationResult.error || 'Credenciales inválidas'}`);
                 }
                 
             } catch (error) {
-                console.error(' ?Error en login:', error);
-                showAlert(alertDiv, 'error', ' ?Error al verificar credenciales. Intente nuevamente.');
+                console.error('❌ Error en login:', error);
+                showAlert(alertDiv, 'error', '❌ Error al verificar credenciales. Intente nuevamente.');
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.innerHTML = '🚀 Ingresar al Sistema';
@@ -1193,38 +1192,38 @@
             // Validación actualizada incluyendo teléfono y justificación
             if (!formData.nombreCompleto || !formData.email || !formData.telefono || 
                 !formData.servicioHospitalario || !formData.cargo || !formData.justificacion) {
-                showAlert(alertDiv, 'error', ' ?Por favor complete todos los campos obligatorios (*)');
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
                 return;
             }
             
             requestBtn.disabled = true;
-            requestBtn.innerHTML = ' ?Enviando con valores mapeados...';
+            requestBtn.innerHTML = '⏳ Enviando con valores mapeados...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
                     await window.airtableAPI.createSolicitudAcceso(formData);
                     
                     showAlert(alertDiv, 'success', 
-                        ` ?Solicitud enviada exitosamente\n\n` +
+                        `✅ Solicitud enviada exitosamente\n\n` +
                         `📋 DATOS ENVIADOS:\n` +
-                        ` ?Nombre: ${formData.nombreCompleto}\n` +
-                        ` ?Email: ${formData.email}\n` +
-                        ` ?Teléfono: ${formData.telefono}\n` +
-                        ` ?Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
-                        `🛡 ?SISTEMA MEJORADO:\n` +
+                        `• Nombre: ${formData.nombreCompleto}\n` +
+                        `• Email: ${formData.email}\n` +
+                        `• Teléfono: ${formData.telefono}\n` +
+                        `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `🛡️ SISTEMA MEJORADO:\n` +
                         `1. Su solicitud fue guardada con valores correctos\n` +
                         `2. Sin errores 422 - Mapeo automático aplicado\n` +
                         `3. El administrador la revisará y aprobará\n` +
                         `4. Recibirá un código de 4 dígitos único\n` +
                         `5. Podrá ingresar con email + código\n\n` +
-                        ` ?Tiempo estimado: 24-48 horas laborales`
+                        `⏰ Tiempo estimado: 24-48 horas laborales`
                     );
                 } else {
                     const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
                     existingRequests.push(formData);
                     localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
                     
-                    showAlert(alertDiv, 'success', ' ?Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
                 }
                 
                 // CORRECCIÓN: Resetear el formulario correctamente
@@ -1238,8 +1237,8 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error(' ?Error enviando solicitud:', error);
-                showAlert(alertDiv, 'error', ' ?Error al enviar la solicitud: ' + error.message);
+                console.error('❌ Error enviando solicitud:', error);
+                showAlert(alertDiv, 'error', '❌ Error al enviar la solicitud: ' + error.message);
             } finally {
                 requestBtn.disabled = false;
                 requestBtn.innerHTML = '📤 Enviar Solicitud';
@@ -1275,8 +1274,8 @@
             // Validación crítica del área ANTES de continuar
             if (!areaValue) {
                 const alertDiv = document.getElementById('form-alert');
-                showAlert(alertDiv, 'error', ' ?Por favor seleccione el área de ingeniería');
-                console.error(' ?ERROR: No se seleccionó área');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
+                console.error('❌ ERROR: No se seleccionó área');
                 return;
             }
             
@@ -1284,7 +1283,7 @@
             const ubicacionValue = document.getElementById('ubicacion').value;
             if (!ubicacionValue) {
                 const alertDiv = document.getElementById('form-alert');
-                showAlert(alertDiv, 'error', ' ?Por favor seleccione la ubicación del servicio');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione la ubicación del servicio');
                 return;
             }
             
@@ -1312,12 +1311,12 @@
             
             // Validación adicional de campos requeridos
             if (!formData.tipoServicio || !formData.equipo || !formData.ubicacion || !formData.descripcion) {
-                showAlert(alertDiv, 'error', ' ?Por favor complete todos los campos obligatorios');
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
                 return;
             }
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = ' ?Enviando con mapeo...';
+            submitBtn.innerHTML = '⏳ Enviando con mapeo...';
             
             try {
                 let result;
@@ -1328,22 +1327,22 @@
                     
                     // Verificar que el área se guardó correctamente
                     if (result.fields && result.fields.servicioIngenieria) {
-                        console.log(' ?ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
+                        console.log('✅ ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
                     } else {
                         console.warn('⚠️ ÁREA NO CONFIRMADA EN RESPUESTA');
                     }
                     
                     showAlert(alertDiv, 'success', 
-                        ` ?Solicitud enviada exitosamente a Airtable\n\n` +
+                        `✅ Solicitud enviada exitosamente a Airtable\n\n` +
                         `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
                         `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
                         `🔧 Tipo: ${getTipoServicioDisplayName(formData.tipoServicio)}\n` +
                         `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
-                        ` ?Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
-                        `🛡 ?SISTEMA ACTUALIZADO:\n` +
-                        ` ?Ubicación seleccionada de lista predefinida\n` +
-                        ` ?Valores mapeados correctamente\n` +
-                        ` ?Compatible con Airtable\n\n` +
+                        `⚡ Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
+                        `🛡️ SISTEMA ACTUALIZADO:\n` +
+                        `• Ubicación seleccionada de lista predefinida\n` +
+                        `• Valores mapeados correctamente\n` +
+                        `• Compatible con Airtable\n\n` +
                         `🌐 Su solicitud está visible en el Portal de Gestión\n` +
                         `⏱️ Tiempo estimado de respuesta según prioridad\n` +
                         `🔄 Sistema con asignación automática de personal`
@@ -1363,7 +1362,7 @@
                     localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
                     
                     showAlert(alertDiv, 'success', 
-                        ` ?Solicitud guardada localmente (Modo sin conexión)\n\n` +
+                        `✅ Solicitud guardada localmente (Modo sin conexión)\n\n` +
                         `📋 Número temporal: ${localRequest.numero}\n` +
                         `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
                         `🔄 Se sincronizará cuando se restablezca la conexión`
@@ -1377,9 +1376,9 @@
                 }, 3000);
                 
             } catch (error) {
-                console.error(' ?Error enviando solicitud:', error);
+                console.error('❌ Error enviando solicitud:', error);
                 // Unificar el mensaje de error para evitar que se concatene sin salto de línea
-                const mensaje = ` ?Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
+                const mensaje = `❌ Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
                 showAlert(alertDiv, 'error', mensaje);
             } finally {
                 submitBtn.disabled = false;
@@ -1392,7 +1391,7 @@
             const areaNames = {
                 'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗 ?Infraestructura'
+                'INFRAESTRUCTURA': '🏗️ Infraestructura'
             };
             return areaNames[area] || area;
         }
@@ -1443,7 +1442,7 @@
         // Función de diagnóstico para probar el mapeo
         async function testValueMapping() {
             if (!window.airtableAPI) {
-                console.error(' ?API no disponible');
+                console.error('❌ API no disponible');
                 return;
             }
             
@@ -1454,21 +1453,21 @@
             const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
             areas.forEach(area => {
                 const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', area);
-                console.log(`Área: ${area}  ?${mapped}`);
+                console.log(`Área: ${area} → ${mapped}`);
             });
             
             // Probar mapeo de tipo de servicio
             const tipos = ['MANTENIMIENTO_PREVENTIVO', 'REPARACION', 'EMERGENCIA', 'DESINSTALACION'];
             tipos.forEach(tipo => {
                 const mapped = window.airtableAPI.mapFieldValue('tipoServicio', tipo);
-                console.log(`Tipo: ${tipo}  ?${mapped}`);
+                console.log(`Tipo: ${tipo} → ${mapped}`);
             });
             
             // Probar mapeo de prioridad
             const prioridades = ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
             prioridades.forEach(prioridad => {
                 const mapped = window.airtableAPI.mapFieldValue('prioridad', prioridad);
-                console.log(`Prioridad: ${prioridad}  ?${mapped}`);
+                console.log(`Prioridad: ${prioridad} → ${mapped}`);
             });
         }
 
