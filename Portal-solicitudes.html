@@ -102,6 +102,26 @@
             transform: translateY(-1px);
         }
 
+        /* Botón Ver Mis Solicitudes */
+        .btn-solicitudes {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-solicitudes:hover {
+            background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
+            transform: translateY(-1px);
+        }
+
         /* Cloud Status Indicator */
         .cloud-status {
             position: fixed;
@@ -204,6 +224,174 @@
             right: 0;
             height: 2px;
             background: #059669;
+        }
+
+        /* Modal de Solicitudes */
+        .solicitudes-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .solicitudes-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .solicitudes-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 80vh;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        /* Tabla de solicitudes */
+        .solicitudes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .solicitudes-table th,
+        .solicitudes-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .solicitudes-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .solicitudes-table td {
+            font-size: 0.875rem;
+        }
+
+        .solicitudes-table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Estados */
+        .estado-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .estado-pendiente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .estado-asignado {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .estado-en-proceso {
+            background: #fde68a;
+            color: #d97706;
+        }
+
+        .estado-completado {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .estado-cancelado {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Prioridades */
+        .prioridad-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .prioridad-critica {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .prioridad-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .prioridad-media {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .prioridad-baja {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Estado sin solicitudes */
+        .no-solicitudes {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .no-solicitudes-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
 
         /* Forms */
@@ -315,6 +503,11 @@
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
             margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
         }
 
         .welcome-title {
@@ -459,6 +652,7 @@
             .user-actions {
                 width: 100%;
                 justify-content: center;
+                flex-wrap: wrap;
             }
 
             .form-grid {
@@ -498,6 +692,21 @@
                 max-width: 100% !important;
                 margin: 0 1rem;
             }
+
+            .solicitudes-content {
+                max-width: 100% !important;
+                margin: 0 0.5rem;
+                max-height: 90vh;
+            }
+
+            .solicitudes-table {
+                font-size: 0.75rem;
+            }
+
+            .welcome-section {
+                flex-direction: column;
+                text-align: center;
+            }
         }
 
         /* Loading spinner */
@@ -514,6 +723,17 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-container .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
@@ -532,13 +752,16 @@
                     <div class="logo-img"><img src="logo-hslv-50x50.png" alt="Logo Hospital" style="width: 100%; height: 100%; object-fit: contain;" /></div>
                     <div class="hospital-info">
                         <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-                        <p>Portal de Solicitudes de Mantenimiento - Sistema Cloud</p>
+                        <p>Portal de Solicitudes de Mantenimiento </p>
                     </div>
                 </div>
                 <div class="user-actions" id="user-actions" style="display: none;">
                     <div class="user-info">
                         <span id="user-name">Usuario</span>
                     </div>
+                    <button class="btn-solicitudes" onclick="showSolicitudesModal()">
+                        📋 Ver Mis Solicitudes
+                    </button>
                     <button class="btn-logout" onclick="logout()">
                         🚪 Cerrar Sesión
                     </button>
@@ -546,6 +769,27 @@
             </div>
         </div>
     </header>
+
+    <!-- Modal de Solicitudes -->
+    <div id="solicitudes-modal" class="solicitudes-modal">
+        <div class="solicitudes-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    📋 Mis Solicitudes de Mantenimiento
+                </h2>
+                <button class="close-modal" onclick="closeSolicitudesModal()">✕</button>
+            </div>
+            
+            <div id="solicitudes-loading" class="loading-container" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Cargando solicitudes...</p>
+            </div>
+
+            <div id="solicitudes-content">
+                <!-- Aquí se cargarán las solicitudes -->
+            </div>
+        </div>
+    </div>
 
     <!-- Auth Modal -->
     <div id="auth-modal" class="auth-modal show">
@@ -595,9 +839,6 @@
                         <div>
                             <strong>Sistema Cloud Protegido</strong>
                             <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
-                                <span>• Código aprobado</span>
-                                <span>• Solicita acceso</span>
-                                <span>• Sincronizado con Airtable</span>
                             </div>
                         </div>
                     </div>
@@ -658,7 +899,7 @@
                                         <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
                                         <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
                                        
-                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
+                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏️Hospitalización Pediatría</option>
                                         <option value="CIRUGIA">⚕️ Cirugía</option>
                                         <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
                                         <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
@@ -691,10 +932,18 @@
                                         <option value="TRAMO_5">📍 Tramo 5</option>
                                     </optgroup>
                                     <optgroup label="Áreas Administrativas">
-                                        <option value="ADMINISTRATIVO">📊 Administrativo</option>
-                                        <option value="MANTENIMIENTO">🔧 Mantenimiento</option>
-                                        <option value="TRAILER">🚛 Trailer</option>
-                                    </optgroup>
+                                         <option value="ADMINISTRATIVO">📊 Administrativo</option>
+    					<option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+   					<option value="TRAILER">🚛 Trailer</option>
+    					<option value="SUMINISTROS">📦 Suministros</option>
+    					<option value="ALMACEN">🏪 Almacén</option>
+    					<option value="ARCHIVO">📁 Archivo</option>
+   					<option value="SISTEMAS">💻 Sistemas</option>
+    					<option value="COSTOS">💰 Costos</option>
+    					<option value="FARMACIA">💊 Farmacia</option>
+    					<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
+    					<option value="INNOVACION">💡 Innovación</option>
+									</optgroup>
                                 </select>
                             </div>
                             
@@ -740,22 +989,22 @@
                                 <span>📋</span> Proceso de Aprobación
                             </h4>
                             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
-                                <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✓</span>
-                                    <span>Revisión por administrador</span>
-                                </div>
-                                <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✓</span>
-                                    <span>Código único de 4 dígitos</span>
-                                </div>
-                                <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✓</span>
-                                    <span>Sistema con mapeo seguro</span>
-                                </div>
-                                <div style="display: flex; align-items: start; gap: 0.25rem;">
-                                    <span style="color: #059669;">✓</span>
-                                    <span>Respuesta en 24-48 horas</span>
-                                </div>
+                               <div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">📄</span>
+    				<span>Revisión por administrador</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+   				 <span style="color: #059669;">🔑</span>
+    				<span>Código único de 4 dígitos</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">🛡️</span>
+    				<span>Sistema con mapeo seguro</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">⏰</span>
+    				<span>Respuesta en 24-48 horas</span>
+				</div>
                             </div>
                         </div>
                         
@@ -772,8 +1021,16 @@
     <!-- Main Content (Hidden until login) -->
     <main class="main-content container" id="main-content" style="display: none;">
         <div class="welcome-section">
-            <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
-            <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento conectado a la nube</p>
+            <div>
+                <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
+                <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento  conectado</p>
+                <p style="color: #6b7280;">Desarrollado por: <span>Ing. Paul Eduardo Muñoz R.</span></p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="showSolicitudesModal()" style="width: auto; padding: 0.75rem 1.5rem;">
+                    📋 Ver Mis Solicitudes
+                </button>
+            </div>
         </div>
 
         <!-- Request Form -->
@@ -796,7 +1053,7 @@
                             <option value="">Seleccione el área</option>
                             <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
                             <option value="MECANICA">⚙️ Mecánica</option>
-                            <option value="INFRAESTRUCTURA">🏗️ Infraestructura</option>
+                            <option value="INFRAESTRUCTURA">🏗️Infraestructura</option>
                         </select>
                     </div>
 
@@ -813,11 +1070,12 @@
                             <option value="INSPECCION">Inspección</option>
                             <option value="ACTUALIZACION">Actualización</option>
                             <option value="EMERGENCIA">Emergencia</option>
+							<option value="CAPACITACION">Capacitación</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label class="form-label">🖥️ Equipo o Sistema *</label>
+                        <label class="form-label">🖥️Equipo o Sistema *</label>
                         <input type="text" id="equipo" class="form-input" required 
                                placeholder="Ej: Ventilador mecánico, Aire acondicionado, etc.">
                     </div>
@@ -838,7 +1096,7 @@
                                 <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
                             </optgroup>
                             <optgroup label="Áreas de Hospitalización">
-                                <option value="HOSPITALIZACION_PEDIATRIA">🛏️ Hospitalización Pediatría</option>
+                                <option value="HOSPITALIZACION_PEDIATRIA">🛏️Hospitalización Pediatría</option>
                             </optgroup>
                             <optgroup label="Áreas Quirúrgicas">
                                 <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
@@ -880,13 +1138,21 @@
                             </optgroup>
                             <optgroup label="Áreas Administrativas">
                                 <option value="TRAILER">🚛 Trailer</option>
+				<option value="SUMINISTROS">📦 Suministros</option>
+   				<option value="ALMACEN">🏪 Almacén</option>
+    				<option value="ARCHIVO">📁 Archivo</option>
+    				<option value="SISTEMAS">💻 Sistemas</option>
+    				<option value="COSTOS">💰 Costos</option>
+    				<option value="FARMACIA">💊 Farmacia</option>
+    				<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
+    				<option value="INNOVACION">💡 Innovación</option>
                             </optgroup>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">⚡ Prioridad *</label>
+                    <label class="form-label">🚦Prioridad *</label>
                     <div class="priority-options">
                         <label class="priority-option">
                             <input type="radio" name="prioridad" value="CRITICA" required>
@@ -986,7 +1252,15 @@
             'TRAMO_4': 'Tramo 4',
             'TRAMO_5': 'Tramo 5',
             // Administrativo
-            'TRAILER': 'Trailer'
+            'TRAILER': 'Trailer',
+			'SUMINISTROS': 'Suministros',
+			'ALMACEN': 'Almacén',
+			'ARCHIVO': 'Archivo',
+			'SISTEMAS': 'Sistemas',
+			'COSTOS': 'Costos',
+			'FARMACIA_GENERAL': 'Farmacia General',
+			'CENTRAL_GASES': 'Central de Gases',
+			'INNOVACION': 'Innovación'
         };
         
         const serviciosHospitalarios = {
@@ -1027,13 +1301,21 @@
             'TRAMO_5': 'Tramo 5',
             'ADMINISTRATIVO': 'Administrativo',
             'MANTENIMIENTO': 'Mantenimiento',
-            'TRAILER': 'Trailer'
+            'TRAILER': 'Trailer',
+			'SUMINISTROS': 'Suministros',
+			'ALMACEN': 'Almacén',
+			'ARCHIVO': 'Archivo',
+			'SISTEMAS': 'Sistemas',
+			'COSTOS': 'Costos',
+			'FARMACIA_GENERAL': 'Farmacia General',
+			'CENTRAL_GASES': 'Central de Gases',
+			'INNOVACION': 'Innovación'
         };
 
         // Inicializar al cargar
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
-            console.log('✨ ACTUALIZACIÓN: Se agregó opción DESINSTALACIÓN en tipo de servicio');
+            console.log('✅ ACTUALIZACIÓN: Se agregó modal para visualizar solicitudes del usuario');
             console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
             
             // Verificar sesión
@@ -1085,9 +1367,9 @@
             
             if (status === 'connected') {
                 iconSpan.textContent = '☁️';
-                textSpan.textContent = 'Conectado a Airtable';
+                textSpan.textContent = 'Conectado';
             } else {
-                iconSpan.textContent = '📴';
+                iconSpan.textContent = '🔴';
                 textSpan.textContent = 'Sin conexión (Modo local)';
             }
         }
@@ -1120,7 +1402,7 @@
             const loginBtn = document.getElementById('login-btn');
             
             loginBtn.disabled = true;
-            loginBtn.innerHTML = '⏳ Verificando...';
+            loginBtn.innerHTML = '🔄 Verificando...';
             
             try {
                 let validationResult;
@@ -1171,7 +1453,7 @@
         async function handleAccessRequestCloud(e) {
             e.preventDefault();
             
-            console.log('🔍 Procesando solicitud de acceso cloud protegido...');
+            console.log('📝 Procesando solicitud de acceso cloud protegido...');
             
             const formData = {
                 // CORRECCIÓN: No incluir id, Airtable generará uno automáticamente
@@ -1197,7 +1479,7 @@
             }
             
             requestBtn.disabled = true;
-            requestBtn.innerHTML = '⏳ Enviando con valores mapeados...';
+            requestBtn.innerHTML = '🔄 Enviando con valores mapeados...';
             
             try {
                 if (window.airtableAPI && isCloudConnected) {
@@ -1206,10 +1488,10 @@
                     showAlert(alertDiv, 'success', 
                         `✅ Solicitud enviada exitosamente\n\n` +
                         `📋 DATOS ENVIADOS:\n` +
-                        `• Nombre: ${formData.nombreCompleto}\n` +
-                        `• Email: ${formData.email}\n` +
-                        `• Teléfono: ${formData.telefono}\n` +
-                        `• Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `👤 Nombre: ${formData.nombreCompleto}\n` +
+                        `📧 Email: ${formData.email}\n` +
+                        `📞 Teléfono: ${formData.telefono}\n` +
+                        `🏥 Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
                         `🛡️ SISTEMA MEJORADO:\n` +
                         `1. Su solicitud fue guardada con valores correctos\n` +
                         `2. Sin errores 422 - Mapeo automático aplicado\n` +
@@ -1261,6 +1543,181 @@
                 currentUser = null;
                 location.reload();
             }
+        }
+
+        // NUEVO: Funciones para el modal de solicitudes
+        async function showSolicitudesModal() {
+            const modal = document.getElementById('solicitudes-modal');
+            const loadingDiv = document.getElementById('solicitudes-loading');
+            const contentDiv = document.getElementById('solicitudes-content');
+            
+            modal.classList.add('show');
+            loadingDiv.style.display = 'block';
+            contentDiv.innerHTML = '';
+            
+            try {
+                let solicitudes = [];
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    console.log('🌐 Cargando solicitudes desde Airtable...');
+                    // Obtener todas las solicitudes y filtrar por usuario
+                    try {
+                        const todasLasSolicitudes = await window.airtableAPI.getSolicitudes();
+                        console.log('📋 Total de solicitudes obtenidas:', todasLasSolicitudes.length);
+                        console.log('📝 Estructura de datos:', todasLasSolicitudes[0] || 'Sin datos');
+                        
+                        // Filtrar solicitudes del usuario actual
+                        solicitudes = todasLasSolicitudes.filter(solicitud => {
+                            // El getSolicitudes() ya devuelve los datos aplanados, no en .fields
+                            const emailSolicitante = solicitud.emailSolicitante;
+                            const solicitante = solicitud.solicitante;
+                            
+                            return emailSolicitante === currentUser.email ||
+                                   solicitante === currentUser.nombreCompleto ||
+                                   solicitante === currentUser.email;
+                        });
+                        
+                        console.log('🔍 Solicitudes filtradas para el usuario:', solicitudes.length);
+                        
+                    } catch (apiError) {
+                        console.error('Error obteniendo solicitudes de Airtable:', apiError);
+                        throw new Error('No se pudieron cargar las solicitudes desde Airtable');
+                    }
+                } else {
+                    console.log('📱 Cargando solicitudes locales...');
+                    // Cargar solicitudes locales
+                    const localSolicitudes = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+                    solicitudes = localSolicitudes.filter(s => 
+                        s.emailSolicitante === currentUser.email || 
+                        s.solicitante === currentUser.nombreCompleto || 
+                        s.solicitante === currentUser.email
+                    );
+                }
+                
+                loadingDiv.style.display = 'none';
+                renderSolicitudes(solicitudes);
+                
+            } catch (error) {
+                console.error('❌ Error cargando solicitudes:', error);
+                loadingDiv.style.display = 'none';
+                contentDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Error al cargar las solicitudes: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function closeSolicitudesModal() {
+            document.getElementById('solicitudes-modal').classList.remove('show');
+        }
+
+        function renderSolicitudes(solicitudes) {
+            const contentDiv = document.getElementById('solicitudes-content');
+            
+            if (!solicitudes || solicitudes.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="no-solicitudes">
+                        <div class="no-solicitudes-icon">📝</div>
+                        <h3>No hay solicitudes registradas</h3>
+                        <p>Aún no ha enviado ninguna solicitud de mantenimiento.</p>
+                        <p>Utilice el formulario principal para crear su primera solicitud.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por fecha más reciente primero
+            solicitudes.sort((a, b) => {
+                const dateA = new Date(a.fechaCreacion || a.createdTime || 0);
+                const dateB = new Date(b.fechaCreacion || b.createdTime || 0);
+                return dateB - dateA;
+            });
+            
+            let tableHTML = `
+                <div class="alert alert-info" style="margin-bottom: 1rem;">
+                    📊 <strong>Total de solicitudes:</strong> ${solicitudes.length}
+                </div>
+                <table class="solicitudes-table">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Área</th>
+                            <th>Tipo Servicio</th>
+                            <th>Equipo</th>
+                            <th>Ubicación</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Asignado a</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            solicitudes.forEach(solicitud => {
+                const fecha = formatDate(solicitud.fechaCreacion || solicitud.createdTime);
+                const numero = solicitud.numero || solicitud.id || 'N/A';
+                const area = getAreaDisplayName(solicitud.servicioIngenieria);
+                const tipoServicio = getTipoServicioDisplayName(solicitud.tipoServicio);
+                const equipo = solicitud.equipo || 'N/A';
+                const ubicacion = ubicacionesHospitalarias[solicitud.ubicacion] || solicitud.ubicacion || 'N/A';
+                const prioridad = solicitud.prioridad || 'MEDIA';
+                const estado = solicitud.estado || 'PENDIENTE';
+                const asignadoA = solicitud.asignadoA || solicitud.responsable || 'Sin asignar';
+                const observaciones = solicitud.observacionesMantenimiento || solicitud.observaciones || 'Sin observaciones';
+                
+                tableHTML += `
+                    <tr>
+                        <td><strong>${numero}</strong></td>
+                        <td>${fecha}</td>
+                        <td>${area}</td>
+                        <td>${tipoServicio}</td>
+                        <td>${equipo}</td>
+                        <td>${ubicacion}</td>
+                        <td><span class="prioridad-badge prioridad-${prioridad.toLowerCase()}">${getPrioridadDisplayName(prioridad)}</span></td>
+                        <td><span class="estado-badge estado-${estado.toLowerCase().replace(' ', '-')}">${getEstadoDisplayName(estado)}</span></td>
+                        <td>${asignadoA}</td>
+                        <td style="max-width: 200px; word-wrap: break-word;">${observaciones}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            contentDiv.innerHTML = tableHTML;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-CO', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                return 'Fecha inválida';
+            }
+        }
+
+        function getEstadoDisplayName(estado) {
+            const estadoNames = {
+                'PENDIENTE': '⏳ Pendiente',
+                'ASIGNADO': '👤 Asignado',
+                'EN_PROCESO': '🔄 En Proceso',
+                'COMPLETADO': '✅ Completado',
+                'CANCELADO': '❌ Cancelado'
+            };
+            return estadoNames[estado] || estado;
         }
 
         // ACTUALIZADO: Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
@@ -1316,7 +1773,7 @@
             }
             
             submitBtn.disabled = true;
-            submitBtn.innerHTML = '⏳ Enviando con mapeo...';
+            submitBtn.innerHTML = '🔄 Enviando con mapeo...';
             
             try {
                 let result;
@@ -1337,12 +1794,8 @@
                         `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
                         `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
                         `🔧 Tipo: ${getTipoServicioDisplayName(formData.tipoServicio)}\n` +
-                        `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
-                        `⚡ Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
-                        `🛡️ SISTEMA ACTUALIZADO:\n` +
-                        `• Ubicación seleccionada de lista predefinida\n` +
-                        `• Valores mapeados correctamente\n` +
-                        `• Compatible con Airtable\n\n` +
+                        `📌 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
+                        `🚦Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
                         `🌐 Su solicitud está visible en el Portal de Gestión\n` +
                         `⏱️ Tiempo estimado de respuesta según prioridad\n` +
                         `🔄 Sistema con asignación automática de personal`
@@ -1391,7 +1844,7 @@
             const areaNames = {
                 'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗️ Infraestructura'
+                'INFRAESTRUCTURA': '🏗️Infraestructura'
             };
             return areaNames[area] || area;
         }
@@ -1407,7 +1860,8 @@
                 'CALIBRACION': 'Calibración',
                 'INSPECCION': 'Inspección',
                 'ACTUALIZACION': 'Actualización',
-                'EMERGENCIA': 'Emergencia'
+                'EMERGENCIA': 'Emergencia',
+				'CAPACITACION': 'Capacitación'
             };
             return tipoNames[tipo] || tipo;
         }
@@ -1473,6 +1927,14 @@
 
         // Agregar función de test al objeto window para uso en consola
         window.testValueMapping = testValueMapping;
+
+        // Cerrar modal al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const solicitudesModal = document.getElementById('solicitudes-modal');
+            if (e.target === solicitudesModal) {
+                closeSolicitudesModal();
+            }
+        });
     </script>
 </body>
 </html>
