@@ -1952,8 +1952,8 @@
         // Variables para auto-refresh
         let autoRefreshInterval = null;
         let autoRefreshCountdown = null;
-        let isAutoRefreshActive = true;
-        let refreshCountdownValue = 5;
+        let isAutoRefreshActive = false;
+        let refreshCountdownValue = 30000;
 
         // Variables para gráficos
         let chartInstances = {};
@@ -2010,7 +2010,7 @@
                     await loadAllDataFromCloud();
                     resetRefreshCountdown();
                 }
-            }, 5000);
+            }, 30000);
 
             // Countdown visual
             startRefreshCountdown();
