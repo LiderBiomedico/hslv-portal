@@ -1954,7 +1954,7 @@
         let autoRefreshInterval = null;
         let autoRefreshCountdown = null;
         let isAutoRefreshActive = true;
-        let refreshCountdownValue = 30;
+        let refreshCountdownValue = 50;
 
         // Variables para gráficos
         let chartInstances = {};
@@ -2011,14 +2011,14 @@
                     await loadAllDataFromCloud();
                     resetRefreshCountdown();
                 }
-            }, 50000);
+            }, 300000);
 
             // Countdown visual
             startRefreshCountdown();
         }
 
         function startRefreshCountdown() {
-            refreshCountdownValue = 30;
+            refreshCountdownValue = 50;
             updateRefreshIndicator();
             
             autoRefreshCountdown = setInterval(() => {
@@ -2026,13 +2026,13 @@
                 updateRefreshIndicator();
                 
                 if (refreshCountdownValue <= 0) {
-                    refreshCountdownValue = 30;
+                    refreshCountdownValue = 50;
                 }
             }, 1000);
         }
 
         function resetRefreshCountdown() {
-            refreshCountdownValue = 30;
+            refreshCountdownValue = 50;
             updateRefreshIndicator();
         }
 
