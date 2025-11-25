@@ -1912,7 +1912,8 @@
         </div>
     </div>
 </div>
-
+<h3 class="modal-title">✏️ Editar Personal de Soporte</h3>
+<button class="modal-close" onclick="closeEditPersonalModal()">×</button>
 </div>
 <div id="edit-personal-content">
 <!-- Contenido dinámico del modal de edición -->
@@ -1953,7 +1954,7 @@
         let autoRefreshInterval = null;
         let autoRefreshCountdown = null;
         let isAutoRefreshActive = false;
-        let refreshCountdownValue = 30000;
+        let refreshCountdownValue = 5;
 
         // Variables para gráficos
         let chartInstances = {};
@@ -2010,14 +2011,14 @@
                     await loadAllDataFromCloud();
                     resetRefreshCountdown();
                 }
-            }, 30000);
+            }, 50000);
 
             // Countdown visual
             startRefreshCountdown();
         }
 
         function startRefreshCountdown() {
-            refreshCountdownValue = 5;
+            refreshCountdownValue = 30;
             updateRefreshIndicator();
             
             autoRefreshCountdown = setInterval(() => {
@@ -2025,13 +2026,13 @@
                 updateRefreshIndicator();
                 
                 if (refreshCountdownValue <= 0) {
-                    refreshCountdownValue = 5;
+                    refreshCountdownValue = 30;
                 }
             }, 1000);
         }
 
         function resetRefreshCountdown() {
-            refreshCountdownValue = 5;
+            refreshCountdownValue = 30;
             updateRefreshIndicator();
         }
 
