@@ -1335,7 +1335,7 @@
 <header class="header">
 <div class="header-content container">
 <!-- Indicador de conexión Airtable -->
-<div class="connection-status disconnected" id="connection-status">
+<div class="connection-status connecting" id="connection-status">
 <span id="connection-icon">🔄</span>
 <span id="connection-text">Conectando...</span>
 </div>
@@ -1343,7 +1343,7 @@
 <div class="auto-refresh-indicator" id="auto-refresh-indicator">
 <span class="refresh-spinner"></span>
 <span id="refresh-text">Auto-refresh activo</span>
-<span id="refresh-countdown">(50s)</span>
+<span id="refresh-countdown">(60s)</span>
 </div>
 <div class="logo">
 <div class="hospital-info">
@@ -2079,7 +2079,7 @@
                 
                 if (isConnected) {
                     updateConnectionStatus('connected');
-                    alert('✅ Conexión exitosa con Airtable\n\n🌐 El sistema está funcionando en la nube correctamente.\n🔄 Auto-refresh cada 5 segundos activo\n🛡️ Sistema con análisis por áreas');
+                    alert('✅ Conexión exitosa con Airtable\n\n🌐 El sistema está funcionando en la nube correctamente.\n🔄 Auto-refresh cada 60 segundos activo\n🛡️ Sistema con análisis por áreas');
                 } else {
                     updateConnectionStatus('fallback');
                     alert('⚠️ No se pudo conectar con Airtable\n\nEl sistema está usando modo local como respaldo.');
@@ -8675,10 +8675,41 @@ window.debugEstadisticas = function() {
             setTimeout(async () => {
                 if (window.airtableAPI) {
                     console.log('🔗 Conectando con Airtable...');
-                    await loadAllDataFromCloud();
-                    
-                    console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
-                    startAutoRefresh();
+                    updateConnectionStatus('connecting', 'Probando conexión...');
+
+                    try {
+                        // ✅ Primero probar conexión (rápido) para evitar quedar "conectando" indefinidamente
+                        const ok = await Promise.race([
+                            window.airtableAPI.testConnection(),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout probando conexión (10s)')), 10000))
+                        ]);
+
+                        if (!ok) {
+                            updateConnectionStatus('fallback', 'Modo Local');
+                            loadDataFromLocalStorage();
+                            console.warn('⚠️ No se pudo conectar con Airtable (testConnection=false). Modo local activado.');
+                            return;
+                        }
+
+                        // ✅ Conexión OK -> cargar datos
+                        updateConnectionStatus('connecting', 'Sincronizando...');
+                        await Promise.race([
+                            loadAllDataFromCloud(),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout sincronizando datos (20s)')), 20000))
+                        ]);
+
+                        // Si loadAllDataFromCloud no alcanzó a setear "connected" por alguna razón, forzarlo aquí
+                        updateConnectionStatus('connected');
+
+                        console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
+                        startAutoRefresh();
+
+                    } catch (err) {
+                        console.error('❌ Error conectando/sincronizando:', err);
+                        updateConnectionStatus('fallback', 'Modo Local');
+                        loadDataFromLocalStorage();
+                    }
+
                 } else {
                     console.error('❌ No se pudo cargar airtable-config.js');
                     updateConnectionStatus('disconnected');
