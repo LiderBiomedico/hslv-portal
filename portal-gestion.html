@@ -3346,6 +3346,9 @@ async function showAdvancedStatisticsModal() {
         
         // Calcular estadísticas por área
         const statsPorArea = calcularEstadisticasPorArea();
+
+        // NUEVO: Tiempo de respuesta promedio por área y por mes (para Vista General)
+        const tiemposMensualesPorArea = calcularTiempoRespuestaMensualPorArea();
         
         // Calcular análisis temporal
         const analisisTemporal = calcularAnalisisTemporal();
@@ -3401,7 +3404,7 @@ async function showAdvancedStatisticsModal() {
 
                     <!-- Contenido de estadísticas General -->
                     <div id="stats-todas" class="area-stats-section active">
-                        ${generateGeneralStats(stats)}
+                        ${generateGeneralStats(stats, tiemposMensualesPorArea)}
                     </div>
 
                     <!-- Contenido de estadísticas Biomédica -->
@@ -3431,7 +3434,7 @@ async function showAdvancedStatisticsModal() {
         setTimeout(() => {
             try {
                 if (document.getElementById('analysis-general').style.display !== 'none') {
-                    createGeneralCharts(stats);
+                    createGeneralCharts(stats, tiemposMensualesPorArea);
                     if (currentAreaStats === 'todas') {
                         // Ya se crearon los gráficos generales
                     } else {
@@ -3558,7 +3561,8 @@ function showAnalysisType(type) {
             // Recrear gráficos generales si es necesario
             setTimeout(async () => {
                 const stats = await window.airtableAPI.getAdvancedStatistics();
-                createGeneralCharts(stats);
+                const tiemposMensualesPorArea = calcularTiempoRespuestaMensualPorArea();
+                createGeneralCharts(stats, tiemposMensualesPorArea);
             }, 100);
         }
     }
@@ -6074,7 +6078,8 @@ function calcularEstadisticasPorArea() {
 }
 
         // FUNCIÓN: Generar HTML de estadísticas generales
-        function generateGeneralStats(stats) {
+        // Soporta opcionalmente el promedio de tiempo de respuesta mensual por área
+        function generateGeneralStats(stats, tiemposMensualesPorArea = null) {
             return `
                 <!-- Indicadores principales -->
                 <div class="stats-grid">
@@ -6130,6 +6135,44 @@ function calcularEstadisticasPorArea() {
                         </div>
                     </div>
                 </div>
+
+                ${tiemposMensualesPorArea ? `
+                <!-- NUEVO: Tiempo promedio de respuesta por área (mensual) -->
+                <div class="card" style="margin-top: 2rem;">
+                    <div class="card-header">
+                        <h3 class="card-title">⏱️ Tiempo Promedio de Respuesta por Área (por Mes)</h3>
+                        <span style="font-size: 0.75rem; color: #6b7280;">Calculado con solicitudes <b>COMPLETADAS</b> (Fecha creación → Fecha completado)</span>
+                    </div>
+                    <div class="card-content">
+                        <div class="chart-container" style="height: 320px;">
+                            <canvas id="tiempoRespuestaMensualChart"></canvas>
+                        </div>
+
+                        <div class="table-responsive" style="margin-top: 1rem;">
+                            <table class="stats-table">
+                                <thead>
+                                    <tr>
+                                        <th>Mes</th>
+                                        <th>🏥 Biomédica</th>
+                                        <th>⚙️ Mecánica</th>
+                                        <th>🏗️ Infraestructura</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tiemposMensualesPorArea.meses.map((mesKey, idx) => `
+                                        <tr>
+                                            <td>${formatMonth(mesKey)}</td>
+                                            <td>${tiemposMensualesPorArea.textos.BIOMEDICA[idx] || '—'}</td>
+                                            <td>${tiemposMensualesPorArea.textos.MECANICA[idx] || '—'}</td>
+                                            <td>${tiemposMensualesPorArea.textos.INFRAESTRUCTURA[idx] || '—'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
                 
                 <!-- Gráfico de distribución por estado -->
                 <div class="card" style="margin-top: 2rem;">
@@ -6155,6 +6198,91 @@ function calcularEstadisticasPorArea() {
                     </div>
                 </div>
             `;
+        }
+
+        // NUEVO: Calcular promedio de tiempo de respuesta por área y por mes (últimos 12 meses)
+        // Usa solicitudes COMPLETADAS. Mes basado en fechaCreacion.
+        function calcularTiempoRespuestaMensualPorArea() {
+            // Asegurar clasificación por área
+            if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
+                clasificarSolicitudesPorArea();
+            }
+
+            const ahora = new Date();
+            const mesActual = ahora.getMonth();
+            const añoActual = ahora.getFullYear();
+
+            const meses = [];
+            for (let i = 11; i >= 0; i--) {
+                const fecha = new Date(añoActual, mesActual - i, 1);
+                const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+                meses.push(mesKey);
+            }
+
+            const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+            const acumulados = {
+                BIOMEDICA: {},
+                MECANICA: {},
+                INFRAESTRUCTURA: {}
+            };
+            areas.forEach(a => {
+                meses.forEach(m => {
+                    acumulados[a][m] = { sumaMs: 0, conteo: 0 };
+                });
+            });
+
+            const obtenerFechaFin = (s) => {
+                return s.fechaCompletado || s.fechaCierre || s.fechaFinalizacion || s.fechaActualizacion || null;
+            };
+
+            areas.forEach(area => {
+                const solicitudesArea = solicitudesPorArea[area] || [];
+                solicitudesArea.forEach(s => {
+                    const estado = (s.estado || '').toUpperCase();
+                    if (estado !== 'COMPLETADA') return;
+                    if (!s.fechaCreacion) return;
+
+                    const fechaCreacion = new Date(s.fechaCreacion);
+                    const fechaFinRaw = obtenerFechaFin(s);
+                    if (!fechaFinRaw) return;
+                    const fechaFin = new Date(fechaFinRaw);
+
+                    const ms = fechaFin - fechaCreacion;
+                    if (isNaN(ms) || ms <= 0) return;
+
+                    const mesKey = `${fechaCreacion.getFullYear()}-${String(fechaCreacion.getMonth() + 1).padStart(2, '0')}`;
+                    if (!acumulados[area][mesKey]) return; // fuera de ventana 12 meses
+
+                    acumulados[area][mesKey].sumaMs += ms;
+                    acumulados[area][mesKey].conteo += 1;
+                });
+            });
+
+            const horas = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [] };
+            const textos = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [] };
+
+            const formatearMs = (ms) => {
+                const totalMin = Math.round(ms / (1000 * 60));
+                const h = Math.floor(totalMin / 60);
+                const m = totalMin % 60;
+                return `${h}h ${String(m).padStart(2, '0')}m`;
+            };
+
+            areas.forEach(area => {
+                meses.forEach(mesKey => {
+                    const { sumaMs, conteo } = acumulados[area][mesKey];
+                    if (conteo === 0) {
+                        horas[area].push(null);
+                        textos[area].push('—');
+                    } else {
+                        const avgMs = sumaMs / conteo;
+                        horas[area].push(Number((avgMs / (1000 * 60 * 60)).toFixed(2)));
+                        textos[area].push(formatearMs(avgMs));
+                    }
+                });
+            });
+
+            return { meses, horas, textos };
         }
 
         // FUNCIÓN: Generar HTML de estadísticas específicas por área
@@ -6358,7 +6486,7 @@ function calcularEstadisticasPorArea() {
         }
 
         // Crear gráficos generales
-        function createGeneralCharts(stats) {
+        function createGeneralCharts(stats, tiemposMensualesPorArea = null) {
             // Gráfico de estados
             const ctxEstado = document.getElementById('estadoChart');
             if (ctxEstado) {
@@ -6430,6 +6558,72 @@ function calcularEstadisticasPorArea() {
                         scales: {
                             y: {
                                 beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            // NUEVO: Tiempo promedio de respuesta mensual por área
+            const ctxTiempoMensual = document.getElementById('tiempoRespuestaMensualChart');
+            if (ctxTiempoMensual && tiemposMensualesPorArea && tiemposMensualesPorArea.meses) {
+                const chartId = 'tiempoRespuestaMensualChart';
+                if (chartInstances[chartId]) {
+                    chartInstances[chartId].destroy();
+                }
+
+                const labels = tiemposMensualesPorArea.meses.map(m => formatMonth(m));
+
+                chartInstances[chartId] = new Chart(ctxTiempoMensual.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [
+                            {
+                                label: 'Biomédica (h)',
+                                data: tiemposMensualesPorArea.horas.BIOMEDICA,
+                                borderColor: '#059669',
+                                backgroundColor: 'rgba(5, 150, 105, 0.08)',
+                                tension: 0.3,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'Mecánica (h)',
+                                data: tiemposMensualesPorArea.horas.MECANICA,
+                                borderColor: '#f59e0b',
+                                backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                                tension: 0.3,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'Infraestructura (h)',
+                                data: tiemposMensualesPorArea.horas.INFRAESTRUCTURA,
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                                tension: 0.3,
+                                spanGaps: true
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'bottom' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const v = context.parsed.y;
+                                        if (v === null || v === undefined) return `${context.dataset.label}: —`;
+                                        return `${context.dataset.label}: ${v.toFixed(2)} h`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: { display: true, text: 'Horas promedio' }
                             }
                         }
                     }
