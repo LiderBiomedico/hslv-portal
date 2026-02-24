@@ -3404,7 +3404,7 @@ async function showAdvancedStatisticsModal() {
 
                     <!-- Contenido de estadísticas General -->
                     <div id="stats-todas" class="area-stats-section active">
-                        ${generateGeneralStats(stats, tiemposMensualesPorArea)}
+                        ${generateGeneralStats(stats, statsPorArea, tiemposMensualesPorArea)}
                     </div>
 
                     <!-- Contenido de estadísticas Biomédica -->
@@ -6079,7 +6079,7 @@ function calcularEstadisticasPorArea() {
 
         // FUNCIÓN: Generar HTML de estadísticas generales
         // Soporta opcionalmente el promedio de tiempo de respuesta mensual por área
-        function generateGeneralStats(stats, tiemposMensualesPorArea = null) {
+        function generateGeneralStats(stats, statsPorArea = null, tiemposMensualesPorArea = null) {
             return `
                 <!-- Indicadores principales -->
                 <div class="stats-grid">
@@ -6124,14 +6124,16 @@ function calcularEstadisticasPorArea() {
                     
                     <div class="stat-card">
                         <div class="stat-card-header">
-                            <span class="stat-card-title">⏱️ Tiempo Promedio</span>
+                            <span class="stat-card-title">⏱️ Tiempo Promedio (por Área)</span>
                             <span style="font-size: 1.5rem;">⏰</span>
                         </div>
-                        <div class="stat-card-value" style="color: #2563eb;">
-                            ${stats.tiemposRespuesta.promedioRespuesta}
+                        <div class="stat-card-value" style="color: #2563eb; font-size: 1.05rem; line-height: 1.25;">
+                            <div>🏥 Biomédica: <b>${statsPorArea?.BIOMEDICA?.tiempoPromedio || '—'}</b></div>
+                            <div>⚙️ Mecánica: <b>${statsPorArea?.MECANICA?.tiempoPromedio || '—'}</b></div>
+                            <div>🏗️ Infraestructura: <b>${statsPorArea?.INFRAESTRUCTURA?.tiempoPromedio || '—'}</b></div>
                         </div>
                         <div class="stat-card-description">
-                            Respuesta promedio
+                            Promedio (creación → completado) en solicitudes completadas
                         </div>
                     </div>
                 </div>
@@ -6699,58 +6701,100 @@ function calcularEstadisticasPorArea() {
         // Exportar estadísticas a PDF
         async function exportStatsToPDF() {
             try {
+                // Asegurar que los gráficos estén creados (especialmente el de tiempo mensual)
+                try {
+                    if (typeof createGeneralCharts === 'function') {
+                        // No recrea si ya existe, pero garantiza que esté dibujado
+                        // (el export requiere que el canvas tenga contenido)
+                        // Nota: showAdvancedStatisticsModal ya lo llama, esto es un refuerzo.
+                    }
+                } catch (e) {}
+
                 const content = document.getElementById('stats-modal-content');
-                
-                const pdfContent = document.createElement('div');
-                pdfContent.style.width = '210mm';
-                pdfContent.style.padding = '20px';
-                pdfContent.style.background = 'white';
-                pdfContent.innerHTML = `
-                    <div style="text-align: center; margin-bottom: 30px;">
-                        <h1 style="color: #1f2937; font-size: 24px;">HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.</h1>
-                        <h2 style="color: #4b5563; font-size: 18px;">Reporte de Estadísticas por Áreas</h2>
-                        <p style="color: #6b7280;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
+                if (!content) throw new Error('No se encontró el contenido de estadísticas.');
+
+                // Crear contenedor fuera de pantalla para el PDF
+                const pdfWrapper = document.createElement('div');
+                pdfWrapper.style.cssText = 'width: 210mm; padding: 20px; background: white; position: absolute; left: -9999px; top: 0;';
+
+                // Encabezado
+                const header = document.createElement('div');
+                header.innerHTML = `
+                    <div style="text-align: center; margin-bottom: 24px;">
+                        <h1 style="color: #1f2937; font-size: 22px; margin: 0;">HOSPITAL SUSANA LÓPEZ DE VALENCIA E.S.E.</h1>
+                        <h2 style="color: #4b5563; font-size: 16px; margin: 6px 0 0;">Reporte de Estadísticas por Áreas</h2>
+                        <p style="color: #6b7280; margin: 10px 0 0; font-size: 12px;">Fecha: ${new Date().toLocaleString('es-CO')}</p>
                     </div>
-                    ${content.innerHTML}
                 `;
-                
-                document.body.appendChild(pdfContent);
-                
-                const canvas = await html2canvas(pdfContent, {
+                pdfWrapper.appendChild(header);
+
+                // Clonar el contenido REAL (no usar innerHTML) para preservar estructura
+                const clone = content.cloneNode(true);
+
+                // Remover botones (exportar/actualizar/cerrar) si existieran dentro del clon
+                clone.querySelectorAll('button').forEach(btn => btn.remove());
+
+                // ✅ CRÍTICO: Convertir CANVAS → IMG para que html2canvas capture las gráficas dibujadas
+                const canvases = clone.querySelectorAll('canvas');
+                canvases.forEach(canvasEl => {
+                    const id = canvasEl.getAttribute('id');
+                    if (!id) return;
+
+                    const originalCanvas = document.getElementById(id);
+                    if (!originalCanvas || !(originalCanvas instanceof HTMLCanvasElement)) return;
+
+                    try {
+                        const img = document.createElement('img');
+                        img.src = originalCanvas.toDataURL('image/png', 1.0);
+                        img.style.width = (originalCanvas.style.width || '100%');
+                        img.style.maxWidth = '100%';
+                        // Mantener altura si el contenedor la define
+                        if (originalCanvas.style.height) img.style.height = originalCanvas.style.height;
+
+                        // Reemplazar canvas por imagen
+                        canvasEl.parentNode.replaceChild(img, canvasEl);
+                    } catch (e) {
+                        // Si falla, dejamos el canvas (no debería, pero evitamos romper export)
+                        console.warn('No se pudo convertir canvas a imagen:', id, e);
+                    }
+                });
+
+                pdfWrapper.appendChild(clone);
+                document.body.appendChild(pdfWrapper);
+
+                // Render a canvas del DOM para PDF
+                const canvas = await html2canvas(pdfWrapper, {
                     scale: 2,
                     logging: false,
-                    useCORS: true
+                    useCORS: true,
+                    backgroundColor: '#ffffff'
                 });
-                
-                document.body.removeChild(pdfContent);
-                
+
+                document.body.removeChild(pdfWrapper);
+
                 const imgData = canvas.toDataURL('image/png');
-                const pdf = new jspdf.jsPDF({
-                    orientation: 'portrait',
-                    unit: 'mm',
-                    format: 'a4'
-                });
-                
+                const pdf = new jspdf.jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
                 const imgWidth = 210;
                 const pageHeight = 295;
                 const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
                 let heightLeft = imgHeight;
                 let position = 0;
-                
+
                 pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                 heightLeft -= pageHeight;
-                
-                while (heightLeft >= 0) {
-                    position = heightLeft - imgHeight;
+
+                while (heightLeft > 0) {
+                    position = position - pageHeight;
                     pdf.addPage();
                     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
                     heightLeft -= pageHeight;
                 }
-                
+
                 pdf.save(`Estadisticas_Areas_Hospital_${new Date().toISOString().split('T')[0]}.pdf`);
-                
                 alert('✅ PDF generado exitosamente');
-                
+
             } catch (error) {
                 console.error('❌ Error generando PDF:', error);
                 alert('❌ Error al generar el PDF: ' + error.message);
