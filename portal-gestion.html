@@ -5438,16 +5438,6 @@ async function showRedirectAreaModal(solicitudId) {
                             <option value="${area.value}">${area.label}</option>
                         `).join('')}
                     </select>
-                                    <div class="form-group" style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px dashed #fecaca;">
-                        <label style="display: flex; align-items: center; cursor: pointer; font-weight: 600; color: #b45309;">
-                            <input type="checkbox" id="mark-as-correctivo" style="margin-right: 0.5rem; width: 20px; height: 20px;">
-                            <span>🛠️ Marcar como MANTENIMIENTO CORRECTIVO</span>
-                        </label>
-                        <p style="margin-top: 0.5rem; font-size: 0.875rem; color: #7c2d12;">
-                            Seleccione esta opción si la solicitud debe registrarse como mantenimiento correctivo. 
-                            Esto cambiará el <b>Tipo de Servicio</b> actual en el sistema.
-                        </p>
-                    </div>
                 </div>
 
                 <div class="form-group">
@@ -7589,20 +7579,7 @@ function toggleErrorUsuarioOption(estado) {
             errorUsuarioSection.style.display = 'none';
             // Desmarcar el checkbox si estaba marcado
             const checkbox = document.getElementById('mark-as-error-usuario');
-            const cbCorrectivo = document.getElementById('mark-as-correctivo');
-            // Evitar que se marquen ambos a la vez
-            if (checkbox && cbCorrectivo) {
-                checkbox.addEventListener('change', () => {
-                    if (checkbox.checked) cbCorrectivo.checked = false;
-                });
-                cbCorrectivo.addEventListener('change', () => {
-                    if (cbCorrectivo.checked) checkbox.checked = false;
-                });
-            }
-
             if (checkbox) checkbox.checked = false;
-            const cbCorrectivo = document.getElementById('mark-as-correctivo');
-            if (cbCorrectivo) cbCorrectivo.checked = false;
         }
     }
 }
@@ -7613,20 +7590,16 @@ function toggleErrorUsuarioOption(estado) {
     const nuevoEstado = document.getElementById('new-status').value;
     const observaciones = document.getElementById('status-notes').value.trim();
     const marcarComoErrorUsuario = document.getElementById('mark-as-error-usuario')?.checked || false;
-    const marcarComoCorrectivo = document.getElementById('mark-as-correctivo')?.checked || false;
     
     if (!nuevoEstado) {
         alert('❌ Por favor seleccione un nuevo estado');
         return;
     }
 
-    // Mensajes de confirmación especiales
+    // Mensaje de confirmación especial si es error de usuario
     let confirmMessage = `¿Está seguro que desea cambiar el estado a "${nuevoEstado}"?`;
-
     if (nuevoEstado === 'COMPLETADA' && marcarComoErrorUsuario) {
-        confirmMessage = `¿Está seguro que desea marcar como COMPLETADA y ERROR DE USUARIO?\n\nEsto actualizará las estadísticas de errores de usuario y cambiará el tipo de servicio a ERROR_USUARIO.`;
-    } else if (nuevoEstado === 'COMPLETADA' && marcarComoCorrectivo) {
-        confirmMessage = `¿Está seguro que desea marcar como COMPLETADA y MANTENIMIENTO CORRECTIVO?\n\nEsto actualizará el tipo de servicio actual a MANTENIMIENTO_CORRECTIVO.`;
+        confirmMessage = `¿Está seguro que desea marcar como COMPLETADA y ERROR DE USUARIO?\n\nEsto actualizará las estadísticas de errores de usuario.`;
     }
 
     const confirmed = confirm(confirmMessage);
@@ -7640,26 +7613,16 @@ function toggleErrorUsuarioOption(estado) {
 
         let result;
         
-        // Si se marca como completada y se requiere cambiar tipo de servicio, usar el método especial
+        // Si se marca como completada Y error de usuario, usar el método especial
         if (nuevoEstado === 'COMPLETADA' && marcarComoErrorUsuario) {
             console.log('👤 Marcando como ERROR DE USUARIO al completar');
-
+            
+            // Usar el método que permite cambiar estado y tipo de servicio
             result = await window.airtableAPI.updateRequestStatusWithServiceType(
                 solicitudId, 
                 nuevoEstado, 
                 'ERROR_USUARIO',
-                observaciones + (observaciones ? '
-' : '') + '[MARCADO COMO ERROR DE USUARIO]'
-            );
-        } else if (nuevoEstado === 'COMPLETADA' && marcarComoCorrectivo) {
-            console.log('🛠️ Marcando como MANTENIMIENTO CORRECTIVO al completar');
-
-            result = await window.airtableAPI.updateRequestStatusWithServiceType(
-                solicitudId, 
-                nuevoEstado, 
-                'MANTENIMIENTO_CORRECTIVO',
-                observaciones + (observaciones ? '
-' : '') + '[TIPO DE SERVICIO CAMBIADO A MANTENIMIENTO_CORRECTIVO]'
+                observaciones + (observaciones ? '\n' : '') + '[MARCADO COMO ERROR DE USUARIO]'
             );
         } else {
             // Cambio de estado normal
@@ -7676,22 +7639,9 @@ function toggleErrorUsuarioOption(estado) {
             closeStatusModal();
             
             if (marcarComoErrorUsuario) {
-                alert(`✅ Estado cambiado exitosamente
-
-🔄 Nuevo estado: ${nuevoEstado}
-👤 MARCADO COMO ERROR DE USUARIO
-🛠️ Tipo de servicio: ERROR_USUARIO
-
-Esta solicitud ahora cuenta en las estadísticas de errores de usuario.`);
-            } else if (marcarComoCorrectivo) {
-                alert(`✅ Estado cambiado exitosamente
-
-🔄 Nuevo estado: ${nuevoEstado}
-🛠️ Tipo de servicio actualizado: MANTENIMIENTO_CORRECTIVO`);
+                alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n👤 MARCADO COMO ERROR DE USUARIO\n\nEsta solicitud ahora cuenta en las estadísticas de errores de usuario.`);
             } else {
-                alert(`✅ Estado cambiado exitosamente
-
-🔄 Nuevo estado: ${nuevoEstado}`);
+                alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}`);
             }
         } else {
             throw new Error(result.mensaje || 'Error al cambiar estado');
