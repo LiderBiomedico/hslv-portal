@@ -1954,7 +1954,7 @@
         let autoRefreshInterval = null;
         let autoRefreshCountdown = null;
         let isAutoRefreshActive = true;
-        let refreshCountdownValue = 50;
+        let refreshCountdownValue = 60;
 
         // Variables para gráficos
         let chartInstances = {};
@@ -2002,23 +2002,23 @@
                 clearInterval(autoRefreshCountdown);
             }
 
-            console.log('🔄 Iniciando auto-refresh cada 50 segundos...');
+            console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
             
-            // Refresh principal cada 5 segundos
+            // Refresh principal cada 60 segundos
             autoRefreshInterval = setInterval(async () => {
                 if (isAutoRefreshActive) {
                     console.log('🔄 Auto-refresh ejecutándose...');
                     await loadAllDataFromCloud();
                     resetRefreshCountdown();
                 }
-            }, 300000);
+            }, 60000);
 
             // Countdown visual
             startRefreshCountdown();
         }
 
         function startRefreshCountdown() {
-            refreshCountdownValue = 50;
+            refreshCountdownValue = 60;
             updateRefreshIndicator();
             
             autoRefreshCountdown = setInterval(() => {
@@ -2026,13 +2026,13 @@
                 updateRefreshIndicator();
                 
                 if (refreshCountdownValue <= 0) {
-                    refreshCountdownValue = 50;
+                    refreshCountdownValue = 60;
                 }
             }, 1000);
         }
 
         function resetRefreshCountdown() {
-            refreshCountdownValue = 50;
+            refreshCountdownValue = 60;
             updateRefreshIndicator();
         }
 
@@ -8627,7 +8627,7 @@ window.debugEstadisticas = function() {
                     console.log('🔗 Conectando con Airtable...');
                     await loadAllDataFromCloud();
                     
-                    console.log('🔄 Iniciando auto-refresh cada 50 segundos...');
+                    console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
                     startAutoRefresh();
                 } else {
                     console.error('❌ No se pudo cargar airtable-config.js');
