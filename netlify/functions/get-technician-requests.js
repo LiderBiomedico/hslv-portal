@@ -1,96 +1,55 @@
-// ===============================================
-// 2. netlify/functions/get-technician-requests.js
-// ===============================================
+const Airtable = require('airtable');
 
-const fetch = require('node-fetch');
+exports.handler = async (event) => {
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Content-Type': 'application/json'
+    };
 
-exports.handler = async (event, context) => {
-    if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            body: JSON.stringify({ success: false, message: 'Method not allowed' })
+    if (event.httpMethod !== 'GET') {
+        return { statusCode: 405, headers, body: 'Method Not Allowed' };
+    }
+
+    const { techId } = event.queryStringParameters || {};
+    
+    if (!techId) {
+        return { 
+            statusCode: 400, 
+            headers, 
+            body: JSON.stringify({ error: 'Tech ID required' }) 
         };
     }
 
     try {
-        const { technicianId } = JSON.parse(event.body);
-        
-        if (!technicianId) {
-            return {
-                statusCode: 400,
-                body: JSON.stringify({ 
-                    success: false, 
-                    message: 'ID del técnico requerido' 
-                })
-            };
-        }
+        const base = new Airtable({
+            apiKey: process.env.AIRTABLE_API_KEY
+        }).base(process.env.AIRTABLE_BASE_ID);
 
-        // Get technician info first
-        const techResponse = await fetch(`https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/Tecnicos/${technicianId}`, {
-            headers: {
-                'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const techData = await techResponse.json();
-        const technicianName = techData.fields?.nombre;
-
-        if (!technicianName) {
-            return {
-                statusCode: 404,
-                body: JSON.stringify({ 
-                    success: false, 
-                    message: 'Técnico no encontrado' 
-                })
-            };
-        }
-
-        // Get all requests assigned to this technician
-        const requestsUrl = `https://api.airtable.com/v0/${process.env.AIRTABLE_BASE_ID}/Solicitudes`;
-        const filterFormula = `{tecnicoAsignado} = "${technicianName}"`;
-        
-        const response = await fetch(`${requestsUrl}?filterByFormula=${encodeURIComponent(filterFormula)}`, {
-            headers: {
-                'Authorization': `Bearer ${process.env.AIRTABLE_API_KEY}`,
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-        
-        const requests = data.records.map(record => ({
-            id: record.id,
-            numero: record.fields.numero,
-            equipo: record.fields.equipo,
-            ubicacion: record.fields.ubicacion,
-            descripcion: record.fields.descripcion,
-            estado: record.fields.estado,
-            prioridad: record.fields.prioridad,
-            servicioIngenieria: record.fields.servicioIngenieria,
-            fechaCreacion: record.fields.fechaCreacion,
-            fechaAsignacion: record.fields.fechaAsignacion,
-            fechaCompletado: record.fields.fechaCompletado,
-            observaciones: record.fields.observaciones,
-            tipoServicio: record.fields.tipoServicio
-        }));
+        const records = await base('Solicitudes')
+            .select({
+                filterByFormula: `AND(
+                    {tecnicoAsignadoId} = '${techId}',
+                    OR(
+                        {estado} = 'ASIGNADA',
+                        {estado} = 'EN_PROCESO'
+                    )
+                )`,
+                sort: [{field: "prioridad", direction: "desc"}]
+            })
+            .all();
 
         return {
             statusCode: 200,
-            body: JSON.stringify({
-                success: true,
-                requests: requests
-            })
+            headers,
+            body: JSON.stringify({ records })
         };
-
     } catch (error) {
-        console.error('Get requests error:', error);
+        console.error('Error:', error);
         return {
             statusCode: 500,
-            body: JSON.stringify({
-                success: false,
-                message: 'Error al obtener solicitudes'
-            })
+            headers,
+            body: JSON.stringify({ error: 'Server error' })
         };
     }
 };

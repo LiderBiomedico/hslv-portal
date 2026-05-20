@@ -1561,11 +1561,9 @@
 </div>
 
 <!-- Filtros de Solicitudes existentes -->
-<!-- Filtros de Solicitudes existentes -->
 <div class="filters-section">
     <h4 style="color: #1f2937; margin-bottom: 1rem;">🔍 Filtros Adicionales</h4>
     <div class="filters-grid">
-        <!-- NUEVO: Filtro de Mes y Año -->
         <div>
             <label class="form-label">📅 Mes:</label>
             <select class="form-select" id="filter-mes" onchange="filterSolicitudes()">
@@ -1589,10 +1587,21 @@
             <label class="form-label">📆 Año:</label>
             <select class="form-select" id="filter-anio" onchange="filterSolicitudes()">
                 <option value="">Todos los años</option>
+                <option value="2026">2026</option>
                 <option value="2025">2025</option>
                 <option value="2024">2024</option>
                 <option value="2023">2023</option>
             </select>
+        </div>
+
+        <div>
+            <label class="form-label">📍 Desde:</label>
+            <input class="form-select" type="date" id="filter-fecha-desde" onchange="filterSolicitudes()">
+        </div>
+
+        <div>
+            <label class="form-label">📍 Hasta:</label>
+            <input class="form-select" type="date" id="filter-fecha-hasta" onchange="filterSolicitudes()">
         </div>
 
         <div>
@@ -1630,7 +1639,7 @@
             </select>
         </div>
         
-        <div>
+        <div style="display: flex; align-items: end;">
             <button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
                 🗑️ Limpiar Filtros
             </button>
@@ -1644,24 +1653,6 @@
             <span id="active-filters-text" style="color: #1e3a8a; margin-left: 0.5rem;"></span>
         </div>
     </div>
-</div>
-<div>
-<label class="form-label">Tipo de Servicio:</label>
-<select class="form-select" id="filter-tipo-servicio" onchange="filterSolicitudes()">
-<option value="">Todos los tipos</option>
-<option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
-<option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
-<option value="REPARACION">Reparación</option>
-<option value="INSTALACION">Instalación</option>
-<option value="ERROR_USUARIO">Error de Usuario</option>
-</select>
-</div>
-<div>
-<button class="btn btn-secondary btn-sm" onclick="clearSolicitudesFilters()" style="width: 100%;">
-                                    🗑️ Limpiar Filtros
-                                </button>
-</div>
-</div>
 </div>
 <div id="solicitudes-list">
 <div style="text-align: center; padding: 3rem; color: #6b7280;">
@@ -2129,6 +2120,7 @@
         console.log(`✅ Datos cargados: ${cloudSolicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios`);
         
         // Clasificar solicitudes por área
+        poblarFiltroAnioSolicitudes();
         clasificarSolicitudesPorArea();
         
         updateAccessRequestsList();
@@ -2167,6 +2159,7 @@
                 cloudSolicitudesAcceso = localAccessRequests;
                 
                 // Clasificar solicitudes por área
+                poblarFiltroAnioSolicitudes();
                 clasificarSolicitudesPorArea();
                 
                 updateAllCounters();
@@ -2262,53 +2255,13 @@
                 }
             });
             
-            // Obtener solicitudes base según el área
-            let baseSolicitudes = [];
-            if (currentAreaFilter === 'TODAS') {
-                baseSolicitudes = [...cloudSolicitudes];
-            } else {
-                baseSolicitudes = [...(solicitudesPorArea[currentAreaFilter] || [])];
-            }
+            // Recalcular desde el área actual y aplicar todos los filtros activos
+            filteredSolicitudes = (currentAreaFilter === 'TODAS')
+                ? [...cloudSolicitudes]
+                : [...(solicitudesPorArea[currentAreaFilter] || [])];
             
-            // Aplicar filtro de estado
-            switch(status) {
-                case 'SIN_ASIGNAR':
-                    filteredSolicitudes = baseSolicitudes.filter(s => !s.tecnicoAsignado);
-                    break;
-                case 'PENDIENTE':
-                    filteredSolicitudes = baseSolicitudes.filter(s => {
-                        const estado = (s.estado || 'PENDIENTE').toUpperCase();
-                        return estado === 'PENDIENTE';
-                    });
-                    break;
-                case 'ASIGNADA':
-                    filteredSolicitudes = baseSolicitudes.filter(s => {
-                        const estado = (s.estado || '').toUpperCase();
-                        return estado === 'ASIGNADA';
-                    });
-                    break;
-                case 'EN_PROCESO':
-                    filteredSolicitudes = baseSolicitudes.filter(s => {
-                        const estado = (s.estado || '').toUpperCase();
-                        return estado === 'EN_PROCESO' || estado === 'EN PROCESO';
-                    });
-                    break;
-                case 'COMPLETADA':
-                    filteredSolicitudes = baseSolicitudes.filter(s => {
-                        const estado = (s.estado || '').toUpperCase();
-                        return estado === 'COMPLETADA';
-                    });
-                    break;
-                case 'NO_COMPLETAS':
-                    filteredSolicitudes = baseSolicitudes.filter(s => {
-                        const estado = (s.estado || '').toUpperCase();
-                        return estado !== 'COMPLETADA' && estado !== 'CANCELADA';
-                    });
-                    break;
-                default:
-                    filteredSolicitudes = baseSolicitudes;
-            }
-            
+            applyCurrentFilters();
+            updateActiveFiltersIndicator();
             updateSolicitudesList();
         }
 
@@ -2368,30 +2321,43 @@
             
             // Aplicar otros filtros si existen
             applyCurrentFilters();
+            updateActiveFiltersIndicator();
             updateSolicitudesList();
         }
 
         // FUNCIÓN: Aplicar filtros actuales
         function applyCurrentFilters() {
-            const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-            const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-            const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
+            const mesFilter = getFilterValue('filter-mes');
+            const anioFilter = getFilterValue('filter-anio');
+            const fechaDesdeFilter = getFilterValue('filter-fecha-desde');
+            const fechaHastaFilter = getFilterValue('filter-fecha-hasta');
+            const estadoFilter = getFilterValue('filter-estado-solicitud');
+            const prioridadFilter = getFilterValue('filter-prioridad-solicitud');
+            const tipoServicioFilter = getFilterValue('filter-tipo-servicio');
+
+            if (currentStatusFilter && currentStatusFilter !== 'TODAS') {
+                filteredSolicitudes = filtrarPorEstadoDetallado(filteredSolicitudes, currentStatusFilter);
+            }
+
+            if (mesFilter || anioFilter || fechaDesdeFilter || fechaHastaFilter) {
+                filteredSolicitudes = filteredSolicitudes.filter(solicitud => cumpleFiltrosDeFecha(solicitud, mesFilter, anioFilter, fechaDesdeFilter, fechaHastaFilter));
+            }
             
             if (estadoFilter) {
                 filteredSolicitudes = filteredSolicitudes.filter(s => 
-                    (s.estado || 'PENDIENTE').toUpperCase() === estadoFilter
+                    normalizarTexto(s.estado || 'PENDIENTE') === normalizarTexto(estadoFilter)
                 );
             }
             
             if (prioridadFilter) {
                 filteredSolicitudes = filteredSolicitudes.filter(s => 
-                    (s.prioridad || 'MEDIA').toUpperCase() === prioridadFilter
+                    normalizarTexto(s.prioridad || 'MEDIA') === normalizarTexto(prioridadFilter)
                 );
             }
             
             if (tipoServicioFilter) {
                 filteredSolicitudes = filteredSolicitudes.filter(s => 
-                    (s.tipoServicio || '').toUpperCase() === tipoServicioFilter
+                    normalizarTexto(s.tipoServicio || '') === normalizarTexto(tipoServicioFilter)
                 );
             }
         }
@@ -7181,126 +7147,155 @@ function getPriorityColor(priority) {
     }
 }
         // 🔍 Filtros
-       function filterSolicitudes() {
-    const mesFilter = document.getElementById('filter-mes').value;
-    const anioFilter = document.getElementById('filter-anio').value;
-    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
-    
-    // Empezar con todas las solicitudes o las del área actual
-    if (currentAreaFilter === 'TODAS') {
-        filteredSolicitudes = [...cloudSolicitudes];
-    } else {
-        filteredSolicitudes = [...solicitudesPorArea[currentAreaFilter]];
-    }
-    
-    // Aplicar filtro de mes y año
-    if (mesFilter || anioFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            if (!solicitud.fechaCreacion) return false;
-            
-            const fecha = new Date(solicitud.fechaCreacion);
+        function getFilterValue(id) {
+            const el = document.getElementById(id);
+            return el ? el.value : '';
+        }
+
+        function normalizarTexto(valor) {
+            return String(valor || '')
+                .trim()
+                .toUpperCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\s+/g, '_');
+        }
+
+        function parseFechaSolicitud(fechaRaw) {
+            if (!fechaRaw) return null;
+            if (fechaRaw instanceof Date && !isNaN(fechaRaw)) return fechaRaw;
+
+            const texto = String(fechaRaw).trim();
+            let fecha = new Date(texto);
+            if (!isNaN(fecha)) return fecha;
+
+            // Soporte para fechas tipo dd/mm/yyyy o dd-mm-yyyy
+            const match = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{2}))?/);
+            if (match) {
+                const [, d, m, y, hh = '0', mm = '0'] = match;
+                fecha = new Date(Number(y), Number(m) - 1, Number(d), Number(hh), Number(mm));
+                if (!isNaN(fecha)) return fecha;
+            }
+
+            return null;
+        }
+
+        function crearFechaLocalDesdeInput(value, finDelDia = false) {
+            if (!value) return null;
+            const [y, m, d] = value.split('-').map(Number);
+            if (!y || !m || !d) return null;
+            return finDelDia ? new Date(y, m - 1, d, 23, 59, 59, 999) : new Date(y, m - 1, d, 0, 0, 0, 0);
+        }
+
+        function cumpleFiltrosDeFecha(solicitud, mesFilter, anioFilter, fechaDesdeFilter, fechaHastaFilter) {
+            const fecha = parseFechaSolicitud(solicitud.fechaCreacion || solicitud.fecha || solicitud.createdTime);
+            if (!fecha) return false;
+
             const mes = String(fecha.getMonth() + 1).padStart(2, '0');
             const anio = String(fecha.getFullYear());
-            
-            if (mesFilter && anioFilter) {
-                return mes === mesFilter && anio === anioFilter;
-            } else if (mesFilter) {
-                return mes === mesFilter;
-            } else if (anioFilter) {
-                return anio === anioFilter;
-            }
+            const fechaDesde = crearFechaLocalDesdeInput(fechaDesdeFilter, false);
+            const fechaHasta = crearFechaLocalDesdeInput(fechaHastaFilter, true);
+
+            if (mesFilter && mes !== mesFilter) return false;
+            if (anioFilter && anio !== anioFilter) return false;
+            if (fechaDesde && fecha < fechaDesde) return false;
+            if (fechaHasta && fecha > fechaHasta) return false;
             return true;
-        });
-    }
-    
-    // Aplicar otros filtros existentes
-    if (estadoFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudEstado = solicitud.estado ? solicitud.estado.toUpperCase() : 'PENDIENTE';
-            return solicitudEstado === estadoFilter;
-        });
-    }
-    
-    if (prioridadFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudPrioridad = solicitud.prioridad ? solicitud.prioridad.toUpperCase() : 'MEDIA';
-            return solicitudPrioridad === prioridadFilter;
-        });
-    }
-    
-    if (tipoServicioFilter) {
-        filteredSolicitudes = filteredSolicitudes.filter(solicitud => {
-            const solicitudTipo = solicitud.tipoServicio ? solicitud.tipoServicio.toUpperCase() : '';
-            return solicitudTipo === tipoServicioFilter;
-        });
-    }
-    
-    // Actualizar indicador de filtros activos
-    updateActiveFiltersIndicator();
-    
-    // Actualizar la lista
-    updateSolicitudesList();
-}
-
-// Nueva función para mostrar los filtros activos
-function updateActiveFiltersIndicator() {
-    const mesFilter = document.getElementById('filter-mes').value;
-    const anioFilter = document.getElementById('filter-anio').value;
-    const estadoFilter = document.getElementById('filter-estado-solicitud').value;
-    const prioridadFilter = document.getElementById('filter-prioridad-solicitud').value;
-    const tipoServicioFilter = document.getElementById('filter-tipo-servicio').value;
-    
-    const indicator = document.getElementById('active-filters-indicator');
-    const text = document.getElementById('active-filters-text');
-    
-    let activeFilters = [];
-    
-    if (mesFilter) {
-        const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
-                       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        activeFilters.push(`Mes: ${meses[parseInt(mesFilter)]}`);
-    }
-    if (anioFilter) activeFilters.push(`Año: ${anioFilter}`);
-    if (estadoFilter) activeFilters.push(`Estado: ${estadoFilter}`);
-    if (prioridadFilter) activeFilters.push(`Prioridad: ${prioridadFilter}`);
-    if (tipoServicioFilter) activeFilters.push(`Tipo: ${tipoServicioFilter.replace('_', ' ')}`);
-    if (currentAreaFilter !== 'TODAS') activeFilters.push(`Área: ${currentAreaFilter}`);
-    
-    if (activeFilters.length > 0) {
-        indicator.style.display = 'block';
-        text.textContent = activeFilters.join(' | ');
-    } else {
-        indicator.style.display = 'none';
-    }
-}
-
-// Actualizar la función clearSolicitudesFilters()
-function clearSolicitudesFilters() {
-    document.getElementById('filter-mes').value = '';
-    document.getElementById('filter-anio').value = '';
-    document.getElementById('filter-estado-solicitud').value = '';
-    document.getElementById('filter-prioridad-solicitud').value = '';
-    document.getElementById('filter-tipo-servicio').value = '';
-    
-    currentStatusFilter = 'TODAS';
-    document.querySelectorAll('.status-filter-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.statusFilter === 'TODAS') {
-            btn.classList.add('active');
         }
-    });
-    
-    // Mantener el área actual pero limpiar otros filtros
-    filterSolicitudesByArea(currentAreaFilter);
-    updateActiveFiltersIndicator();
-}
 
+        function filtrarPorEstadoDetallado(lista, status) {
+            switch (status) {
+                case 'SIN_ASIGNAR':
+                    return lista.filter(s => !s.tecnicoAsignado);
+                case 'PENDIENTE':
+                    return lista.filter(s => normalizarTexto(s.estado || 'PENDIENTE') === 'PENDIENTE');
+                case 'ASIGNADA':
+                    return lista.filter(s => normalizarTexto(s.estado || '') === 'ASIGNADA');
+                case 'EN_PROCESO':
+                    return lista.filter(s => ['EN_PROCESO', 'EN PROCESO'].includes(normalizarTexto(s.estado || '').replace('_', ' ')) || normalizarTexto(s.estado || '') === 'EN_PROCESO');
+                case 'COMPLETADA':
+                    return lista.filter(s => normalizarTexto(s.estado || '') === 'COMPLETADA');
+                case 'NO_COMPLETAS':
+                    return lista.filter(s => !['COMPLETADA', 'CANCELADA'].includes(normalizarTexto(s.estado || '')));
+                default:
+                    return lista;
+            }
+        }
+
+        function poblarFiltroAnioSolicitudes() {
+            const select = document.getElementById('filter-anio');
+            if (!select) return;
+
+            const valorActual = select.value;
+            const anios = new Set(['2026', '2025', '2024', '2023']);
+            cloudSolicitudes.forEach(solicitud => {
+                const fecha = parseFechaSolicitud(solicitud.fechaCreacion || solicitud.fecha || solicitud.createdTime);
+                if (fecha) anios.add(String(fecha.getFullYear()));
+            });
+
+            const opciones = Array.from(anios).sort((a, b) => Number(b) - Number(a));
+            select.innerHTML = '<option value="">Todos los años</option>' + opciones.map(anio => `<option value="${anio}">${anio}</option>`).join('');
+            if (valorActual && opciones.includes(valorActual)) select.value = valorActual;
+        }
+
+        function obtenerSolicitudesBasePorArea() {
+            if (currentAreaFilter === 'TODAS') {
+                return [...cloudSolicitudes];
+            }
+            return [...(solicitudesPorArea[currentAreaFilter] || [])];
+        }
+
+        function filterSolicitudes() {
+            filteredSolicitudes = obtenerSolicitudesBasePorArea();
+            applyCurrentFilters();
+            updateActiveFiltersIndicator();
+            updateSolicitudesList();
+        }
+
+        // Nueva función para mostrar los filtros activos
+        function updateActiveFiltersIndicator() {
+            const mesFilter = getFilterValue('filter-mes');
+            const anioFilter = getFilterValue('filter-anio');
+            const fechaDesdeFilter = getFilterValue('filter-fecha-desde');
+            const fechaHastaFilter = getFilterValue('filter-fecha-hasta');
+            const estadoFilter = getFilterValue('filter-estado-solicitud');
+            const prioridadFilter = getFilterValue('filter-prioridad-solicitud');
+            const tipoServicioFilter = getFilterValue('filter-tipo-servicio');
+            
+            const indicator = document.getElementById('active-filters-indicator');
+            const text = document.getElementById('active-filters-text');
+            if (!indicator || !text) return;
+            
+            let activeFilters = [];
+            
+            if (mesFilter) {
+                const meses = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                               'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+                activeFilters.push(`Mes: ${meses[parseInt(mesFilter)]}`);
+            }
+            if (anioFilter) activeFilters.push(`Año: ${anioFilter}`);
+            if (fechaDesdeFilter) activeFilters.push(`Desde: ${fechaDesdeFilter.split('-').reverse().join('/')}`);
+            if (fechaHastaFilter) activeFilters.push(`Hasta: ${fechaHastaFilter.split('-').reverse().join('/')}`);
+            if (estadoFilter) activeFilters.push(`Estado: ${estadoFilter.replaceAll('_', ' ')}`);
+            if (prioridadFilter) activeFilters.push(`Prioridad: ${prioridadFilter}`);
+            if (tipoServicioFilter) activeFilters.push(`Tipo: ${tipoServicioFilter.replaceAll('_', ' ')}`);
+            if (currentStatusFilter && currentStatusFilter !== 'TODAS') activeFilters.push(`Vista: ${currentStatusFilter.replaceAll('_', ' ')}`);
+            if (currentAreaFilter !== 'TODAS') activeFilters.push(`Área: ${currentAreaFilter}`);
+            
+            if (activeFilters.length > 0) {
+                indicator.style.display = 'block';
+                text.textContent = activeFilters.join(' | ');
+            } else {
+                indicator.style.display = 'none';
+            }
+        }
+
+        // Actualizar la función clearSolicitudesFilters()
         function clearSolicitudesFilters() {
-            document.getElementById('filter-estado-solicitud').value = '';
-            document.getElementById('filter-prioridad-solicitud').value = '';
-            document.getElementById('filter-tipo-servicio').value = '';
+            ['filter-mes', 'filter-anio', 'filter-fecha-desde', 'filter-fecha-hasta', 'filter-estado-solicitud', 'filter-prioridad-solicitud', 'filter-tipo-servicio'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
             
             currentStatusFilter = 'TODAS';
             document.querySelectorAll('.status-filter-btn').forEach(btn => {
@@ -7311,6 +7306,7 @@ function clearSolicitudesFilters() {
             });
             
             filterSolicitudesByArea(currentAreaFilter);
+            updateActiveFiltersIndicator();
         }
 
         // Las siguientes funciones permanecen sin cambios (personal, accesos, modales, etc.)
