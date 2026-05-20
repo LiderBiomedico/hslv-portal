@@ -1,0 +1,19 @@
+SOLUCIÓN ERROR NETLIFY - DEPENDENCIAS FALTANTES
+
+El deploy fallaba porque algunas Netlify Functions usan librerías que no estaban declaradas en el package.json raíz.
+
+Funciones afectadas:
+- netlify/functions/send-push-notification.js requiere web-push
+- netlify/functions/submit-technician-response.js requiere form-data
+- netlify/functions/submit-technician-response.js requiere lambda-multipart-parser
+
+Corrección aplicada en package.json:
+"dependencies": {
+  "airtable": "^0.12.2",
+  "node-fetch": "^2.6.7",
+  "web-push": "^3.6.7",
+  "form-data": "^4.0.0",
+  "lambda-multipart-parser": "^1.0.1"
+}
+
+Subir nuevamente este proyecto completo a Netlify/GitHub y ejecutar un nuevo deploy.
