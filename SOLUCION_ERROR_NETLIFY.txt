@@ -1,0 +1,3 @@
+Solución aplicada: se agregó la dependencia "web-push" al package.json para que Netlify pueda empaquetar la función netlify/functions/send-push-notification.js.
+
+Después de subir estos archivos a Netlify/GitHub, ejecuta un nuevo deploy.
