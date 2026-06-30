@@ -1,6 +1,16 @@
 exports.handler = async (event, context) => {
-    const API_KEY = process.env.AIRTABLE_API_KEY || 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
-    const BASE_ID = 'appFyEBCedQGOeJyV';
+    // 🔐 La clave SOLO debe venir de la variable de entorno de Netlify.
+    // Sin fallback incrustado: si falta, la funcion responde 500 en vez de exponer un token.
+    const API_KEY = process.env.AIRTABLE_API_KEY;
+    const BASE_ID = process.env.AIRTABLE_BASE_ID || 'appFyEBCedQGOeJyV';
+
+    if (!API_KEY) {
+        return {
+            statusCode: 500,
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+            body: JSON.stringify({ error: 'AIRTABLE_API_KEY no configurada en variables de entorno' })
+        };
+    }
     
     // Extraer la ruta sin el prefijo de la función
     let path = event.path.replace('/.netlify/functions/airtable-proxy/', '');

@@ -162,7 +162,10 @@ class AirtableAPI {
         if (this.isLocalDevelopment) {
             this.useProxy = false;
             this.baseUrl = 'https://api.airtable.com/v0/appFyEBCedQGOeJyV';
-            this.directApiKey = 'patev8QTzDMA5EGSK.777efed543e6fac49d2c830659a6d0c508b617ff90c352921d626fd9c929e570';
+            // ⚠️ SEGURIDAD: NUNCA incrustar el token aqui (este archivo se sirve al navegador).
+            // Para desarrollo local usar `netlify dev` (que enruta por el proxy con la
+            // variable de entorno) o definir window.__AIRTABLE_DEV_KEY en una consola local.
+            this.directApiKey = (typeof window !== 'undefined' && window.__AIRTABLE_DEV_KEY) || null;
             console.log('🔧 MODO DESARROLLO: Conexión directa');
         } else {
             this.useProxy = true;
