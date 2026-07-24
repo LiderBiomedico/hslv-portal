@@ -22,48 +22,161 @@ function rkNormalizar(txt) {
 
 // Catálogo canónico: agrupa variantes, typos y descripciones largas.
 // El orden importa: se evalúa de patrón más largo a más corto.
+// Catálogo canónico: agrupa variantes, typos y descripciones largas.
+// El patrón MÁS LARGO que coincida gana, por eso el orden de la lista no afecta
+// el resultado. Para añadir un equipo nuevo basta con agregar una línea.
 const RK_CATALOGO_EQUIPOS = [
-    { canon: 'MONITOR DE SIGNOS VITALES', pat: ['MONITOR DE SIGNOS', 'MONITOR SIGNOS', 'MONITOR MULTIPARAMETRO'] },
-    { canon: 'MAQUINA DE ANESTESIA',      pat: ['MAQUINA DE ANESTESIA', 'MAQUINA ANESTESIA', 'ANESTESIA'] },
-    { canon: 'LAMPARA DE CALOR RADIANTE', pat: ['CALOR RADIANTE', 'LAMPARA DE CALOR'] },
-    { canon: 'LAMPARA CIELITICA',         pat: ['CIELITICA', 'CIALITICA', 'LAMPARA QUIRURGICA'] },
-    { canon: 'MESA QUIRURGICA',           pat: ['MESA QUIRURGICA', 'MESA QUIRUGICA', 'MESA DE CIRUGIA'] },
-    { canon: 'EQUIPO DE GASES',           pat: ['MAQUINA DE GASES', 'EQUIPO DE GASES', 'RED DE GASES', 'GASES MEDICINALES'] },
-    { canon: 'BOMBA DE INFUSION',         pat: ['BOMBA DE INFUSION', 'BOMBA INFUSION', 'INFUSOR'] },
-    { canon: 'VENTILADOR MECANICO',       pat: ['VENTILADOR MECANICO', 'VENTILADOR'] },
-    { canon: 'DESFIBRILADOR',             pat: ['DESFIBRILADOR', 'DEA'] },
-    { canon: 'ELECTROBISTURI',            pat: ['ELECTROBISTURI', 'ELECTRO BISTURI', 'UNIDAD ELECTROQUIRURGICA'] },
-    { canon: 'AUTOCLAVE',                 pat: ['AUTOCLAVE'] },
-    { canon: 'ARCO EN C',                 pat: ['ARCO EN C', 'ARCO C'] },
-    { canon: 'RAYOS X',                   pat: ['RAYOS X', 'RX PORTATIL', 'EQUIPO DE RX'] },
-    { canon: 'FLUOROSCOPIO',              pat: ['FLUOROSCOPIO'] },
-    { canon: 'ECOGRAFO',                  pat: ['ECOGRAFO', 'ULTRASONIDO', 'ECOGRAFIA'] },
-    { canon: 'CRIOCAUTERIO',              pat: ['CRIOCAUTERIO', 'CRIOCIRUGIA'] },
-    { canon: 'SATUROMETRO',               pat: ['SATUROMETRO', 'PULSIOXIMETRO', 'OXIMETRO'] },
-    { canon: 'TENSIOMETRO',               pat: ['TENSIOMETRO', 'ESFIGMOMANOMETRO'] },
-    { canon: 'ASPIRADOR / SUCCIONADOR',   pat: ['ASPIRADOR', 'SUCCIONADOR', 'SUCCION'] },
-    { canon: 'INCUBADORA',                pat: ['INCUBADORA'] },
-    { canon: 'FOTOTERAPIA',               pat: ['FOTOTERAPIA'] },
+
+    // ── MONITOREO Y SIGNOS VITALES ──────────────────────────────────────────
+    { canon: 'MONITOR DE SIGNOS VITALES', pat: ['MONITOR DE SIGNOS', 'MONITOR SIGNOS', 'MONITOR MULTIPARAMETRO', 'MONITOR DE PACIENTE', 'MONITOR DE TRANSPORTE'] },
+    { canon: 'MONITOR FETAL',             pat: ['MONITOR FETAL', 'CARDIOTOCOGRAFO', 'MONITOREO FETAL'] },
     { canon: 'DOPPLER FETAL',             pat: ['DOPPLER'] },
-    { canon: 'MONITOR FETAL',             pat: ['MONITOR FETAL', 'CARDIOTOCOGRAFO'] },
-    { canon: 'ELECTROCARDIOGRAFO',        pat: ['ELECTROCARDIOGRAFO', 'EKG', 'ECG'] },
-    { canon: 'CENTRIFUGA',                pat: ['CENTRIFUGA'] },
-    { canon: 'MICROSCOPIO',               pat: ['MICROSCOPIO'] },
-    { canon: 'NEVERA / REFRIGERADOR',     pat: ['NEVERA', 'REFRIGERADOR', 'CONGELADOR'] },
-    { canon: 'CAMILLA',                   pat: ['CAMILLA'] },
+    { canon: 'SATUROMETRO / PULSIOXIMETRO', pat: ['SATUROMETRO', 'SATURIMETRO', 'PULSIOXIMETRO', 'OXIMETRO', 'PULSOXIMETRO'] },
+    { canon: 'TENSIOMETRO',               pat: ['TENSIOMETRO', 'ESFIGMOMANOMETRO', 'TOMA TENSION'] },
+    { canon: 'ELECTROCARDIOGRAFO',        pat: ['ELECTROCARDIOGRAFO', 'EKG', 'ELECTROCARDIOGRAMA'] },
+    { canon: 'ELECTROENCEFALOGRAFO',      pat: ['ELECTROENCEFALOGRAFO', 'ENCEFALOGRAFO', 'EEG'] },
+    { canon: 'TERMOMETRO',                pat: ['TERMOMETRO', 'TERMOHIGROMETRO'] },
+    { canon: 'GLUCOMETRO',                pat: ['GLUCOMETRO'] },
+
+    // ── SOPORTE VITAL Y RESPIRATORIO ────────────────────────────────────────
+    { canon: 'VENTILADOR MECANICO',       pat: ['VENTILADOR MECANICO', 'VENTILADOR PULMONAR', 'VENTILADOR'] },
+    { canon: 'CPAP / BIPAP',              pat: ['CPAP', 'BIPAP', 'VENTILACION NO INVASIVA'] },
+    { canon: 'MAQUINA DE ANESTESIA',      pat: ['MAQUINA DE ANESTESIA', 'MAQUINA ANESTESIA', 'ANESTESIA', 'VAPORIZADOR'] },
+    { canon: 'DESFIBRILADOR',             pat: ['DESFIBRILADOR', 'DESFIBRILACION', 'CARDIODESFIBRILADOR'] },
+    { canon: 'CARRO DE PARO',             pat: ['CARRO DE PARO', 'CARRO PARO'] },
+    { canon: 'ASPIRADOR / SUCCIONADOR',   pat: ['ASPIRADOR', 'SUCCIONADOR', 'SUCCION', 'ASPIRACION'] },
+    { canon: 'NEBULIZADOR',               pat: ['NEBULIZADOR', 'MICRONEBULIZADOR'] },
+    { canon: 'CONCENTRADOR DE OXIGENO',   pat: ['CONCENTRADOR DE OXIGENO', 'CONCENTRADOR OXIGENO'] },
+    { canon: 'FLUJOMETRO / REGULADOR',    pat: ['FLUJOMETRO', 'REGULADOR DE OXIGENO', 'MANOMETRO', 'VACUOMETRO'] },
+    { canon: 'LARINGOSCOPIO',             pat: ['LARINGOSCOPIO'] },
+    { canon: 'HUMIDIFICADOR',             pat: ['HUMIDIFICADOR', 'CALENTADOR HUMIDIFICADOR'] },
+
+    // ── INFUSIÓN ────────────────────────────────────────────────────────────
+    { canon: 'BOMBA DE INFUSION',         pat: ['BOMBA DE INFUSION', 'BOMBA INFUSION', 'INFUSOR', 'BOMBA VOLUMETRICA'] },
+    { canon: 'BOMBA DE JERINGA',          pat: ['BOMBA DE JERINGA', 'JERINGA DE INFUSION', 'PERFUSOR'] },
+    { canon: 'CALENTADOR DE FLUIDOS',     pat: ['CALENTADOR DE FLUIDOS', 'CALENTADOR DE SANGRE', 'MANTA TERMICA'] },
+
+    // ── QUIRÓFANO ───────────────────────────────────────────────────────────
+    { canon: 'MESA QUIRURGICA',           pat: ['MESA QUIRURGICA', 'MESA QUIRUGICA', 'MESA DE CIRUGIA', 'MESA DE MAYO'] },
+    { canon: 'LAMPARA CIELITICA',         pat: ['CIELITICA', 'CIALITICA', 'SIALITICA', 'LAMPARA QUIRURGICA', 'LAMPARA DE CIRUGIA'] },
+    { canon: 'ELECTROBISTURI',            pat: ['ELECTROBISTURI', 'ELECTRO BISTURI', 'UNIDAD ELECTROQUIRURGICA', 'BISTURI ELECTRICO'] },
+    { canon: 'ASPIRADOR DE HUMO',         pat: ['ASPIRADOR DE HUMO', 'EVACUADOR DE HUMO'] },
+    { canon: 'TORNIQUETE NEUMATICO',      pat: ['TORNIQUETE'] },
+    { canon: 'MOTOR / SIERRA QUIRURGICA', pat: ['SIERRA QUIRURGICA', 'MOTOR QUIRURGICO', 'PERFORADOR OSEO', 'CRANEOTOMO', 'MICROMOTOR'] },
+    { canon: 'TORRE DE LAPAROSCOPIA',     pat: ['LAPAROSCOPIA', 'LAPAROSCOPIO', 'TORRE DE VIDEO', 'VIDEOCAMARA QUIRURGICA'] },
+    { canon: 'CRIOCAUTERIO',              pat: ['CRIOCAUTERIO', 'CRIOCIRUGIA', 'CRIOTERAPIA'] },
+
+    // ── IMAGENOLOGÍA Y ENDOSCOPIA ───────────────────────────────────────────
+    { canon: 'RAYOS X',                   pat: ['RAYOS X', 'RAYOS-X', 'RX PORTATIL', 'EQUIPO DE RX', 'RADIOLOGIA'] },
+    { canon: 'RAYOS X DENTAL',            pat: ['RAYOS X DENTAL', 'RX DENTAL', 'PERIAPICAL', 'PANORAMICO'] },
+    { canon: 'ARCO EN C',                 pat: ['ARCO EN C', 'ARCO C'] },
+    { canon: 'FLUOROSCOPIO',              pat: ['FLUOROSCOPIO', 'FLUOROSCOPIA'] },
+    { canon: 'ECOGRAFO',                  pat: ['ECOGRAFO', 'ECOGRAFIA', 'ULTRASONIDO', 'ULTRASONIDO DIAGNOSTICO', 'TRANSDUCTOR'] },
+    { canon: 'MAMOGRAFO',                 pat: ['MAMOGRAFO', 'MAMOGRAFIA'] },
+    { canon: 'TOMOGRAFO',                 pat: ['TOMOGRAFO', 'TOMOGRAFIA', 'ESCANOGRAFO'] },
+    { canon: 'ENDOSCOPIO / COLONOSCOPIO', pat: ['ENDOSCOPIO', 'COLONOSCOPIO', 'GASTROSCOPIO', 'VIDEOENDOSCOPIO', 'FIBROBRONCOSCOPIO'] },
+    { canon: 'NEGATOSCOPIO',              pat: ['NEGATOSCOPIO'] },
+    { canon: 'REVELADORA / PROCESADORA',  pat: ['REVELADORA', 'PROCESADORA DE PLACAS', 'CHASIS'] },
+
+    // ── ESTERILIZACIÓN ──────────────────────────────────────────────────────
+    { canon: 'AUTOCLAVE',                 pat: ['AUTOCLAVE', 'ESTERILIZADOR A VAPOR', 'ESTERILIZADOR DE VAPOR'] },
+    { canon: 'HORNO DE CALOR SECO',       pat: ['CALOR SECO', 'POUPINEL', 'PUPINEL', 'HORNO DE ESTERILIZACION'] },
+    { canon: 'LAVADORA ULTRASONICA',      pat: ['LAVADORA ULTRASONICA', 'ULTRASONIDO DE LIMPIEZA', 'CUBA ULTRASONICA'] },
+    { canon: 'SELLADORA',                 pat: ['SELLADORA', 'TERMOSELLADORA'] },
+    { canon: 'ESTERILIZADOR DE PLASMA',   pat: ['PLASMA', 'PEROXIDO DE HIDROGENO', 'OXIDO DE ETILENO'] },
+
+    // ── NEONATOLOGÍA Y PEDIATRÍA ────────────────────────────────────────────
+    { canon: 'INCUBADORA',                pat: ['INCUBADORA'] },
+    { canon: 'LAMPARA DE CALOR RADIANTE', pat: ['CALOR RADIANTE', 'LAMPARA DE CALOR', 'SERVOCUNA', 'CUNA TERMICA'] },
+    { canon: 'FOTOTERAPIA',               pat: ['FOTOTERAPIA', 'LAMPARA DE FOTOTERAPIA'] },
+    { canon: 'BILIRRUBINOMETRO',          pat: ['BILIRRUBINOMETRO', 'BILIRRUBINA'] },
+
+    // ── LABORATORIO Y BANCO DE SANGRE ───────────────────────────────────────
+    { canon: 'CENTRIFUGA',                pat: ['CENTRIFUGA', 'MICROCENTRIFUGA'] },
+    { canon: 'MICROSCOPIO',               pat: ['MICROSCOPIO', 'ESTEREOSCOPIO'] },
+    { canon: 'ANALIZADOR DE LABORATORIO', pat: ['ANALIZADOR', 'HEMATOLOGIA', 'QUIMICA SANGUINEA', 'COAGULOMETRO', 'GASES ARTERIALES', 'ELECTROLITOS'] },
+    { canon: 'CABINA DE BIOSEGURIDAD',    pat: ['CABINA DE SEGURIDAD', 'CABINA DE BIOSEGURIDAD', 'FLUJO LAMINAR', 'CAMPANA EXTRACTORA'] },
+    { canon: 'BAÑO SEROLOGICO',           pat: ['BANO SEROLOGICO', 'BANO MARIA', 'BANO TERMOSTATADO'] },
+    { canon: 'INCUBADORA DE LABORATORIO', pat: ['INCUBADORA BACTERIOLOGICA', 'ESTUFA DE CULTIVO', 'HORNO DE SECADO'] },
+    { canon: 'AGITADOR / ROTADOR',        pat: ['AGITADOR', 'VORTEX', 'ROTADOR', 'HOMOGENIZADOR'] },
+    { canon: 'PIPETA / DISPENSADOR',      pat: ['PIPETA', 'DISPENSADOR DE REACTIVO'] },
+    { canon: 'DESTILADOR DE AGUA',        pat: ['DESTILADOR', 'AGUA DESTILADA', 'OSMOSIS'] },
+
+    // ── ODONTOLOGÍA ─────────────────────────────────────────────────────────
+    { canon: 'UNIDAD ODONTOLOGICA',       pat: ['UNIDAD ODONTOLOGICA', 'SILLA ODONTOLOGICA', 'SILLON ODONTOLOGICO', 'ESCUPIDERA'] },
+    { canon: 'LAMPARA DE FOTOCURADO',     pat: ['FOTOCURADO', 'LAMPARA DE LUZ HALOGENA'] },
+    { canon: 'AMALGAMADOR',               pat: ['AMALGAMADOR', 'VIBRADOR DE AMALGAMA'] },
+    { canon: 'CAVITRON / ULTRASONIDO DENTAL', pat: ['CAVITRON', 'ULTRASONIDO DENTAL', 'DESTARTARIZADOR'] },
+    { canon: 'COMPRESOR ODONTOLOGICO',    pat: ['COMPRESOR ODONTOLOGICO', 'COMPRESOR DENTAL'] },
+
+    // ── FISIOTERAPIA Y REHABILITACIÓN ───────────────────────────────────────
+    { canon: 'ULTRASONIDO TERAPEUTICO',   pat: ['ULTRASONIDO TERAPEUTICO', 'ULTRASONIDO DE TERAPIA'] },
+    { canon: 'ELECTROESTIMULADOR / TENS', pat: ['ELECTROESTIMULADOR', 'TENS', 'CORRIENTES INTERFERENCIALES', 'ELECTROTERAPIA'] },
+    { canon: 'MAGNETOTERAPIA',            pat: ['MAGNETOTERAPIA', 'MAGNETO'] },
+    { canon: 'LASER TERAPEUTICO',         pat: ['LASER TERAPEUTICO', 'LASER DE TERAPIA'] },
+    { canon: 'COMPRESERO / PARAFINA',     pat: ['COMPRESERO', 'TANQUE DE PARAFINA', 'PARAFINERO', 'COMPRESAS'] },
+    { canon: 'BICICLETA / TROTADORA',     pat: ['SPINING', 'SPINNING', 'BICICLETA', 'ELIPTICA', 'TROTADORA', 'CAMINADORA', 'BANDA SIN FIN'] },
+    { canon: 'BARRAS PARALELAS / GIMNASIO', pat: ['PARALELAS', 'ESPALDERA', 'COLCHONETA', 'ESCALERILLA', 'POLEA'] },
+    { canon: 'TANQUE DE HIDROTERAPIA',    pat: ['HIDROTERAPIA', 'TINA DE REMOLINO', 'TANQUE DE HUBBARD'] },
+
+    // ── CONSULTA EXTERNA / ESPECIALIDADES ───────────────────────────────────
+    { canon: 'LAMPARA DE HENDIDURA',      pat: ['LAMPARA DE HENDIDURA', 'BIOMICROSCOPIO'] },
+    { canon: 'OFTALMOSCOPIO / OTOSCOPIO', pat: ['OFTALMOSCOPIO', 'OTOSCOPIO', 'RETINOSCOPIO', 'QUERATOMETRO'] },
+    { canon: 'AUDIOMETRO',                pat: ['AUDIOMETRO', 'AUDIOMETRIA', 'IMPEDANCIOMETRO', 'CABINA SONOAMORTIGUADA'] },
+    { canon: 'ESPIROMETRO',               pat: ['ESPIROMETRO', 'ESPIROMETRIA'] },
+    { canon: 'FONENDOSCOPIO',             pat: ['FONENDOSCOPIO', 'ESTETOSCOPIO'] },
+    { canon: 'LAMPARA DE EXAMEN / CUELLO DE CISNE', pat: ['CUELLO DE CISNE', 'LAMPARA DE EXAMEN'] },
+    { canon: 'CAMILLA GINECOLOGICA',      pat: ['GINECOLOGICA', 'MESA DE EXAMEN'] },
+
+    // ── MOBILIARIO CLÍNICO Y TRANSPORTE ─────────────────────────────────────
     { canon: 'CAMA HOSPITALARIA',         pat: ['CAMA'] },
+    { canon: 'CAMILLA',                   pat: ['CAMILLA'] },
     { canon: 'SILLA DE RUEDAS',           pat: ['SILLA DE RUEDAS'] },
-    { canon: 'BICICLETA / SPINNING',      pat: ['SPINING', 'SPINNING', 'BICICLETA', 'ELIPTICA', 'TROTADORA', 'CAMINADORA'] },
-    { canon: 'AIRE ACONDICIONADO',        pat: ['AIRE ACONDICIONADO', 'SPLIT', 'CLIMATIZACION'] },
-    { canon: 'CALDERA',                   pat: ['CALDERA'] },
-    { canon: 'PLANTA ELECTRICA',          pat: ['PLANTA ELECTRICA', 'GENERADOR'] },
-    { canon: 'ASCENSOR',                  pat: ['ASCENSOR'] },
-    { canon: 'BOMBA DE AGUA',             pat: ['BOMBA DE AGUA', 'MOTOBOMBA'] },
-    { canon: 'COMPRESOR',                 pat: ['COMPRESOR'] },
-    { canon: 'RED HIDRAULICA',            pat: ['LAVAMANOS', 'SANITARIO', 'INODORO', 'TUBERIA', 'GRIFO', 'LLAVE DE PASO', 'DUCHA'] },
-    { canon: 'RED ELECTRICA / ILUMINACION', pat: ['TOMACORRIENTE', 'ILUMINACION', 'LUMINARIA', 'BOMBILLO', 'TABLERO ELECTRICO', 'BREAKER'] },
-    { canon: 'OBRA CIVIL',                pat: ['PUERTA', 'VENTANA', 'MURO', 'PARED', 'TECHO', 'CIELO RASO', 'PISO', 'CERRADURA'] },
-    { canon: 'MOBILIARIO',                pat: ['ESCRITORIO', 'SILLA', 'ARMARIO', 'ESTANTE', 'MESA DE NOCHE'] }
+    { canon: 'ATRIL / PORTASUEROS',       pat: ['ATRIL', 'PORTASUERO', 'PORTA SUERO'] },
+    { canon: 'BALANZA / BASCULA',         pat: ['BALANZA', 'BASCULA', 'PESABEBE', 'PESA BEBE', 'TALLIMETRO'] },
+    { canon: 'NEVERA / REFRIGERADOR',     pat: ['NEVERA', 'REFRIGERADOR', 'CONGELADOR', 'REFRIGERACION DE VACUNAS'] },
+
+    // ── GASES MEDICINALES ───────────────────────────────────────────────────
+    { canon: 'RED DE GASES MEDICINALES',  pat: ['MAQUINA DE GASES', 'EQUIPO DE GASES', 'RED DE GASES', 'GASES MEDICINALES', 'MANIFOLD', 'TOMA DE OXIGENO', 'CENTRAL DE OXIGENO'] },
+    { canon: 'BOMBA DE VACIO',            pat: ['BOMBA DE VACIO', 'VACIO MEDICINAL'] },
+
+    // ── MECÁNICA / PLANTA FÍSICA ────────────────────────────────────────────
+    { canon: 'AIRE ACONDICIONADO',        pat: ['AIRE ACONDICIONADO', 'SPLIT', 'CLIMATIZACION', 'MINISPLIT', 'MANEJADORA'] },
+    { canon: 'CHILLER / TORRE DE ENFRIAMIENTO', pat: ['CHILLER', 'TORRE DE ENFRIAMIENTO', 'CONDENSADORA'] },
+    { canon: 'EXTRACTOR / VENTILACION',   pat: ['EXTRACTOR', 'VENTILACION MECANICA', 'INYECTOR DE AIRE', 'DUCTO'] },
+    { canon: 'CALDERA',                   pat: ['CALDERA', 'CALENTADOR DE AGUA', 'CALDERIN'] },
+    { canon: 'PLANTA ELECTRICA',          pat: ['PLANTA ELECTRICA', 'GENERADOR', 'GRUPO ELECTROGENO'] },
+    { canon: 'UPS / REGULADOR',           pat: ['UPS', 'REGULADOR DE VOLTAJE', 'ESTABILIZADOR'] },
+    { canon: 'TRANSFORMADOR / SUBESTACION', pat: ['TRANSFORMADOR', 'SUBESTACION'] },
+    { canon: 'ASCENSOR / MONTACARGAS',    pat: ['ASCENSOR', 'MONTACARGA', 'ELEVADOR'] },
+    { canon: 'BOMBA DE AGUA',             pat: ['BOMBA DE AGUA', 'MOTOBOMBA', 'BOMBA HIDRAULICA', 'TANQUE DE AGUA', 'HIDROFLO'] },
+    { canon: 'COMPRESOR DE AIRE',         pat: ['COMPRESOR', 'AIRE COMPRIMIDO', 'SECADOR DE AIRE'] },
+    { canon: 'PLANTA DE TRATAMIENTO',     pat: ['PTAR', 'TRATAMIENTO DE AGUAS', 'TRAMPA DE GRASA'] },
+    { canon: 'HIDROLAVADORA',             pat: ['HIDROLAVADORA'] },
+
+    // ── LAVANDERÍA Y COCINA ─────────────────────────────────────────────────
+    { canon: 'LAVADORA INDUSTRIAL',       pat: ['LAVADORA INDUSTRIAL', 'LAVADORA DE ROPA', 'LAVADORA'] },
+    { canon: 'SECADORA INDUSTRIAL',       pat: ['SECADORA'] },
+    { canon: 'PLANCHADORA / CALANDRA',    pat: ['PLANCHADORA', 'CALANDRA', 'PLANCHA INDUSTRIAL'] },
+    { canon: 'MARMITA / ESTUFA INDUSTRIAL', pat: ['MARMITA', 'ESTUFA INDUSTRIAL', 'FOGON', 'HORNO INDUSTRIAL', 'FREIDORA'] },
+    { canon: 'CUARTO FRIO',               pat: ['CUARTO FRIO', 'CAVA'] },
+    { canon: 'CARRO TERMICO / BANDEJERO', pat: ['CARRO TERMICO', 'BANDEJERO', 'CARRO DE ALIMENTOS'] },
+    { canon: 'LICUADORA / PROCESADOR',    pat: ['LICUADORA', 'PROCESADOR DE ALIMENTOS', 'PELADORA'] },
+
+    // ── INFRAESTRUCTURA / OBRA ──────────────────────────────────────────────
+    { canon: 'RED HIDRAULICA / SANITARIA', pat: ['LAVAMANOS', 'SANITARIO', 'INODORO', 'TUBERIA', 'GRIFO', 'GRIFERIA', 'LLAVE DE PASO', 'DUCHA', 'ORINAL', 'SIFON', 'DESAGUE', 'POCETA'] },
+    { canon: 'RED ELECTRICA / ILUMINACION', pat: ['TOMACORRIENTE', 'ILUMINACION', 'LUMINARIA', 'BOMBILLO', 'TABLERO ELECTRICO', 'BREAKER', 'INTERRUPTOR', 'LAMPARA FLUORESCENTE', 'ACOMETIDA'] },
+    { canon: 'OBRA CIVIL',                pat: ['PUERTA', 'VENTANA', 'MURO', 'PARED', 'TECHO', 'CIELO RASO', 'PISO', 'CERRADURA', 'ENCHAPE', 'PINTURA', 'GOTERA', 'FILTRACION', 'DIVISION'] },
+    { canon: 'PUERTA AUTOMATICA',         pat: ['PUERTA AUTOMATICA', 'PUERTA CORREDIZA AUTOMATICA'] },
+    { canon: 'MOBILIARIO',                pat: ['ESCRITORIO', 'SILLA', 'ARMARIO', 'ESTANTE', 'MESA DE NOCHE', 'ARCHIVADOR', 'CASILLERO', 'MESON'] },
+    { canon: 'RED DE DATOS / TELEFONIA',  pat: ['PUNTO DE RED', 'RED DE DATOS', 'CITOFONO', 'TELEFONO', 'CABLEADO ESTRUCTURADO', 'SWITCH', 'ACCESS POINT'] },
+    { canon: 'CCTV / SEGURIDAD',          pat: ['CAMARA DE SEGURIDAD', 'CCTV', 'CAMARA DE VIGILANCIA', 'ALARMA', 'CONTROL DE ACCESO'] },
+    { canon: 'SISTEMA CONTRA INCENDIOS',  pat: ['EXTINTOR', 'DETECTOR DE HUMO', 'GABINETE CONTRA INCENDIO', 'ROCIADOR'] },
+    { canon: 'ZONAS VERDES / EXTERIORES', pat: ['GUADANA', 'JARDIN', 'ZONA VERDE', 'PODA'] },
+
+    // ── OFIMÁTICA / VARIOS ──────────────────────────────────────────────────
+    { canon: 'COMPUTADOR / IMPRESORA',    pat: ['COMPUTADOR', 'IMPRESORA', 'COMPUTADOR PORTATIL', 'MONITOR DE COMPUTADOR', 'CPU', 'ESCANER'] },
+    { canon: 'TELEVISOR / VIDEOBEAM',     pat: ['TELEVISOR', 'VIDEOBEAM', 'PROYECTOR', 'PANTALLA'] }
 ];
 
 /**
@@ -71,22 +184,38 @@ const RK_CATALOGO_EQUIPOS = [
  * @param {string} valor  texto crudo del campo `equipo`
  * @param {boolean} agrupar  true = agrupación inteligente, false = texto normalizado tal cual
  */
-function rkCanonizarEquipo(valor, agrupar = true) {
-    const norm = rkNormalizar(valor);
-    if (!norm) return 'SIN ESPECIFICAR';
-    if (!agrupar) return norm;
+// Caché de expresiones regulares (coincidencia por PALABRA COMPLETA, para que
+// "CAMA" no capture "CAMARA" ni "TENS" capture "EXTENSION").
+const RK_REGEX_CACHE = {};
+function rkRegexPatron(p) {
+    if (!RK_REGEX_CACHE[p]) RK_REGEX_CACHE[p] = new RegExp('(?:^| )' + p + '(?: |$)');
+    return RK_REGEX_CACHE[p];
+}
 
+/**
+ * Busca el equipo canónico. Gana el patrón MÁS LARGO que coincida.
+ * @returns {{canon:string, patron:string}|null}
+ */
+function rkBuscarCanon(norm) {
     let mejor = null;
     let mejorLargo = 0;
     for (const item of RK_CATALOGO_EQUIPOS) {
         for (const p of item.pat) {
-            if (norm.includes(p) && p.length > mejorLargo) {
-                mejor = item.canon;
+            if (p.length > mejorLargo && rkRegexPatron(p).test(norm)) {
+                mejor = { canon: item.canon, patron: p };
                 mejorLargo = p.length;
             }
         }
     }
-    return mejor || norm;
+    return mejor;
+}
+
+function rkCanonizarEquipo(valor, agrupar = true) {
+    const norm = rkNormalizar(valor);
+    if (!norm) return 'SIN ESPECIFICAR';
+    if (!agrupar) return norm;
+    const m = rkBuscarCanon(norm);
+    return m ? m.canon : norm;
 }
 
 function rkCanonizarUbicacion(valor) {
@@ -492,3 +621,96 @@ window.rkSetFiltro = rkSetFiltro;
 window.rkRenderizar = rkRenderizar;
 window.rkExportarCSV = rkExportarCSV;
 window.rkCalcularRanking = rkCalcularRanking;
+
+// ---------------------------------------------------------------------------
+// 6) 🔍 DIAGNÓSTICO DEL CATÁLOGO
+//    Ejecuta rkDiagnosticoNombres() en la consola del navegador (F12) para ver
+//    qué nombres reales de tu Airtable NO están siendo reconocidos por el
+//    catálogo, y cuáles variantes se están agrupando en cada equipo canónico.
+// ---------------------------------------------------------------------------
+
+function rkDiagnosticoNombres(descargarCSV = false) {
+    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
+        clasificarSolicitudesPorArea();
+    }
+
+    const base = [
+        ...(solicitudesPorArea.BIOMEDICA || []),
+        ...(solicitudesPorArea.MECANICA || []),
+        ...(solicitudesPorArea.INFRAESTRUCTURA || [])
+    ];
+
+    const sinReconocer = {};   // nombre normalizado -> conteo
+    const agrupados = {};      // canon -> { total, variantes: {crudo: conteo} }
+
+    base.forEach(s => {
+        const crudo = rkNormalizar(s.equipo);
+        if (!crudo) return;
+        const m = rkBuscarCanon(crudo);
+
+        if (!m) {
+            // No coincidió con ningún patrón del catálogo
+            sinReconocer[crudo] = (sinReconocer[crudo] || 0) + 1;
+        } else {
+            if (!agrupados[m.canon]) agrupados[m.canon] = { total: 0, variantes: {} };
+            agrupados[m.canon].total++;
+            agrupados[m.canon].variantes[crudo] = (agrupados[m.canon].variantes[crudo] || 0) + 1;
+        }
+    });
+
+    const listaSin = Object.entries(sinReconocer).sort((a, b) => b[1] - a[1]);
+    const listaAgr = Object.entries(agrupados).sort((a, b) => b[1].total - a[1].total);
+
+    const totalSin = listaSin.reduce((a, b) => a + b[1], 0);
+    const cobertura = base.length > 0 ? (((base.length - totalSin) / base.length) * 100).toFixed(1) : '0';
+
+    console.log('%c🔍 DIAGNÓSTICO DEL CATÁLOGO DE EQUIPOS', 'font-size:14px;font-weight:bold;color:#2563eb');
+    console.log(`Solicitudes revisadas: ${base.length}`);
+    console.log(`Cobertura del catálogo: ${cobertura}%  (${totalSin} solicitudes con nombre no reconocido)`);
+    console.log(`Nombres distintos SIN reconocer: ${listaSin.length}`);
+
+    console.groupCollapsed('❌ Nombres NO reconocidos (ordenados por frecuencia)');
+    console.table(listaSin.map(([n, c]) => ({ nombre: n, solicitudes: c })));
+    console.groupEnd();
+
+    console.groupCollapsed('✅ Agrupaciones aplicadas (verifica que ninguna esté mal unida)');
+    listaAgr.forEach(([canon, info]) => {
+        console.log(`${canon} → ${info.total} solicitudes | variantes:`,
+            Object.entries(info.variantes).sort((a, b) => b[1] - a[1]).map(([v, c]) => `${v} (${c})`).join(' · '));
+    });
+    console.groupEnd();
+
+    if (descargarCSV) {
+        const sep = ';';
+        const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+        const lineas = [
+            esc('DIAGNOSTICO DEL CATALOGO DE EQUIPOS'),
+            [esc('Solicitudes revisadas'), esc(base.length)].join(sep),
+            [esc('Cobertura'), esc(cobertura + '%')].join(sep),
+            '',
+            esc('NOMBRES NO RECONOCIDOS'),
+            [esc('Nombre'), esc('Solicitudes')].join(sep),
+            ...listaSin.map(([n, c]) => [esc(n), esc(c)].join(sep)),
+            '',
+            esc('AGRUPACIONES APLICADAS'),
+            [esc('Canonico'), esc('Total'), esc('Variantes detectadas')].join(sep),
+            ...listaAgr.map(([canon, info]) => [
+                esc(canon), esc(info.total),
+                esc(Object.entries(info.variantes).sort((a, b) => b[1] - a[1]).map(([v, c]) => `${v} (${c})`).join(' | '))
+            ].join(sep))
+        ];
+        const blob = new Blob(['\ufeff' + lineas.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `diagnostico_catalogo_equipos_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    return { cobertura: Number(cobertura), sinReconocer: listaSin, agrupados: listaAgr };
+}
+
+window.rkDiagnosticoNombres = rkDiagnosticoNombres;
