@@ -1,8 +1,9 @@
 /* ============================================================================
-   📦 MÓDULO: RANKING DE EQUIPOS Y SERVICIOS  —  Portal de Gestión HSLV
-   Autor: Paul Eduardo Muñoz R.
-   Pegar este bloque DENTRO del <script> de portal-gestion.html,
-   justo ANTES de la etiqueta </script> final.
+   MODULO: RANKING DE EQUIPOS Y SERVICIOS  -  Portal de Gestion HSLV
+   Autor: Paul Eduardo Munoz R.
+   Analiza que equipos y que ubicaciones/servicios generan mas solicitudes.
+   Se integra como pestana "Equipos y Servicios" en Estadisticas Avanzadas.
+   Comandos de consola: rkRenderizar() - rkDiagnosticoNombres() - rkExportarCSV()
    ============================================================================ */
 
 // ---------------------------------------------------------------------------
@@ -714,3 +715,77 @@ function rkDiagnosticoNombres(descargarCSV = false) {
 }
 
 window.rkDiagnosticoNombres = rkDiagnosticoNombres;
+
+// ---------------------------------------------------------------------------
+// 7) ⚙️ AUTO-INSTALADOR DE LA PESTAÑA
+//    Crea la pestaña "Equipos y Servicios" automáticamente cada vez que se
+//    abre el modal de estadísticas. NO requiere editar el HTML del portal.
+// ---------------------------------------------------------------------------
+
+function rkInstalarPestana() {
+    // El contenedor de pestañas del modal de estadísticas
+    const tabs = document.querySelector('#stats-modal-content .analysis-tabs');
+    if (!tabs) return false;
+
+    // Evitar duplicados si el modal se vuelve a renderizar
+    if (tabs.querySelector('[data-analysis-type="equipos"]')) return true;
+
+    // 1) Botón de la pestaña
+    const btn = document.createElement('button');
+    btn.className = 'analysis-tab';
+    btn.setAttribute('data-analysis-type', 'equipos');
+    btn.innerHTML = '🔧 Equipos y Servicios';
+    btn.addEventListener('click', () => showAnalysisType('equipos'));
+    tabs.appendChild(btn);
+
+    // 2) Contenedor del contenido (hermano de analysis-general / analysis-temporal)
+    const padre = tabs.parentNode;
+    if (!document.getElementById('analysis-equipos')) {
+        const cont = document.createElement('div');
+        cont.id = 'analysis-equipos';
+        cont.className = 'analysis-content';
+        cont.style.display = 'none';
+        cont.innerHTML = '<div id="ranking-equipos-container"></div>';
+        padre.appendChild(cont);
+    }
+
+    console.log('✅ Pestaña "Equipos y Servicios" instalada');
+    return true;
+}
+
+// Intenta instalar varias veces, porque el modal arma su HTML de forma asíncrona
+function rkIntentarInstalar(intentos = 20) {
+    if (rkInstalarPestana()) return;
+    if (intentos > 0) setTimeout(() => rkIntentarInstalar(intentos - 1), 250);
+}
+
+(function rkEngancharModal() {
+    // Envolver showAdvancedStatisticsModal para instalar la pestaña al abrirlo
+    if (typeof window.showAdvancedStatisticsModal === 'function' && !window.__rkModalParcheado) {
+        const original = window.showAdvancedStatisticsModal;
+        window.showAdvancedStatisticsModal = async function (...args) {
+            const r = await original.apply(this, args);
+            rkIntentarInstalar();
+            return r;
+        };
+        window.__rkModalParcheado = true;
+    }
+
+    // Envolver showAnalysisType para que dibuje el ranking al entrar a la pestaña
+    if (typeof window.showAnalysisType === 'function' && !window.__rkTabParcheado) {
+        const originalTab = window.showAnalysisType;
+        window.showAnalysisType = function (type) {
+            originalTab.apply(this, arguments);
+            if (type === 'equipos') setTimeout(() => rkRenderizar(), 30);
+        };
+        window.__rkTabParcheado = true;
+    }
+
+    // Si el modal ya estaba abierto cuando se cargó este módulo
+    rkIntentarInstalar(4);
+})();
+
+window.rkInstalarPestana = rkInstalarPestana;
+
+console.log('🔧 Módulo Ranking de Equipos y Servicios cargado. ' +
+            'Comandos: rkRenderizar() · rkDiagnosticoNombres() · rkExportarCSV()');
