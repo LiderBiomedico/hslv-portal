@@ -82,9 +82,12 @@
 
   var IM_AREA_KEY = { todas: null, biomedica: 'BIOMEDICA', mecanica: 'MECANICA', infraestructura: 'INFRAESTRUCTURA' };
 
-  // Normalización "Agrupado (básico)": mayúsculas, sin tildes, sin numeración final.
-  // Puede sobrescribirse en una línea para delegar en el normalizador del
-  // módulo de Ranking:  window.imNormalizarEquipo = rkNombreCanonico;
+  // Normalización de nombres de equipo.
+  // Si el módulo "Ranking de Equipos" está cargado, se usa su catálogo canónico
+  // (rkCanonizarEquipo) para que el "equipo con más llamados" coincida con la
+  // pestaña "Equipos y Servicios" en modo Agrupados. Si no, se usa un
+  // normalizador básico (mayúsculas, sin tildes, sin numeración final).
+  // Se puede forzar uno propio con:  window.imNormalizarEquipoOverride = fn;
   function imNormalizarEquipoDefault(nombre) {
     if (!nombre) return 'SIN ESPECIFICAR';
     var t = String(nombre).toUpperCase();
@@ -94,7 +97,18 @@
     t = t.replace(/\s+/g, ' ').trim();
     return t || 'SIN ESPECIFICAR';
   }
-  window.imNormalizarEquipo = window.imNormalizarEquipo || imNormalizarEquipoDefault;
+  function imNormalizarEquipo(nombre) {
+    if (typeof window.imNormalizarEquipoOverride === 'function') {
+      try { return window.imNormalizarEquipoOverride(nombre); } catch (e) { /* fallback */ }
+    }
+    if (typeof rkCanonizarEquipo === 'function') {
+      try {
+        var canon = rkCanonizarEquipo(nombre);
+        if (canon) return canon;
+      } catch (e) { /* fallback */ }
+    }
+    return imNormalizarEquipoDefault(nombre);
+  }
 
   function imEsFinDeSemana(fecha) {
     var d = fecha.getDay(); // 0 = domingo, 6 = sábado
@@ -160,7 +174,7 @@
       if (imMesKey(f) !== mesKey) return;
       if (areaObjetivo && imClasificarArea(s.servicioIngenieria) !== areaObjetivo) return;
 
-      var norm = window.imNormalizarEquipo(s.equipo);
+      var norm = imNormalizarEquipo(s.equipo);
       var tecnico = (s.tecnicoAsignado || '').toString().trim();
       var finde = imEsFinDeSemana(f);
       var critica = imEsCritica(s.prioridad);
