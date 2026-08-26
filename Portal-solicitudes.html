@@ -1055,6 +1055,7 @@
                             <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
                             <option value="MECANICA">⚙️ Mecánica</option>
                             <option value="INFRAESTRUCTURA">🏗️Infraestructura</option>
+                            <option value="SISTEMAS">💻 Sistemas</option>
                         </select>
                     </div>
 
@@ -1848,7 +1849,8 @@
             const areaNames = {
                 'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗️Infraestructura'
+                'INFRAESTRUCTURA': '🏗️Infraestructura',
+                'SISTEMAS': '💻 Sistemas'
             };
             return areaNames[area] || area;
         }
@@ -1908,7 +1910,7 @@
             console.log('============================');
             
             // Probar mapeo de área
-            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
             areas.forEach(area => {
                 const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', area);
                 console.log(`Área: ${area} → ${mapped}`);
