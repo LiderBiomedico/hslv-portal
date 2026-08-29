@@ -1,0 +1,1946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Solicitudes Cloud - Hospital Susana López de Valencia</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f1f5f9;
+            line-height: 1.6;
+            min-height: 100vh;
+            color: #334155;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #059669 0%, #2563eb 100%);
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: white;
+        }
+
+        .logo-img {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .hospital-info h1 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.25rem;
+        }
+
+        .hospital-info p {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-logout {
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .btn-logout:hover {
+            background: rgba(220, 38, 38, 1);
+            transform: translateY(-1px);
+        }
+
+        /* Botón Ver Mis Solicitudes */
+        .btn-solicitudes {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-solicitudes:hover {
+            background: linear-gradient(135deg, #0e7490 0%, #155e75 100%);
+            transform: translateY(-1px);
+        }
+
+        /* Cloud Status Indicator */
+        .cloud-status {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            background: white;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            z-index: 1000;
+            font-size: 0.875rem;
+        }
+
+        .cloud-status.connected {
+            border-left: 4px solid #10b981;
+        }
+
+        .cloud-status.disconnected {
+            border-left: 4px solid #ef4444;
+        }
+
+        /* Auth Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .auth-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 700px; /* Aumentado de 400px */
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .auth-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 0.75rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .auth-tab.active {
+            color: #059669;
+        }
+
+        .auth-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #059669;
+        }
+
+        /* Modal de Solicitudes */
+        .solicitudes-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .solicitudes-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .solicitudes-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 80vh;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .close-modal:hover {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        /* Tabla de solicitudes */
+        .solicitudes-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .solicitudes-table th,
+        .solicitudes-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .solicitudes-table th {
+            background: #f9fafb;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        .solicitudes-table td {
+            font-size: 0.875rem;
+        }
+
+        .solicitudes-table tr:hover {
+            background: #f8fafc;
+        }
+
+        /* Estados */
+        .estado-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .estado-pendiente {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .estado-asignado {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .estado-en-proceso {
+            background: #fde68a;
+            color: #d97706;
+        }
+
+        .estado-completado {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .estado-cancelado {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Prioridades */
+        .prioridad-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .prioridad-critica {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .prioridad-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .prioridad-media {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .prioridad-baja {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Estado sin solicitudes */
+        .no-solicitudes {
+            text-align: center;
+            padding: 3rem;
+            color: #6b7280;
+        }
+
+        .no-solicitudes-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #059669;
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #93c5fd;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem 0;
+            min-height: calc(100vh - 100px);
+        }
+
+        .welcome-section {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .welcome-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+
+        /* Request Form Card */
+        .request-form-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .form-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+        }
+
+        .form-title {
+            flex: 1;
+        }
+
+        .form-title h2 {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-title p {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Priority badges */
+        .priority-options {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.5rem;
+        }
+
+        .priority-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .priority-option:hover {
+            border-color: #059669;
+            background: #f0fdf4;
+        }
+
+        .priority-option.selected {
+            border-color: #059669;
+            background: #ecfdf5;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .priority-critica {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .priority-alta {
+            background: #fed7aa;
+            color: #ea580c;
+        }
+
+        .priority-media {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .priority-baja {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Success Message */
+        .success-container {
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .user-actions {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .priority-options {
+                grid-template-columns: 1fr;
+            }
+            
+            /* Ajustes para el formulario de solicitud de acceso en móvil */
+            #request-form .form-group {
+                margin-bottom: 1rem;
+            }
+            
+            #request-form div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #request-form div[style*="grid-template-columns: 2fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #request-form div[style*="grid-template-columns: repeat(2, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #login-form div[style*="grid-template-columns: 1fr 1fr"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            #login-form div[style*="grid-template-columns: repeat(3, 1fr)"] {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .auth-content {
+                max-width: 100% !important;
+                margin: 0 1rem;
+            }
+
+            .solicitudes-content {
+                max-width: 100% !important;
+                margin: 0 0.5rem;
+                max-height: 90vh;
+            }
+
+            .solicitudes-table {
+                font-size: 0.75rem;
+            }
+
+            .welcome-section {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #059669;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading-container .loading-spinner {
+            width: 2rem;
+            height: 2rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Cloud Status Indicator -->
+    <div id="cloud-status" class="cloud-status disconnected">
+        <span id="cloud-icon">🔄</span>
+        <span id="cloud-text">Conectando...</span>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-img"><img src="logo-hslv-50x50.png" alt="Logo Hospital" style="width: 100%; height: 100%; object-fit: contain;" /></div>
+                    <div class="hospital-info">
+                        <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
+                        <p>Portal de Solicitudes de Mantenimiento </p>
+                    </div>
+                </div>
+                <div class="user-actions" id="user-actions" style="display: none;">
+                    <div class="user-info">
+                        <span id="user-name">Usuario</span>
+                    </div>
+                    <button class="btn-solicitudes" onclick="showSolicitudesModal()">
+                        📋 Ver Mis Solicitudes
+                    </button>
+                    <button class="btn-logout" onclick="logout()">
+                        🚪 Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Modal de Solicitudes -->
+    <div id="solicitudes-modal" class="solicitudes-modal">
+        <div class="solicitudes-content">
+            <div class="modal-header">
+                <h2 class="modal-title">
+                    📋 Mis Solicitudes de Mantenimiento
+                </h2>
+                <button class="close-modal" onclick="closeSolicitudesModal()">✕</button>
+            </div>
+            
+            <div id="solicitudes-loading" class="loading-container" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Cargando solicitudes...</p>
+            </div>
+
+            <div id="solicitudes-content">
+                <!-- Aquí se cargarán las solicitudes -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="auth-modal show">
+        <div class="auth-content">
+            <div class="auth-header">
+                <h2 class="auth-title">🏥 Portal de Solicitudes</h2>
+                <p class="auth-subtitle">Hospital Susana López de Valencia</p>
+            </div>
+
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="showAuthTab('login')" data-tab="login">
+                    🔐 Iniciar Sesión
+                </button>
+                <button class="auth-tab" onclick="showAuthTab('request')" data-tab="request">
+                    📝 Solicitar Acceso
+                </button>
+            </div>
+
+            <!-- Login Form -->
+            <div id="login-form" class="auth-form">
+                <form onsubmit="handleLoginCloud(event)">
+                    <div id="login-alert"></div>
+                    
+                    <!-- Campos de login en horizontal -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">📧 Email</label>
+                            <input type="email" id="login-email" class="form-input" required 
+                                   placeholder="correo@hospital.com">
+                        </div>
+                        
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label class="form-label">🔑 Código de Acceso</label>
+                            <input type="text" id="login-code" class="form-input" required 
+                                   placeholder="Código de 4 dígitos" maxlength="4" pattern="[0-9]{4}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" id="login-btn">
+                        🚀 Ingresar al Sistema
+                    </button>
+                </form>
+
+                <div class="alert alert-info" style="margin-top: 1rem;">
+                    <div style="display: grid; grid-template-columns: auto 1fr; gap: 0.5rem; align-items: start;">
+                        <strong>ℹ️</strong>
+                        <div>
+                            <strong>Sistema Cloud Protegido</strong>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; font-size: 0.875rem;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Request Access Form - ACTUALIZADO CON TODOS LOS CAMPOS OBLIGATORIOS -->
+            <div id="request-form" class="auth-form" style="display: none;">
+                <form onsubmit="handleAccessRequestCloud(event)">
+                    <div id="request-alert"></div>
+                    
+                    <!-- Diseño horizontal en dos columnas principales -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                        
+                        <!-- Columna Izquierda - Información Personal -->
+                        <div style="background: #f0fdf4; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #bbf7d0;">
+                            <h3 style="font-size: 0.875rem; font-weight: 600; color: #059669; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>👤</span> Datos Personales
+                            </h3>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Nombre Completo *</label>
+                                <input type="text" id="req-name" class="form-input" required 
+                                       placeholder="Juan Pérez García" style="font-size: 0.875rem;">
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Email Institucional *</label>
+                                <input type="email" id="req-email" class="form-input" required 
+                                       placeholder="correo@hospital.gov.co" style="font-size: 0.875rem;">
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Teléfono de Contacto *</label>
+                                <input type="tel" id="req-phone" class="form-input" required 
+                                       placeholder="300 123 4567" style="font-size: 0.875rem;">
+                            </div>
+                        </div>
+                        
+                        <!-- Columna Derecha - Información Laboral -->
+                        <div style="background: #eff6ff; padding: 1.25rem; border-radius: 0.5rem; border: 1px solid #bfdbfe;">
+                            <h3 style="font-size: 0.875rem; font-weight: 600; color: #1e40af; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>🏥</span> Información Laboral
+                            </h3>
+                            
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label class="form-label" style="font-size: 0.75rem;">Servicio/Área *</label>
+                                <select id="req-service" class="form-select" required style="font-size: 0.875rem;">
+                                    <option value="">-- Seleccione --</option>
+                                    <optgroup label="Áreas Asistenciales">
+                                       
+                                        <option value="URGENCIAS_ADULTO">🚨 Urgencias Adulto</option>
+                                        <option value="URGENCIAS_PEDIATRIA">🚨 Urgencias Pediatría</option>
+                                        <option value="URGENCIAS_GINECOLOGIA">🚨 Urgencias Ginecología</option>
+                                       
+                                        <option value="UCI_ADULTO">🏥 UCI Adulto</option>
+                                        <option value="UCI_INTERMEDIOS">🏥 UCI Intermedios</option>
+                                        <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
+                                        <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
+                                       
+                                        <option value="HOSPITALIZACION_PEDIATRIA">🛏️Hospitalización Pediatría</option>
+                                        <option value="CIRUGIA">⚕️ Cirugía</option>
+                                        <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
+                                        <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
+                                        <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
+                                        <option value="SALA_PARTOS">👶 Sala de Partos</option>
+                                        <option value="ENDOSCOPIA">🔍 Endoscopia</option>
+										<option value="REFERENCIA">🚑 Referencia</option>
+                                    </optgroup>
+                                    <optgroup label="Servicios de Apoyo">
+                                       
+                                        <option value="IMAGENES_DIAGNOSTICAS">📷 Imágenes Diagnósticas</option>
+                                        
+                                        <option value="LABORATORIO_CLINICO">🔬 Laboratorio Clínico</option>
+                                       
+                                        <option value="FARMACIA_CENTRAL">💊 Farmacia Central</option>
+                                        <option value="FARMACIA_ADULTO">💊 Farmacia Adulto</option>
+                                        <option value="FARMACIA_UMI">💊 Farmacia UMI</option>
+                                        <option value="FISIOTERAPIA">🏃 Fisioterapia</option>
+                                        <option value="VACUNACION">💉 Vacunación</option>
+                                        <option value="TRANSPORTE_ASISTENCIAL">🚑 Transporte Asistencial</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas de Esterilización">
+                                        <option value="CENTRAL_ESTERILIZACION_UMI">🧪 Central Esterilización UMI</option>
+                                        <option value="CENTRAL_ESTERILIZACION_ADULTO">🧪 Central Esterilización Adulto</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas de Tramos">
+                                        <option value="TRAMO_1">📍 Tramo 1</option>
+                                        <option value="TRAMO_2">📍 Tramo 2</option>
+                                        <option value="TRAMO_3">📍 Tramo 3</option>
+                                        <option value="TRAMO_4">📍 Tramo 4</option>
+                                        <option value="TRAMO_5">📍 Tramo 5</option>
+                                    </optgroup>
+                                    <optgroup label="Áreas Administrativas">
+                                         <option value="ADMINISTRATIVO">📊 Administrativo</option>
+    					<option value="MANTENIMIENTO">🔧 Mantenimiento</option>
+   					<option value="TRAILER">🚛 Trailer</option>
+    					<option value="SUMINISTROS">📦 Suministros</option>
+    					<option value="ALMACEN">🏪 Almacén</option>
+    					<option value="ARCHIVO">📁 Archivo</option>
+   					<option value="SISTEMAS">💻 Sistemas</option>
+    					<option value="COSTOS">💰 Costos</option>
+    					<option value="FARMACIA">💊 Farmacia</option>
+    					<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
+    					<option value="INNOVACION">💡 Innovación</option>
+									</optgroup>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="font-size: 0.75rem;">Cargo/Función *</label>
+                                <select id="req-position" class="form-select" required style="font-size: 0.875rem;">
+                                    <option value="">-- Seleccione --</option>
+                                    <optgroup label="Personal Asistencial">
+                                        <option value="MEDICO">👨‍⚕️ Médico</option>
+                                        <option value="ENFERMERO">👩‍⚕️ Enfermero/a</option>
+                                        <option value="AUXILIAR_ENFERMERIA">🏥 Auxiliar Enfermería</option>
+                                    </optgroup>
+                                    <optgroup label="Personal de Apoyo">
+                                        <option value="TECNICO">🔧 Técnico</option>
+                                        <option value="SERVICIOS_GENERALES">🧹 Servicios Generales</option>
+                                    </optgroup>
+                                    <optgroup label="Personal Administrativo">
+                                        <option value="ADMINISTRATIVO">💼 Administrativo</option>
+                                        <option value="DIRECTIVO">👔 Directivo</option>
+                                        <option value="OTRO">📋 Otro</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Justificación - Ancho completo debajo (ahora obligatoria) -->
+                    <div class="form-group" style="margin-top: 1rem; margin-bottom: 0.5rem;">
+                        <label class="form-label" style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span>📝</span> Justificación de la Solicitud *
+                        </label>
+                        <textarea id="req-justification" class="form-textarea" required
+                                  style="min-height: 60px; font-size: 0.875rem;"
+                                  placeholder="Breve descripción del motivo por el cual necesita acceso al sistema..."></textarea>
+                    </div>
+
+                    <!-- Información del proceso y botón en la misma línea -->
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; align-items: center; margin-top: 1rem;">
+                        
+                        <!-- Información del proceso a la izquierda -->
+                        <div style="background: #f9fafb; padding: 0.75rem; border-radius: 0.5rem; border: 1px solid #e5e7eb;">
+                            <h4 style="font-size: 0.75rem; font-weight: 600; color: #374151; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;">
+                                <span>📋</span> Proceso de Aprobación
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; font-size: 0.75rem; color: #6b7280;">
+                               <div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">📄</span>
+    				<span>Revisión por administrador</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+   				 <span style="color: #059669;">🔑</span>
+    				<span>Código único de 4 dígitos</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">🛡️</span>
+    				<span>Sistema con mapeo seguro</span>
+				</div>
+				<div style="display: flex; align-items: start; gap: 0.25rem;">
+    				<span style="color: #059669;">⏰</span>
+    				<span>Respuesta en 24-48 horas</span>
+				</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botón de envío a la derecha -->
+                        <button type="submit" class="btn btn-primary" id="request-btn" style="font-size: 1rem; padding: 1rem; height: fit-content;">
+                            📤 Enviar Solicitud
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (Hidden until login) -->
+    <main class="main-content container" id="main-content" style="display: none;">
+        <div class="welcome-section">
+            <div>
+                <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
+                <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento  conectado</p>
+                <p style="color: #6b7280;">Desarrollado por: <span>Ing. Paul Eduardo Muñoz R.</span></p>
+            </div>
+            <div>
+                <button class="btn btn-primary" onclick="showSolicitudesModal()" style="width: auto; padding: 0.75rem 1.5rem;">
+                    📋 Ver Mis Solicitudes
+                </button>
+            </div>
+        </div>
+
+        <!-- Request Form -->
+        <div class="request-form-card">
+            <div class="form-header">
+                <div class="form-icon">🔧</div>
+                <div class="form-title">
+                    <h2>Nueva Solicitud de Mantenimiento</h2>
+                    <p>Complete el formulario para reportar un problema o solicitar mantenimiento</p>
+                </div>
+            </div>
+
+            <form id="maintenance-form" onsubmit="handleMaintenanceRequest(event)">
+                <div id="form-alert"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">🏥 Área de Ingeniería *</label>
+                        <select id="area" class="form-select" required>
+                            <option value="">Seleccione el área</option>
+                            <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
+                            <option value="MECANICA">⚙️ Mecánica</option>
+                            <option value="INFRAESTRUCTURA">🏗️Infraestructura</option>
+                            <option value="SISTEMAS">💻 Sistemas</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🔨 Tipo de Servicio *</label>
+                        <select id="tipo-servicio" class="form-select" required>
+                            <option value="">Seleccione el tipo</option>
+                            <option value="MANTENIMIENTO_PREVENTIVO">Mantenimiento Preventivo</option>
+                            <option value="MANTENIMIENTO_CORRECTIVO">Mantenimiento Correctivo</option>
+                            <option value="REPARACION">Reparación</option>
+                            <option value="INSTALACION">Instalación</option>
+                            <option value="DESINSTALACION">Desinstalación</option>
+                            <option value="CALIBRACION">Calibración</option>
+                            <option value="INSPECCION">Inspección</option>
+                            <option value="ACTUALIZACION">Actualización</option>
+                            <option value="EMERGENCIA">Emergencia</option>
+							<option value="CAPACITACION">Capacitación</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">🖥️Equipo o Sistema *</label>
+                        <input type="text" id="equipo" class="form-input" required 
+                               placeholder="Ej: Ventilador mecánico, Aire acondicionado, etc.">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">📍 Ubicación del Servicio *</label>
+                        <select id="ubicacion" class="form-select" required>
+                            <option value="">Seleccione la ubicación</option>
+                            <optgroup label="Áreas de Urgencias">
+                                <option value="URGENCIAS_ADULTO">🚨 Urgencias Adulto</option>
+                                <option value="URGENCIAS_PEDIATRIA">🚨 Urgencias Pediatría</option>
+                                <option value="URGENCIAS_GINECOLOGIA">🚨 Urgencias Ginecología</option>
+                            </optgroup>
+                            <optgroup label="Unidades de Cuidados Intensivos">
+                                <option value="UCI_ADULTO">🏥 UCI Adulto</option>
+                                <option value="UCI_INTERMEDIOS">🏥 UCI Intermedios</option>
+                                <option value="UCI_NEONATAL">🏥 UCI Neonatal</option>
+                                <option value="UCI_PEDIATRICA">🏥 UCI Pediátrica</option>
+                            </optgroup>
+                            <optgroup label="Áreas de Hospitalización">
+                                <option value="HOSPITALIZACION_PEDIATRIA">🛏️Hospitalización Pediatría</option>
+                            </optgroup>
+                            <optgroup label="Áreas Quirúrgicas">
+                                <option value="CIRUGIA_ADULTO">⚕️ Cirugía Adulto</option>
+                                <option value="CIRUGIA_PEDIATRICA">⚕️ Cirugía Pediátrica</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Consulta">
+                                <option value="CONSULTA_EXTERNA">👨‍⚕️ Consulta Externa</option>
+                            </optgroup>
+                            <optgroup label="Servicios Especializados">
+                                <option value="SALA_PARTOS">👶 Sala de Partos</option>
+                                <option value="ENDOSCOPIA">🔍 Endoscopia</option>
+                                <option value="IMAGENES_DIAGNOSTICAS">📷 Imágenes Diagnósticas</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Apoyo Diagnóstico">
+                                <option value="LABORATORIO_CLINICO">🔬 Laboratorio Clínico</option>
+                            </optgroup>
+                            <optgroup label="Servicios Farmacéuticos">
+                                <option value="FARMACIA_CENTRAL">💊 Farmacia Central</option>
+                                <option value="FARMACIA_ADULTO">💊 Farmacia Adulto</option>
+                                <option value="FARMACIA_UMI">💊 Farmacia UMI</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Apoyo Terapéutico">
+                                <option value="FISIOTERAPIA">🏃 Fisioterapia</option>
+                                <option value="VACUNACION">💉 Vacunación</option>
+								<option value="REFERENCIA">🚑 Referencia</option>
+                            </optgroup>
+                            <optgroup label="Servicios de Transporte">
+                                <option value="TRANSPORTE_ASISTENCIAL">🚑 Transporte Asistencial</option>
+                            </optgroup>
+                            <optgroup label="Centrales de Esterilización">
+                                <option value="CENTRAL_ESTERILIZACION_UMI">🧪 Central de Esterilización UMI</option>
+                                <option value="CENTRAL_ESTERILIZACION_ADULTO">🧪 Central de Esterilización Adulto</option>
+                            </optgroup>
+                            <optgroup label="Áreas por Tramos">
+                                <option value="TRAMO_1">📍 Tramo 1</option>
+                                <option value="TRAMO_2">📍 Tramo 2</option>
+                                <option value="TRAMO_3">📍 Tramo 3</option>
+                                <option value="TRAMO_4">📍 Tramo 4</option>
+                                <option value="TRAMO_5">📍 Tramo 5</option>
+                            </optgroup>
+                            <optgroup label="Áreas Administrativas">
+                                <option value="TRAILER">🚛 Trailer</option>
+				<option value="SUMINISTROS">📦 Suministros</option>
+   				<option value="ALMACEN">🏪 Almacén</option>
+    				<option value="ARCHIVO">📁 Archivo</option>
+    				<option value="SISTEMAS">💻 Sistemas</option>
+    				<option value="COSTOS">💰 Costos</option>
+    				<option value="FARMACIA">💊 Farmacia</option>
+    				<option value="CENTRAL_GASES">⚗️ Central de Gases</option>
+    				<option value="INNOVACION">💡 Innovación</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">🚦Prioridad *</label>
+                    <div class="priority-options">
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="CRITICA" required>
+                            <span class="priority-badge priority-critica">🚨 CRÍTICA</span>
+                            <span>Afecta servicios vitales</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="ALTA" required>
+                            <span class="priority-badge priority-alta">🔴 ALTA</span>
+                            <span>Requiere atención pronta</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="MEDIA" required checked>
+                            <span class="priority-badge priority-media">🟡 MEDIA</span>
+                            <span>Atención normal</span>
+                        </label>
+                        <label class="priority-option">
+                            <input type="radio" name="prioridad" value="BAJA" required>
+                            <span class="priority-badge priority-baja">🟢 BAJA</span>
+                            <span>Puede programarse</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📝 Descripción del Problema *</label>
+                    <textarea id="descripcion" class="form-textarea" required 
+                              placeholder="Describa detalladamente el problema o solicitud"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">📋 Observaciones Adicionales</label>
+                    <textarea id="observaciones" class="form-textarea" 
+                              placeholder="Información adicional que pueda ser útil (opcional)"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">
+                        📤 Enviar Solicitud
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                        🔄 Limpiar Formulario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- Include Airtable config -->
+    <script src="airtable-config.js"></script>
+
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let isCloudConnected = false;
+        
+        // ACTUALIZADO: Mapa completo de servicios hospitalarios para ubicaciones
+        const ubicacionesHospitalarias = {
+            // Urgencias
+            'URGENCIAS_ADULTO': 'Urgencias Adulto',
+            'URGENCIAS_PEDIATRIA': 'Urgencias Pediatría',
+            'URGENCIAS_GINECOLOGIA': 'Urgencias Ginecología',
+            // UCI
+            'UCI_ADULTO': 'UCI Adulto',
+            'UCI_INTERMEDIOS': 'UCI Intermedios',
+            'UCI_NEONATAL': 'UCI Neonatal',
+            'UCI_PEDIATRICA': 'UCI Pediátrica',
+            // Hospitalización
+            'HOSPITALIZACION_PEDIATRIA': 'Hospitalización Pediatría',
+            // Cirugía
+            'CIRUGIA_ADULTO': 'Cirugía Adulto',
+            'CIRUGIA_PEDIATRICA': 'Cirugía Pediátrica',
+            // Consulta
+            'CONSULTA_EXTERNA': 'Consulta Externa',
+            // Servicios especializados
+            'SALA_PARTOS': 'Sala de Partos',
+            'ENDOSCOPIA': 'Endoscopia',
+            'IMAGENES_DIAGNOSTICAS': 'Imágenes Diagnósticas',
+            // Laboratorio
+            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+            // Farmacia
+            'FARMACIA_CENTRAL': 'Farmacia Central',
+            'FARMACIA_ADULTO': 'Farmacia Adulto',
+            'FARMACIA_UMI': 'Farmacia UMI',
+            // Apoyo terapéutico
+            'FISIOTERAPIA': 'Fisioterapia',
+            'VACUNACION': 'Vacunación',
+            // Transporte
+			'REFERENCIA': 'Referencia',
+            'TRANSPORTE_ASISTENCIAL': 'Transporte Asistencial',
+            // Esterilización
+            'CENTRAL_ESTERILIZACION_UMI': 'Central de Esterilización UMI',
+            'CENTRAL_ESTERILIZACION_ADULTO': 'Central de Esterilización Adulto',
+            // Tramos
+            'TRAMO_1': 'Tramo 1',
+            'TRAMO_2': 'Tramo 2',
+            'TRAMO_3': 'Tramo 3',
+            'TRAMO_4': 'Tramo 4',
+            'TRAMO_5': 'Tramo 5',
+            // Administrativo
+            'TRAILER': 'Trailer',
+			'SUMINISTROS': 'Suministros',
+			'ALMACEN': 'Almacén',
+			'ARCHIVO': 'Archivo',
+			'SISTEMAS': 'Sistemas',
+			'COSTOS': 'Costos',
+			'FARMACIA_GENERAL': 'Farmacia General',
+			'CENTRAL_GASES': 'Central de Gases',
+			'INNOVACION': 'Innovación'
+        };
+        
+        const serviciosHospitalarios = {
+            'URGENCIAS': 'Urgencias',
+            'URGENCIAS_ADULTO': 'Urgencias Adulto',
+            'URGENCIAS_PEDIATRIA': 'Urgencias Pediatría',
+            'URGENCIAS_GINECOLOGIA': 'Urgencias Ginecología',
+            'UCI': 'UCI',
+            'UCI_ADULTO': 'UCI Adulto',
+            'UCI_INTERMEDIOS': 'UCI Intermedios',
+            'UCI_NEONATAL': 'UCI Neonatal',
+            'UCI_PEDIATRICA': 'UCI Pediátrica',
+            'HOSPITALIZACION': 'Hospitalización',
+            'HOSPITALIZACION_PEDIATRIA': 'Hospitalización Pediatría',
+            'CIRUGIA': 'Cirugía',
+            'CIRUGIA_ADULTO': 'Cirugía Adulto',
+            'CIRUGIA_PEDIATRICA': 'Cirugía Pediátrica',
+            'CONSULTA_EXTERNA': 'Consulta Externa',
+            'SALA_PARTOS': 'Sala de Partos',
+            'ENDOSCOPIA': 'Endoscopia',
+            'IMAGENOLOGIA': 'Imagenología',
+            'IMAGENES_DIAGNOSTICAS': 'Imágenes Diagnósticas',
+            'LABORATORIO': 'Laboratorio',
+            'LABORATORIO_CLINICO': 'Laboratorio Clínico',
+            'FARMACIA': 'Farmacia',
+            'FARMACIA_CENTRAL': 'Farmacia Central',
+            'FARMACIA_ADULTO': 'Farmacia Adulto',
+            'FARMACIA_UMI': 'Farmacia UMI',
+            'FISIOTERAPIA': 'Fisioterapia',
+            'VACUNACION': 'Vacunación',
+			'REFERENCIA': 'Referencia',
+            'TRANSPORTE_ASISTENCIAL': 'Transporte Asistencial',
+            'CENTRAL_ESTERILIZACION_UMI': 'Central Esterilización UMI',
+            'CENTRAL_ESTERILIZACION_ADULTO': 'Central Esterilización Adulto',
+            'TRAMO_1': 'Tramo 1',
+            'TRAMO_2': 'Tramo 2',
+            'TRAMO_3': 'Tramo 3',
+            'TRAMO_4': 'Tramo 4',
+            'TRAMO_5': 'Tramo 5',
+            'ADMINISTRATIVO': 'Administrativo',
+            'MANTENIMIENTO': 'Mantenimiento',
+            'TRAILER': 'Trailer',
+			'SUMINISTROS': 'Suministros',
+			'ALMACEN': 'Almacén',
+			'ARCHIVO': 'Archivo',
+			'SISTEMAS': 'Sistemas',
+			'COSTOS': 'Costos',
+			'FARMACIA_GENERAL': 'Farmacia General',
+			'CENTRAL_GASES': 'Central de Gases',
+			'INNOVACION': 'Innovación'
+        };
+
+        // Inicializar al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Portal de Solicitudes Cloud - Hospital Susana López de Valencia');
+            console.log('✅ ACTUALIZACIÓN: Se agregó modal para visualizar solicitudes del usuario');
+            console.log('📍 Ubicaciones disponibles:', Object.keys(ubicacionesHospitalarias).length);
+            
+            // Verificar sesión
+            checkSession();
+            
+            // Listener para prioridades
+            document.querySelectorAll('.priority-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Conectar con Airtable después de un breve delay
+            setTimeout(() => {
+                if (window.airtableAPI) {
+                    console.log('🔗 Conectando con Airtable...');
+                    monitorCloudConnection();
+                } else {
+                    console.error('❌ No se pudo cargar airtable-config.js');
+                    updateCloudStatus('disconnected');
+                }
+            }, 1000);
+        });
+
+        // Monitor de conexión cloud
+        function monitorCloudConnection() {
+            // Listener para cambios de conexión
+            window.addEventListener('airtableConnectionUpdate', function(event) {
+                console.log('🔄 Estado de conexión actualizado:', event.detail);
+                isCloudConnected = event.detail.connected;
+                updateCloudStatus(event.detail.connected ? 'connected' : 'disconnected');
+            });
+            
+            // Check inicial
+            if (window.airtableAPI) {
+                const status = window.airtableAPI.getStatus();
+                isCloudConnected = status.isConnected;
+                updateCloudStatus(isCloudConnected ? 'connected' : 'disconnected');
+            }
+        }
+
+        function updateCloudStatus(status) {
+            const statusDiv = document.getElementById('cloud-status');
+            const iconSpan = document.getElementById('cloud-icon');
+            const textSpan = document.getElementById('cloud-text');
+            
+            statusDiv.className = `cloud-status ${status}`;
+            
+            if (status === 'connected') {
+                iconSpan.textContent = '☁️';
+                textSpan.textContent = 'Conectado';
+            } else {
+                iconSpan.textContent = '🔴';
+                textSpan.textContent = 'Sin conexión (Modo local)';
+            }
+        }
+
+        // Gestión de pestañas de autenticación
+        function showAuthTab(tab) {
+            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            document.getElementById('login-form').style.display = tab === 'login' ? 'block' : 'none';
+            document.getElementById('request-form').style.display = tab === 'request' ? 'block' : 'none';
+        }
+
+        // Verificar sesión
+        function checkSession() {
+            const savedUser = localStorage.getItem('hospital_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                showMainContent();
+            }
+        }
+
+        // Login con validación cloud
+        async function handleLoginCloud(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('login-email').value.trim();
+            const code = document.getElementById('login-code').value.trim();
+            const alertDiv = document.getElementById('login-alert');
+            const loginBtn = document.getElementById('login-btn');
+            
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '🔄 Verificando...';
+            
+            try {
+                let validationResult;
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    // Validación en la nube
+                    console.log('🌐 Validando credenciales en Airtable...');
+                    validationResult = await window.airtableAPI.validateUserCredentials(email, code);
+                } else {
+                    // Validación local como fallback
+                    console.log('📱 Validando credenciales localmente...');
+                    validationResult = validateLocalCredentials(email, code);
+                }
+                
+                if (validationResult.valid) {
+                    currentUser = validationResult.user;
+                    localStorage.setItem('hospital_user', JSON.stringify(currentUser));
+                    showAlert(alertDiv, 'success', '✅ ¡Bienvenido al sistema!');
+                    
+                    setTimeout(() => {
+                        showMainContent();
+                    }, 1000);
+                } else {
+                    showAlert(alertDiv, 'error', `❌ ${validationResult.error || 'Credenciales inválidas'}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ Error en login:', error);
+                showAlert(alertDiv, 'error', '❌ Error al verificar credenciales. Intente nuevamente.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '🚀 Ingresar al Sistema';
+            }
+        }
+
+        function validateLocalCredentials(email, code) {
+            const approvedUsers = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
+            const user = approvedUsers.find(u => u.email === email && u.codigoAcceso === code);
+            
+            if (user) {
+                return { valid: true, user: user };
+            } else {
+                return { valid: false, error: 'Credenciales inválidas' };
+            }
+        }
+
+        // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
+        async function handleAccessRequestCloud(e) {
+            e.preventDefault();
+            
+            console.log('📝 Procesando solicitud de acceso cloud protegido...');
+            
+            const formData = {
+                // CORRECCIÓN: No incluir id, Airtable generará uno automáticamente
+                nombreCompleto: document.getElementById('req-name').value.trim(),
+                email: document.getElementById('req-email').value.trim(),
+                telefono: document.getElementById('req-phone').value.trim(),
+                servicioHospitalario: document.getElementById('req-service').value,
+                cargo: document.getElementById('req-position').value,
+                justificacion: document.getElementById('req-justification').value.trim(),
+                fechaSolicitud: new Date().toISOString(),
+                estado: 'PENDIENTE',
+                esUrgente: false
+            };
+            
+            const alertDiv = document.getElementById('request-alert');
+            const requestBtn = document.getElementById('request-btn');
+            
+            // Validación actualizada incluyendo teléfono y justificación
+            if (!formData.nombreCompleto || !formData.email || !formData.telefono || 
+                !formData.servicioHospitalario || !formData.cargo || !formData.justificacion) {
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios (*)');
+                return;
+            }
+            
+            requestBtn.disabled = true;
+            requestBtn.innerHTML = '🔄 Enviando con valores mapeados...';
+            
+            try {
+                if (window.airtableAPI && isCloudConnected) {
+                    await window.airtableAPI.createSolicitudAcceso(formData);
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud enviada exitosamente\n\n` +
+                        `📋 DATOS ENVIADOS:\n` +
+                        `👤 Nombre: ${formData.nombreCompleto}\n` +
+                        `📧 Email: ${formData.email}\n` +
+                        `📞 Teléfono: ${formData.telefono}\n` +
+                        `🏥 Servicio: ${serviciosHospitalarios[formData.servicioHospitalario] || formData.servicioHospitalario}\n\n` +
+                        `🛡️ SISTEMA MEJORADO:\n` +
+                        `1. Su solicitud fue guardada con valores correctos\n` +
+                        `2. Sin errores 422 - Mapeo automático aplicado\n` +
+                        `3. El administrador la revisará y aprobará\n` +
+                        `4. Recibirá un código de 4 dígitos único\n` +
+                        `5. Podrá ingresar con email + código\n\n` +
+                        `⏰ Tiempo estimado: 24-48 horas laborales`
+                    );
+                } else {
+                    const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
+                    existingRequests.push(formData);
+                    localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
+                    
+                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                }
+                
+                // CORRECCIÓN: Resetear el formulario correctamente
+                const formElement = document.querySelector('#request-form form');
+                if (formElement) {
+                    formElement.reset();
+                }
+                
+                setTimeout(() => {
+                    showAuthTab('login');
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error enviando solicitud:', error);
+                showAlert(alertDiv, 'error', '❌ Error al enviar la solicitud: ' + error.message);
+            } finally {
+                requestBtn.disabled = false;
+                requestBtn.innerHTML = '📤 Enviar Solicitud';
+            }
+        }
+
+        // Mostrar contenido principal
+        function showMainContent() {
+            document.getElementById('auth-modal').classList.remove('show');
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('user-actions').style.display = 'flex';
+            document.getElementById('user-name').textContent = currentUser.nombreCompleto || currentUser.email;
+            document.getElementById('welcome-user').textContent = currentUser.nombreCompleto || currentUser.email;
+        }
+
+        // Cerrar sesión
+        function logout() {
+            if (confirm('¿Está seguro que desea cerrar sesión?')) {
+                localStorage.removeItem('hospital_user');
+                currentUser = null;
+                location.reload();
+            }
+        }
+
+        // NUEVO: Funciones para el modal de solicitudes
+        async function showSolicitudesModal() {
+            const modal = document.getElementById('solicitudes-modal');
+            const loadingDiv = document.getElementById('solicitudes-loading');
+            const contentDiv = document.getElementById('solicitudes-content');
+            
+            modal.classList.add('show');
+            loadingDiv.style.display = 'block';
+            contentDiv.innerHTML = '';
+            
+            try {
+                let solicitudes = [];
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    console.log('🌐 Cargando solicitudes desde Airtable...');
+                    // Obtener todas las solicitudes y filtrar por usuario
+                    try {
+                        const todasLasSolicitudes = await window.airtableAPI.getSolicitudes();
+                        console.log('📋 Total de solicitudes obtenidas:', todasLasSolicitudes.length);
+                        console.log('📝 Estructura de datos:', todasLasSolicitudes[0] || 'Sin datos');
+                        
+                        // Filtrar solicitudes del usuario actual
+                        solicitudes = todasLasSolicitudes.filter(solicitud => {
+                            // El getSolicitudes() ya devuelve los datos aplanados, no en .fields
+                            const emailSolicitante = solicitud.emailSolicitante;
+                            const solicitante = solicitud.solicitante;
+                            
+                            return emailSolicitante === currentUser.email ||
+                                   solicitante === currentUser.nombreCompleto ||
+                                   solicitante === currentUser.email;
+                        });
+                        
+                        console.log('🔍 Solicitudes filtradas para el usuario:', solicitudes.length);
+                        
+                    } catch (apiError) {
+                        console.error('Error obteniendo solicitudes de Airtable:', apiError);
+                        throw new Error('No se pudieron cargar las solicitudes desde Airtable');
+                    }
+                } else {
+                    console.log('📱 Cargando solicitudes locales...');
+                    // Cargar solicitudes locales
+                    const localSolicitudes = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+                    solicitudes = localSolicitudes.filter(s => 
+                        s.emailSolicitante === currentUser.email || 
+                        s.solicitante === currentUser.nombreCompleto || 
+                        s.solicitante === currentUser.email
+                    );
+                }
+                
+                loadingDiv.style.display = 'none';
+                renderSolicitudes(solicitudes);
+                
+            } catch (error) {
+                console.error('❌ Error cargando solicitudes:', error);
+                loadingDiv.style.display = 'none';
+                contentDiv.innerHTML = `
+                    <div class="alert alert-error">
+                        ❌ Error al cargar las solicitudes: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        function closeSolicitudesModal() {
+            document.getElementById('solicitudes-modal').classList.remove('show');
+        }
+
+        function renderSolicitudes(solicitudes) {
+            const contentDiv = document.getElementById('solicitudes-content');
+            
+            if (!solicitudes || solicitudes.length === 0) {
+                contentDiv.innerHTML = `
+                    <div class="no-solicitudes">
+                        <div class="no-solicitudes-icon">📝</div>
+                        <h3>No hay solicitudes registradas</h3>
+                        <p>Aún no ha enviado ninguna solicitud de mantenimiento.</p>
+                        <p>Utilice el formulario principal para crear su primera solicitud.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Ordenar por fecha más reciente primero
+            solicitudes.sort((a, b) => {
+                const dateA = new Date(a.fechaCreacion || a.createdTime || 0);
+                const dateB = new Date(b.fechaCreacion || b.createdTime || 0);
+                return dateB - dateA;
+            });
+            
+            let tableHTML = `
+                <div class="alert alert-info" style="margin-bottom: 1rem;">
+                    📊 <strong>Total de solicitudes:</strong> ${solicitudes.length}
+                </div>
+                <table class="solicitudes-table">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fecha</th>
+                            <th>Área</th>
+                            <th>Tipo Servicio</th>
+                            <th>Equipo</th>
+                            <th>Ubicación</th>
+                            <th>Prioridad</th>
+                            <th>Estado</th>
+                            <th>Asignado a</th>
+                            <th>Observaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            solicitudes.forEach(solicitud => {
+                const fecha = formatDate(solicitud.fechaCreacion || solicitud.createdTime);
+                const numero = solicitud.numero || solicitud.id || 'N/A';
+                const area = getAreaDisplayName(solicitud.servicioIngenieria);
+                const tipoServicio = getTipoServicioDisplayName(solicitud.tipoServicio);
+                const equipo = solicitud.equipo || 'N/A';
+                const ubicacion = ubicacionesHospitalarias[solicitud.ubicacion] || solicitud.ubicacion || 'N/A';
+                const prioridad = solicitud.prioridad || 'MEDIA';
+                const estado = solicitud.estado || 'PENDIENTE';
+                const asignadoA = solicitud.asignadoA || solicitud.responsable || 'Sin asignar';
+                const observaciones = solicitud.observacionesMantenimiento || solicitud.observaciones || 'Sin observaciones';
+                
+                tableHTML += `
+                    <tr>
+                        <td><strong>${numero}</strong></td>
+                        <td>${fecha}</td>
+                        <td>${area}</td>
+                        <td>${tipoServicio}</td>
+                        <td>${equipo}</td>
+                        <td>${ubicacion}</td>
+                        <td><span class="prioridad-badge prioridad-${prioridad.toLowerCase()}">${getPrioridadDisplayName(prioridad)}</span></td>
+                        <td><span class="estado-badge estado-${estado.toLowerCase().replace(' ', '-')}">${getEstadoDisplayName(estado)}</span></td>
+                        <td>${asignadoA}</td>
+                        <td style="max-width: 200px; word-wrap: break-word;">${observaciones}</td>
+                    </tr>
+                `;
+            });
+            
+            tableHTML += `
+                    </tbody>
+                </table>
+            `;
+            
+            contentDiv.innerHTML = tableHTML;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            
+            try {
+                const date = new Date(dateString);
+                return date.toLocaleDateString('es-CO', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            } catch (error) {
+                return 'Fecha inválida';
+            }
+        }
+
+        function getEstadoDisplayName(estado) {
+            const estadoNames = {
+                'PENDIENTE': '⏳ Pendiente',
+                'ASIGNADO': '👤 Asignado',
+                'EN_PROCESO': '🔄 En Proceso',
+                'COMPLETADO': '✅ Completado',
+                'CANCELADO': '❌ Cancelado'
+            };
+            return estadoNames[estado] || estado;
+        }
+
+        // ACTUALIZADO: Manejar solicitud de mantenimiento con campo ubicación como lista desplegable
+        async function handleMaintenanceRequest(e) {
+            e.preventDefault();
+            
+            // CORRECCIÓN: Obtener el valor del área directamente
+            const areaValue = document.getElementById('area').value;
+            console.log('📋 Área seleccionada:', areaValue);
+            
+            // Validación crítica del área ANTES de continuar
+            if (!areaValue) {
+                const alertDiv = document.getElementById('form-alert');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione el área de ingeniería');
+                console.error('❌ ERROR: No se seleccionó área');
+                return;
+            }
+            
+            // ACTUALIZADO: Obtener el valor de ubicación del select
+            const ubicacionValue = document.getElementById('ubicacion').value;
+            if (!ubicacionValue) {
+                const alertDiv = document.getElementById('form-alert');
+                showAlert(alertDiv, 'error', '❌ Por favor seleccione la ubicación del servicio');
+                return;
+            }
+            
+            const formData = {
+                servicioIngenieria: areaValue, // Se enviará tal cual, el mapeo se hace en airtable-config.js
+                tipoServicio: document.getElementById('tipo-servicio').value,
+                equipo: document.getElementById('equipo').value.trim(),
+                ubicacion: ubicacionValue, // ACTUALIZADO: Ahora es el valor del select
+                prioridad: document.querySelector('input[name="prioridad"]:checked').value,
+                descripcion: document.getElementById('descripcion').value.trim(),
+                observaciones: document.getElementById('observaciones').value.trim(),
+                // Datos del solicitante
+                solicitante: currentUser.nombreCompleto || currentUser.email,
+                servicioHospitalario: currentUser.servicioHospitalario || 'NO_ESPECIFICADO',
+                emailSolicitante: currentUser.email
+            };
+            
+            console.log('📋 Datos de solicitud preparados:', formData);
+            console.log('🏥 ÁREA A ENVIAR:', formData.servicioIngenieria);
+            console.log('📍 UBICACIÓN SELECCIONADA:', formData.ubicacion, '-', ubicacionesHospitalarias[formData.ubicacion]);
+            console.log('🔍 MAPEO: Los valores se mapearán automáticamente en airtable-config.js');
+            
+            const alertDiv = document.getElementById('form-alert');
+            const submitBtn = document.getElementById('submit-btn');
+            
+            // Validación adicional de campos requeridos
+            if (!formData.tipoServicio || !formData.equipo || !formData.ubicacion || !formData.descripcion) {
+                showAlert(alertDiv, 'error', '❌ Por favor complete todos los campos obligatorios');
+                return;
+            }
+            
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '🔄 Enviando con mapeo...';
+            
+            try {
+                let result;
+                
+                if (window.airtableAPI && isCloudConnected) {
+                    console.log('☁️ Enviando a Airtable con mapeo automático...');
+                    result = await window.airtableAPI.createSolicitud(formData);
+                    
+                    // Verificar que el área se guardó correctamente
+                    if (result.fields && result.fields.servicioIngenieria) {
+                        console.log('✅ ÁREA CONFIRMADA EN RESPUESTA:', result.fields.servicioIngenieria);
+                    } else {
+                        console.warn('⚠️ ÁREA NO CONFIRMADA EN RESPUESTA');
+                    }
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud enviada exitosamente a Airtable\n\n` +
+                        `📋 Número de solicitud: ${result.fields.numero || 'Generado'}\n` +
+                        `🏥 Área: ${getAreaDisplayName(formData.servicioIngenieria)}\n` +
+                        `🔧 Tipo: ${getTipoServicioDisplayName(formData.tipoServicio)}\n` +
+                        `📌 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
+                        `🚦Prioridad: ${getPrioridadDisplayName(formData.prioridad)}\n\n` +
+                        `🌐 Su solicitud está visible en el Portal de Gestión\n` +
+                        `⏱️ Tiempo estimado de respuesta según prioridad\n` +
+                        `🔄 Sistema con asignación automática de personal`
+                    );
+                } else {
+                    console.log('💾 Guardando localmente...');
+                    const localRequest = {
+                        ...formData,
+                        id: `LOCAL-${Date.now()}`,
+                        numero: `TEMP-${Date.now().toString().slice(-6)}`,
+                        fechaCreacion: new Date().toISOString(),
+                        estado: 'PENDIENTE'
+                    };
+                    
+                    const existingRequests = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+                    existingRequests.push(localRequest);
+                    localStorage.setItem('hospital_solicitudes', JSON.stringify(existingRequests));
+                    
+                    showAlert(alertDiv, 'success', 
+                        `✅ Solicitud guardada localmente (Modo sin conexión)\n\n` +
+                        `📋 Número temporal: ${localRequest.numero}\n` +
+                        `📍 Ubicación: ${ubicacionesHospitalarias[formData.ubicacion] || formData.ubicacion}\n` +
+                        `🔄 Se sincronizará cuando se restablezca la conexión`
+                    );
+                }
+                
+                // Limpiar formulario después de éxito
+                setTimeout(() => {
+                    document.getElementById('maintenance-form').reset();
+                    document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                }, 3000);
+                
+            } catch (error) {
+                console.error('❌ Error enviando solicitud:', error);
+                // Unificar el mensaje de error para evitar que se concatene sin salto de línea
+                const mensaje = `❌ Error al enviar la solicitud\n\n${error.message}\n\nPor favor intente nuevamente o contacte al administrador.`;
+                showAlert(alertDiv, 'error', mensaje);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '📤 Enviar Solicitud';
+            }
+        }
+
+        // Helper para mostrar nombre de área
+        function getAreaDisplayName(area) {
+            const areaNames = {
+                'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
+                'MECANICA': '⚙️ Mecánica',
+                'INFRAESTRUCTURA': '🏗️Infraestructura',
+                'SISTEMAS': '💻 Sistemas'
+            };
+            return areaNames[area] || area;
+        }
+
+        // Helper para mostrar nombre de tipo de servicio
+        function getTipoServicioDisplayName(tipo) {
+            const tipoNames = {
+                'MANTENIMIENTO_PREVENTIVO': 'Mantenimiento Preventivo',
+                'MANTENIMIENTO_CORRECTIVO': 'Mantenimiento Correctivo',
+                'REPARACION': 'Reparación',
+                'INSTALACION': 'Instalación',
+                'DESINSTALACION': 'Desinstalación',
+                'CALIBRACION': 'Calibración',
+                'INSPECCION': 'Inspección',
+                'ACTUALIZACION': 'Actualización',
+                'EMERGENCIA': 'Emergencia',
+				'CAPACITACION': 'Capacitación'
+            };
+            return tipoNames[tipo] || tipo;
+        }
+
+        // Helper para mostrar nombre de prioridad
+        function getPrioridadDisplayName(prioridad) {
+            const prioridadNames = {
+                'CRITICA': '🚨 Crítica',
+                'ALTA': '🔴 Alta',
+                'MEDIA': '🟡 Media',
+                'BAJA': '🟢 Baja'
+            };
+            return prioridadNames[prioridad] || prioridad;
+        }
+
+        // Resetear formulario
+        function resetForm() {
+            if (confirm('¿Está seguro que desea limpiar el formulario?')) {
+                document.getElementById('maintenance-form').reset();
+                document.querySelectorAll('.priority-option').forEach(o => o.classList.remove('selected'));
+                document.getElementById('form-alert').innerHTML = '';
+            }
+        }
+
+        // Mostrar alertas
+        function showAlert(alertDiv, type, message) {
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = message.replace(/\n/g, '<br>');
+            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Función de diagnóstico para probar el mapeo
+        async function testValueMapping() {
+            if (!window.airtableAPI) {
+                console.error('❌ API no disponible');
+                return;
+            }
+            
+            console.log('🧪 PROBANDO MAPEO DE VALORES');
+            console.log('============================');
+            
+            // Probar mapeo de área
+            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
+            areas.forEach(area => {
+                const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', area);
+                console.log(`Área: ${area} → ${mapped}`);
+            });
+            
+            // Probar mapeo de tipo de servicio
+            const tipos = ['MANTENIMIENTO_PREVENTIVO', 'REPARACION', 'EMERGENCIA', 'DESINSTALACION'];
+            tipos.forEach(tipo => {
+                const mapped = window.airtableAPI.mapFieldValue('tipoServicio', tipo);
+                console.log(`Tipo: ${tipo} → ${mapped}`);
+            });
+            
+            // Probar mapeo de prioridad
+            const prioridades = ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'];
+            prioridades.forEach(prioridad => {
+                const mapped = window.airtableAPI.mapFieldValue('prioridad', prioridad);
+                console.log(`Prioridad: ${prioridad} → ${mapped}`);
+            });
+        }
+
+        // Agregar función de test al objeto window para uso en consola
+        window.testValueMapping = testValueMapping;
+
+        // Cerrar modal al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            const solicitudesModal = document.getElementById('solicitudes-modal');
+            if (e.target === solicitudesModal) {
+                closeSolicitudesModal();
+            }
+        });
+    </script>
+</body>
+</html>

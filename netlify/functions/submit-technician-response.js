@@ -49,19 +49,17 @@ exports.handler = async (event, context) => {
         const attachments = [];
         
         if (result.files && result.files.length > 0) {
-            for (let i = 0; i < result.files.length && i < 2; i++) {
-                const file = result.files[i];
-                
+            const filesToUpload = result.files.slice(0, 2);
+            const uploadedAttachments = await Promise.all(filesToUpload.map(async (file) => {
                 try {
                     // Upload to Airtable as attachment
-                    const attachment = await uploadPhotoToAirtable(file);
-                    if (attachment) {
-                        attachments.push(attachment);
-                    }
+                    return await uploadPhotoToAirtable(file);
                 } catch (uploadError) {
                     console.error('Photo upload error:', uploadError);
+                    return null;
                 }
-            }
+            }));
+            attachments.push(...uploadedAttachments.filter(Boolean));
         }
 
         // Add attachments if any were uploaded

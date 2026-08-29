@@ -716,7 +716,7 @@ class AirtableAPI {
                 { justificacion: solicitudData.justificacion }
             ];
             
-            for (const fieldObj of fieldsToAdd) {
+            await Promise.all(fieldsToAdd.map(async (fieldObj) => {
                 const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
                 if (fieldValue) {
                     try {
@@ -728,7 +728,7 @@ class AirtableAPI {
                         console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, error.message);
                     }
                 }
-            }
+            }));
             
             return result;
             
@@ -1238,10 +1238,11 @@ async getSolicitudes() {
         console.log(`🔍 Datos originales:`, data);
         
         const safeFields = SAFE_FIELDS[tableName] || [];
+        const safeFieldsSet = new Set(safeFields);
         const safeData = {};
-        
+
         Object.keys(data).forEach(key => {
-            if (safeFields.includes(key)) {
+            if (safeFieldsSet.has(key)) {
                 let value = data[key];
                 
                 if (typeof value === 'string') {

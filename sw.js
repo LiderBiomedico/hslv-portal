@@ -114,7 +114,7 @@ async function syncRequestUpdates() {
     // Get pending updates from IndexedDB
     const pendingUpdates = await getPendingUpdates();
     
-    for (const update of pendingUpdates) {
+    await Promise.all(pendingUpdates.map(async (update) => {
       try {
         const response = await fetch('/.netlify/functions/update-request-status', {
           method: 'POST',
@@ -123,11 +123,11 @@ async function syncRequestUpdates() {
           },
           body: JSON.stringify(update)
         });
-        
+
         if (response.ok) {
           // Remove from pending updates
           await removePendingUpdate(update.id);
-          
+
           // Notify clients of successful sync
           const clients = await self.clients.matchAll();
           clients.forEach(client => {
@@ -140,7 +140,7 @@ async function syncRequestUpdates() {
       } catch (error) {
         console.error('Failed to sync update:', update.id, error);
       }
-    }
+    }));
   } catch (error) {
     console.error('Background sync failed:', error);
   }

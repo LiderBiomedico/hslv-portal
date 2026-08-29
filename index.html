@@ -534,7 +534,8 @@
         };
 
         // Configuración de seguridad
-        const ADMIN_PASSWORD = 'pm2066412';
+        // La contraseña se valida en el backend (netlify/functions/verify-admin-password.js)
+        // contra la variable de entorno ADMIN_PASSWORD; nunca vive en el código del cliente.
         let attemptCount = 0;
         const MAX_ATTEMPTS = 3;
 
@@ -658,7 +659,7 @@
         }
 
         // Verificar contraseña
-        function verifyPassword() {
+        async function verifyPassword() {
             const input = document.getElementById('passwordInput');
             const password = input.value.trim();
             const confirmBtn = document.getElementById('confirmBtn');
@@ -672,20 +673,32 @@
             confirmBtn.classList.add('loading');
             confirmBtn.disabled = true;
 
-            setTimeout(() => {
-                if (password === ADMIN_PASSWORD) {
+            try {
+                const response = await fetch('/.netlify/functions/verify-admin-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error del servidor: ${response.status}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
                     // Contraseña correcta
                     showSuccess();
                     setTimeout(() => {
                         accessGestion();
                     }, 1500);
                 } else {
-                    // Contraseña incorrecta
+                    // Contraseña incorrecta (mensaje genérico: no distingue causas al usuario)
                     attemptCount++;
-                    
+
                     if (attemptCount >= MAX_ATTEMPTS) {
                         showError(`Máximo de intentos alcanzado (${MAX_ATTEMPTS}). Acceso bloqueado temporalmente.`);
-                        
+
                         // Bloquear por 30 segundos
                         setTimeout(() => {
                             attemptCount = 0;
@@ -698,10 +711,13 @@
                         input.focus();
                     }
                 }
-
+            } catch (error) {
+                console.error('Error verificando contraseña:', error);
+                showError('No se pudo verificar la contraseña. Intente nuevamente.');
+            } finally {
                 confirmBtn.classList.remove('loading');
                 confirmBtn.disabled = false;
-            }, 1000);
+            }
         }
 
         // Acceso al Portal de Gestión
