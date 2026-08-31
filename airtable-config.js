@@ -586,6 +586,24 @@ class AirtableAPI {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Error response:', errorText);
+
+            // 🔐 Sesión de administrador ausente o expirada. En el portal de gestión,
+            // en lugar de mostrar un error crudo, avisamos y enviamos al login para
+            // re-autenticar. Se limita al portal de gestión (por ruta) para no afectar
+            // al portal público de solicitudes ni a las apps de técnicos, que comparten
+            // este mismo archivo. El flag evita múltiples avisos/redirecciones cuando
+            // varias peticiones fallan a la vez.
+            if (response.status === 401 &&
+                typeof window !== 'undefined' &&
+                /portal-gestion/i.test(window.location.pathname) &&
+                !this._redirigiendoALogin) {
+                this._redirigiendoALogin = true;
+                try {
+                    alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión para continuar.');
+                } catch (e) {}
+                window.location.replace('index.html');
+            }
+
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
