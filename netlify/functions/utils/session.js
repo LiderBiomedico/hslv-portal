@@ -75,6 +75,18 @@ function isValidSession(event) {
     }
 }
 
+// Sesión deslizante: si la request trae una sesión válida, devuelve una cookie
+// nueva con la ventana de expiración reiniciada (misma TTL de 15 min). Devuelve
+// null cuando no hay sesión válida, para no renovar cookies inexistentes ni
+// revivir sesiones ya caducadas (así se conserva el cierre por inactividad).
+function maybeRefreshSessionCookie(event) {
+    try {
+        return isValidSession(event) ? createSessionCookie() : null;
+    } catch (error) {
+        return null;
+    }
+}
+
 function unauthorizedResponse() {
     return {
         statusCode: 401,
@@ -88,5 +100,6 @@ module.exports = {
     SESSION_TTL_MS,
     createSessionCookie,
     isValidSession,
+    maybeRefreshSessionCookie,
     unauthorizedResponse
 };

@@ -1,4 +1,4 @@
-const { isValidSession, unauthorizedResponse } = require('./utils/session');
+const { isValidSession, maybeRefreshSessionCookie, unauthorizedResponse } = require('./utils/session');
 
 // Este proxy es genérico (reenvía cualquier tabla/método a Airtable) y lo usan
 // tanto el portal público de solicitudes como el portal de gestión, así que la
@@ -64,6 +64,16 @@ exports.handler = async (event, context) => {
         return unauthorizedResponse();
     }
 
+    // 🔄 Sesión deslizante: si la request llega con una sesión de admin válida,
+    // se reemite la cookie con la ventana de 15 min reiniciada. Como el portal
+    // hace auto-refresh de datos cada pocos minutos, la sesión se mantiene viva
+    // mientras la pestaña esté activa; solo caduca tras 15 min sin actividad.
+    // Vale null para tráfico público (sin cookie válida): en ese caso no se toca.
+    const refreshedSessionCookie = maybeRefreshSessionCookie(event);
+    const withSessionCookie = (headers) => refreshedSessionCookie
+        ? { ...headers, 'Set-Cookie': refreshedSessionCookie }
+        : headers;
+
     // Construir la URL base
     let url = `https://api.airtable.com/v0/${BASE_ID}/${path}`;
     
@@ -103,12 +113,12 @@ exports.handler = async (event, context) => {
             }
             return {
                 statusCode: response.status,
-                headers: {
+                headers: withSessionCookie({
                     'Content-Type': 'application/json',
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Headers': 'Content-Type',
                     'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS'
-                },
+                }),
                 body: JSON.stringify(errorData)
             };
         }
@@ -117,12 +127,12 @@ exports.handler = async (event, context) => {
 
         return {
             statusCode: response.status,
-            headers: {
+            headers: withSessionCookie({
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Headers': 'Content-Type',
                 'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS'
-            },
+            }),
             body: JSON.stringify(data)
         };
     } catch (error) {
