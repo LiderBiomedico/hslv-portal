@@ -4,6 +4,27 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
+<!-- 🔐 Puerta de acceso: exige sesión de administrador antes de mostrar el portal.
+     Se ejecuta lo antes posible (en <head>) para no filtrar la interfaz. Oculta la
+     página hasta confirmar la sesión con el servidor; si no hay sesión válida,
+     redirige al login (index.html). La cookie admin_session es HttpOnly y no es
+     legible por JS, por eso se consulta el endpoint check-session. -->
+<script>
+(function () {
+    try { document.documentElement.style.visibility = 'hidden'; } catch (e) {}
+    function mostrar() { try { document.documentElement.style.visibility = ''; } catch (e) {} }
+    function irAlLogin() { window.location.replace('index.html'); }
+    fetch('/.netlify/functions/check-session', { credentials: 'same-origin', cache: 'no-store' })
+        .then(function (r) {
+            // 401 = sesión ausente o expirada -> exigir login.
+            if (r.status === 401) { irAlLogin(); return; }
+            // 200 = autenticado. Cualquier otro estado (p. ej. 404 si el endpoint
+            // aún no está desplegado, o 500) NO bloquea, para no encerrar al admin.
+            mostrar();
+        })
+        .catch(function () { mostrar(); }); // Error de red: no encerrar al usuario.
+})();
+</script>
 <!-- Agregar Chart.js para gráficos -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Agregar jsPDF para exportar a PDF -->
