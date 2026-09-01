@@ -7863,14 +7863,34 @@ function toggleErrorUsuarioOption(estado) {
         }
         
         if (result.success) {
-            await refreshFromCloud();
-            
-            if (nuevoEstado === 'COMPLETADA') {
-                await syncTechniciansWithCloud();
+            // ⚡ OPTIMIZACIÓN: en vez de re-descargar las ~4000 solicitudes con
+            // refreshFromCloud(), actualizamos SOLO el registro modificado en memoria
+            // y re-renderizamos. El PATCH ya devuelve la solicitud actualizada.
+            if (result.solicitud) {
+                const idx = cloudSolicitudes.findIndex(s => s.id === solicitudId);
+                if (idx !== -1) {
+                    cloudSolicitudes[idx] = { ...cloudSolicitudes[idx], ...result.solicitud };
+                }
             }
-            
+            clasificarSolicitudesPorArea();
+            filterSolicitudesByArea(currentAreaFilter);
+            updateAllCounters();
+
+            // Al completar se libera el técnico: refrescamos el personal en segundo
+            // plano (sin bloquear el cierre del modal ni mostrar alertas extra).
+            if (nuevoEstado === 'COMPLETADA') {
+                window.airtableAPI.getTecnicos()
+                    .then(tecnicos => {
+                        cloudTecnicos = tecnicos;
+                        updateTechniciansList();
+                        updateAllCounters();
+                        updatePersonnelSummaries();
+                    })
+                    .catch(err => console.warn('⚠️ No se pudo refrescar el personal:', err));
+            }
+
             closeStatusModal();
-            
+
             if (marcarComoErrorUsuario) {
                 alert(`✅ Estado cambiado exitosamente\n\n🔄 Nuevo estado: ${nuevoEstado}\n👤 MARCADO COMO ERROR DE USUARIO\n\nEsta solicitud ahora cuenta en las estadísticas de errores de usuario.`);
             } else {

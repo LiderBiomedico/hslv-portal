@@ -1019,9 +1019,11 @@ async getSolicitudes() {
                     continuar = false;
                 }
                 
-                // Pequeña pausa para no sobrecargar la API
+                // Pausa mínima entre páginas para respetar el límite de Airtable
+                // (5 req/s por base) sin penalizar la carga. Antes eran 200 ms, que
+                // con ~40 páginas sumaban ~8 s de espera pura.
                 if (continuar) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
                 
             } catch (pageError) {
