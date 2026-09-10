@@ -15,11 +15,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     tipoServicio: {
         'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
@@ -78,11 +74,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
@@ -197,16 +189,14 @@ class AirtableAPI {
         this.areaCounters = {
             'INGENIERIA_BIOMEDICA': 0,
             'MECANICA': 0,
-            'INFRAESTRUCTURA': 0,
-            'SISTEMAS': 0
+            'INFRAESTRUCTURA': 0
         };
 
         // 🎯 PREFIJOS POR ÁREA
         this.areaPrefixes = {
             'INGENIERIA_BIOMEDICA': 'SOLBIO',
             'MECANICA': 'SOLMEC',
-            'INFRAESTRUCTURA': 'SOLINFRA',
-            'SISTEMAS': 'SOLSIS'
+            'INFRAESTRUCTURA': 'SOLINFRA'
         };
         
         this.connectionStatus = 'connecting';
@@ -227,7 +217,7 @@ class AirtableAPI {
         
         // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
-            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'],
+            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'CAPACITACION','ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
@@ -1078,7 +1068,6 @@ async getSolicitudes() {
         let totalBiomedica = 0;
         let totalMecanica = 0;
         let totalInfraestructura = 0;
-        let totalSistemas = 0;
         let sinArea = 0;
         
         Object.entries(porArea).forEach(([area, count]) => {
@@ -1101,11 +1090,6 @@ async getSolicitudes() {
                        areaLower.includes('infra')) {
                 totalInfraestructura += count;
                 console.log(`║ 🏗️ ${area}: ${count}`);
-            } else if (area === 'SISTEMAS' || 
-                       area === 'Sistemas' ||
-                       areaLower.includes('sistema')) {
-                totalSistemas += count;
-                console.log(`║ 💻 ${area}: ${count}`);
             } else if (area === 'SIN_AREA') {
                 sinArea = count;
                 console.log(`║ ❓ Sin área definida: ${count}`);
@@ -1120,7 +1104,6 @@ async getSolicitudes() {
         console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
         console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
         console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
-        console.log(`║ 💻 SISTEMAS TOTAL: ${totalSistemas}`);
         if (sinArea > 0) {
             console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
         }
