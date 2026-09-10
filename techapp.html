@@ -1309,22 +1309,26 @@ async function loadUserRequests() {
         }
 
         async function uploadPhotosToServer() {
-            const entries = Object.entries(uploadedPhotos).filter(([, file]) => file);
-
-            try {
-                return await Promise.all(entries.map(async ([key, file]) => {
-                    // Convert to base64 for now - replace with actual upload logic
-                    const base64 = await fileToBase64(file);
-                    return {
-                        filename: `${selectedRequestId}_${key}_${Date.now()}.jpg`,
-                        data: base64,
-                        type: file.type
-                    };
-                }));
-            } catch (error) {
-                console.error('Error uploading photo:', error);
-                throw new Error('Error subiendo fotografías');
+            const photoUrls = [];
+            
+            for (const [key, file] of Object.entries(uploadedPhotos)) {
+                if (file) {
+                    try {
+                        // Convert to base64 for now - replace with actual upload logic
+                        const base64 = await fileToBase64(file);
+                        photoUrls.push({
+                            filename: `${selectedRequestId}_${key}_${Date.now()}.jpg`,
+                            data: base64,
+                            type: file.type
+                        });
+                    } catch (error) {
+                        console.error('Error uploading photo:', error);
+                        throw new Error('Error subiendo fotografías');
+                    }
+                }
             }
+            
+            return photoUrls;
         }
 
         function fileToBase64(file) {

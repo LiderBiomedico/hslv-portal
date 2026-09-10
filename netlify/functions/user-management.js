@@ -2,13 +2,6 @@
 // netlify/functions/user-management.js
 
 const fetch = require('node-fetch');
-const { isValidSession, unauthorizedResponse } = require('./utils/session');
-
-// 'validate' es la comprobación de credenciales que usa el portal público
-// (equivalente a validateUserCredentials en airtable-config.js) — el resto de
-// operaciones (listar, crear, editar usuarios, generar códigos, aprobar
-// solicitudes, estadísticas) son exclusivamente administrativas.
-const OPERACIONES_PUBLICAS = new Set(['validate']);
 
 exports.handler = async (event, context) => {
     console.log('👤 === USER MANAGEMENT FUNCTION ===');
@@ -60,13 +53,9 @@ exports.handler = async (event, context) => {
         // Parsear operación del query string
         const operation = event.queryStringParameters?.operation || 'list';
         const table = event.queryStringParameters?.table || 'Usuarios';
-
+        
         console.log('🎯 Operación:', operation);
         console.log('📋 Tabla:', table);
-
-        if (!OPERACIONES_PUBLICAS.has(operation) && !isValidSession(event)) {
-            return unauthorizedResponse();
-        }
 
         // Procesar según la operación
         switch (operation) {
@@ -118,10 +107,6 @@ exports.handler = async (event, context) => {
         };
     }
 };
-
-// Exportado aparte solo para poder probar la lista de operaciones públicas sin
-// invocar el handler completo (que hace llamadas reales a Airtable).
-exports.OPERACIONES_PUBLICAS = OPERACIONES_PUBLICAS;
 
 // 📋 Listar usuarios
 async function listUsers(baseId, apiKey, headers) {
@@ -446,13 +431,13 @@ async function generateAccessCode(baseId, apiKey, headers) {
             }
         });
 
-        const existingCodes = new Set();
-
+        const existingCodes = [];
+        
         if (response.ok) {
             const data = await response.json();
             data.records.forEach(record => {
                 if (record.fields.codigoAcceso) {
-                    existingCodes.add(record.fields.codigoAcceso);
+                    existingCodes.push(record.fields.codigoAcceso);
                 }
             });
         }
@@ -465,11 +450,11 @@ async function generateAccessCode(baseId, apiKey, headers) {
         do {
             code = Math.floor(1000 + Math.random() * 9000).toString();
             attempts++;
-
+            
             if (attempts > maxAttempts) {
                 throw new Error('No se pudo generar código único después de 100 intentos');
             }
-        } while (existingCodes.has(code));
+        } while (existingCodes.includes(code));
 
         console.log('✅ Código único generado:', code);
 

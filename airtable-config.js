@@ -15,11 +15,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     tipoServicio: {
         'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
@@ -78,11 +74,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
@@ -197,16 +189,14 @@ class AirtableAPI {
         this.areaCounters = {
             'INGENIERIA_BIOMEDICA': 0,
             'MECANICA': 0,
-            'INFRAESTRUCTURA': 0,
-            'SISTEMAS': 0
+            'INFRAESTRUCTURA': 0
         };
 
         // 🎯 PREFIJOS POR ÁREA
         this.areaPrefixes = {
             'INGENIERIA_BIOMEDICA': 'SOLBIO',
             'MECANICA': 'SOLMEC',
-            'INFRAESTRUCTURA': 'SOLINFRA',
-            'SISTEMAS': 'SOLSIS'
+            'INFRAESTRUCTURA': 'SOLINFRA'
         };
         
         this.connectionStatus = 'connecting';
@@ -227,7 +217,7 @@ class AirtableAPI {
         
         // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
-            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'],
+            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'CAPACITACION','ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
@@ -586,24 +576,6 @@ class AirtableAPI {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Error response:', errorText);
-
-            // 🔐 Sesión de administrador ausente o expirada. En el portal de gestión,
-            // en lugar de mostrar un error crudo, avisamos y enviamos al login para
-            // re-autenticar. Se limita al portal de gestión (por ruta) para no afectar
-            // al portal público de solicitudes ni a las apps de técnicos, que comparten
-            // este mismo archivo. El flag evita múltiples avisos/redirecciones cuando
-            // varias peticiones fallan a la vez.
-            if (response.status === 401 &&
-                typeof window !== 'undefined' &&
-                /portal-gestion/i.test(window.location.pathname) &&
-                !this._redirigiendoALogin) {
-                this._redirigiendoALogin = true;
-                try {
-                    alert('Tu sesión de administrador expiró. Vuelve a iniciar sesión para continuar.');
-                } catch (e) {}
-                window.location.replace('index.html');
-            }
-
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
@@ -734,7 +706,7 @@ class AirtableAPI {
                 { justificacion: solicitudData.justificacion }
             ];
             
-            await Promise.all(fieldsToAdd.map(async (fieldObj) => {
+            for (const fieldObj of fieldsToAdd) {
                 const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
                 if (fieldValue) {
                     try {
@@ -746,7 +718,7 @@ class AirtableAPI {
                         console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, error.message);
                     }
                 }
-            }));
+            }
             
             return result;
             
@@ -1019,11 +991,9 @@ async getSolicitudes() {
                     continuar = false;
                 }
                 
-                // Pausa mínima entre páginas para respetar el límite de Airtable
-                // (5 req/s por base) sin penalizar la carga. Antes eran 200 ms, que
-                // con ~40 páginas sumaban ~8 s de espera pura.
+                // Pequeña pausa para no sobrecargar la API
                 if (continuar) {
-                    await new Promise(resolve => setTimeout(resolve, 50));
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
                 
             } catch (pageError) {
@@ -1098,7 +1068,6 @@ async getSolicitudes() {
         let totalBiomedica = 0;
         let totalMecanica = 0;
         let totalInfraestructura = 0;
-        let totalSistemas = 0;
         let sinArea = 0;
         
         Object.entries(porArea).forEach(([area, count]) => {
@@ -1121,11 +1090,6 @@ async getSolicitudes() {
                        areaLower.includes('infra')) {
                 totalInfraestructura += count;
                 console.log(`║ 🏗️ ${area}: ${count}`);
-            } else if (area === 'SISTEMAS' || 
-                       area === 'Sistemas' ||
-                       areaLower.includes('sistema')) {
-                totalSistemas += count;
-                console.log(`║ 💻 ${area}: ${count}`);
             } else if (area === 'SIN_AREA') {
                 sinArea = count;
                 console.log(`║ ❓ Sin área definida: ${count}`);
@@ -1140,7 +1104,6 @@ async getSolicitudes() {
         console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
         console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
         console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
-        console.log(`║ 💻 SISTEMAS TOTAL: ${totalSistemas}`);
         if (sinArea > 0) {
             console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
         }
@@ -1258,11 +1221,10 @@ async getSolicitudes() {
         console.log(`🔍 Datos originales:`, data);
         
         const safeFields = SAFE_FIELDS[tableName] || [];
-        const safeFieldsSet = new Set(safeFields);
         const safeData = {};
-
+        
         Object.keys(data).forEach(key => {
-            if (safeFieldsSet.has(key)) {
+            if (safeFields.includes(key)) {
                 let value = data[key];
                 
                 if (typeof value === 'string') {

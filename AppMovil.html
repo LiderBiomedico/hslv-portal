@@ -695,10 +695,6 @@
                     body: JSON.stringify({ email, code })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
-
                 const result = await response.json();
 
                 if (result.success) {
@@ -748,10 +744,6 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ technicianId: currentUser.id })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
 
                 const result = await response.json();
 
@@ -876,15 +868,11 @@
                 const response = await fetch('/.netlify/functions/start-work', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
+                    body: JSON.stringify({ 
                         requestId: requestId,
-                        technicianId: currentUser.id
+                        technicianId: currentUser.id 
                     })
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
 
                 const result = await response.json();
 
@@ -958,10 +946,6 @@
                     method: 'POST',
                     body: formData
                 });
-
-                if (!response.ok) {
-                    throw new Error(`Error del servidor: ${response.status}`);
-                }
 
                 const result = await response.json();
 
@@ -1067,8 +1051,7 @@
                 'INGENIERIA_BIOMEDICA': '🏥 Ing. Biomédica',
                 'BIOMEDICA': '🏥 Ing. Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗️ Infraestructura',
-                'SISTEMAS': '💻 Sistemas'
+                'INFRAESTRUCTURA': '🏗️ Infraestructura'
             };
             return areas[area] || area || 'No especificada';
         }
