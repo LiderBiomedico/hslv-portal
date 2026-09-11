@@ -1,15 +1,18 @@
 {
   "name": "hospital-tech-app",
-  "version": "1.0.0",
-  "description": "Sistema de gestión de solicitudes técnicas hospitalarias",
+  "version": "2.0.0",
+  "description": "Sistema de gestión de solicitudes técnicas hospitalarias - HSLV",
   "scripts": {
-    "build": "echo 'No build required'"
+    "build": "echo 'No build required'",
+    "migrar-codigos": "node scripts/migrar-codigos.js"
   },
   "dependencies": {
     "airtable": "^0.12.2",
-    "node-fetch": "^2.6.7",
     "web-push": "^3.6.7",
-    "form-data": "^4.0.0",
+    "form-data": "^4.0.4",
     "lambda-multipart-parser": "^1.0.1"
+  },
+  "overrides": {
+    "form-data": "^4.0.4"
   }
 }

@@ -3,9 +3,8 @@
 
 const CACHE_NAME = 'techapp-v1.0.0';
 const URLS_TO_CACHE = [
-  '/tech-app.html',
+  '/AppMovil.html',   // corregido: '/tech-app.html' no existe en este proyecto
   '/manifest.json',
-  // Add other static assets as needed
 ];
 
 // Install event - cache essential resources
@@ -55,6 +54,12 @@ self.addEventListener('fetch', event => {
     return;
   }
   
+  // Nunca cachear las funciones serverless: devuelven datos por sesion,
+  // y una respuesta cacheada mostraria informacion de otro usuario
+  if (request.url.includes('/.netlify/functions/')) {
+    return;
+  }
+
   // Skip cross-origin requests
   if (!(request.url.indexOf(self.location.origin) === 0)) {
     return;
@@ -114,6 +119,8 @@ async function syncRequestUpdates() {
     // Get pending updates from IndexedDB
     const pendingUpdates = await getPendingUpdates();
     
+    // Secuencial a proposito: cada envio depende del anterior para poder
+    // borrar el pendiente, y Airtable limita a 5 peticiones por segundo
     for (const update of pendingUpdates) {
       try {
         const response = await fetch('/.netlify/functions/update-request-status', {

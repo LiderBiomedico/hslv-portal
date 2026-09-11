@@ -1,0 +1,773 @@
+{
+  "schemaVersion": 3,
+  "mode": "full",
+  "reactDetected": false,
+  "version": "0.9.13",
+  "ok": true,
+  "directory": "C:\\Users\\paulm\\OneDrive\\Escritorio\\PLATAFORMAS IA HSLV\\LLAMADOS2\\8.1 optimizacion",
+  "diff": null,
+  "projects": [
+    {
+      "directory": "C:\\Users\\paulm\\OneDrive\\Escritorio\\PLATAFORMAS IA HSLV\\LLAMADOS2\\8.1 optimizacion",
+      "packageRoot": "C:\\Users\\paulm\\OneDrive\\Escritorio\\PLATAFORMAS IA HSLV\\LLAMADOS2\\8.1 optimizacion",
+      "framework": "unknown",
+      "project": {
+        "rootDirectory": "C:\\Users\\paulm\\OneDrive\\Escritorio\\PLATAFORMAS IA HSLV\\LLAMADOS2\\8.1 optimizacion",
+        "projectName": "hospital-tech-app",
+        "reactVersion": null,
+        "reactMajorVersion": null,
+        "tailwindVersion": null,
+        "zodVersion": null,
+        "zodMajorVersion": null,
+        "mobxVersion": null,
+        "mobxMajorVersion": null,
+        "hasMobxReact": false,
+        "mobxReactVersion": null,
+        "hasMobxReactLite": false,
+        "mobxReactLiteVersion": null,
+        "hasMobxStateTree": false,
+        "hasMobxReactObserver": false,
+        "zustandVersion": null,
+        "zustandMajorVersion": null,
+        "framework": "unknown",
+        "hasTypeScript": false,
+        "hasReactCompiler": false,
+        "hasReactCompilerLintPlugin": false,
+        "hasTanStackQuery": false,
+        "hasI18nLibrary": false,
+        "hasRadixUi": false,
+        "hasBaseUi": false,
+        "hasReactAriaComponents": false,
+        "hasTanstackTable": false,
+        "hasTanstackVirtual": false,
+        "hasTanstackForm": false,
+        "tanstackQueryVersion": null,
+        "styledComponentsVersion": null,
+        "valtioVersion": null,
+        "valtioMajorVersion": null,
+        "hasRemotion": false,
+        "remotionVersion": null,
+        "remotionMajorVersion": null,
+        "hasThree": false,
+        "threeVersion": null,
+        "threeRelease": null,
+        "hasReactThreeFiber": false,
+        "reactThreeFiberVersion": null,
+        "reactThreeFiberMajorVersion": null,
+        "hasSsrDependency": false,
+        "preactVersion": null,
+        "preactMajorVersion": null,
+        "hasReactNativeWorkspace": false,
+        "nextjsVersion": null,
+        "nextjsMajorVersion": null,
+        "reactRouterVersion": null,
+        "hasReactRouterFramework": false,
+        "expoVersion": null,
+        "shopifyFlashListVersion": null,
+        "shopifyFlashListMajorVersion": null,
+        "hasReanimated": false,
+        "reanimatedVersion": null,
+        "hasShadcnUi": false,
+        "isPreES2023Target": false,
+        "isStaticExport": false,
+        "sourceFileCount": 19
+      },
+      "diagnostics": [
+        {
+          "filePath": "AppMovil.html",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 692,
+          "column": 40,
+          "offset": 21424,
+          "length": 228,
+          "endLine": 696,
+          "category": "Bugs",
+          "id": "AppMovil.html::692:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "AppMovil.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "AppMovil.html",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 742,
+          "column": 40,
+          "offset": 23612,
+          "length": 253,
+          "endLine": 746,
+          "category": "Bugs",
+          "id": "AppMovil.html::742:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "AppMovil.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "AppMovil.html",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 868,
+          "column": 40,
+          "offset": 29625,
+          "length": 332,
+          "endLine": 875,
+          "category": "Bugs",
+          "id": "AppMovil.html::868:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "AppMovil.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "AppMovil.html",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 945,
+          "column": 40,
+          "offset": 32779,
+          "length": 147,
+          "endLine": 948,
+          "category": "Bugs",
+          "id": "AppMovil.html::945:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "AppMovil.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "airtable-config.js",
+          "plugin": "react-doctor",
+          "rule": "async-await-in-loop",
+          "severity": "warning",
+          "title": "await inside a loop",
+          "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+          "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+          "line": 723,
+          "column": 25,
+          "offset": 29173,
+          "length": 195,
+          "endLine": 725,
+          "category": "Performance",
+          "id": "airtable-config.js::723:25::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+          "normalizedFilePath": "airtable-config.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "airtable-config.js",
+          "plugin": "react-doctor",
+          "rule": "js-set-map-lookups",
+          "severity": "warning",
+          "title": "Array lookup inside a loop",
+          "message": "This scales poorly because `array.includes()` inside a loop scans the whole list every time. Use a Set for constant-time lookups.",
+          "help": "Use a `Set` or `Map` when you check for the same items over and over. `Array.includes`/`find` scans the whole list each time",
+          "line": 1244,
+          "column": 17,
+          "offset": 50448,
+          "length": 24,
+          "endLine": 1244,
+          "category": "Performance",
+          "id": "airtable-config.js::1244:17::react-doctor/js-set-map-lookups::8ca162272c84d42896a45c0a801007a712bbbc2697f9f8e1c400af6faf47fe70",
+          "normalizedFilePath": "airtable-config.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "netlify/functions/airtable-proxy.js",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 35,
+          "column": 32,
+          "offset": 1412,
+          "length": 290,
+          "endLine": 42,
+          "category": "Bugs",
+          "id": "netlify/functions/airtable-proxy.js::35:32::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "netlify/functions/airtable-proxy.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "netlify/functions/desempeno-personal.js",
+          "plugin": "react-doctor",
+          "rule": "js-tosorted-immutable",
+          "severity": "warning",
+          "title": "Spread copy before sort()",
+          "message": "This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)",
+          "help": "Use `array.toSorted()` (ES2023) instead of `[...array].sort()` so you sort without copying the array first",
+          "line": 88,
+          "column": 15,
+          "offset": 3552,
+          "length": 30,
+          "endLine": 88,
+          "category": "Performance",
+          "id": "netlify/functions/desempeno-personal.js::88:15::react-doctor/js-tosorted-immutable::a5bb01dfbd6915545bde9300631dacdd68097fff0ec590e3a78cbc5d08b75ffd",
+          "normalizedFilePath": "netlify/functions/desempeno-personal.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "netlify/functions/submit-technician-response.js",
+          "plugin": "react-doctor",
+          "rule": "async-await-in-loop",
+          "severity": "warning",
+          "title": "await inside a loop",
+          "message": "This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+          "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+          "line": 57,
+          "column": 40,
+          "offset": 1948,
+          "length": 33,
+          "endLine": 57,
+          "category": "Performance",
+          "id": "netlify/functions/submit-technician-response.js::57:40::react-doctor/async-await-in-loop::a7b9dd94bf565cb9f290cbb4b2164bd7c5aeb172ec507d310166288b21470b49",
+          "normalizedFilePath": "netlify/functions/submit-technician-response.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "netlify/functions/user-management.js",
+          "plugin": "react-doctor",
+          "rule": "js-set-map-lookups",
+          "severity": "warning",
+          "title": "Array lookup inside a loop",
+          "message": "This scales poorly because `array.includes()` inside a loop scans the whole list every time. Use a Set for constant-time lookups.",
+          "help": "Use a `Set` or `Map` when you check for the same items over and over. `Array.includes`/`find` scans the whole list each time",
+          "line": 457,
+          "column": 18,
+          "offset": 14881,
+          "length": 28,
+          "endLine": 457,
+          "category": "Performance",
+          "id": "netlify/functions/user-management.js::457:18::react-doctor/js-set-map-lookups::8ca162272c84d42896a45c0a801007a712bbbc2697f9f8e1c400af6faf47fe70",
+          "normalizedFilePath": "netlify/functions/user-management.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "package.json",
+          "plugin": "socket",
+          "rule": "low-supply-chain-score",
+          "severity": "error",
+          "message": "`form-data@4.0.0 (lowest version \"^4.0.0\" allows)` scored 25/100 on Socket's vulnerability axis (minimum 50). This points to known security vulnerabilities (CVEs) affecting this version. Other axes — supply chain 99, maintenance 87, quality 100, license 100.",
+          "help": "Upgrade to a version with no known advisories (run `npm audit` to find one), or replace it; update `\"form-data\": \"^4.0.0\"` in package.json. Full report: https://socket.dev/npm/package/form-data/overview/4.0.0. If you've reviewed and accepted this package, raise `supplyChain.minScore` (currently 50) or set `supplyChain.severity: \"warning\"`.",
+          "url": "https://socket.dev/npm/package/form-data/overview/4.0.0",
+          "line": 12,
+          "column": 5,
+          "category": "Security",
+          "id": "package.json::12:5::socket/low-supply-chain-score::99021e0ff5e3115406fe21f2d96efeca7c43a886f792e50ef86609e663c0968f",
+          "normalizedFilePath": "package.json",
+          "tags": []
+        },
+        {
+          "filePath": "portal-gestion.html",
+          "plugin": "react-doctor",
+          "rule": "js-tosorted-immutable",
+          "severity": "warning",
+          "title": "Spread copy before sort()",
+          "message": "This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)",
+          "help": "Use `array.toSorted()` (ES2023) instead of `[...array].sort()` so you sort without copying the array first",
+          "line": 3012,
+          "column": 43,
+          "offset": 110439,
+          "length": 537,
+          "endLine": 3020,
+          "category": "Performance",
+          "id": "portal-gestion.html::3012:43::react-doctor/js-tosorted-immutable::a5bb01dfbd6915545bde9300631dacdd68097fff0ec590e3a78cbc5d08b75ffd",
+          "normalizedFilePath": "portal-gestion.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "portal-gestion.html",
+          "plugin": "react-doctor",
+          "rule": "async-await-in-loop",
+          "severity": "warning",
+          "title": "await inside a loop",
+          "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+          "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+          "line": 8706,
+          "column": 36,
+          "offset": 379200,
+          "length": 72,
+          "endLine": 8706,
+          "category": "Performance",
+          "id": "portal-gestion.html::8706:36::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+          "normalizedFilePath": "portal-gestion.html",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "sw.js",
+          "plugin": "react-doctor",
+          "rule": "no-fetch-response-used-without-status-check",
+          "severity": "warning",
+          "title": "fetch Response consumed without status check",
+          "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+          "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+          "line": 73,
+          "column": 16,
+          "offset": 1891,
+          "length": 14,
+          "endLine": 73,
+          "category": "Bugs",
+          "id": "sw.js::73:16::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+          "normalizedFilePath": "sw.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "sw.js",
+          "plugin": "react-doctor",
+          "rule": "async-await-in-loop",
+          "severity": "warning",
+          "title": "await inside a loop",
+          "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+          "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+          "line": 119,
+          "column": 26,
+          "offset": 3308,
+          "length": 221,
+          "endLine": 125,
+          "category": "Performance",
+          "id": "sw.js::119:26::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+          "normalizedFilePath": "sw.js",
+          "tags": [
+            "test-noise"
+          ]
+        },
+        {
+          "filePath": "techapp.html",
+          "plugin": "react-doctor",
+          "rule": "async-await-in-loop",
+          "severity": "warning",
+          "title": "await inside a loop",
+          "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+          "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+          "line": 1318,
+          "column": 40,
+          "offset": 46996,
+          "length": 24,
+          "endLine": 1318,
+          "category": "Performance",
+          "id": "techapp.html::1318:40::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+          "normalizedFilePath": "techapp.html",
+          "tags": [
+            "test-noise"
+          ]
+        }
+      ],
+      "score": {
+        "score": 45,
+        "label": "Critical",
+        "rules": {
+          "react-doctor/no-fetch-response-used-without-status-check": {
+            "priority": null,
+            "tier": "P3"
+          },
+          "react-doctor/async-await-in-loop": {
+            "priority": 57,
+            "tier": "P2"
+          },
+          "react-doctor/js-set-map-lookups": {
+            "priority": 48,
+            "tier": "P3"
+          },
+          "react-doctor/js-tosorted-immutable": {
+            "priority": 33,
+            "tier": "P3"
+          },
+          "socket/low-supply-chain-score": {
+            "priority": 86,
+            "tier": "P0"
+          }
+        }
+      },
+      "skippedChecks": [],
+      "analyzedFiles": [
+        "AppMovil.html",
+        "Portal-solicitudes.html",
+        "airtable-config.js",
+        "index.html",
+        "netlify/functions/airtable-proxy.js",
+        "netlify/functions/desempeno-personal.js",
+        "netlify/functions/get-technician-requests.js",
+        "netlify/functions/informe-mensual.js",
+        "netlify/functions/ranking-equipos.js",
+        "netlify/functions/save-push-subscription.js",
+        "netlify/functions/send-push-notification.js",
+        "netlify/functions/start-work.js",
+        "netlify/functions/submit-technician-response.js",
+        "netlify/functions/technician-auth.js",
+        "netlify/functions/user-management.js",
+        "portal-gestion.html",
+        "sw.js",
+        "tech-login.html",
+        "techapp.html"
+      ],
+      "analyzedFileCount": 19,
+      "complete": true,
+      "scannedFileCount": 19,
+      "elapsedMilliseconds": 2311.8642
+    }
+  ],
+  "diagnostics": [
+    {
+      "filePath": "AppMovil.html",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 692,
+      "column": 40,
+      "offset": 21424,
+      "length": 228,
+      "endLine": 696,
+      "category": "Bugs",
+      "id": "AppMovil.html::692:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "AppMovil.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "AppMovil.html",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 742,
+      "column": 40,
+      "offset": 23612,
+      "length": 253,
+      "endLine": 746,
+      "category": "Bugs",
+      "id": "AppMovil.html::742:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "AppMovil.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "AppMovil.html",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 868,
+      "column": 40,
+      "offset": 29625,
+      "length": 332,
+      "endLine": 875,
+      "category": "Bugs",
+      "id": "AppMovil.html::868:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "AppMovil.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "AppMovil.html",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 945,
+      "column": 40,
+      "offset": 32779,
+      "length": 147,
+      "endLine": 948,
+      "category": "Bugs",
+      "id": "AppMovil.html::945:40::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "AppMovil.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "airtable-config.js",
+      "plugin": "react-doctor",
+      "rule": "async-await-in-loop",
+      "severity": "warning",
+      "title": "await inside a loop",
+      "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+      "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+      "line": 723,
+      "column": 25,
+      "offset": 29173,
+      "length": 195,
+      "endLine": 725,
+      "category": "Performance",
+      "id": "airtable-config.js::723:25::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+      "normalizedFilePath": "airtable-config.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "airtable-config.js",
+      "plugin": "react-doctor",
+      "rule": "js-set-map-lookups",
+      "severity": "warning",
+      "title": "Array lookup inside a loop",
+      "message": "This scales poorly because `array.includes()` inside a loop scans the whole list every time. Use a Set for constant-time lookups.",
+      "help": "Use a `Set` or `Map` when you check for the same items over and over. `Array.includes`/`find` scans the whole list each time",
+      "line": 1244,
+      "column": 17,
+      "offset": 50448,
+      "length": 24,
+      "endLine": 1244,
+      "category": "Performance",
+      "id": "airtable-config.js::1244:17::react-doctor/js-set-map-lookups::8ca162272c84d42896a45c0a801007a712bbbc2697f9f8e1c400af6faf47fe70",
+      "normalizedFilePath": "airtable-config.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "netlify/functions/airtable-proxy.js",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 35,
+      "column": 32,
+      "offset": 1412,
+      "length": 290,
+      "endLine": 42,
+      "category": "Bugs",
+      "id": "netlify/functions/airtable-proxy.js::35:32::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "netlify/functions/airtable-proxy.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "netlify/functions/desempeno-personal.js",
+      "plugin": "react-doctor",
+      "rule": "js-tosorted-immutable",
+      "severity": "warning",
+      "title": "Spread copy before sort()",
+      "message": "This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)",
+      "help": "Use `array.toSorted()` (ES2023) instead of `[...array].sort()` so you sort without copying the array first",
+      "line": 88,
+      "column": 15,
+      "offset": 3552,
+      "length": 30,
+      "endLine": 88,
+      "category": "Performance",
+      "id": "netlify/functions/desempeno-personal.js::88:15::react-doctor/js-tosorted-immutable::a5bb01dfbd6915545bde9300631dacdd68097fff0ec590e3a78cbc5d08b75ffd",
+      "normalizedFilePath": "netlify/functions/desempeno-personal.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "netlify/functions/submit-technician-response.js",
+      "plugin": "react-doctor",
+      "rule": "async-await-in-loop",
+      "severity": "warning",
+      "title": "await inside a loop",
+      "message": "This makes the for-loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+      "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+      "line": 57,
+      "column": 40,
+      "offset": 1948,
+      "length": 33,
+      "endLine": 57,
+      "category": "Performance",
+      "id": "netlify/functions/submit-technician-response.js::57:40::react-doctor/async-await-in-loop::a7b9dd94bf565cb9f290cbb4b2164bd7c5aeb172ec507d310166288b21470b49",
+      "normalizedFilePath": "netlify/functions/submit-technician-response.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "netlify/functions/user-management.js",
+      "plugin": "react-doctor",
+      "rule": "js-set-map-lookups",
+      "severity": "warning",
+      "title": "Array lookup inside a loop",
+      "message": "This scales poorly because `array.includes()` inside a loop scans the whole list every time. Use a Set for constant-time lookups.",
+      "help": "Use a `Set` or `Map` when you check for the same items over and over. `Array.includes`/`find` scans the whole list each time",
+      "line": 457,
+      "column": 18,
+      "offset": 14881,
+      "length": 28,
+      "endLine": 457,
+      "category": "Performance",
+      "id": "netlify/functions/user-management.js::457:18::react-doctor/js-set-map-lookups::8ca162272c84d42896a45c0a801007a712bbbc2697f9f8e1c400af6faf47fe70",
+      "normalizedFilePath": "netlify/functions/user-management.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "package.json",
+      "plugin": "socket",
+      "rule": "low-supply-chain-score",
+      "severity": "error",
+      "message": "`form-data@4.0.0 (lowest version \"^4.0.0\" allows)` scored 25/100 on Socket's vulnerability axis (minimum 50). This points to known security vulnerabilities (CVEs) affecting this version. Other axes — supply chain 99, maintenance 87, quality 100, license 100.",
+      "help": "Upgrade to a version with no known advisories (run `npm audit` to find one), or replace it; update `\"form-data\": \"^4.0.0\"` in package.json. Full report: https://socket.dev/npm/package/form-data/overview/4.0.0. If you've reviewed and accepted this package, raise `supplyChain.minScore` (currently 50) or set `supplyChain.severity: \"warning\"`.",
+      "url": "https://socket.dev/npm/package/form-data/overview/4.0.0",
+      "line": 12,
+      "column": 5,
+      "category": "Security",
+      "id": "package.json::12:5::socket/low-supply-chain-score::99021e0ff5e3115406fe21f2d96efeca7c43a886f792e50ef86609e663c0968f",
+      "normalizedFilePath": "package.json",
+      "tags": []
+    },
+    {
+      "filePath": "portal-gestion.html",
+      "plugin": "react-doctor",
+      "rule": "js-tosorted-immutable",
+      "severity": "warning",
+      "title": "Spread copy before sort()",
+      "message": "This wastes work because [...array].sort() copies the array just to sort it, so use array.toSorted() to sort without the extra copy (ES2023)",
+      "help": "Use `array.toSorted()` (ES2023) instead of `[...array].sort()` so you sort without copying the array first",
+      "line": 3012,
+      "column": 43,
+      "offset": 110439,
+      "length": 537,
+      "endLine": 3020,
+      "category": "Performance",
+      "id": "portal-gestion.html::3012:43::react-doctor/js-tosorted-immutable::a5bb01dfbd6915545bde9300631dacdd68097fff0ec590e3a78cbc5d08b75ffd",
+      "normalizedFilePath": "portal-gestion.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "portal-gestion.html",
+      "plugin": "react-doctor",
+      "rule": "async-await-in-loop",
+      "severity": "warning",
+      "title": "await inside a loop",
+      "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+      "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+      "line": 8706,
+      "column": 36,
+      "offset": 379200,
+      "length": 72,
+      "endLine": 8706,
+      "category": "Performance",
+      "id": "portal-gestion.html::8706:36::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+      "normalizedFilePath": "portal-gestion.html",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "sw.js",
+      "plugin": "react-doctor",
+      "rule": "no-fetch-response-used-without-status-check",
+      "severity": "warning",
+      "title": "fetch Response consumed without status check",
+      "message": "`fetch()` resolves (does not reject) on HTTP 4xx/5xx, so this unchecked body read may treat an HTTP error payload like a successful response. Check `response.ok`/`response.status`, or deliberately handle the API's error payload, before reading the body.",
+      "help": "Check `response.ok` (or `response.status`) before consuming a `fetch` Response with `.json()`/`.text()`/`.blob()`. `fetch` resolves on HTTP 4xx/5xx, so an unchecked response parses the error body as success or crashes on an always-truthy guard.",
+      "line": 73,
+      "column": 16,
+      "offset": 1891,
+      "length": 14,
+      "endLine": 73,
+      "category": "Bugs",
+      "id": "sw.js::73:16::react-doctor/no-fetch-response-used-without-status-check::16e1208188bbd3fba56ebfbda112b48489f7e63a91839b9b8e3137335a8226d4",
+      "normalizedFilePath": "sw.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "sw.js",
+      "plugin": "react-doctor",
+      "rule": "async-await-in-loop",
+      "severity": "warning",
+      "title": "await inside a loop",
+      "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+      "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+      "line": 119,
+      "column": 26,
+      "offset": 3308,
+      "length": 221,
+      "endLine": 125,
+      "category": "Performance",
+      "id": "sw.js::119:26::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+      "normalizedFilePath": "sw.js",
+      "tags": [
+        "test-noise"
+      ]
+    },
+    {
+      "filePath": "techapp.html",
+      "plugin": "react-doctor",
+      "rule": "async-await-in-loop",
+      "severity": "warning",
+      "title": "await inside a loop",
+      "message": "This makes the for…of loop slow because each await runs one after another, so collect the independent calls & run them together with `await Promise.all(items.map(...))`",
+      "help": "Collect the items, then use `await Promise.all(items.map(...))` so independent work runs at the same time",
+      "line": 1318,
+      "column": 40,
+      "offset": 46996,
+      "length": 24,
+      "endLine": 1318,
+      "category": "Performance",
+      "id": "techapp.html::1318:40::react-doctor/async-await-in-loop::24db5eed6cd2923504171fbb67fc8cacd8d7ae699e9f8244b2b932bbb21eee5a",
+      "normalizedFilePath": "techapp.html",
+      "tags": [
+        "test-noise"
+      ]
+    }
+  ],
+  "summary": {
+    "errorCount": 1,
+    "warningCount": 15,
+    "affectedFileCount": 10,
+    "totalDiagnosticCount": 16,
+    "score": 45,
+    "scoreLabel": "Critical"
+  },
+  "elapsedMilliseconds": 2321.98,
+  "error": null
+}

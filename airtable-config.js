@@ -15,7 +15,11 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA'
+        'Infraestructura': 'INFRAESTRUCTURA',
+        'SISTEMAS': 'SISTEMAS',
+        'Sistemas': 'SISTEMAS',
+        'Ingeniería de Sistemas': 'SISTEMAS',
+        'Ingenieria de Sistemas': 'SISTEMAS'
     },
     tipoServicio: {
         'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
@@ -74,7 +78,11 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA'
+        'Infraestructura': 'INFRAESTRUCTURA',
+        'SISTEMAS': 'SISTEMAS',
+        'Sistemas': 'SISTEMAS',
+        'Ingeniería de Sistemas': 'SISTEMAS',
+        'Ingenieria de Sistemas': 'SISTEMAS'
     },
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
@@ -139,7 +147,7 @@ const SAFE_FIELDS = {
         'email',
         'servicioHospitalario',
         'cargo',
-        'codigoAcceso',
+        // 'codigoAcceso' eliminado: el navegador ya no envía ni recibe códigos
         'estado',
         'fechaCreacion',
         'solicitudOrigenId'
@@ -189,14 +197,16 @@ class AirtableAPI {
         this.areaCounters = {
             'INGENIERIA_BIOMEDICA': 0,
             'MECANICA': 0,
-            'INFRAESTRUCTURA': 0
+            'INFRAESTRUCTURA': 0,
+            'SISTEMAS': 0
         };
 
         // 🎯 PREFIJOS POR ÁREA
         this.areaPrefixes = {
             'INGENIERIA_BIOMEDICA': 'SOLBIO',
             'MECANICA': 'SOLMEC',
-            'INFRAESTRUCTURA': 'SOLINFRA'
+            'INFRAESTRUCTURA': 'SOLINFRA',
+            'SISTEMAS': 'SOLSIS'
         };
         
         this.connectionStatus = 'connecting';
@@ -217,7 +227,7 @@ class AirtableAPI {
         
         // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
-            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
+            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'CAPACITACION','ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
@@ -542,12 +552,16 @@ class AirtableAPI {
             // Para debugging
             console.log('🔗 URL completa al proxy:', url);
             
+            const sessionToken = this.getSessionToken();
+
             options = {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     // Agregar el endpoint como header personalizado para el proxy
-                    'X-Airtable-Endpoint': endpoint
+                    'X-Airtable-Endpoint': endpoint,
+                    // El proxy exige sesión válida para todo lo que no sea el formulario público
+                    ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {})
                 },
                 mode: 'cors',
                 credentials: 'same-origin'
@@ -576,6 +590,12 @@ class AirtableAPI {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Error response:', errorText);
+
+            if (response.status === 401) {
+                this.setSessionToken(null);
+                throw new Error('Sesión expirada. Vuelva a iniciar sesión.');
+            }
+
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
@@ -706,17 +726,24 @@ class AirtableAPI {
                 { justificacion: solicitudData.justificacion }
             ];
             
-            for (const fieldObj of fieldsToAdd) {
+            // Un solo PATCH con todos los campos: antes se hacía una petición por campo
+            // de forma secuencial (4 llamadas a Airtable en vez de 1).
+            const camposAdicionales = {};
+            fieldsToAdd.forEach(fieldObj => {
                 const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
                 if (fieldValue) {
-                    try {
-                        await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'PATCH', {
-                            fields: { [fieldName]: this.cleanFieldValue(fieldValue) }
-                        });
-                        console.log(`✅ Campo ${fieldName} agregado`);
-                    } catch (error) {
-                        console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, error.message);
-                    }
+                    camposAdicionales[fieldName] = this.cleanFieldValue(fieldValue);
+                }
+            });
+
+            if (Object.keys(camposAdicionales).length > 0) {
+                try {
+                    await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'PATCH', {
+                        fields: camposAdicionales
+                    });
+                    console.log(`✅ Campos agregados: ${Object.keys(camposAdicionales).join(', ')}`);
+                } catch (error) {
+                    console.warn('⚠️ No se pudieron agregar los campos adicionales:', error.message);
                 }
             }
             
@@ -728,40 +755,29 @@ class AirtableAPI {
         }
     }
 
+    // 👤 Los usuarios se piden a la función de gestión (requiere sesión de administrador).
+    // La tabla Usuarios ya NO es accesible por el proxy desde el navegador.
     async getUsuarios() {
-        console.log('👤 Obteniendo TODOS los usuarios con paginación...');
-        
+        console.log('👤 Obteniendo usuarios (sin códigos de acceso)...');
+
         try {
-            let allRecords = [];
-            let offset = null;
-            let pageCount = 0;
-            
-            do {
-                let endpoint = this.tables.usuarios;
-                if (offset) {
-                    endpoint += `?offset=${offset}`;
+            const token = this.getSessionToken();
+            const response = await fetch('/.netlify/functions/user-management?operation=list', {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+
+            if (!response.ok) {
+                if (response.status === 401 || response.status === 403) {
+                    console.warn('⚠️ Sin permisos para listar usuarios');
+                    return [];
                 }
-                
-                const result = await this.makeRequest(endpoint);
-                
-                if (result.records && result.records.length > 0) {
-                    const pageRecords = result.records.map(record => ({
-                        id: record.id,
-                        ...record.fields
-                    }));
-                    allRecords = allRecords.concat(pageRecords);
-                }
-                
-                offset = result.offset || null;
-                pageCount++;
-                
-                if (pageCount > 20) break;
-                
-            } while (offset);
-            
-            console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
-            return allRecords;
-            
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(`✅ Total de usuarios obtenidos: ${data.users?.length || 0}`);
+            return data.users || [];
+
         } catch (error) {
             console.error('❌ Error obteniendo usuarios:', error);
             return [];
@@ -808,123 +824,40 @@ class AirtableAPI {
         }
     }
 
-    // 🔍 MÉTODO: Aprobar solicitud y crear usuario
+    // ✅ La aprobación y la generación del código ocurren en el servidor.
+    // Antes el código se generaba en el navegador con Math.random() y se escribía
+    // directamente en Airtable; ambas cosas eran inseguras.
     async approveAccessRequestAndCreateUser(requestId) {
-        console.log('✅ Iniciando aprobación de solicitud:', requestId);
-        
-        try {
-            const solicitudesAcceso = await this.getSolicitudesAcceso();
-            const solicitud = solicitudesAcceso.find(s => s.id === requestId);
-            
-            if (!solicitud) {
-                throw new Error('Solicitud de acceso no encontrada');
-            }
+        console.log('✅ Solicitando aprobación al servidor:', requestId);
 
-            if (solicitud.estado === 'APROBADA' || solicitud.estado === 'Aprobada') {
-                throw new Error('La solicitud ya fue aprobada anteriormente');
-            }
+        const token = this.getSessionToken();
 
-            const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
-            console.log(`🔒 Código generado: ${codigoAcceso}`);
-
-            if (!this.validUserValues.estado) {
-                await this.detectValidUserValues();
-            }
-
-            const userData = {
-                nombreCompleto: this.cleanFieldValue(solicitud.nombreCompleto || 'Sin nombre'),
-                email: this.cleanFieldValue(solicitud.email || 'no-email@temp.com'),
-                servicioHospitalario: this.cleanFieldValue(solicitud.servicioHospitalario || ''),
-                cargo: this.cleanFieldValue(solicitud.cargo || ''),
-                codigoAcceso: codigoAcceso,
-                fechaCreacion: new Date().toISOString(),
-                solicitudOrigenId: requestId
-            };
-
-            if (this.validUserValues.estado) {
-                userData.estado = this.validUserValues.estado;
-            } else {
-                userData.estado = 'Activo';
-                console.warn('⚠️ Usando valor de estado por defecto: "Activo"');
-            }
-
-            console.log('🔍 Datos del usuario a crear:', userData);
-
-            let newUser;
-            try {
-                newUser = await this.makeRequest(this.tables.usuarios, 'POST', {
-                    fields: userData
-                });
-                console.log('✅ Usuario creado exitosamente:', newUser.id);
-                
-            } catch (error) {
-                if (error.message.includes('422')) {
-                    console.warn('⚠️ Error 422 al crear usuario, reintentando con campos mínimos...');
-                    
-                    const minimalUserData = {
-                        nombreCompleto: userData.nombreCompleto,
-                        email: userData.email,
-                        codigoAcceso: userData.codigoAcceso,
-                        fechaCreacion: userData.fechaCreacion
-                    };
-                    
-                    newUser = await this.makeRequest(this.tables.usuarios, 'POST', {
-                        fields: minimalUserData
-                    });
-                    
-                    console.log('✅ Usuario creado con campos mínimos:', newUser.id);
-                } else {
-                    throw error;
-                }
-            }
-
-            try {
-                let aprobadasValue = 'Aprobada';
-                if (this.validAccessRequestValues.estadoValues) {
-                    const aprobadaDetectada = this.validAccessRequestValues.estadoValues.find(v => 
-                        v.toUpperCase().includes('APROBADA') || v.toUpperCase().includes('APROBADO')
-                    );
-                    if (aprobadaDetectada) {
-                        aprobadasValue = aprobadaDetectada;
-                        console.log(`✅ Usando valor de estado detectado: "${aprobadasValue}"`);
-                    }
-                }
-
-                const updateFields = {
-                    estado: aprobadasValue
-                };
-                
-                if (this.validAccessRequestValues.availableFields.includes('usuarioCreado')) {
-                    updateFields.usuarioCreado = newUser.id;
-                }
-
-                console.log('🔍 Actualizando solicitud con campos:', updateFields);
-
-                await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
-                    fields: updateFields
-                });
-                
-                console.log('✅ Solicitud de acceso actualizada');
-                
-            } catch (updateError) {
-                console.error('❌ Error actualizando solicitud de acceso:', updateError);
-                console.warn('⚠️ El usuario fue creado pero no se pudo actualizar completamente la solicitud');
-            }
-
-            return {
-                success: true,
-                user: {
-                    id: newUser.id,
-                    ...newUser.fields
+        const response = await fetch(
+            `/.netlify/functions/user-management?operation=approve-request&requestId=${encodeURIComponent(requestId)}`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
                 },
-                accessCode: codigoAcceso,
-                requestId: requestId
-            };
+                body: JSON.stringify({})
+            }
+        );
 
-        } catch (error) {
-            console.error('❌ Error en aprobación:', error);
-            throw error;
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.error || `No se pudo aprobar la solicitud (HTTP ${response.status})`);
         }
+
+        // accessCode viene UNA sola vez, para mostrarlo al administrador
+        // y que lo entregue al usuario. No queda almacenado en el navegador.
+        return {
+            success: true,
+            user: data.user,
+            accessCode: data.accessCode,
+            requestId: requestId
+        };
     }
 
 async getSolicitudes() {
@@ -1068,6 +1001,7 @@ async getSolicitudes() {
         let totalBiomedica = 0;
         let totalMecanica = 0;
         let totalInfraestructura = 0;
+        let totalSistemas = 0;
         let sinArea = 0;
         
         Object.entries(porArea).forEach(([area, count]) => {
@@ -1090,6 +1024,11 @@ async getSolicitudes() {
                        areaLower.includes('infra')) {
                 totalInfraestructura += count;
                 console.log(`║ 🏗️ ${area}: ${count}`);
+            } else if (area === 'SISTEMAS' || 
+                       area === 'Sistemas' ||
+                       areaLower.includes('sistema')) {
+                totalSistemas += count;
+                console.log(`║ 💻 ${area}: ${count}`);
             } else if (area === 'SIN_AREA') {
                 sinArea = count;
                 console.log(`║ ❓ Sin área definida: ${count}`);
@@ -1104,6 +1043,7 @@ async getSolicitudes() {
         console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
         console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
         console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
+        console.log(`║ 💻 SISTEMAS TOTAL: ${totalSistemas}`);
         if (sinArea > 0) {
             console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
         }
@@ -1160,32 +1100,56 @@ async getSolicitudes() {
         }
     }
 
+    // 🔐 La validación ocurre EN EL SERVIDOR (netlify/functions/auth-login.js).
+    // El navegador nunca recibe ni compara el código de acceso de ningún usuario.
     async validateUserCredentials(email, codigoAcceso) {
         try {
-            const usuarios = await this.getUsuarios();
-            const user = usuarios.find(u => 
-                u.email && u.email.toLowerCase() === email.toLowerCase()
-            );
-            
-            if (!user) {
-                return { valid: false, error: 'Usuario no encontrado' };
+            const response = await fetch('/.netlify/functions/auth-login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, codigoAcceso })
+            });
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok || !data.valid) {
+                return { valid: false, error: data.error || 'Credenciales inválidas' };
             }
 
-            const estadoActivo = ['ACTIVO', 'Activo', 'activo'];
-            if (!estadoActivo.includes(user.estado)) {
-                return { valid: false, error: `Usuario en estado: ${user.estado}` };
-            }
+            // Token de sesión firmado por el servidor, válido 8 h
+            this.setSessionToken(data.token);
 
-            if (String(user.codigoAcceso) !== String(codigoAcceso)) {
-                return { valid: false, error: 'Código incorrecto' };
-            }
-
-            return { valid: true, user: user };
+            return { valid: true, user: data.user };
 
         } catch (error) {
             console.error('❌ Error validando credenciales:', error);
             return { valid: false, error: 'Error de sistema' };
         }
+    }
+
+    // 🎟️ Manejo del token de sesión
+    setSessionToken(token) {
+        this.sessionToken = token || null;
+        try {
+            if (token) sessionStorage.setItem('hslv_session', token);
+            else sessionStorage.removeItem('hslv_session');
+        } catch (e) {
+            console.warn('⚠️ sessionStorage no disponible; el token vive solo en memoria');
+        }
+    }
+
+    getSessionToken() {
+        if (this.sessionToken) return this.sessionToken;
+        try {
+            this.sessionToken = sessionStorage.getItem('hslv_session');
+        } catch (e) {
+            this.sessionToken = null;
+        }
+        return this.sessionToken;
+    }
+
+    logout() {
+        this.setSessionToken(null);
     }
 
     mapFieldValue(fieldType, value) {
@@ -1220,11 +1184,12 @@ async getSolicitudes() {
         console.log(`🛡️ Preparando datos seguros para tabla: ${tableName}`);
         console.log(`🔍 Datos originales:`, data);
         
-        const safeFields = SAFE_FIELDS[tableName] || [];
+        // Set: búsqueda en tiempo constante en lugar de recorrer el array en cada vuelta
+        const safeFields = new Set(SAFE_FIELDS[tableName] || []);
         const safeData = {};
         
         Object.keys(data).forEach(key => {
-            if (safeFields.includes(key)) {
+            if (safeFields.has(key)) {
                 let value = data[key];
                 
                 if (typeof value === 'string') {

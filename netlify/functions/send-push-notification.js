@@ -3,21 +3,35 @@
 // ===============================================
 
 const webpush = require('web-push');
+const { requireSession, corsHeaders } = require('./utils/session');
 
-// Configure web-push (you'll need to generate VAPID keys)
-webpush.setVapidDetails(
-    'mailto:tu-email@hospital.com',
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-);
+// Las claves VAPID solo se configuran si existen, para que la funcion
+// no reviente al cargarse cuando el push no esta configurado todavia
+if (process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        process.env.VAPID_SUBJECT || 'mailto:soporte@hslv.gov.co',
+        process.env.VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+}
 
 exports.handler = async (event, context) => {
+    const headers = corsHeaders(event);
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
+            headers,
             body: JSON.stringify({ success: false, message: 'Method not allowed' })
         };
     }
+
+    // 🔐 Solo un administrador puede disparar notificaciones a los tecnicos
+    const control = requireSession(event, headers, { rol: 'admin' });
+    if (control.error) return control.error;
 
     try {
         const { technicianId, requestNumber, message } = JSON.parse(event.body);
@@ -25,6 +39,7 @@ exports.handler = async (event, context) => {
         if (!technicianId || !requestNumber) {
             return {
                 statusCode: 400,
+                headers,
                 body: JSON.stringify({ 
                     success: false, 
                     message: 'Datos requeridos faltantes' 
@@ -52,6 +67,7 @@ exports.handler = async (event, context) => {
         
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify({
                 success: true,
                 message: 'Notificación enviada'
@@ -62,6 +78,7 @@ exports.handler = async (event, context) => {
         console.error('Push notification error:', error);
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({
                 success: false,
                 message: 'Error enviando notificación'

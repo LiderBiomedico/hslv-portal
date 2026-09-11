@@ -533,8 +533,8 @@
             gestion: 'portal-gestion.html'              // Portal administrativo (cambiar nombre si es diferente)
         };
 
-        // Configuración de seguridad
-        const ADMIN_PASSWORD = 'pm2066412';
+        // 🔐 Seguridad: la contraseña se valida en el servidor
+        // (netlify/functions/admin-login.js). Ya no existe en este archivo.
         let attemptCount = 0;
         const MAX_ATTEMPTS = 3;
 
@@ -672,15 +672,49 @@
             confirmBtn.classList.add('loading');
             confirmBtn.disabled = true;
 
+            verificarEnServidor(password, confirmBtn, input);
+        }
+
+        // Valida contra netlify/functions/admin-login.js y guarda el token de sesión
+        async function verificarEnServidor(password, confirmBtn, input) {
+            let autorizado = false;
+            let mensajeServidor = '';
+
+            try {
+                const response = await fetch('/.netlify/functions/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (response.ok && data.success && data.token) {
+                    autorizado = true;
+                    // Token firmado, válido 8 h. portal-gestion.html lo exige para abrir.
+                    sessionStorage.setItem('hslv_session', data.token);
+                } else {
+                    mensajeServidor = data.error || 'Contraseña incorrecta';
+                }
+            } catch (error) {
+                console.error('Error verificando acceso:', error);
+                mensajeServidor = 'Error de conexión. Intente nuevamente.';
+            }
+
+            // Se limpia la contraseña de la memoria del formulario en cualquier caso
+            input.value = '';
+
+            verificarPasswordResultado(autorizado, mensajeServidor, confirmBtn, input);
+        }
+
+        function verificarPasswordResultado(autorizado, mensajeServidor, confirmBtn, input) {
             setTimeout(() => {
-                if (password === ADMIN_PASSWORD) {
-                    // Contraseña correcta
+                if (autorizado) {
                     showSuccess();
                     setTimeout(() => {
                         accessGestion();
                     }, 1500);
                 } else {
-                    // Contraseña incorrecta
                     attemptCount++;
                     
                     if (attemptCount >= MAX_ATTEMPTS) {
@@ -693,7 +727,7 @@
                         }, 30000);
                     } else {
                         const remaining = MAX_ATTEMPTS - attemptCount;
-                        showError(`Contraseña incorrecta. Intentos restantes: ${remaining}`);
+                        showError(`${mensajeServidor}. Intentos restantes: ${remaining}`);
                         input.value = '';
                         input.focus();
                     }
