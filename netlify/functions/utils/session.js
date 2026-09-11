@@ -8,12 +8,59 @@ const crypto = require('crypto');
 
 const SESSION_TTL_SECONDS = Number(process.env.SESSION_TTL_SECONDS || 8 * 60 * 60); // 8 h
 
+const LONGITUD_MINIMA_SECRETO = 32;
+
 function getSecret() {
     const secret = process.env.SESSION_SECRET;
-    if (!secret || secret.length < 32) {
+    if (!secret || secret.length < LONGITUD_MINIMA_SECRETO) {
         throw new Error('SESSION_SECRET no configurada (minimo 32 caracteres)');
     }
     return secret;
+}
+
+// Revisa la configuracion ANTES de usarla y devuelve los problemas concretos.
+// Asi el fallo se ve en los registros de Netlify en vez de aparecer como un
+// 500 generico a mitad del proceso de login.
+function revisarConfiguracion({ requiereAdmin = false, requiereAirtable = true } = {}) {
+    const problemas = [];
+    const secreto = process.env.SESSION_SECRET;
+
+    if (!secreto) {
+        problemas.push('SESSION_SECRET no esta definida');
+    } else if (secreto.length < LONGITUD_MINIMA_SECRETO) {
+        problemas.push(
+            `SESSION_SECRET tiene ${secreto.length} caracteres; se requieren al menos ` +
+            `${LONGITUD_MINIMA_SECRETO}. Genere una con: ` +
+            `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
+        );
+    }
+
+    if (requiereAirtable) {
+        if (!process.env.AIRTABLE_API_KEY) problemas.push('AIRTABLE_API_KEY no esta definida');
+        if (!process.env.AIRTABLE_BASE_ID) problemas.push('AIRTABLE_BASE_ID no esta definida');
+    }
+
+    if (requiereAdmin && !process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
+        problemas.push('Falta ADMIN_PASSWORD_HASH (o ADMIN_PASSWORD)');
+    }
+
+    return problemas;
+}
+
+// Respuesta unica para configuracion incompleta: 503, no 500.
+// 503 dice "el servicio no esta listo", que es lo que realmente pasa.
+function respuestaConfiguracion(problemas, headers, etiqueta) {
+    console.error(`[${etiqueta}] Configuracion incompleta:`);
+    problemas.forEach(p => console.error(`  - ${p}`));
+
+    return {
+        statusCode: 503,
+        headers,
+        body: JSON.stringify({
+            error: 'El servicio no esta configurado. Revise las variables de entorno en Netlify.',
+            codigo: 'CONFIGURACION_INCOMPLETA'
+        })
+    };
 }
 
 function base64url(input) {
@@ -150,6 +197,8 @@ function corsHeaders(event) {
 }
 
 module.exports = {
+    revisarConfiguracion,
+    respuestaConfiguracion,
     signSession,
     verifySession,
     getSession,

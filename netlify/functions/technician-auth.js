@@ -8,7 +8,8 @@
 // Ahora el codigo se verifica contra el registro del tecnico en Airtable.
 // ===============================================
 
-const { signSession, verifyCode, corsHeaders } = require('./utils/session');
+const { signSession, verifyCode, corsHeaders,
+        revisarConfiguracion, respuestaConfiguracion } = require('./utils/session');
 
 const BLOQUEO_INTENTOS = Number(process.env.LOGIN_MAX_INTENTOS || 5);
 const BLOQUEO_MINUTOS = Number(process.env.LOGIN_BLOQUEO_MINUTOS || 15);
@@ -51,13 +52,9 @@ exports.handler = async (event) => {
     const API_KEY = process.env.AIRTABLE_API_KEY;
     const BASE_ID = process.env.AIRTABLE_BASE_ID;
 
-    if (!API_KEY || !BASE_ID || !process.env.SESSION_SECRET) {
-        console.error('Faltan variables de entorno');
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ success: false, message: 'Servicio no configurado' })
-        };
+    const problemas = revisarConfiguracion();
+    if (problemas.length > 0) {
+        return respuestaConfiguracion(problemas, headers, 'technician-auth');
     }
 
     try {

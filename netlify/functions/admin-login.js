@@ -7,7 +7,8 @@
 // user-management.js y el proxy para las operaciones administrativas.
 // ===============================================
 
-const { signSession, safeEqual, verifyCode, corsHeaders } = require('./utils/session');
+const { signSession, safeEqual, verifyCode, corsHeaders,
+        revisarConfiguracion, respuestaConfiguracion } = require('./utils/session');
 
 const MAX_INTENTOS = Number(process.env.ADMIN_MAX_INTENTOS || 5);
 const BLOQUEO_MINUTOS = Number(process.env.ADMIN_BLOQUEO_MINUTOS || 15);
@@ -37,13 +38,12 @@ exports.handler = async (event) => {
     const ADMIN_HASH = process.env.ADMIN_PASSWORD_HASH;
     const ADMIN_PLANO = process.env.ADMIN_PASSWORD;
 
-    if ((!ADMIN_HASH && !ADMIN_PLANO) || !process.env.SESSION_SECRET) {
-        console.error('Falta ADMIN_PASSWORD_HASH / ADMIN_PASSWORD o SESSION_SECRET');
-        return {
-            statusCode: 500,
-            headers,
-            body: JSON.stringify({ error: 'Servicio no configurado' })
-        };
+    // Se valida TODO antes de empezar: longitud del secreto incluida.
+    // Antes solo se comprobaba que SESSION_SECRET existiera, y una clave
+    // demasiado corta reventaba mas adelante como un 500 sin explicacion.
+    const problemas = revisarConfiguracion({ requiereAdmin: true, requiereAirtable: false });
+    if (problemas.length > 0) {
+        return respuestaConfiguracion(problemas, headers, 'admin-login');
     }
 
     const ip = event.headers?.['x-nf-client-connection-ip']

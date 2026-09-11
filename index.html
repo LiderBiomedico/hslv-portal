@@ -693,6 +693,10 @@
                     autorizado = true;
                     // Token firmado, válido 8 h. portal-gestion.html lo exige para abrir.
                     sessionStorage.setItem('hslv_session', data.token);
+                } else if (data.codigo === 'CONFIGURACION_INCOMPLETA') {
+                    // No es culpa del usuario: faltan variables en Netlify.
+                    // No se descuenta intento.
+                    mensajeServidor = 'CONFIG';
                 } else {
                     mensajeServidor = data.error || 'Contraseña incorrecta';
                 }
@@ -708,6 +712,14 @@
         }
 
         function verificarPasswordResultado(autorizado, mensajeServidor, confirmBtn, input) {
+            // Problema de configuración del servidor: no cuenta como intento fallido
+            if (mensajeServidor === 'CONFIG') {
+                showError('El servidor no está configurado. Revise las variables de entorno en Netlify y los registros de la función.');
+                confirmBtn.classList.remove('loading');
+                confirmBtn.disabled = false;
+                return;
+            }
+
             setTimeout(() => {
                 if (autorizado) {
                     showSuccess();
