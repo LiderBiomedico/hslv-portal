@@ -1,6 +1,3 @@
-// Depuración: window.HSLV_DEBUG = true en la consola para ver el detalle
-window.HSLV_DEBUG = window.HSLV_DEBUG || false;
-
 // 🛡️ Configuración COMPLETA de Airtable API - Con cambio de tipo de servicio al completar
 // airtable-config.js - Versión con actualización de tipo de servicio
 
@@ -18,11 +15,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     tipoServicio: {
         'MANTENIMIENTO_PREVENTIVO': 'MANTENIMIENTO_PREVENTIVO',
@@ -81,11 +74,7 @@ const AIRTABLE_VALUE_MAPPING = {
         'Mecánica': 'MECANICA',
         'Mecanica': 'MECANICA',
         'INFRAESTRUCTURA': 'INFRAESTRUCTURA',
-        'Infraestructura': 'INFRAESTRUCTURA',
-        'SISTEMAS': 'SISTEMAS',
-        'Sistemas': 'SISTEMAS',
-        'Ingeniería de Sistemas': 'SISTEMAS',
-        'Ingenieria de Sistemas': 'SISTEMAS'
+        'Infraestructura': 'INFRAESTRUCTURA'
     },
     estadoSolicitudAcceso: {
         'PENDIENTE': 'Pendiente',
@@ -150,7 +139,7 @@ const SAFE_FIELDS = {
         'email',
         'servicioHospitalario',
         'cargo',
-        // 'codigoAcceso' eliminado: el navegador ya no envía ni recibe códigos
+        'codigoAcceso',
         'estado',
         'fechaCreacion',
         'solicitudOrigenId'
@@ -200,16 +189,14 @@ class AirtableAPI {
         this.areaCounters = {
             'INGENIERIA_BIOMEDICA': 0,
             'MECANICA': 0,
-            'INFRAESTRUCTURA': 0,
-            'SISTEMAS': 0
+            'INFRAESTRUCTURA': 0
         };
 
         // 🎯 PREFIJOS POR ÁREA
         this.areaPrefixes = {
             'INGENIERIA_BIOMEDICA': 'SOLBIO',
             'MECANICA': 'SOLMEC',
-            'INFRAESTRUCTURA': 'SOLINFRA',
-            'SISTEMAS': 'SOLSIS'
+            'INFRAESTRUCTURA': 'SOLINFRA'
         };
         
         this.connectionStatus = 'connecting';
@@ -230,7 +217,7 @@ class AirtableAPI {
         
         // Inicializar valores válidos de solicitud
         this.validSolicitudValues = {
-            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'],
+            servicioIngenieria: ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'],
             tipoServicio: ['MANTENIMIENTO_PREVENTIVO', 'MANTENIMIENTO_CORRECTIVO', 'REPARACION', 'INSTALACION', 'DESINSTALACION', 'CALIBRACION', 'INSPECCION', 'ACTUALIZACION', 'EMERGENCIA', 'CAPACITACION','ERROR_USUARIO'],
             prioridad: ['CRITICA', 'ALTA', 'MEDIA', 'BAJA'],
             estado: ['PENDIENTE', 'ASIGNADA', 'EN_PROCESO', 'COMPLETADA', 'CANCELADA'],
@@ -537,7 +524,7 @@ class AirtableAPI {
     }
 
     async makeRequest(endpoint, method = 'GET', data = null) {
-    if (window.HSLV_DEBUG) console.log('📡 Request:', method, endpoint);
+    console.log('📡 Request:', method, endpoint);
     
     try {
         let url, options;
@@ -553,18 +540,14 @@ class AirtableAPI {
             }
             
             // Para debugging
-            if (window.HSLV_DEBUG) console.log('🔗 URL completa al proxy:', url);
+            console.log('🔗 URL completa al proxy:', url);
             
-            const sessionToken = this.getSessionToken();
-
             options = {
                 method: method,
                 headers: {
                     'Content-Type': 'application/json',
                     // Agregar el endpoint como header personalizado para el proxy
-                    'X-Airtable-Endpoint': endpoint,
-                    // El proxy exige sesión válida para todo lo que no sea el formulario público
-                    ...(sessionToken ? { 'Authorization': `Bearer ${sessionToken}` } : {})
+                    'X-Airtable-Endpoint': endpoint
                 },
                 mode: 'cors',
                 credentials: 'same-origin'
@@ -593,12 +576,6 @@ class AirtableAPI {
         if (!response.ok) {
             const errorText = await response.text();
             console.error('❌ Error response:', errorText);
-
-            if (response.status === 401) {
-                this.setSessionToken(null);
-                throw new Error('Sesión expirada. Vuelva a iniciar sesión.');
-            }
-
             throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
         
@@ -729,24 +706,17 @@ class AirtableAPI {
                 { justificacion: solicitudData.justificacion }
             ];
             
-            // Un solo PATCH con todos los campos: antes se hacía una petición por campo
-            // de forma secuencial (4 llamadas a Airtable en vez de 1).
-            const camposAdicionales = {};
-            fieldsToAdd.forEach(fieldObj => {
+            for (const fieldObj of fieldsToAdd) {
                 const [fieldName, fieldValue] = Object.entries(fieldObj)[0];
                 if (fieldValue) {
-                    camposAdicionales[fieldName] = this.cleanFieldValue(fieldValue);
-                }
-            });
-
-            if (Object.keys(camposAdicionales).length > 0) {
-                try {
-                    await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'PATCH', {
-                        fields: camposAdicionales
-                    });
-                    console.log(`✅ Campos agregados: ${Object.keys(camposAdicionales).join(', ')}`);
-                } catch (error) {
-                    console.warn('⚠️ No se pudieron agregar los campos adicionales:', error.message);
+                    try {
+                        await this.makeRequest(`${this.tables.solicitudesAcceso}/${result.id}`, 'PATCH', {
+                            fields: { [fieldName]: this.cleanFieldValue(fieldValue) }
+                        });
+                        console.log(`✅ Campo ${fieldName} agregado`);
+                    } catch (error) {
+                        console.warn(`⚠️ No se pudo agregar campo ${fieldName}:`, error.message);
+                    }
                 }
             }
             
@@ -758,29 +728,40 @@ class AirtableAPI {
         }
     }
 
-    // 👤 Los usuarios se piden a la función de gestión (requiere sesión de administrador).
-    // La tabla Usuarios ya NO es accesible por el proxy desde el navegador.
     async getUsuarios() {
-        console.log('👤 Obteniendo usuarios (sin códigos de acceso)...');
-
+        console.log('👤 Obteniendo TODOS los usuarios con paginación...');
+        
         try {
-            const token = this.getSessionToken();
-            const response = await fetch('/.netlify/functions/user-management?operation=list', {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-            });
-
-            if (!response.ok) {
-                if (response.status === 401 || response.status === 403) {
-                    console.warn('⚠️ Sin permisos para listar usuarios');
-                    return [];
+            let allRecords = [];
+            let offset = null;
+            let pageCount = 0;
+            
+            do {
+                let endpoint = this.tables.usuarios;
+                if (offset) {
+                    endpoint += `?offset=${offset}`;
                 }
-                throw new Error(`HTTP ${response.status}`);
-            }
-
-            const data = await response.json();
-            console.log(`✅ Total de usuarios obtenidos: ${data.users?.length || 0}`);
-            return data.users || [];
-
+                
+                const result = await this.makeRequest(endpoint);
+                
+                if (result.records && result.records.length > 0) {
+                    const pageRecords = result.records.map(record => ({
+                        id: record.id,
+                        ...record.fields
+                    }));
+                    allRecords = allRecords.concat(pageRecords);
+                }
+                
+                offset = result.offset || null;
+                pageCount++;
+                
+                if (pageCount > 20) break;
+                
+            } while (offset);
+            
+            console.log(`✅ Total de usuarios obtenidos: ${allRecords.length}`);
+            return allRecords;
+            
         } catch (error) {
             console.error('❌ Error obteniendo usuarios:', error);
             return [];
@@ -827,170 +808,242 @@ class AirtableAPI {
         }
     }
 
-    // ✅ La aprobación y la generación del código ocurren en el servidor.
-    // Antes el código se generaba en el navegador con Math.random() y se escribía
-    // directamente en Airtable; ambas cosas eran inseguras.
+    // 🔍 MÉTODO: Aprobar solicitud y crear usuario
     async approveAccessRequestAndCreateUser(requestId) {
-        console.log('✅ Solicitando aprobación al servidor:', requestId);
-
-        const token = this.getSessionToken();
-
-        const response = await fetch(
-            `/.netlify/functions/user-management?operation=approve-request&requestId=${encodeURIComponent(requestId)}`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-                },
-                body: JSON.stringify({})
+        console.log('✅ Iniciando aprobación de solicitud:', requestId);
+        
+        try {
+            const solicitudesAcceso = await this.getSolicitudesAcceso();
+            const solicitud = solicitudesAcceso.find(s => s.id === requestId);
+            
+            if (!solicitud) {
+                throw new Error('Solicitud de acceso no encontrada');
             }
-        );
 
-        const data = await response.json().catch(() => ({}));
+            if (solicitud.estado === 'APROBADA' || solicitud.estado === 'Aprobada') {
+                throw new Error('La solicitud ya fue aprobada anteriormente');
+            }
 
-        if (!response.ok || !data.success) {
-            throw new Error(data.error || `No se pudo aprobar la solicitud (HTTP ${response.status})`);
-        }
+            const codigoAcceso = Math.floor(1000 + Math.random() * 9000).toString();
+            console.log(`🔒 Código generado: ${codigoAcceso}`);
 
-        // accessCode viene UNA sola vez, para mostrarlo al administrador
-        // y que lo entregue al usuario. No queda almacenado en el navegador.
-        return {
-            success: true,
-            user: data.user,
-            accessCode: data.accessCode,
-            requestId: requestId
-        };
-    }
+            if (!this.validUserValues.estado) {
+                await this.detectValidUserValues();
+            }
 
-async getSolicitudes(opciones = {}) {
-    // ───────────────────────────────────────────────────────────────────
-    // Carga progresiva y con selección de campos.
-    //
-    //   onPagina(registros, info)  se llama al terminar CADA página, para
-    //                              que la interfaz pinte sin esperar el resto
-    //   maxPaginas                 corta la carga (fase inicial rápida)
-    //   desde                      offset de Airtable para continuar después
-    //   completo                   true = trae todos los campos
-    // ───────────────────────────────────────────────────────────────────
-    const { onPagina = null, maxPaginas = Infinity, desde = null, completo = false } = opciones;
+            const userData = {
+                nombreCompleto: this.cleanFieldValue(solicitud.nombreCompleto || 'Sin nombre'),
+                email: this.cleanFieldValue(solicitud.email || 'no-email@temp.com'),
+                servicioHospitalario: this.cleanFieldValue(solicitud.servicioHospitalario || ''),
+                cargo: this.cleanFieldValue(solicitud.cargo || ''),
+                codigoAcceso: codigoAcceso,
+                fechaCreacion: new Date().toISOString(),
+                solicitudOrigenId: requestId
+            };
 
-    const allRecordsMap = new Map();
-    let offset = desde;
-    let pageCount = 0;
-    let continuar = true;
+            if (this.validUserValues.estado) {
+                userData.estado = this.validUserValues.estado;
+            } else {
+                userData.estado = 'Activo';
+                console.warn('⚠️ Usando valor de estado por defecto: "Activo"');
+            }
 
-    const PAGE_SIZE = 100;                 // máximo que permite Airtable
-    const INTERVALO_MINIMO_MS = 210;       // 5 peticiones/segundo permitidas
+            console.log('🔍 Datos del usuario a crear:', userData);
 
-    // Solo los campos que el portal realmente usa. Se excluyen Attachments,
-    // evidencias y observacionesCompletado: pesan mucho y no se muestran.
-    const CAMPOS = [
-        'numero', 'servicioIngenieria', 'tipoServicio', 'prioridad', 'equipo',
-        'ubicacion', 'descripcion', 'observaciones', 'solicitante',
-        'servicioHospitalario', 'fechaCreacion', 'estado', 'tecnicoAsignado',
-        'fechaAsignacion', 'fechaInicio', 'fechaCompletado',
-        'observacionesAsignacion', 'tiempoRespuestaMaximo', 'area',
-        'fechaInicioTrabajo'
-    ];
-    const parametrosCampos = completo
-        ? ''
-        : '&' + CAMPOS.map(c => `fields%5B%5D=${encodeURIComponent(c)}`).join('&');
-
-    try {
-        while (continuar && pageCount < maxPaginas) {
-            const inicioPeticion = Date.now();
-            pageCount++;
+            let newUser;
+            try {
+                newUser = await this.makeRequest(this.tables.usuarios, 'POST', {
+                    fields: userData
+                });
+                console.log('✅ Usuario creado exitosamente:', newUser.id);
+                
+            } catch (error) {
+                if (error.message.includes('422')) {
+                    console.warn('⚠️ Error 422 al crear usuario, reintentando con campos mínimos...');
+                    
+                    const minimalUserData = {
+                        nombreCompleto: userData.nombreCompleto,
+                        email: userData.email,
+                        codigoAcceso: userData.codigoAcceso,
+                        fechaCreacion: userData.fechaCreacion
+                    };
+                    
+                    newUser = await this.makeRequest(this.tables.usuarios, 'POST', {
+                        fields: minimalUserData
+                    });
+                    
+                    console.log('✅ Usuario creado con campos mínimos:', newUser.id);
+                } else {
+                    throw error;
+                }
+            }
 
             try {
-                // Más recientes primero: la fase inicial trae lo que se ve en pantalla
-                let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`
-                    + '&sort%5B0%5D%5Bfield%5D=fechaCreacion'
-                    + '&sort%5B0%5D%5Bdirection%5D=desc'
-                    + parametrosCampos;
+                let aprobadasValue = 'Aprobada';
+                if (this.validAccessRequestValues.estadoValues) {
+                    const aprobadaDetectada = this.validAccessRequestValues.estadoValues.find(v => 
+                        v.toUpperCase().includes('APROBADA') || v.toUpperCase().includes('APROBADO')
+                    );
+                    if (aprobadaDetectada) {
+                        aprobadasValue = aprobadaDetectada;
+                        console.log(`✅ Usando valor de estado detectado: "${aprobadasValue}"`);
+                    }
+                }
 
-                if (offset) endpoint += `&offset=${encodeURIComponent(offset)}`;
+                const updateFields = {
+                    estado: aprobadasValue
+                };
+                
+                if (this.validAccessRequestValues.availableFields.includes('usuarioCreado')) {
+                    updateFields.usuarioCreado = newUser.id;
+                }
 
+                console.log('🔍 Actualizando solicitud con campos:', updateFields);
+
+                await this.makeRequest(`${this.tables.solicitudesAcceso}/${requestId}`, 'PATCH', {
+                    fields: updateFields
+                });
+                
+                console.log('✅ Solicitud de acceso actualizada');
+                
+            } catch (updateError) {
+                console.error('❌ Error actualizando solicitud de acceso:', updateError);
+                console.warn('⚠️ El usuario fue creado pero no se pudo actualizar completamente la solicitud');
+            }
+
+            return {
+                success: true,
+                user: {
+                    id: newUser.id,
+                    ...newUser.fields
+                },
+                accessCode: codigoAcceso,
+                requestId: requestId
+            };
+
+        } catch (error) {
+            console.error('❌ Error en aprobación:', error);
+            throw error;
+        }
+    }
+
+async getSolicitudes() {
+    console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
+    
+    try {
+        const allRecordsMap = new Map();
+        let offset = null;
+        let pageCount = 0;
+        let continuar = true;
+        
+        // Configuración para obtener TODOS los registros
+        const PAGE_SIZE = 100; // Máximo permitido por Airtable
+        
+        while (continuar) {
+            pageCount++;
+            console.log(`🔄 Obteniendo página ${pageCount}...`);
+            
+            try {
+                // Construir endpoint con pageSize y offset
+                let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
+                
+                // IMPORTANTE: Agregar offset si existe
+                if (offset) {
+                    endpoint += `&offset=${encodeURIComponent(offset)}`;
+                    console.log(`📍 Usando offset: ${offset}`);
+                }
+                
+                // Hacer la solicitud
                 const result = await this.makeRequest(endpoint);
-
+                
+                // Verificar si hay registros
                 if (!result.records || result.records.length === 0) {
+                    console.log(`✅ Página ${pageCount} vacía - fin de datos`);
                     continuar = false;
                     break;
                 }
-
-                const nuevos = [];
+                
+                // Procesar registros y agregar al Map para evitar duplicados
+                let nuevosRegistros = 0;
                 result.records.forEach(record => {
-                    if (!allRecordsMap.has(record.id)) {
-                        const item = { id: record.id, ...record.fields };
-                        allRecordsMap.set(record.id, item);
-                        nuevos.push(item);
+                    const recordId = record.id;
+                    
+                    if (!allRecordsMap.has(recordId)) {
+                        allRecordsMap.set(recordId, {
+                            id: recordId,
+                            ...record.fields
+                        });
+                        nuevosRegistros++;
                     }
                 });
-
-                offset = result.offset || null;
-                continuar = Boolean(offset);
-
-                if (onPagina) {
-                    onPagina(nuevos, {
-                        pagina: pageCount,
-                        acumulado: allRecordsMap.size,
-                        hayMas: continuar,
-                        offset: offset
-                    });
+                
+                console.log(`📊 Página ${pageCount}: ${result.records.length} registros recibidos, ${nuevosRegistros} nuevos`);
+                console.log(`📊 Total acumulado: ${allRecordsMap.size} registros únicos`);
+                
+                // CRÍTICO: Verificar si hay más páginas
+                if (result.offset) {
+                    // Hay más registros, continuar con el siguiente offset
+                    offset = result.offset;
+                    console.log(`➡️ Hay más páginas, siguiente offset: ${offset}`);
+                } else {
+                    // No hay más registros
+                    console.log('✅ No hay más páginas - paginación completa');
+                    continuar = false;
                 }
-
-                // Espera solo lo que falte para respetar el límite de Airtable.
-                // Antes se dormían 200 ms fijos por página aunque la petición
-                // ya hubiera tardado más: con 53 páginas eran ~10 s regalados.
-                if (continuar && pageCount < maxPaginas) {
-                    const transcurrido = Date.now() - inicioPeticion;
-                    const espera = INTERVALO_MINIMO_MS - transcurrido;
-                    if (espera > 0) await new Promise(r => setTimeout(r, espera));
+                
+                // Pequeña pausa para no sobrecargar la API
+                if (continuar) {
+                    await new Promise(resolve => setTimeout(resolve, 200));
                 }
-
+                
             } catch (pageError) {
-                console.error(`Error en página ${pageCount}:`, pageError.message);
-
+                console.error(`❌ Error en página ${pageCount}:`, pageError.message);
+                
+                // Si es un error de red, reintentar
                 if (pageError.message && pageError.message.includes('fetch')) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    pageCount--;      // se reintenta la misma página
+                    console.log('🔄 Reintentando página después de error de red...');
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     continue;
                 }
+                
+                // Para otros errores, detener
                 continuar = false;
+                break;
             }
         }
-
+        
+        // Convertir Map a Array
         const finalRecords = Array.from(allRecordsMap.values());
-        console.log(`✅ ${finalRecords.length} solicitudes en ${pageCount} página(s)`);
-
-        // Se devuelve el offset para poder continuar la carga en segundo plano
-        finalRecords.offsetSiguiente = offset;
+        
+        // Análisis detallado de los resultados
+        console.log('╔══════════════════════════════════════════╗');
+        console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
+        console.log('╠══════════════════════════════════════════╣');
+        console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
+        console.log(`║ 📄 Páginas procesadas: ${pageCount}`);
+        console.log(`║ 🎯 Objetivo: 233 solicitudes`);
+        console.log(`║ ${finalRecords.length >= 233 ? '✅ OBJETIVO ALCANZADO' : '⚠️ FALTAN SOLICITUDES'}`);
+        console.log('╚══════════════════════════════════════════╝');
+        
+        // Verificación adicional
+        if (finalRecords.length < 233) {
+            console.warn('⚠️ ADVERTENCIA: No se obtuvieron todas las solicitudes esperadas');
+            console.log('💡 Posibles causas:');
+            console.log('   1. Verificar permisos en Airtable');
+            console.log('   2. Verificar que los registros existan en la tabla');
+            console.log('   3. Verificar filtros o vistas en Airtable');
+        }
+        
+        // Análisis por área
+        this.analizarSolicitudesPorArea(finalRecords);
+        
         return finalRecords;
-
+        
     } catch (error) {
-        console.error('❌ Error obteniendo solicitudes:', error);
+        console.error('❌ Error crítico obteniendo solicitudes:', error);
         throw error;
     }
 }
-
-    // ───────────────────────────────────────────────────────────────────
-    // Solo las solicitudes que pueden haber cambiado: las que no están
-    // cerradas, más las creadas en los últimos días. Es lo que necesita el
-    // auto-refresh — de 5.239 registros a unas pocas decenas, en 1 petición.
-    // ───────────────────────────────────────────────────────────────────
-    async getSolicitudesActivas(diasRecientes = 7) {
-        const formula = `OR(
-            NOT(OR({estado}='COMPLETADA', {estado}='CANCELADA')),
-            IS_AFTER({fechaCreacion}, DATEADD(TODAY(), -${diasRecientes}, 'days'))
-        )`.replace(/\s+/g, ' ');
-
-        const endpoint = `${this.tables.solicitudes}`
-            + `?pageSize=100&filterByFormula=${encodeURIComponent(formula)}`
-            + '&sort%5B0%5D%5Bfield%5D=fechaCreacion&sort%5B0%5D%5Bdirection%5D=desc';
-
-        const result = await this.makeRequest(endpoint);
-        return (result.records || []).map(r => ({ id: r.id, ...r.fields }));
-    }
 
     // Agregar este método auxiliar después del método getSolicitudes
     analizarSolicitudesPorArea(records) {
@@ -1015,7 +1068,6 @@ async getSolicitudes(opciones = {}) {
         let totalBiomedica = 0;
         let totalMecanica = 0;
         let totalInfraestructura = 0;
-        let totalSistemas = 0;
         let sinArea = 0;
         
         Object.entries(porArea).forEach(([area, count]) => {
@@ -1038,11 +1090,6 @@ async getSolicitudes(opciones = {}) {
                        areaLower.includes('infra')) {
                 totalInfraestructura += count;
                 console.log(`║ 🏗️ ${area}: ${count}`);
-            } else if (area === 'SISTEMAS' || 
-                       area === 'Sistemas' ||
-                       areaLower.includes('sistema')) {
-                totalSistemas += count;
-                console.log(`║ 💻 ${area}: ${count}`);
             } else if (area === 'SIN_AREA') {
                 sinArea = count;
                 console.log(`║ ❓ Sin área definida: ${count}`);
@@ -1057,7 +1104,6 @@ async getSolicitudes(opciones = {}) {
         console.log(`║ 🏥 BIOMÉDICA TOTAL: ${totalBiomedica}`);
         console.log(`║ ⚙️ MECÁNICA TOTAL: ${totalMecanica}`);
         console.log(`║ 🏗️ INFRAESTRUCTURA TOTAL: ${totalInfraestructura}`);
-        console.log(`║ 💻 SISTEMAS TOTAL: ${totalSistemas}`);
         if (sinArea > 0) {
             console.log(`║ ❓ SIN ÁREA: ${sinArea}`);
         }
@@ -1114,56 +1160,32 @@ async getSolicitudes(opciones = {}) {
         }
     }
 
-    // 🔐 La validación ocurre EN EL SERVIDOR (netlify/functions/auth-login.js).
-    // El navegador nunca recibe ni compara el código de acceso de ningún usuario.
     async validateUserCredentials(email, codigoAcceso) {
         try {
-            const response = await fetch('/.netlify/functions/auth-login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, codigoAcceso })
-            });
-
-            const data = await response.json().catch(() => ({}));
-
-            if (!response.ok || !data.valid) {
-                return { valid: false, error: data.error || 'Credenciales inválidas' };
+            const usuarios = await this.getUsuarios();
+            const user = usuarios.find(u => 
+                u.email && u.email.toLowerCase() === email.toLowerCase()
+            );
+            
+            if (!user) {
+                return { valid: false, error: 'Usuario no encontrado' };
             }
 
-            // Token de sesión firmado por el servidor, válido 8 h
-            this.setSessionToken(data.token);
+            const estadoActivo = ['ACTIVO', 'Activo', 'activo'];
+            if (!estadoActivo.includes(user.estado)) {
+                return { valid: false, error: `Usuario en estado: ${user.estado}` };
+            }
 
-            return { valid: true, user: data.user };
+            if (String(user.codigoAcceso) !== String(codigoAcceso)) {
+                return { valid: false, error: 'Código incorrecto' };
+            }
+
+            return { valid: true, user: user };
 
         } catch (error) {
             console.error('❌ Error validando credenciales:', error);
             return { valid: false, error: 'Error de sistema' };
         }
-    }
-
-    // 🎟️ Manejo del token de sesión
-    setSessionToken(token) {
-        this.sessionToken = token || null;
-        try {
-            if (token) sessionStorage.setItem('hslv_session', token);
-            else sessionStorage.removeItem('hslv_session');
-        } catch (e) {
-            console.warn('⚠️ sessionStorage no disponible; el token vive solo en memoria');
-        }
-    }
-
-    getSessionToken() {
-        if (this.sessionToken) return this.sessionToken;
-        try {
-            this.sessionToken = sessionStorage.getItem('hslv_session');
-        } catch (e) {
-            this.sessionToken = null;
-        }
-        return this.sessionToken;
-    }
-
-    logout() {
-        this.setSessionToken(null);
     }
 
     mapFieldValue(fieldType, value) {
@@ -1198,12 +1220,11 @@ async getSolicitudes(opciones = {}) {
         console.log(`🛡️ Preparando datos seguros para tabla: ${tableName}`);
         console.log(`🔍 Datos originales:`, data);
         
-        // Set: búsqueda en tiempo constante en lugar de recorrer el array en cada vuelta
-        const safeFields = new Set(SAFE_FIELDS[tableName] || []);
+        const safeFields = SAFE_FIELDS[tableName] || [];
         const safeData = {};
         
         Object.keys(data).forEach(key => {
-            if (safeFields.has(key)) {
+            if (safeFields.includes(key)) {
                 let value = data[key];
                 
                 if (typeof value === 'string') {

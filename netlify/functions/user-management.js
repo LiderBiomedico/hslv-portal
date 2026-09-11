@@ -1,25 +1,21 @@
 // 👤 Función Netlify para gestión completa de usuarios
 // netlify/functions/user-management.js
 
-const { requireSession, hashCode, generateCode, corsHeaders } = require('./utils/session');
-
-// Campos que jamás deben salir hacia el navegador
-const CAMPOS_SENSIBLES = ['codigoAcceso', 'codigoAccesoHash', 'intentosFallidos', 'bloqueadoHasta'];
-
-function sinCamposSensibles(objeto) {
-    const limpio = { ...objeto };
-    CAMPOS_SENSIBLES.forEach(campo => delete limpio[campo]);
-    return limpio;
-}
+const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
     console.log('👤 === USER MANAGEMENT FUNCTION ===');
     console.log('🔍 Method:', event.httpMethod);
     console.log('🔍 Path:', event.path);
-    // No se registra event.body: puede contener códigos de acceso
+    console.log('🔍 Body:', event.body);
     
-    // Headers de respuesta (origen restringido por ALLOWED_ORIGINS)
-    const headers = corsHeaders(event);
+    // Headers de respuesta
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
+        'Content-Type': 'application/json'
+    };
 
     // Manejar preflight OPTIONS
     if (event.httpMethod === 'OPTIONS') {
@@ -53,10 +49,6 @@ exports.handler = async (event, context) => {
                 })
             };
         }
-
-        // 🔐 Toda operación de gestión de usuarios exige sesión con rol admin
-        const control = requireSession(event, headers, { rol: 'admin' });
-        if (control.error) return control.error;
 
         // Parsear operación del query string
         const operation = event.queryStringParameters?.operation || 'list';
@@ -140,7 +132,7 @@ async function listUsers(baseId, apiKey, headers) {
         
         const users = data.records.map(record => ({
             id: record.id,
-            ...sinCamposSensibles(record.fields)
+            ...record.fields
         }));
 
         console.log(`✅ ${users.length} usuarios listados`);
@@ -185,9 +177,11 @@ async function createUser(bodyData, baseId, apiKey, headers) {
             };
         }
 
-        // Código de 6 dígitos con aleatoriedad criptográfica.
-        // Math.random() es predecible y 4 dígitos son 9.000 combinaciones.
-        const accessCode = userData.codigoAcceso || generateCode(6);
+        // Generar código de acceso si no se proporciona
+        let accessCode = userData.codigoAcceso;
+        if (!accessCode) {
+            accessCode = Math.floor(1000 + Math.random() * 9000).toString();
+        }
 
         const url = `https://api.airtable.com/v0/${baseId}/Usuarios`;
         
@@ -198,8 +192,7 @@ async function createUser(bodyData, baseId, apiKey, headers) {
                 telefono: userData.telefono || '',
                 servicioHospitalario: userData.servicioHospitalario,
                 cargo: userData.cargo || '',
-                // Solo se guarda el hash; el código en claro no queda en Airtable
-                codigoAccesoHash: hashCode(accessCode),
+                codigoAcceso: accessCode,
                 estado: userData.estado || 'ACTIVO',
                 fechaCreacion: userData.fechaCreacion || new Date().toISOString(),
                 solicitudOrigenId: userData.solicitudOrigenId || ''
@@ -231,10 +224,8 @@ async function createUser(bodyData, baseId, apiKey, headers) {
                 success: true,
                 user: {
                     id: result.id,
-                    ...sinCamposSensibles(result.fields)
+                    ...result.fields
                 },
-                // El código en claro se devuelve UNA sola vez, para que el
-                // administrador lo entregue al usuario
                 accessCode: accessCode,
                 timestamp: new Date().toISOString()
             })
@@ -263,7 +254,7 @@ async function updateUser(userId, bodyData, baseId, apiKey, headers) {
             };
         }
 
-        const updateData = sinCamposSensibles(JSON.parse(bodyData || '{}'));
+        const updateData = JSON.parse(bodyData || '{}');
         
         const url = `https://api.airtable.com/v0/${baseId}/Usuarios/${userId}`;
         
@@ -296,7 +287,7 @@ async function updateUser(userId, bodyData, baseId, apiKey, headers) {
                 success: true,
                 user: {
                     id: result.id,
-                    ...sinCamposSensibles(result.fields)
+                    ...result.fields
                 },
                 timestamp: new Date().toISOString()
             })
@@ -312,35 +303,180 @@ async function updateUser(userId, bodyData, baseId, apiKey, headers) {
     }
 }
 
-// ⚠️ El login de usuarios se hace en netlify/functions/auth-login.js.
-// Esta operación queda deshabilitada para no mantener dos caminos de autenticación.
+// ✅ Validar acceso de usuario
 async function validateUserAccess(bodyData, baseId, apiKey, headers) {
-    return {
-        statusCode: 410,
-        headers,
-        body: JSON.stringify({
-            error: 'Operación movida',
-            usar: '/.netlify/functions/auth-login'
-        })
-    };
+    console.log('✅ Validando acceso de usuario...');
+    
+    try {
+        const { email, codigoAcceso } = JSON.parse(bodyData || '{}');
+        
+        if (!email || !codigoAcceso) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({
+                    error: 'Email y código de acceso requeridos'
+                })
+            };
+        }
+
+        // Obtener todos los usuarios
+        const url = `https://api.airtable.com/v0/${baseId}/Usuarios`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error ${response.status}: ${errorText}`);
+        }
+
+        const data = await response.json();
+        
+        // Buscar usuario por email
+        const user = data.records.find(record => 
+            record.fields.email && 
+            record.fields.email.toLowerCase() === email.toLowerCase()
+        );
+
+        if (!user) {
+            return {
+                statusCode: 404,
+                headers,
+                body: JSON.stringify({
+                    valid: false,
+                    error: 'Usuario no encontrado'
+                })
+            };
+        }
+
+        // Validar estado
+        if (user.fields.estado !== 'ACTIVO') {
+            return {
+                statusCode: 403,
+                headers,
+                body: JSON.stringify({
+                    valid: false,
+                    error: 'Usuario inactivo'
+                })
+            };
+        }
+
+        // Validar código
+        if (user.fields.codigoAcceso !== codigoAcceso) {
+            return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({
+                    valid: false,
+                    error: 'Código de acceso incorrecto'
+                })
+            };
+        }
+
+        // Actualizar último acceso
+        try {
+            await updateUser(user.id, { fechaUltimoAcceso: new Date().toISOString() }, baseId, apiKey, headers);
+        } catch (updateError) {
+            console.warn('⚠️ No se pudo actualizar último acceso:', updateError);
+        }
+
+        console.log('✅ Acceso validado para:', email);
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                valid: true,
+                user: {
+                    id: user.id,
+                    nombreCompleto: user.fields.nombreCompleto,
+                    email: user.fields.email,
+                    servicioHospitalario: user.fields.servicioHospitalario,
+                    cargo: user.fields.cargo,
+                    estado: user.fields.estado
+                },
+                timestamp: new Date().toISOString()
+            })
+        };
+
+    } catch (error) {
+        console.error('❌ Error validando acceso:', error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: error.message })
+        };
+    }
 }
 
-// 🎲 Generar código de acceso
-// Ya no se consulta la tabla para evitar repetidos: los códigos se guardan
-// hasheados, no son comparables, y el login es por email + código, así que
-// un código repetido entre dos usuarios distintos no da acceso cruzado.
+// 🎲 Generar código de acceso único
 async function generateAccessCode(baseId, apiKey, headers) {
-    const code = generateCode(6);
+    console.log('🎲 Generando código de acceso único...');
+    
+    try {
+        // Obtener todos los códigos existentes
+        const url = `https://api.airtable.com/v0/${baseId}/Usuarios`;
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
 
-    return {
-        statusCode: 200,
-        headers,
-        body: JSON.stringify({
-            success: true,
-            accessCode: code,
-            timestamp: new Date().toISOString()
-        })
-    };
+        const existingCodes = [];
+        
+        if (response.ok) {
+            const data = await response.json();
+            data.records.forEach(record => {
+                if (record.fields.codigoAcceso) {
+                    existingCodes.push(record.fields.codigoAcceso);
+                }
+            });
+        }
+
+        // Generar código único
+        let code;
+        let attempts = 0;
+        const maxAttempts = 100;
+
+        do {
+            code = Math.floor(1000 + Math.random() * 9000).toString();
+            attempts++;
+            
+            if (attempts > maxAttempts) {
+                throw new Error('No se pudo generar código único después de 100 intentos');
+            }
+        } while (existingCodes.includes(code));
+
+        console.log('✅ Código único generado:', code);
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify({
+                success: true,
+                accessCode: code,
+                attempts: attempts,
+                timestamp: new Date().toISOString()
+            })
+        };
+
+    } catch (error) {
+        console.error('❌ Error generando código:', error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ error: error.message })
+        };
+    }
 }
 
 // ✅ Aprobar solicitud de acceso
@@ -393,7 +529,7 @@ async function approveAccessRequest(requestId, bodyData, baseId, apiKey, headers
             telefono: request.telefono || '',
             servicioHospitalario: request.servicioHospitalario,
             cargo: request.cargo,
-            codigoAcceso: accessCode, // createUser lo convierte en hash antes de guardarlo
+            codigoAcceso: accessCode,
             estado: 'ACTIVO',
             fechaCreacion: new Date().toISOString(),
             solicitudOrigenId: requestId
@@ -474,7 +610,7 @@ async function getUserStatistics(baseId, apiKey, headers) {
 
         if (usersResponse.ok) {
             const usersData = await usersResponse.json();
-            users = usersData.records.map(r => sinCamposSensibles(r.fields));
+            users = usersData.records.map(r => r.fields);
         }
 
         if (requestsResponse.ok) {
@@ -487,7 +623,7 @@ async function getUserStatistics(baseId, apiKey, headers) {
                 total: users.length,
                 active: users.filter(u => u.estado === 'ACTIVO').length,
                 inactive: users.filter(u => u.estado === 'INACTIVO').length,
-                total_activos: users.filter(u => u.estado === 'ACTIVO').length
+                withAccessCode: users.filter(u => u.codigoAcceso).length
             },
             requests: {
                 total: requests.length,

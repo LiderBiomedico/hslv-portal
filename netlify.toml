@@ -1,73 +1,40 @@
 [build]
+  # Directorio de funciones
   functions = "netlify/functions"
+  
+  # Directorio de publicación
   publish = "."
+  
+  # Comando de build (vacío porque es sitio estático)
   command = "echo 'Build completed'"
 
 [build.environment]
-  # Node 18 esta fuera de soporte. 20 trae fetch y crypto.scryptSync estables.
-  NODE_VERSION = "20"
+  # Versión de Node.js
+  NODE_VERSION = "18"
+  
+  # Instalar dependencias automáticamente
+  NPM_FLAGS = "--production"
 
-# ── Cabeceras de seguridad del sitio ──────────────────────────────────
+# Headers de seguridad
 [[headers]]
   for = "/*"
   [headers.values]
     X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
     X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "geolocation=(), microphone=(), camera=(self)"
-    # X-XSS-Protection se retiro: esta obsoleta y los navegadores modernos
-    # la ignoran o se comportan peor con ella activada.
 
-# Las respuestas de las funciones nunca deben quedar en cache
+# Headers específicos para las funciones
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
-    Cache-Control = "no-store, no-cache, must-revalidate"
-    # Access-Control-Allow-Origin se retiro de aqui a proposito:
-    # cada funcion decide el origen permitido segun ALLOWED_ORIGINS.
-    # Dejarlo en "*" aqui anulaba ese control.
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Headers = "Content-Type, Authorization"
+    Access-Control-Allow-Methods = "GET, POST, PATCH, DELETE, OPTIONS"
 
-# ── Archivos que no deben servirse al publico ─────────────────────────
-[[redirects]]
-  from = "/set.env*"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/package.json"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/package-lock.json"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/scripts/*"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/_local/*"
-  to = "/404.html"
-  status = 404
-  force = true
-
-[[redirects]]
-  from = "/netlify/*"
-  to = "/404.html"
-  status = 404
-  force = true
-
-# ── URLs amigables ────────────────────────────────────────────────────
+# Redirects para URLs amigables
 [[redirects]]
   from = "/portal"
-  to = "/Portal-solicitudes.html"
+  to = "/portal-solicitudes.html"
   status = 200
 
 [[redirects]]
@@ -76,6 +43,6 @@
   status = 200
 
 [[redirects]]
-  from = "/movil"
-  to = "/AppMovil.html"
+  from = "/test"
+  to = "/test-netlify.html"
   status = 200

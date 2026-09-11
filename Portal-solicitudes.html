@@ -1025,7 +1025,7 @@
             <div>
                 <h1 class="welcome-title">👋 Bienvenido, <span id="welcome-user">Usuario</span></h1>
                 <p style="color: #6b7280;">Sistema de Solicitudes de Mantenimiento  conectado</p>
-               
+                <p style="color: #6b7280;">Desarrollado por: <span>Ing. Paul Eduardo Muñoz R.</span></p>
             </div>
             <div>
                 <button class="btn btn-primary" onclick="showSolicitudesModal()" style="width: auto; padding: 0.75rem 1.5rem;">
@@ -1055,7 +1055,6 @@
                             <option value="INGENIERIA_BIOMEDICA">🏥 Ingeniería Biomédica</option>
                             <option value="MECANICA">⚙️ Mecánica</option>
                             <option value="INFRAESTRUCTURA">🏗️Infraestructura</option>
-                            <option value="SISTEMAS">💻 Sistemas</option>
                         </select>
                     </div>
 
@@ -1390,16 +1389,10 @@
 
         // Verificar sesión
         function checkSession() {
-            const savedUser = sessionStorage.getItem('hospital_user');
-            const token = sessionStorage.getItem('hslv_session');
-
-            // Sin token de sesión no se restaura nada: el usuario guardado
-            // por sí solo no es prueba de haber iniciado sesión.
-            if (savedUser && token) {
+            const savedUser = localStorage.getItem('hospital_user');
+            if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 showMainContent();
-            } else {
-                sessionStorage.removeItem('hospital_user');
             }
         }
 
@@ -1418,16 +1411,19 @@
             try {
                 let validationResult;
                 
-                // Siempre contra el servidor. No hay validación local:
-                // comparar credenciales en el navegador permitía entrar
-                // escribiendo usuarios falsos en localStorage.
-                console.log('🔐 Validando credenciales en el servidor...');
-                validationResult = await window.airtableAPI.validateUserCredentials(email, code);
+                if (window.airtableAPI && isCloudConnected) {
+                    // Validación en la nube
+                    console.log('🌐 Validando credenciales en Airtable...');
+                    validationResult = await window.airtableAPI.validateUserCredentials(email, code);
+                } else {
+                    // Validación local como fallback
+                    console.log('📱 Validando credenciales localmente...');
+                    validationResult = validateLocalCredentials(email, code);
+                }
                 
                 if (validationResult.valid) {
                     currentUser = validationResult.user;
-                    // sessionStorage: la sesión muere al cerrar la pestaña, igual que el token
-                    sessionStorage.setItem('hospital_user', JSON.stringify(currentUser));
+                    localStorage.setItem('hospital_user', JSON.stringify(currentUser));
                     showAlert(alertDiv, 'success', '✅ ¡Bienvenido al sistema!');
                     
                     setTimeout(() => {
@@ -1446,9 +1442,16 @@
             }
         }
 
-        // ❌ validateLocalCredentials() eliminada.
-        // Comparaba el código contra una lista guardada en localStorage, que
-        // cualquiera puede editar desde la consola del navegador.
+        function validateLocalCredentials(email, code) {
+            const approvedUsers = JSON.parse(localStorage.getItem('hospital_approved_users') || '[]');
+            const user = approvedUsers.find(u => u.email === email && u.codigoAcceso === code);
+            
+            if (user) {
+                return { valid: true, user: user };
+            } else {
+                return { valid: false, error: 'Credenciales inválidas' };
+            }
+        }
 
         // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
         async function handleAccessRequestCloud(e) {
@@ -1540,9 +1543,7 @@
         // Cerrar sesión
         function logout() {
             if (confirm('¿Está seguro que desea cerrar sesión?')) {
-                sessionStorage.removeItem('hospital_user');
-                sessionStorage.removeItem('hslv_session');
-                if (window.airtableAPI) window.airtableAPI.setSessionToken(null);
+                localStorage.removeItem('hospital_user');
                 currentUser = null;
                 location.reload();
             }
@@ -1847,8 +1848,7 @@
             const areaNames = {
                 'INGENIERIA_BIOMEDICA': '🏥 Ingeniería Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗️Infraestructura',
-                'SISTEMAS': '💻 Sistemas'
+                'INFRAESTRUCTURA': '🏗️Infraestructura'
             };
             return areaNames[area] || area;
         }
@@ -1908,7 +1908,7 @@
             console.log('============================');
             
             // Probar mapeo de área
-            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
+            const areas = ['INGENIERIA_BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
             areas.forEach(area => {
                 const mapped = window.airtableAPI.mapFieldValue('servicioIngenieria', area);
                 console.log(`Área: ${area} → ${mapped}`);

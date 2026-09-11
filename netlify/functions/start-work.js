@@ -1,36 +1,23 @@
-// ===============================================
-// netlify/functions/start-work.js
+/ ===============================================
+// 3. netlify/functions/start-work.js
 // ===============================================
 
-const { requireSession, corsHeaders } = require('./utils/session');
+const fetch = require('node-fetch');
 
 exports.handler = async (event, context) => {
-    const headers = corsHeaders(event);
-
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
-    }
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
-            headers,
             body: JSON.stringify({ success: false, message: 'Method not allowed' })
         };
     }
 
-    // 🔐 Sesion obligatoria
-    const control = requireSession(event, headers);
-    if (control.error) return control.error;
-
     try {
-        const { requestId } = JSON.parse(event.body);
-        // El tecnico se toma del token, no del cuerpo de la peticion
-        const technicianId = control.sesion.sub;
+        const { requestId, technicianId } = JSON.parse(event.body);
         
         if (!requestId || !technicianId) {
             return {
                 statusCode: 400,
-                headers,
                 body: JSON.stringify({ 
                     success: false, 
                     message: 'ID de solicitud y técnico requeridos' 
@@ -56,13 +43,11 @@ exports.handler = async (event, context) => {
         });
 
         if (!response.ok) {
-            const detalle = await response.text().catch(() => '');
-            throw new Error(`Airtable ${response.status}: ${detalle.slice(0, 200)}`);
+            throw new Error('Error updating request');
         }
 
         return {
             statusCode: 200,
-            headers,
             body: JSON.stringify({
                 success: true,
                 message: 'Trabajo iniciado correctamente'
@@ -73,7 +58,6 @@ exports.handler = async (event, context) => {
         console.error('Start work error:', error);
         return {
             statusCode: 500,
-            headers,
             body: JSON.stringify({
                 success: false,
                 message: 'Error al iniciar trabajo'

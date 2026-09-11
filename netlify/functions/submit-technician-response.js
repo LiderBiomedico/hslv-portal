@@ -2,39 +2,27 @@
 // 4. netlify/functions/submit-technician-response.js
 // ===============================================
 
+const fetch = require('node-fetch');
+const FormData = require('form-data');
 const multipart = require('lambda-multipart-parser');
-const { requireSession, corsHeaders } = require('./utils/session');
 
 exports.handler = async (event, context) => {
-    const headers = corsHeaders(event);
-
-    if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
-    }
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
-            headers,
             body: JSON.stringify({ success: false, message: 'Method not allowed' })
         };
     }
-
-    // 🔐 Sesion obligatoria
-    const control = requireSession(event, headers);
-    if (control.error) return control.error;
 
     try {
         // Parse multipart form data
         const result = await multipart.parse(event);
         
-        const { requestId, status, comments } = result;
-        // El tecnico se toma del token de sesion
-        const technicianId = control.sesion.sub;
+        const { requestId, technicianId, status, comments } = result;
         
-        if (!requestId || !status) {
+        if (!requestId || !technicianId || !status) {
             return {
                 statusCode: 400,
-                headers,
                 body: JSON.stringify({ 
                     success: false, 
                     message: 'Datos requeridos faltantes' 
@@ -60,7 +48,6 @@ exports.handler = async (event, context) => {
         // Handle photo uploads
         const attachments = [];
         
-        // Maximo 2 fotos, subidas de a una: Airtable limita a 5 peticiones/segundo
         if (result.files && result.files.length > 0) {
             for (let i = 0; i < result.files.length && i < 2; i++) {
                 const file = result.files[i];
@@ -95,13 +82,11 @@ exports.handler = async (event, context) => {
         });
 
         if (!response.ok) {
-            const detalle = await response.text().catch(() => '');
-            throw new Error(`Airtable ${response.status}: ${detalle.slice(0, 200)}`);
+            throw new Error('Error updating request');
         }
 
         return {
             statusCode: 200,
-            headers,
             body: JSON.stringify({
                 success: true,
                 message: 'Respuesta enviada correctamente'
@@ -112,11 +97,9 @@ exports.handler = async (event, context) => {
         console.error('Submit response error:', error);
         return {
             statusCode: 500,
-            headers,
-            // No se devuelve error.message: puede filtrar rutas internas
             body: JSON.stringify({
                 success: false,
-                message: 'Error al enviar la respuesta'
+                message: 'Error al enviar respuesta: ' + error.message
             })
         };
     }
