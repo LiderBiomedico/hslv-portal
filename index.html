@@ -695,8 +695,10 @@
                     sessionStorage.setItem('hslv_session', data.token);
                 } else if (data.codigo === 'CONFIGURACION_INCOMPLETA') {
                     // No es culpa del usuario: faltan variables en Netlify.
-                    // No se descuenta intento.
+                    // No se descuenta intento. Se muestra QUÉ falta.
                     mensajeServidor = 'CONFIG';
+                    window.__configFaltante = data.faltantes || [];
+                    console.error('⚙️ Configuración incompleta en Netlify:', data.faltantes);
                 } else {
                     mensajeServidor = data.error || 'Contraseña incorrecta';
                 }
@@ -714,7 +716,10 @@
         function verificarPasswordResultado(autorizado, mensajeServidor, confirmBtn, input) {
             // Problema de configuración del servidor: no cuenta como intento fallido
             if (mensajeServidor === 'CONFIG') {
-                showError('El servidor no está configurado. Revise las variables de entorno en Netlify y los registros de la función.');
+                const faltantes = window.__configFaltante || [];
+                showError(faltantes.length
+                    ? 'Falta configurar en Netlify: ' + faltantes.join(' · ')
+                    : 'El servidor no está configurado. Revise las variables de entorno en Netlify.');
                 confirmBtn.classList.remove('loading');
                 confirmBtn.disabled = false;
                 return;

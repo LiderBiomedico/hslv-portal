@@ -26,22 +26,34 @@ function revisarConfiguracion({ requiereAdmin = false, requiereAirtable = true }
     const secreto = process.env.SESSION_SECRET;
 
     if (!secreto) {
-        problemas.push('SESSION_SECRET no esta definida');
+        problemas.push({
+            variable: 'SESSION_SECRET',
+            causa: 'no esta definida',
+            solucion: 'Cree la variable con al menos 32 caracteres'
+        });
     } else if (secreto.length < LONGITUD_MINIMA_SECRETO) {
-        problemas.push(
-            `SESSION_SECRET tiene ${secreto.length} caracteres; se requieren al menos ` +
-            `${LONGITUD_MINIMA_SECRETO}. Genere una con: ` +
-            `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-        );
+        problemas.push({
+            variable: 'SESSION_SECRET',
+            causa: `tiene ${secreto.length} caracteres; se requieren ${LONGITUD_MINIMA_SECRETO} o mas`,
+            solucion: 'node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"'
+        });
     }
 
     if (requiereAirtable) {
-        if (!process.env.AIRTABLE_API_KEY) problemas.push('AIRTABLE_API_KEY no esta definida');
-        if (!process.env.AIRTABLE_BASE_ID) problemas.push('AIRTABLE_BASE_ID no esta definida');
+        if (!process.env.AIRTABLE_API_KEY) {
+            problemas.push({ variable: 'AIRTABLE_API_KEY', causa: 'no esta definida' });
+        }
+        if (!process.env.AIRTABLE_BASE_ID) {
+            problemas.push({ variable: 'AIRTABLE_BASE_ID', causa: 'no esta definida' });
+        }
     }
 
     if (requiereAdmin && !process.env.ADMIN_PASSWORD_HASH && !process.env.ADMIN_PASSWORD) {
-        problemas.push('Falta ADMIN_PASSWORD_HASH (o ADMIN_PASSWORD)');
+        problemas.push({
+            variable: 'ADMIN_PASSWORD_HASH',
+            causa: 'no esta definida (tampoco ADMIN_PASSWORD)',
+            solucion: 'Genere el hash con session.js hashCode() y peguelo completo'
+        });
     }
 
     return problemas;
@@ -51,14 +63,21 @@ function revisarConfiguracion({ requiereAdmin = false, requiereAirtable = true }
 // 503 dice "el servicio no esta listo", que es lo que realmente pasa.
 function respuestaConfiguracion(problemas, headers, etiqueta) {
     console.error(`[${etiqueta}] Configuracion incompleta:`);
-    problemas.forEach(p => console.error(`  - ${p}`));
+    problemas.forEach(p => {
+        console.error(`  - ${p.variable}: ${p.causa}`);
+        if (p.solucion) console.error(`    Solucion: ${p.solucion}`);
+    });
 
+    // Se devuelven los NOMBRES de las variables que faltan, nunca sus valores.
+    // Saber que falta "SESSION_SECRET" no le sirve de nada a un atacante, y le
+    // ahorra a quien administra el sitio tener que rastrear el registro.
     return {
         statusCode: 503,
         headers,
         body: JSON.stringify({
-            error: 'El servicio no esta configurado. Revise las variables de entorno en Netlify.',
-            codigo: 'CONFIGURACION_INCOMPLETA'
+            error: 'El servicio no esta configurado correctamente en Netlify.',
+            codigo: 'CONFIGURACION_INCOMPLETA',
+            faltantes: problemas.map(p => `${p.variable}: ${p.causa}`)
         })
     };
 }
