@@ -9126,5 +9126,16 @@ window.debugEstadisticas = function() {
             })();
         });
     </script>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Módulos de análisis.
+         Van DESPUÉS del script principal a propósito: cada uno envuelve
+         showAnalysisType() y showAdvancedStatisticsModal(), así que esas
+         funciones deben existir ya. Se auto-instalan como pestañas nuevas
+         dentro del modal de Estadísticas Avanzadas.
+         ═══════════════════════════════════════════════════════════════ -->
+    <script defer src="modules/ranking-equipos.js"></script>
+    <script defer src="modules/desempeno-personal.js"></script>
+    <script defer src="modules/informe-mensual.js"></script>
 </body>
 </html>

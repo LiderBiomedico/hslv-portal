@@ -132,6 +132,33 @@ que hacer.
 
 ---
 
+## Módulos de análisis
+
+`ranking-equipos.js`, `desempeno-personal.js` e `informe-mensual.js` estaban
+sueltos dentro de `netlify/functions/`, donde Netlify intentaba desplegarlos
+como endpoints (no exportan `handler`, así que no funcionaban como tales), y
+**ningún HTML los cargaba**. Por eso el modal de Estadísticas solo mostraba dos
+pestañas.
+
+Ahora viven en `modules/` y se cargan al final de `portal-gestion.html`:
+
+```html
+<script defer src="modules/ranking-equipos.js"></script>
+<script defer src="modules/desempeno-personal.js"></script>
+<script defer src="modules/informe-mensual.js"></script>
+```
+
+El orden importa: `desempeno-personal.js` reutiliza `rkNormalizar()`,
+`rkCanonizarEquipo()` y `RK_COLORES` de `ranking-equipos.js` cuando están
+disponibles. Y van después del script principal porque cada módulo envuelve
+`showAnalysisType()` y `showAdvancedStatisticsModal()`, que deben existir antes.
+
+Verificado con un DOM simulado: al abrir Estadísticas Avanzadas aparecen las
+cinco pestañas — Vista General, Análisis Temporal, 🔧 Equipos y Servicios,
+👷 Desempeño del Personal y 📆 Informe Mensual.
+
+---
+
 ## Lo que no toqué, y por qué
 
 - **`portal-gestion.html` sigue siendo un archivo de 380 KB.** Partirlo en
