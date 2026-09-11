@@ -643,11 +643,15 @@
             console.log('🚀 Hospital Técnicos App iniciada');
             
             // Check if user is already logged in
-            const savedUser = localStorage.getItem('hospital_technician_user');
-            if (savedUser) {
+            // Solo se restaura la sesión si además existe el token firmado
+            const savedUser = sessionStorage.getItem('hospital_technician_user');
+            const savedToken = sessionStorage.getItem('hslv_session');
+            if (savedUser && savedToken) {
                 currentUser = JSON.parse(savedUser);
                 showMainApp();
                 loadAssignedRequests();
+            } else {
+                sessionStorage.removeItem('hospital_technician_user');
             }
 
             // Setup form handlers
@@ -697,9 +701,16 @@
 
                 const result = await response.json();
 
+                if (!response.ok || !result.success) {
+                    alert('❌ ' + (result.message || 'No se pudo iniciar sesión'));
+                    return;
+                }
+
                 if (result.success) {
                     currentUser = result.user;
-                    localStorage.setItem('hospital_technician_user', JSON.stringify(currentUser));
+                    // 🔑 Token de sesión firmado por el servidor: se envía en cada petición
+                    guardarToken(result.token);
+                    sessionStorage.setItem('hospital_technician_user', JSON.stringify(currentUser));
                     
                     showMainApp();
                     loadAssignedRequests();
@@ -736,16 +747,62 @@
             document.getElementById('profile-status').textContent = currentUser.estado || 'ACTIVO';
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // 🔑 Sesión y peticiones autenticadas
+        // ═══════════════════════════════════════════════════════════
+        function guardarToken(token) {
+            if (token) sessionStorage.setItem('hslv_session', token);
+            else sessionStorage.removeItem('hslv_session');
+        }
+
+        function obtenerToken() {
+            return sessionStorage.getItem('hslv_session');
+        }
+
+        function cerrarSesionTecnico() {
+            sessionStorage.removeItem('hslv_session');
+            sessionStorage.removeItem('hospital_technician_user');
+            currentUser = null;
+            location.reload();
+        }
+
+        // fetch() NO falla con 4xx/5xx: hay que revisar response.ok a mano.
+        // Sin esto, un 401 o un 500 llegaban a la interfaz como si fueran datos válidos.
+        async function apiFetch(url, options = {}) {
+            const token = obtenerToken();
+            const esFormData = options.body instanceof FormData;
+
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...(esFormData ? {} : { 'Content-Type': 'application/json' }),
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+                    ...(options.headers || {})
+                }
+            });
+
+            if (response.status === 401 || response.status === 403) {
+                alert('⚠️ Su sesión expiró. Vuelva a iniciar sesión.');
+                cerrarSesionTecnico();
+                throw new Error('Sesión expirada');
+            }
+
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                throw new Error(data.message || data.error || `Error ${response.status}`);
+            }
+
+            return data;
+        }
+
         // Load assigned requests
         async function loadAssignedRequests() {
             try {
-                const response = await fetch('/.netlify/functions/get-technician-requests', {
+                const result = await apiFetch('/.netlify/functions/get-technician-requests', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ technicianId: currentUser.id })
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                     currentRequests = result.requests.filter(r => {
@@ -865,16 +922,13 @@
         // Start work on a request
         async function startWork(requestId) {
             try {
-                const response = await fetch('/.netlify/functions/start-work', {
+                const result = await apiFetch('/.netlify/functions/start-work', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                         requestId: requestId,
                         technicianId: currentUser.id 
                     })
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                     alert('✅ Trabajo iniciado correctamente');
@@ -942,12 +996,10 @@
                 if (photo1) formData.append('photo1', photo1);
                 if (photo2) formData.append('photo2', photo2);
 
-                const response = await fetch('/.netlify/functions/submit-technician-response', {
+                const result = await apiFetch('/.netlify/functions/submit-technician-response', {
                     method: 'POST',
                     body: formData
                 });
-
-                const result = await response.json();
 
                 if (result.success) {
                     alert('✅ Respuesta enviada correctamente');
@@ -1030,8 +1082,7 @@
         // Logout
         function logout() {
             if (confirm('¿Estás seguro que deseas cerrar sesión?')) {
-                localStorage.removeItem('hospital_technician_user');
-                location.reload();
+                cerrarSesionTecnico();
             }
         }
 
@@ -1051,7 +1102,8 @@
                 'INGENIERIA_BIOMEDICA': '🏥 Ing. Biomédica',
                 'BIOMEDICA': '🏥 Ing. Biomédica',
                 'MECANICA': '⚙️ Mecánica',
-                'INFRAESTRUCTURA': '🏗️ Infraestructura'
+                'INFRAESTRUCTURA': '🏗️ Infraestructura',
+                'SISTEMAS': '💻 Sistemas'
             };
             return areas[area] || area || 'No especificada';
         }
@@ -1098,7 +1150,7 @@
                     });
 
                     // Send subscription to server
-                    await fetch('/.netlify/functions/save-push-subscription', {
+                    await apiFetch('/.netlify/functions/save-push-subscription', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({

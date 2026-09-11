@@ -5,10 +5,32 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
 <!-- Agregar Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Agregar jsPDF para exportar a PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- jsPDF y html2canvas se cargan solo al exportar (≈500 KB que ya no bloquean el arranque) -->
+<script>
+// Carga perezosa de las librerías de exportación
+window.cargarLibreriasPDF = (function () {
+    let promesa = null;
+    function cargarScript(src) {
+        return new Promise((ok, mal) => {
+            const el = document.createElement('script');
+            el.src = src; el.onload = ok; el.onerror = () => mal(new Error('No se pudo cargar ' + src));
+            document.head.appendChild(el);
+        });
+    }
+    return function () {
+        if (window.jspdf && window.html2canvas) return Promise.resolve();
+        if (!promesa) {
+            promesa = Promise.all([
+                cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+            ]).catch(e => { promesa = null; throw e; });
+        }
+        return promesa;
+    };
+})();
+</script>
 <style>
         * {
             margin: 0;
@@ -2077,14 +2099,49 @@ function cerrarSesionGestion() {
                 // Solo refrescar si esta activo Y la pestana esta visible.
                 // Una pestana en segundo plano u oculta NO consume creditos.
                 if (isAutoRefreshActive && document.visibilityState === 'visible') {
-                    console.log('🔄 Auto-refresh ejecutándose...');
-                    await loadAllDataFromCloud();
+                    await refrescarIncremental();
                     resetRefreshCountdown();
                 }
             }, AUTO_REFRESH_SECONDS * 1000);
 
             // Countdown visual
             startRefreshCountdown();
+        }
+
+        // ── Refresco incremental ────────────────────────────────────────
+        // Antes: cada 60 s se volvían a descargar las 5.239 solicitudes
+        // completas (53 páginas) para detectar cambios en unas pocas.
+        // Ahora: 1 petición con las abiertas y las recientes, y se fusionan.
+        async function refrescarIncremental() {
+            if (!window.airtableAPI || cargaEnSegundoPlano) return;
+
+            try {
+                const activas = await window.airtableAPI.getSolicitudesActivas();
+
+                const porId = new Map(cloudSolicitudes.map(s => [s.id, s]));
+                let cambios = 0;
+
+                activas.forEach(nueva => {
+                    const anterior = porId.get(nueva.id);
+                    if (!anterior || anterior.estado !== nueva.estado ||
+                        anterior.tecnicoAsignado !== nueva.tecnicoAsignado) {
+                        cambios++;
+                    }
+                    porId.set(nueva.id, nueva);
+                });
+
+                if (cambios > 0) {
+                    cloudSolicitudes = Array.from(porId.values());
+                    pintarTodo();
+                    guardarCache();
+                    console.log(`🔄 ${cambios} solicitud(es) actualizada(s)`);
+                }
+
+                updateConnectionStatus('connected');
+            } catch (error) {
+                console.error('Error en el refresco:', error);
+                updateConnectionStatus('fallback');
+            }
         }
 
         function startRefreshCountdown() {
@@ -2148,8 +2205,8 @@ function cerrarSesionGestion() {
             visibilityListenerRegistrado = true;
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible' && isAutoRefreshActive) {
-                    console.log('👁️ Pestana visible de nuevo: refresco puntual');
-                    loadAllDataFromCloud();
+                    // Refresco ligero, no recarga completa
+                    refrescarIncremental();
                     resetRefreshCountdown();
                 }
             });
@@ -2176,58 +2233,152 @@ function cerrarSesionGestion() {
         }
 
         // 🔄 Funciones de carga de datos desde Airtable
-       async function loadAllDataFromCloud() {
-    console.log('🌐 Cargando todos los datos desde Airtable...');
-    
-    try {
-        updateConnectionStatus('connecting', 'Sincronizando...');
-        
-        const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
-            window.airtableAPI.getSolicitudes(),
-            window.airtableAPI.getTecnicos(),
-            window.airtableAPI.getUsuarios(),
-            window.airtableAPI.getSolicitudesAcceso()
-        ]);
-        
-        // Validación de datos antes de asignar
-        if (solicitudes.length > 1000) {
-            console.warn(`⚠️ Se obtuvieron ${solicitudes.length} solicitudes - verificando duplicados...`);
-            
-            // Eliminar duplicados por ID
-            const uniqueSolicitudes = new Map();
-            solicitudes.forEach(s => {
-                if (!uniqueSolicitudes.has(s.id)) {
-                    uniqueSolicitudes.set(s.id, s);
-                }
-            });
-            
-            cloudSolicitudes = Array.from(uniqueSolicitudes.values());
-            console.log(`✅ Solicitudes únicas después de limpieza: ${cloudSolicitudes.length}`);
-        } else {
-            cloudSolicitudes = solicitudes;
-        }
-        
-        cloudTecnicos = tecnicos;
-        cloudUsuarios = usuarios;
-        cloudSolicitudesAcceso = solicitudesAcceso;
-        
-        console.log(`✅ Datos cargados: ${cloudSolicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios`);
-        
-        // Clasificar solicitudes por área
-        poblarFiltroAnioSolicitudes();
-        clasificarSolicitudesPorArea();
-        
-        updateAccessRequestsList();
-        updateAllCounters();
-        updateAllDisplays();
-        updateConnectionStatus('connected');
-        
-    } catch (error) {
-        console.error('❌ Error cargando datos desde Airtable:', error);
-        updateConnectionStatus('fallback');
-        loadDataFromLocalStorage();
-    }
-}
+       // ═══════════════════════════════════════════════════════════════
+       // Carga en dos fases.
+       //
+       // Antes: se descargaban las 5.239 solicitudes (53 páginas, 200 ms de
+       // pausa fija entre cada una) ANTES de pintar nada. El usuario miraba
+       // una pantalla vacía durante todo ese tiempo.
+       //
+       // Ahora: la primera página pinta de inmediato y el resto entra en
+       // segundo plano, actualizando la vista a medida que llega.
+       // ═══════════════════════════════════════════════════════════════
+       const CACHE_CLAVE = 'hslv_cache_datos';
+       const CACHE_VIGENCIA_MS = 5 * 60 * 1000;   // 5 minutos
+       let cargaEnSegundoPlano = false;
+
+       function guardarCache() {
+           try {
+               sessionStorage.setItem(CACHE_CLAVE, JSON.stringify({
+                   t: Date.now(),
+                   solicitudes: cloudSolicitudes,
+                   tecnicos: cloudTecnicos,
+                   usuarios: cloudUsuarios,
+                   acceso: cloudSolicitudesAcceso
+               }));
+           } catch (e) {
+               // sessionStorage lleno: no es crítico, solo se pierde la caché
+               console.warn('No se pudo guardar la caché:', e.message);
+           }
+       }
+
+       function leerCache() {
+           try {
+               const crudo = sessionStorage.getItem(CACHE_CLAVE);
+               if (!crudo) return null;
+               const datos = JSON.parse(crudo);
+               if (Date.now() - datos.t > CACHE_VIGENCIA_MS) return null;
+               return datos;
+           } catch (e) {
+               return null;
+           }
+       }
+
+       function pintarTodo() {
+           poblarFiltroAnioSolicitudes();
+           clasificarSolicitudesPorArea();
+           updateAccessRequestsList();
+           updateAllCounters();
+           updateAllDisplays();
+       }
+
+       function mostrarProgresoCarga(acumulado, hayMas) {
+           const el = document.getElementById('indicador-carga');
+           if (!el) return;
+           el.textContent = hayMas
+               ? `Cargando histórico… ${acumulado} de ~${TOTAL_ESTIMADO} solicitudes`
+               : '';
+           el.style.display = hayMas ? 'block' : 'none';
+       }
+
+       const TOTAL_ESTIMADO = 5300;
+
+       async function loadAllDataFromCloud({ usarCache = true } = {}) {
+           try {
+               updateConnectionStatus('connecting', 'Sincronizando...');
+
+               // ── Fase 0: caché de sesión ────────────────────────────────
+               const cache = usarCache ? leerCache() : null;
+               if (cache) {
+                   cloudSolicitudes = cache.solicitudes;
+                   cloudTecnicos = cache.tecnicos;
+                   cloudUsuarios = cache.usuarios;
+                   cloudSolicitudesAcceso = cache.acceso;
+                   pintarTodo();
+                   updateConnectionStatus('connected');
+                   console.log(`⚡ ${cloudSolicitudes.length} solicitudes desde caché`);
+                   return;
+               }
+
+               // ── Fase 1: lo mínimo para pintar la pantalla ──────────────
+               const t0 = performance.now();
+
+               const [primeraPagina, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+                   window.airtableAPI.getSolicitudes({ maxPaginas: 1 }),
+                   window.airtableAPI.getTecnicos(),
+                   window.airtableAPI.getUsuarios(),
+                   window.airtableAPI.getSolicitudesAcceso()
+               ]);
+
+               cloudSolicitudes = primeraPagina;
+               cloudTecnicos = tecnicos;
+               cloudUsuarios = usuarios;
+               cloudSolicitudesAcceso = solicitudesAcceso;
+
+               pintarTodo();
+               updateConnectionStatus('connected');
+               console.log(`⚡ Primera pintura en ${Math.round(performance.now() - t0)} ms`);
+
+               // ── Fase 2: el resto del histórico, sin bloquear ───────────
+               const offsetSiguiente = primeraPagina.offsetSiguiente;
+               if (offsetSiguiente && !cargaEnSegundoPlano) {
+                   cargarRestoEnSegundoPlano(offsetSiguiente, t0);
+               }
+
+           } catch (error) {
+               console.error('❌ Error cargando datos desde Airtable:', error);
+               updateConnectionStatus('fallback');
+               loadDataFromLocalStorage();
+           }
+       }
+
+       async function cargarRestoEnSegundoPlano(offset, t0) {
+           cargaEnSegundoPlano = true;
+           mostrarProgresoCarga(cloudSolicitudes.length, true);
+
+           try {
+               const porId = new Map(cloudSolicitudes.map(s => [s.id, s]));
+               let ultimoRepintado = 0;
+
+               await window.airtableAPI.getSolicitudes({
+                   desde: offset,
+                   onPagina: (nuevos, info) => {
+                       nuevos.forEach(s => porId.set(s.id, s));
+                       cloudSolicitudes = Array.from(porId.values());
+                       mostrarProgresoCarga(cloudSolicitudes.length, info.hayMas);
+
+                       // Se repinta cada 2 s como mucho: repintar en cada una de
+                       // las 53 páginas costaba más que la propia descarga
+                       const ahora = Date.now();
+                       if (!info.hayMas || ahora - ultimoRepintado > 2000) {
+                           ultimoRepintado = ahora;
+                           clasificarSolicitudesPorArea();
+                           updateAllCounters();
+                       }
+                   }
+               });
+
+               pintarTodo();
+               guardarCache();
+               console.log(`✅ Histórico completo: ${cloudSolicitudes.length} solicitudes ` +
+                           `en ${Math.round((performance.now() - t0) / 1000)} s`);
+           } catch (error) {
+               console.error('Error cargando el histórico:', error);
+           } finally {
+               cargaEnSegundoPlano = false;
+               mostrarProgresoCarga(cloudSolicitudes.length, false);
+           }
+       }
 
         function loadDataFromLocalStorage() {
             console.log('📱 Cargando datos desde localStorage (modo fallback)...');
@@ -2845,6 +2996,7 @@ async function exportFilteredSolicitudesPDF() {
         document.body.appendChild(pdfContent);
         
         // Generar PDF
+        await window.cargarLibreriasPDF();
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -2982,12 +3134,12 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             console.log('🔄 Actualizando solicitudes desde Airtable...');
             
             try {
-                cloudSolicitudes = await window.airtableAPI.getSolicitudes();
-                clasificarSolicitudesPorArea();
+                // Refresco de las que cambian, no de las 5.239
+                await refrescarIncremental();
                 filterSolicitudesByArea(currentAreaFilter);
-                updateAllCounters();
-                
-                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                guardarCache();
+
+                alert(`✅ Solicitudes actualizadas\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error actualizando solicitudes:', error);
@@ -3069,6 +3221,13 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                     headerText += ` - ${currentStatusFilter.toLowerCase().replace('_', ' ')}`;
                 }
 
+                // Solo se pintan los primeros TAMANO_LOTE; el resto se añade
+                // al pulsar "Mostrar más" o al llegar al final de la lista.
+                // Pintar 5.239 tarjetas de golpe generaba varios MB de HTML y
+                // congelaba la pestaña durante segundos.
+                solicitudesRenderPendientes = solicitudesSorted;
+                solicitudesRenderIndice = 0;
+
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">
@@ -3079,10 +3238,68 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                             🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'} | 
                             Última actualización: ${new Date().toLocaleTimeString('es-CO')}
                         </p>
+                        <p id="indicador-carga" style="display:none; color:#047857; font-size:0.8rem; margin-top:0.5rem;"></p>
                     </div>
-                    ${solicitudesSorted.map(solicitud => createSolicitudCard(solicitud)).join('')}
+                    <div id="solicitudes-lote"></div>
+                    <div id="solicitudes-mas" style="text-align:center; padding:1rem;"></div>
                 `;
+
+                pintarSiguienteLote();
             }
+        }
+
+        // ── Render por lotes ────────────────────────────────────────────
+        const TAMANO_LOTE = 40;
+        let solicitudesRenderPendientes = [];
+        let solicitudesRenderIndice = 0;
+
+        function pintarSiguienteLote() {
+            const lote = document.getElementById('solicitudes-lote');
+            const pie = document.getElementById('solicitudes-mas');
+            if (!lote || !pie) return;
+
+            const siguiente = solicitudesRenderPendientes.slice(
+                solicitudesRenderIndice,
+                solicitudesRenderIndice + TAMANO_LOTE
+            );
+
+            // insertAdjacentHTML no vuelve a analizar lo ya pintado,
+            // a diferencia de innerHTML += que reconstruye todo el bloque
+            lote.insertAdjacentHTML('beforeend',
+                siguiente.map(solicitud => createSolicitudCard(solicitud)).join(''));
+
+            solicitudesRenderIndice += siguiente.length;
+            const restantes = solicitudesRenderPendientes.length - solicitudesRenderIndice;
+
+            if (restantes > 0) {
+                pie.innerHTML = `
+                    <button class="btn btn-secondary" onclick="pintarSiguienteLote()">
+                        Mostrar ${Math.min(TAMANO_LOTE, restantes)} más
+                        <span style="opacity:.7">(${restantes} restantes)</span>
+                    </button>`;
+                observarFinDeLista();
+            } else {
+                pie.innerHTML = solicitudesRenderPendientes.length > TAMANO_LOTE
+                    ? `<span style="color:#6b7280; font-size:0.85rem;">
+                         ${solicitudesRenderPendientes.length} solicitudes mostradas</span>`
+                    : '';
+            }
+        }
+
+        // Carga automática al llegar al final: más cómodo que pulsar el botón
+        let observadorLista = null;
+        function observarFinDeLista() {
+            const pie = document.getElementById('solicitudes-mas');
+            if (!pie || !('IntersectionObserver' in window)) return;
+
+            if (observadorLista) observadorLista.disconnect();
+            observadorLista = new IntersectionObserver(entradas => {
+                if (entradas[0].isIntersecting) {
+                    observadorLista.disconnect();
+                    pintarSiguienteLote();
+                }
+            }, { rootMargin: '300px' });
+            observadorLista.observe(pie);
         }
 
         function createSolicitudCard(solicitud) {
@@ -3418,7 +3635,7 @@ async function showAdvancedStatisticsModal() {
                 <div class="alert alert-warning">
                     <h4>⚠️ No hay datos disponibles</h4>
                     <p>Por favor, espere a que se carguen los datos o presione el botón de actualizar.</p>
-                    <button class="btn btn-primary" onclick="loadAllDataFromCloud()">🔄 Cargar Datos</button>
+                    <button class="btn btn-primary" onclick="loadAllDataFromCloud({ usarCache: false })">🔄 Cargar Datos</button>
                 </div>
             `;
             return;
@@ -4712,6 +4929,8 @@ async function exportTemporalAnalysis() {
         
         document.body.appendChild(pdfContent);
         
+        await window.cargarLibreriasPDF();
+        
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -5940,6 +6159,8 @@ async function exportTemporalAnalysis() {
         
         document.body.appendChild(pdfContent);
         
+        await window.cargarLibreriasPDF();
+        
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -6874,7 +7095,7 @@ function calcularEstadisticasPorArea() {
 
         // Actualizar datos de estadísticas
         async function refreshStatsData() {
-            await loadAllDataFromCloud();
+            await loadAllDataFromCloud({ usarCache: false });
             await showAdvancedStatisticsModal();
         }
 
@@ -6943,6 +7164,7 @@ function calcularEstadisticasPorArea() {
                 document.body.appendChild(pdfWrapper);
 
                 // Render a canvas del DOM para PDF
+                await window.cargarLibreriasPDF();
                 const canvas = await html2canvas(pdfWrapper, {
                     scale: 2,
                     logging: false,
@@ -7287,6 +7509,7 @@ function generateFilteredSolicitudesTable(solicitudes) {
         document.body.appendChild(pdfContent);
         
         // Generar PDF
+        await window.cargarLibreriasPDF();
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -7981,8 +8204,9 @@ async function forzarActualizacionCompleta() {
     cloudUsuarios = [];
     cloudSolicitudesAcceso = [];
     
-    // Recargar todo
-    await loadAllDataFromCloud();
+    // Recargar todo, ignorando la caché
+    sessionStorage.removeItem('hslv_cache_datos');
+    await loadAllDataFromCloud({ usarCache: false });
     
     // Reiniciar auto-refresh
     startAutoRefresh();
@@ -8888,19 +9112,18 @@ window.debugEstadisticas = function() {
             
             document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
             
-            setTimeout(async () => {
+            // Sin setTimeout(1000): airtable-config.js ya está cargado en este punto
+            // porque su <script> es anterior. Ese segundo era espera pura.
+            (async () => {
                 if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
                     await loadAllDataFromCloud();
-                    
-                    console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
                     startAutoRefresh();
                 } else {
                     console.error('❌ No se pudo cargar airtable-config.js');
                     updateConnectionStatus('disconnected');
                     loadDataFromLocalStorage();
                 }
-            }, 1000);
+            })();
         });
     </script>
 </body>

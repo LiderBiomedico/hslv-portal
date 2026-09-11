@@ -1,3 +1,6 @@
+// Depuración: window.HSLV_DEBUG = true en la consola para ver el detalle
+window.HSLV_DEBUG = window.HSLV_DEBUG || false;
+
 // 🛡️ Configuración COMPLETA de Airtable API - Con cambio de tipo de servicio al completar
 // airtable-config.js - Versión con actualización de tipo de servicio
 
@@ -534,7 +537,7 @@ class AirtableAPI {
     }
 
     async makeRequest(endpoint, method = 'GET', data = null) {
-    console.log('📡 Request:', method, endpoint);
+    if (window.HSLV_DEBUG) console.log('📡 Request:', method, endpoint);
     
     try {
         let url, options;
@@ -550,7 +553,7 @@ class AirtableAPI {
             }
             
             // Para debugging
-            console.log('🔗 URL completa al proxy:', url);
+            if (window.HSLV_DEBUG) console.log('🔗 URL completa al proxy:', url);
             
             const sessionToken = this.getSessionToken();
 
@@ -860,123 +863,134 @@ class AirtableAPI {
         };
     }
 
-async getSolicitudes() {
-    console.log('📋 Obteniendo TODAS las solicitudes con paginación mejorada...');
-    
+async getSolicitudes(opciones = {}) {
+    // ───────────────────────────────────────────────────────────────────
+    // Carga progresiva y con selección de campos.
+    //
+    //   onPagina(registros, info)  se llama al terminar CADA página, para
+    //                              que la interfaz pinte sin esperar el resto
+    //   maxPaginas                 corta la carga (fase inicial rápida)
+    //   desde                      offset de Airtable para continuar después
+    //   completo                   true = trae todos los campos
+    // ───────────────────────────────────────────────────────────────────
+    const { onPagina = null, maxPaginas = Infinity, desde = null, completo = false } = opciones;
+
+    const allRecordsMap = new Map();
+    let offset = desde;
+    let pageCount = 0;
+    let continuar = true;
+
+    const PAGE_SIZE = 100;                 // máximo que permite Airtable
+    const INTERVALO_MINIMO_MS = 210;       // 5 peticiones/segundo permitidas
+
+    // Solo los campos que el portal realmente usa. Se excluyen Attachments,
+    // evidencias y observacionesCompletado: pesan mucho y no se muestran.
+    const CAMPOS = [
+        'numero', 'servicioIngenieria', 'tipoServicio', 'prioridad', 'equipo',
+        'ubicacion', 'descripcion', 'observaciones', 'solicitante',
+        'servicioHospitalario', 'fechaCreacion', 'estado', 'tecnicoAsignado',
+        'fechaAsignacion', 'fechaInicio', 'fechaCompletado',
+        'observacionesAsignacion', 'tiempoRespuestaMaximo', 'area',
+        'fechaInicioTrabajo'
+    ];
+    const parametrosCampos = completo
+        ? ''
+        : '&' + CAMPOS.map(c => `fields%5B%5D=${encodeURIComponent(c)}`).join('&');
+
     try {
-        const allRecordsMap = new Map();
-        let offset = null;
-        let pageCount = 0;
-        let continuar = true;
-        
-        // Configuración para obtener TODOS los registros
-        const PAGE_SIZE = 100; // Máximo permitido por Airtable
-        
-        while (continuar) {
+        while (continuar && pageCount < maxPaginas) {
+            const inicioPeticion = Date.now();
             pageCount++;
-            console.log(`🔄 Obteniendo página ${pageCount}...`);
-            
+
             try {
-                // Construir endpoint con pageSize y offset
-                let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`;
-                
-                // IMPORTANTE: Agregar offset si existe
-                if (offset) {
-                    endpoint += `&offset=${encodeURIComponent(offset)}`;
-                    console.log(`📍 Usando offset: ${offset}`);
-                }
-                
-                // Hacer la solicitud
+                // Más recientes primero: la fase inicial trae lo que se ve en pantalla
+                let endpoint = `${this.tables.solicitudes}?pageSize=${PAGE_SIZE}`
+                    + '&sort%5B0%5D%5Bfield%5D=fechaCreacion'
+                    + '&sort%5B0%5D%5Bdirection%5D=desc'
+                    + parametrosCampos;
+
+                if (offset) endpoint += `&offset=${encodeURIComponent(offset)}`;
+
                 const result = await this.makeRequest(endpoint);
-                
-                // Verificar si hay registros
+
                 if (!result.records || result.records.length === 0) {
-                    console.log(`✅ Página ${pageCount} vacía - fin de datos`);
                     continuar = false;
                     break;
                 }
-                
-                // Procesar registros y agregar al Map para evitar duplicados
-                let nuevosRegistros = 0;
+
+                const nuevos = [];
                 result.records.forEach(record => {
-                    const recordId = record.id;
-                    
-                    if (!allRecordsMap.has(recordId)) {
-                        allRecordsMap.set(recordId, {
-                            id: recordId,
-                            ...record.fields
-                        });
-                        nuevosRegistros++;
+                    if (!allRecordsMap.has(record.id)) {
+                        const item = { id: record.id, ...record.fields };
+                        allRecordsMap.set(record.id, item);
+                        nuevos.push(item);
                     }
                 });
-                
-                console.log(`📊 Página ${pageCount}: ${result.records.length} registros recibidos, ${nuevosRegistros} nuevos`);
-                console.log(`📊 Total acumulado: ${allRecordsMap.size} registros únicos`);
-                
-                // CRÍTICO: Verificar si hay más páginas
-                if (result.offset) {
-                    // Hay más registros, continuar con el siguiente offset
-                    offset = result.offset;
-                    console.log(`➡️ Hay más páginas, siguiente offset: ${offset}`);
-                } else {
-                    // No hay más registros
-                    console.log('✅ No hay más páginas - paginación completa');
-                    continuar = false;
+
+                offset = result.offset || null;
+                continuar = Boolean(offset);
+
+                if (onPagina) {
+                    onPagina(nuevos, {
+                        pagina: pageCount,
+                        acumulado: allRecordsMap.size,
+                        hayMas: continuar,
+                        offset: offset
+                    });
                 }
-                
-                // Pequeña pausa para no sobrecargar la API
-                if (continuar) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
+
+                // Espera solo lo que falte para respetar el límite de Airtable.
+                // Antes se dormían 200 ms fijos por página aunque la petición
+                // ya hubiera tardado más: con 53 páginas eran ~10 s regalados.
+                if (continuar && pageCount < maxPaginas) {
+                    const transcurrido = Date.now() - inicioPeticion;
+                    const espera = INTERVALO_MINIMO_MS - transcurrido;
+                    if (espera > 0) await new Promise(r => setTimeout(r, espera));
                 }
-                
+
             } catch (pageError) {
-                console.error(`❌ Error en página ${pageCount}:`, pageError.message);
-                
-                // Si es un error de red, reintentar
+                console.error(`Error en página ${pageCount}:`, pageError.message);
+
                 if (pageError.message && pageError.message.includes('fetch')) {
-                    console.log('🔄 Reintentando página después de error de red...');
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(r => setTimeout(r, 1000));
+                    pageCount--;      // se reintenta la misma página
                     continue;
                 }
-                
-                // Para otros errores, detener
                 continuar = false;
-                break;
             }
         }
-        
-        // Convertir Map a Array
+
         const finalRecords = Array.from(allRecordsMap.values());
-        
-        // Análisis detallado de los resultados
-        console.log('╔══════════════════════════════════════════╗');
-        console.log('║   RESUMEN DE SOLICITUDES OBTENIDAS      ║');
-        console.log('╠══════════════════════════════════════════╣');
-        console.log(`║ ✅ TOTAL: ${finalRecords.length} solicitudes`);
-        console.log(`║ 📄 Páginas procesadas: ${pageCount}`);
-        console.log(`║ 🎯 Objetivo: 233 solicitudes`);
-        console.log(`║ ${finalRecords.length >= 233 ? '✅ OBJETIVO ALCANZADO' : '⚠️ FALTAN SOLICITUDES'}`);
-        console.log('╚══════════════════════════════════════════╝');
-        
-        // Verificación adicional
-        if (finalRecords.length < 233) {
-            console.warn('⚠️ ADVERTENCIA: No se obtuvieron todas las solicitudes esperadas');
-            console.log('💡 Posibles causas:');
-            console.log('   1. Verificar permisos en Airtable');
-            console.log('   2. Verificar que los registros existan en la tabla');
-            console.log('   3. Verificar filtros o vistas en Airtable');
-        }
-        
-        // Análisis por área
-        this.analizarSolicitudesPorArea(finalRecords);
-        
+        console.log(`✅ ${finalRecords.length} solicitudes en ${pageCount} página(s)`);
+
+        // Se devuelve el offset para poder continuar la carga en segundo plano
+        finalRecords.offsetSiguiente = offset;
         return finalRecords;
-        
+
     } catch (error) {
-        console.error('❌ Error crítico obteniendo solicitudes:', error);
+        console.error('❌ Error obteniendo solicitudes:', error);
         throw error;
     }
 }
+
+    // ───────────────────────────────────────────────────────────────────
+    // Solo las solicitudes que pueden haber cambiado: las que no están
+    // cerradas, más las creadas en los últimos días. Es lo que necesita el
+    // auto-refresh — de 5.239 registros a unas pocas decenas, en 1 petición.
+    // ───────────────────────────────────────────────────────────────────
+    async getSolicitudesActivas(diasRecientes = 7) {
+        const formula = `OR(
+            NOT(OR({estado}='COMPLETADA', {estado}='CANCELADA')),
+            IS_AFTER({fechaCreacion}, DATEADD(TODAY(), -${diasRecientes}, 'days'))
+        )`.replace(/\s+/g, ' ');
+
+        const endpoint = `${this.tables.solicitudes}`
+            + `?pageSize=100&filterByFormula=${encodeURIComponent(formula)}`
+            + '&sort%5B0%5D%5Bfield%5D=fechaCreacion&sort%5B0%5D%5Bdirection%5D=desc';
+
+        const result = await this.makeRequest(endpoint);
+        return (result.records || []).map(r => ({ id: r.id, ...r.fields }));
+    }
 
     // Agregar este método auxiliar después del método getSolicitudes
     analizarSolicitudesPorArea(records) {
