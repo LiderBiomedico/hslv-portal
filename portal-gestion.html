@@ -2324,6 +2324,12 @@ function cerrarSesionGestion() {
                cloudTecnicos = tecnicos;
                cloudUsuarios = usuarios;
                cloudSolicitudesAcceso = solicitudesAcceso;
+               const estados = {};
+               solicitudesAcceso.forEach(s => {
+                   const clave = s.estado || '(sin estado)';
+                   estados[clave] = (estados[clave] || 0) + 1;
+               });
+               console.log(`🔐 Solicitudes de acceso cargadas: ${solicitudesAcceso.length}`, estados);
 
                pintarTodo();
                updateConnectionStatus('connected');
@@ -2721,9 +2727,7 @@ function updateAllCounters() {
     document.getElementById('sistemas-personnel-count').textContent = `${sistemasTecnicos} registrados`;
 
     // Actualizar contadores de accesos
-    const pendingAccess = cloudSolicitudesAcceso.filter(s => 
-        s.estado === 'PENDIENTE' || s.estado === 'Pendiente' || !s.estado
-    ).length;
+    const pendingAccess = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'PENDIENTE').length;
     document.getElementById('pending-access-count').textContent = pendingAccess;
     document.getElementById('notification-count').textContent = pendingAccess + pendientes;
     
@@ -8701,6 +8705,21 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
             }
         }
 
+        // Clasifica el estado de una solicitud de acceso sin depender de que el texto
+        // coincida exactamente. Antes se exigía 'PENDIENTE', 'APROBADA' o 'RECHAZADA':
+        // cualquier otra variante ("Pendiente de revisión", "Aprobado", espacios
+        // sobrantes) dejaba la solicitud fuera de las tres listas y no se veía.
+        function estadoAcceso(solicitud) {
+            const bruto = String(solicitud?.estado ?? solicitud?.Estado ?? '')
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .trim().toUpperCase();
+            if (bruto.startsWith('APROB')) return 'APROBADA';
+            if (bruto.startsWith('RECHAZ')) return 'RECHAZADA';
+            // Sin estado, o con cualquier otro texto, se trata como pendiente:
+            // es preferible que el administrador la vea a que desaparezca.
+            return 'PENDIENTE';
+        }
+
         // Funciones de Accesos (sin cambios)
         function updateAccessRequestsList() {
             const container = document.getElementById('access-requests-container');
@@ -8714,18 +8733,9 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
                     </div>
                 `;
             } else {
-                const pendientes = cloudSolicitudesAcceso.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
-                    return estado === 'PENDIENTE';
-                });
-                const aprobadas = cloudSolicitudesAcceso.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'APROBADA';
-                });
-                const rechazadas = cloudSolicitudesAcceso.filter(s => {
-                    const estado = s.estado ? s.estado.toUpperCase() : '';
-                    return estado === 'RECHAZADA';
-                });
+                const pendientes = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'PENDIENTE');
+                const aprobadas = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'APROBADA');
+                const rechazadas = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'RECHAZADA');
                 
                 container.innerHTML = `
                     <div style="background: #fef3c7; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
@@ -8953,10 +8963,7 @@ async function notifyTechnician(technicianId, requestNumber) {
         }
 
         async function approveAllPending() {
-            const pendientes = cloudSolicitudesAcceso.filter(s => {
-                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
-                return estado === 'PENDIENTE';
-            });
+            const pendientes = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'PENDIENTE');
             
             if (pendientes.length === 0) {
                 alert('No hay solicitudes pendientes para aprobar');
@@ -9010,10 +9017,7 @@ async function notifyTechnician(technicianId, requestNumber) {
         }
 
         function showNotifications() {
-            const pendingAccess = cloudSolicitudesAcceso.filter(s => {
-                const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
-                return estado === 'PENDIENTE';
-            }).length;
+            const pendingAccess = cloudSolicitudesAcceso.filter(s => estadoAcceso(s) === 'PENDIENTE').length;
             const pendingSolicitudes = cloudSolicitudes.filter(s => {
                 const estado = s.estado ? s.estado.toUpperCase() : 'PENDIENTE';
                 return estado === 'PENDIENTE' || !s.tecnicoAsignado;
