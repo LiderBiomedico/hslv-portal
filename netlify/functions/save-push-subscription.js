@@ -1,21 +1,35 @@
-/ ===============================================
-// 6. netlify/functions/save-push-subscription.js
+// ===============================================
+// netlify/functions/save-push-subscription.js
 // ===============================================
 
+const { requireSession, corsHeaders } = require('./utils/session');
+
 exports.handler = async (event, context) => {
+    const headers = corsHeaders(event);
+
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
+            headers,
             body: JSON.stringify({ success: false, message: 'Method not allowed' })
         };
     }
 
+    // 🔐 Sesion obligatoria
+    const control = requireSession(event, headers);
+    if (control.error) return control.error;
+
     try {
-        const { technicianId, subscription } = JSON.parse(event.body);
+        const { subscription } = JSON.parse(event.body);
+        const technicianId = control.sesion.sub;
         
-        if (!technicianId || !subscription) {
+        if (!subscription) {
             return {
                 statusCode: 400,
+                headers,
                 body: JSON.stringify({ 
                     success: false, 
                     message: 'Datos requeridos faltantes' 
@@ -30,6 +44,7 @@ exports.handler = async (event, context) => {
         
         return {
             statusCode: 200,
+            headers,
             body: JSON.stringify({
                 success: true,
                 message: 'Suscripción guardada'
@@ -40,6 +55,7 @@ exports.handler = async (event, context) => {
         console.error('Save subscription error:', error);
         return {
             statusCode: 500,
+            headers,
             body: JSON.stringify({
                 success: false,
                 message: 'Error guardando suscripción'

@@ -5,10 +5,32 @@
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Portal de Gestión Cloud - Hospital Susana López de Valencia</title>
 <!-- Agregar Chart.js para gráficos -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <!-- Agregar jsPDF para exportar a PDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<!-- jsPDF y html2canvas se cargan solo al exportar (≈500 KB que ya no bloquean el arranque) -->
+<script>
+// Carga perezosa de las librerías de exportación
+window.cargarLibreriasPDF = (function () {
+    let promesa = null;
+    function cargarScript(src) {
+        return new Promise((ok, mal) => {
+            const el = document.createElement('script');
+            el.src = src; el.onload = ok; el.onerror = () => mal(new Error('No se pudo cargar ' + src));
+            document.head.appendChild(el);
+        });
+    }
+    return function () {
+        if (window.jspdf && window.html2canvas) return Promise.resolve();
+        if (!promesa) {
+            promesa = Promise.all([
+                cargarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'),
+                cargarScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')
+            ]).catch(e => { promesa = null; throw e; });
+        }
+        return promesa;
+    };
+})();
+</script>
 <style>
         * {
             margin: 0;
@@ -527,6 +549,10 @@
             border-top-color: #8b5cf6; 
             background: linear-gradient(135deg, #ffffff 0%, #ede9fe 100%);
         }
+        .metric-card.sistemas { 
+            border-top-color: #0891b2; 
+            background: linear-gradient(135deg, #ffffff 0%, #cffafe 100%);
+        }
         .metric-card.pendientes { 
             border-top-color: #ef4444; 
             background: linear-gradient(135deg, #ffffff 0%, #fee2e2 100%);
@@ -835,6 +861,11 @@
         .badge-infraestructura {
             background: #ede9fe;
             color: #7c3aed;
+        }
+
+        .badge-sistemas {
+            background: #cffafe;
+            color: #0e7490;
         }
 
         .request-details {
@@ -1348,7 +1379,7 @@
 <div class="logo">
 <div class="hospital-info">
 <h1>HOSPITAL SUSANA LOPEZ DE VALENCIA E.S.E.</h1>
-<p class="developer-credit" style="display:none!important">Desarrollado por Ing. Paul Eduardo Muñoz R.</p>
+<p class="developer-credit" style="display:none!important"></p>
 <p>Portal de Gestión Cloud - Sistema con Análisis por Áreas</p>
 </div>
 </div>
@@ -1431,6 +1462,11 @@
 <div class="metric-number" id="metric-infraestructura">-</div>
 <div class="metric-label">Infraestructura</div>
 </div>
+<div class="metric-card sistemas" onclick="showAreaSolicitudes('SISTEMAS')">
+<div class="metric-icon">💻</div>
+<div class="metric-number" id="metric-sistemas">-</div>
+<div class="metric-label">Sistemas</div>
+</div>
 </div>
 <!-- Resumen de Personal por Área -->
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem;">
@@ -1463,6 +1499,17 @@
 </div>
 <div class="card-content">
 <div id="infraestructura-personnel-summary">
+<p style="color: #6b7280; text-align: center;">Cargando datos...</p>
+</div>
+</div>
+</div>
+<div class="card">
+<div class="card-header">
+<h2 class="card-title">💻 Personal Sistemas</h2>
+<span class="status-disponible" id="sistemas-personnel-count">- registrados</span>
+</div>
+<div class="card-content">
+<div id="sistemas-personnel-summary">
 <p style="color: #6b7280; text-align: center;">Cargando datos...</p>
 </div>
 </div>
@@ -1504,6 +1551,10 @@
 <button class="area-tab" data-area="INFRAESTRUCTURA" onclick="filterSolicitudesByArea('INFRAESTRUCTURA')">
 🏗️ Infraestructura
 <span class="badge" id="badge-infraestructura">0</span>
+</button>
+<button class="area-tab" data-area="SISTEMAS" onclick="filterSolicitudesByArea('SISTEMAS')">
+💻 Sistemas
+<span class="badge" id="badge-sistemas">0</span>
 </button>
 </div>
 
@@ -1696,6 +1747,7 @@
 <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
 <option value="MECANICA">Mecánica</option>
 <option value="INFRAESTRUCTURA">Infraestructura</option>
+<option value="SISTEMAS">Sistemas</option>
 </select>
 </div>
 <div>
@@ -1835,6 +1887,7 @@
 <option value="INGENIERIA_BIOMEDICA">Ingeniería Biomédica</option>
 <option value="MECANICA">Mecánica</option>
 <option value="INFRAESTRUCTURA">Infraestructura</option>
+<option value="SISTEMAS">Sistemas</option>
 </select>
 </div>
 <div>
@@ -1924,6 +1977,48 @@
 </div>
 </div>
 <!-- Incluir el archivo de configuración de Airtable -->
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// 🔐 GUARDIA DE ACCESO — se ejecuta ANTES de cargar el portal.
+// Antes este archivo se abría escribiendo su URL directamente, sin
+// pasar por el modal de contraseña de index.html.
+// ═══════════════════════════════════════════════════════════════════
+(function guardiaDeAcceso() {
+    const token = sessionStorage.getItem('hslv_session');
+    let valido = false;
+
+    if (token && token.includes('.')) {
+        try {
+            const payload = JSON.parse(atob(
+                token.split('.')[0].replace(/-/g, '+').replace(/_/g, '/')
+            ));
+            valido = payload.rol === 'admin' && payload.exp > Math.floor(Date.now() / 1000);
+        } catch (e) {
+            valido = false;
+        }
+    }
+
+    if (!valido) {
+        // La comprobación real la hace el servidor con la firma del token;
+        // esto solo evita mostrar el portal a quien no ha iniciado sesión.
+        sessionStorage.removeItem('hslv_session');
+        document.documentElement.innerHTML =
+            '<body style="font-family:system-ui;display:flex;align-items:center;' +
+            'justify-content:center;height:100vh;margin:0;background:#f8fafc">' +
+            '<div style="text-align:center"><h2 style="color:#dc2626">Acceso restringido</h2>' +
+            '<p style="color:#475569">Debe iniciar sesión desde el portal principal.</p>' +
+            '<a href="index.html" style="color:#2563eb">Ir al inicio</a></div></body>';
+        throw new Error('Sesion no valida');
+    }
+})();
+
+// Cierra la sesión y vuelve al inicio
+function cerrarSesionGestion() {
+    sessionStorage.removeItem('hslv_session');
+    if (window.airtableAPI) window.airtableAPI.setSessionToken(null);
+    window.location.href = 'index.html';
+}
+</script>
 <script src="airtable-config.js"></script>
 <script>
         // Variables globales para datos de la nube
@@ -1938,7 +2033,8 @@
         let solicitudesPorArea = {
             BIOMEDICA: [],
             MECANICA: [],
-            INFRAESTRUCTURA: []
+            INFRAESTRUCTURA: [],
+            SISTEMAS: []
         };
 
         // Variables para auto-refresh
@@ -2003,14 +2099,49 @@
                 // Solo refrescar si esta activo Y la pestana esta visible.
                 // Una pestana en segundo plano u oculta NO consume creditos.
                 if (isAutoRefreshActive && document.visibilityState === 'visible') {
-                    console.log('🔄 Auto-refresh ejecutándose...');
-                    await loadAllDataFromCloud();
+                    await refrescarIncremental();
                     resetRefreshCountdown();
                 }
             }, AUTO_REFRESH_SECONDS * 1000);
 
             // Countdown visual
             startRefreshCountdown();
+        }
+
+        // ── Refresco incremental ────────────────────────────────────────
+        // Antes: cada 60 s se volvían a descargar las 5.239 solicitudes
+        // completas (53 páginas) para detectar cambios en unas pocas.
+        // Ahora: 1 petición con las abiertas y las recientes, y se fusionan.
+        async function refrescarIncremental() {
+            if (!window.airtableAPI || cargaEnSegundoPlano) return;
+
+            try {
+                const activas = await window.airtableAPI.getSolicitudesActivas();
+
+                const porId = new Map(cloudSolicitudes.map(s => [s.id, s]));
+                let cambios = 0;
+
+                activas.forEach(nueva => {
+                    const anterior = porId.get(nueva.id);
+                    if (!anterior || anterior.estado !== nueva.estado ||
+                        anterior.tecnicoAsignado !== nueva.tecnicoAsignado) {
+                        cambios++;
+                    }
+                    porId.set(nueva.id, nueva);
+                });
+
+                if (cambios > 0) {
+                    cloudSolicitudes = Array.from(porId.values());
+                    pintarTodo();
+                    guardarCache();
+                    console.log(`🔄 ${cambios} solicitud(es) actualizada(s)`);
+                }
+
+                updateConnectionStatus('connected');
+            } catch (error) {
+                console.error('Error en el refresco:', error);
+                updateConnectionStatus('fallback');
+            }
         }
 
         function startRefreshCountdown() {
@@ -2074,8 +2205,8 @@
             visibilityListenerRegistrado = true;
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible' && isAutoRefreshActive) {
-                    console.log('👁️ Pestana visible de nuevo: refresco puntual');
-                    loadAllDataFromCloud();
+                    // Refresco ligero, no recarga completa
+                    refrescarIncremental();
                     resetRefreshCountdown();
                 }
             });
@@ -2102,58 +2233,152 @@
         }
 
         // 🔄 Funciones de carga de datos desde Airtable
-       async function loadAllDataFromCloud() {
-    console.log('🌐 Cargando todos los datos desde Airtable...');
-    
-    try {
-        updateConnectionStatus('connecting', 'Sincronizando...');
-        
-        const [solicitudes, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
-            window.airtableAPI.getSolicitudes(),
-            window.airtableAPI.getTecnicos(),
-            window.airtableAPI.getUsuarios(),
-            window.airtableAPI.getSolicitudesAcceso()
-        ]);
-        
-        // Validación de datos antes de asignar
-        if (solicitudes.length > 1000) {
-            console.warn(`⚠️ Se obtuvieron ${solicitudes.length} solicitudes - verificando duplicados...`);
-            
-            // Eliminar duplicados por ID
-            const uniqueSolicitudes = new Map();
-            solicitudes.forEach(s => {
-                if (!uniqueSolicitudes.has(s.id)) {
-                    uniqueSolicitudes.set(s.id, s);
-                }
-            });
-            
-            cloudSolicitudes = Array.from(uniqueSolicitudes.values());
-            console.log(`✅ Solicitudes únicas después de limpieza: ${cloudSolicitudes.length}`);
-        } else {
-            cloudSolicitudes = solicitudes;
-        }
-        
-        cloudTecnicos = tecnicos;
-        cloudUsuarios = usuarios;
-        cloudSolicitudesAcceso = solicitudesAcceso;
-        
-        console.log(`✅ Datos cargados: ${cloudSolicitudes.length} solicitudes, ${tecnicos.length} personal, ${usuarios.length} usuarios`);
-        
-        // Clasificar solicitudes por área
-        poblarFiltroAnioSolicitudes();
-        clasificarSolicitudesPorArea();
-        
-        updateAccessRequestsList();
-        updateAllCounters();
-        updateAllDisplays();
-        updateConnectionStatus('connected');
-        
-    } catch (error) {
-        console.error('❌ Error cargando datos desde Airtable:', error);
-        updateConnectionStatus('fallback');
-        loadDataFromLocalStorage();
-    }
-}
+       // ═══════════════════════════════════════════════════════════════
+       // Carga en dos fases.
+       //
+       // Antes: se descargaban las 5.239 solicitudes (53 páginas, 200 ms de
+       // pausa fija entre cada una) ANTES de pintar nada. El usuario miraba
+       // una pantalla vacía durante todo ese tiempo.
+       //
+       // Ahora: la primera página pinta de inmediato y el resto entra en
+       // segundo plano, actualizando la vista a medida que llega.
+       // ═══════════════════════════════════════════════════════════════
+       const CACHE_CLAVE = 'hslv_cache_datos';
+       const CACHE_VIGENCIA_MS = 5 * 60 * 1000;   // 5 minutos
+       let cargaEnSegundoPlano = false;
+
+       function guardarCache() {
+           try {
+               sessionStorage.setItem(CACHE_CLAVE, JSON.stringify({
+                   t: Date.now(),
+                   solicitudes: cloudSolicitudes,
+                   tecnicos: cloudTecnicos,
+                   usuarios: cloudUsuarios,
+                   acceso: cloudSolicitudesAcceso
+               }));
+           } catch (e) {
+               // sessionStorage lleno: no es crítico, solo se pierde la caché
+               console.warn('No se pudo guardar la caché:', e.message);
+           }
+       }
+
+       function leerCache() {
+           try {
+               const crudo = sessionStorage.getItem(CACHE_CLAVE);
+               if (!crudo) return null;
+               const datos = JSON.parse(crudo);
+               if (Date.now() - datos.t > CACHE_VIGENCIA_MS) return null;
+               return datos;
+           } catch (e) {
+               return null;
+           }
+       }
+
+       function pintarTodo() {
+           poblarFiltroAnioSolicitudes();
+           clasificarSolicitudesPorArea();
+           updateAccessRequestsList();
+           updateAllCounters();
+           updateAllDisplays();
+       }
+
+       function mostrarProgresoCarga(acumulado, hayMas) {
+           const el = document.getElementById('indicador-carga');
+           if (!el) return;
+           el.textContent = hayMas
+               ? `Cargando histórico… ${acumulado} de ~${TOTAL_ESTIMADO} solicitudes`
+               : '';
+           el.style.display = hayMas ? 'block' : 'none';
+       }
+
+       const TOTAL_ESTIMADO = 5300;
+
+       async function loadAllDataFromCloud({ usarCache = true } = {}) {
+           try {
+               updateConnectionStatus('connecting', 'Sincronizando...');
+
+               // ── Fase 0: caché de sesión ────────────────────────────────
+               const cache = usarCache ? leerCache() : null;
+               if (cache) {
+                   cloudSolicitudes = cache.solicitudes;
+                   cloudTecnicos = cache.tecnicos;
+                   cloudUsuarios = cache.usuarios;
+                   cloudSolicitudesAcceso = cache.acceso;
+                   pintarTodo();
+                   updateConnectionStatus('connected');
+                   console.log(`⚡ ${cloudSolicitudes.length} solicitudes desde caché`);
+                   return;
+               }
+
+               // ── Fase 1: lo mínimo para pintar la pantalla ──────────────
+               const t0 = performance.now();
+
+               const [primeraPagina, tecnicos, usuarios, solicitudesAcceso] = await Promise.all([
+                   window.airtableAPI.getSolicitudes({ maxPaginas: 1 }),
+                   window.airtableAPI.getTecnicos(),
+                   window.airtableAPI.getUsuarios(),
+                   window.airtableAPI.getSolicitudesAcceso()
+               ]);
+
+               cloudSolicitudes = primeraPagina;
+               cloudTecnicos = tecnicos;
+               cloudUsuarios = usuarios;
+               cloudSolicitudesAcceso = solicitudesAcceso;
+
+               pintarTodo();
+               updateConnectionStatus('connected');
+               console.log(`⚡ Primera pintura en ${Math.round(performance.now() - t0)} ms`);
+
+               // ── Fase 2: el resto del histórico, sin bloquear ───────────
+               const offsetSiguiente = primeraPagina.offsetSiguiente;
+               if (offsetSiguiente && !cargaEnSegundoPlano) {
+                   cargarRestoEnSegundoPlano(offsetSiguiente, t0);
+               }
+
+           } catch (error) {
+               console.error('❌ Error cargando datos desde Airtable:', error);
+               updateConnectionStatus('fallback');
+               loadDataFromLocalStorage();
+           }
+       }
+
+       async function cargarRestoEnSegundoPlano(offset, t0) {
+           cargaEnSegundoPlano = true;
+           mostrarProgresoCarga(cloudSolicitudes.length, true);
+
+           try {
+               const porId = new Map(cloudSolicitudes.map(s => [s.id, s]));
+               let ultimoRepintado = 0;
+
+               await window.airtableAPI.getSolicitudes({
+                   desde: offset,
+                   onPagina: (nuevos, info) => {
+                       nuevos.forEach(s => porId.set(s.id, s));
+                       cloudSolicitudes = Array.from(porId.values());
+                       mostrarProgresoCarga(cloudSolicitudes.length, info.hayMas);
+
+                       // Se repinta cada 2 s como mucho: repintar en cada una de
+                       // las 53 páginas costaba más que la propia descarga
+                       const ahora = Date.now();
+                       if (!info.hayMas || ahora - ultimoRepintado > 2000) {
+                           ultimoRepintado = ahora;
+                           clasificarSolicitudesPorArea();
+                           updateAllCounters();
+                       }
+                   }
+               });
+
+               pintarTodo();
+               guardarCache();
+               console.log(`✅ Histórico completo: ${cloudSolicitudes.length} solicitudes ` +
+                           `en ${Math.round((performance.now() - t0) / 1000)} s`);
+           } catch (error) {
+               console.error('Error cargando el histórico:', error);
+           } finally {
+               cargaEnSegundoPlano = false;
+               mostrarProgresoCarga(cloudSolicitudes.length, false);
+           }
+       }
 
         function loadDataFromLocalStorage() {
             console.log('📱 Cargando datos desde localStorage (modo fallback)...');
@@ -2197,7 +2422,8 @@
             solicitudesPorArea = {
                 BIOMEDICA: [],
                 MECANICA: [],
-                INFRAESTRUCTURA: []
+                INFRAESTRUCTURA: [],
+                SISTEMAS: []
             };
             
             cloudSolicitudes.forEach(solicitud => {
@@ -2296,6 +2522,8 @@
                 return 'MECANICA';
             } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                 return 'INFRAESTRUCTURA';
+            } else if (area === 'SISTEMAS' || area === 'Sistemas' || lowerArea.includes('sistema')) {
+                return 'SISTEMAS';
             }
             return 'BIOMEDICA'; // Default
         }
@@ -2306,6 +2534,7 @@
             document.getElementById('badge-biomedica').textContent = solicitudesPorArea.BIOMEDICA.length;
             document.getElementById('badge-mecanica').textContent = solicitudesPorArea.MECANICA.length;
             document.getElementById('badge-infraestructura').textContent = solicitudesPorArea.INFRAESTRUCTURA.length;
+            document.getElementById('badge-sistemas').textContent = solicitudesPorArea.SISTEMAS.length;
         }
 
         // FUNCIÓN MEJORADA: Filtrar solicitudes por área
@@ -2429,10 +2658,21 @@ function updateAllCounters() {
                lowerArea.includes('infra');
     };
     
+    // Función para detectar área de sistemas
+    const isSystemsArea = (area) => {
+        if (!area) return false;
+        const areaStr = String(area).trim();
+        const lowerArea = areaStr.toLowerCase();
+        return areaStr === 'SISTEMAS' || 
+               areaStr === 'Sistemas' ||
+               lowerArea.includes('sistema');
+    };
+    
     // Contar por áreas
     const biomedica = cloudSolicitudes.filter(r => isBiomedicalArea(r.servicioIngenieria)).length;
     const mecanica = cloudSolicitudes.filter(r => isMechanicalArea(r.servicioIngenieria)).length;
     const infraestructura = cloudSolicitudes.filter(r => isInfrastructureArea(r.servicioIngenieria)).length;
+    const sistemas = cloudSolicitudes.filter(r => isSystemsArea(r.servicioIngenieria)).length;
     
     // Log detallado para debug
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -2440,8 +2680,9 @@ function updateAllCounters() {
     console.log(`🏥 Ingeniería Biomédica: ${biomedica}`);
     console.log(`⚙️ Mecánica: ${mecanica}`);
     console.log(`🏗️ Infraestructura: ${infraestructura}`);
+    console.log(`💻 Sistemas: ${sistemas}`);
     console.log(`📋 TOTAL: ${total}`);
-    console.log(`❓ Sin clasificar: ${total - (biomedica + mecanica + infraestructura)}`);
+    console.log(`❓ Sin clasificar: ${total - (biomedica + mecanica + infraestructura + sistemas)}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     
     // Contar por estados
@@ -2461,6 +2702,7 @@ function updateAllCounters() {
     document.getElementById('metric-biomedica').textContent = biomedica;
     document.getElementById('metric-mecanica').textContent = mecanica;
     document.getElementById('metric-infraestructura').textContent = infraestructura;
+    document.getElementById('metric-sistemas').textContent = sistemas;
     document.getElementById('metric-pendientes').textContent = pendientes;
     document.getElementById('metric-asignadas').textContent = asignadas;
     document.getElementById('total-count').textContent = total;
@@ -2470,11 +2712,13 @@ function updateAllCounters() {
     const biomedicaTecnicos = cloudTecnicos.filter(t => isBiomedicalArea(t.area)).length;
     const mecanicaTecnicos = cloudTecnicos.filter(t => isMechanicalArea(t.area)).length;
     const infraestructuraTecnicos = cloudTecnicos.filter(t => isInfrastructureArea(t.area)).length;
+    const sistemasTecnicos = cloudTecnicos.filter(t => isSystemsArea(t.area)).length;
 
     document.getElementById('total-technicians-nav').textContent = totalTechnicians;
     document.getElementById('biomedica-personnel-count').textContent = `${biomedicaTecnicos} registrados`;
     document.getElementById('mecanica-personnel-count').textContent = `${mecanicaTecnicos} registrados`;
     document.getElementById('infraestructura-personnel-count').textContent = `${infraestructuraTecnicos} registrados`;
+    document.getElementById('sistemas-personnel-count').textContent = `${sistemasTecnicos} registrados`;
 
     // Actualizar contadores de accesos
     const pendingAccess = cloudSolicitudesAcceso.filter(s => 
@@ -2484,7 +2728,7 @@ function updateAllCounters() {
     document.getElementById('notification-count').textContent = pendingAccess + pendientes;
     
     // Mostrar alerta si hay solicitudes sin clasificar
-    const sinClasificar = total - (biomedica + mecanica + infraestructura);
+    const sinClasificar = total - (biomedica + mecanica + infraestructura + sistemas);
     if (sinClasificar > 0) {
         console.warn(`⚠️ Hay ${sinClasificar} solicitudes sin área definida o con área no reconocida`);
     }
@@ -2752,6 +2996,7 @@ async function exportFilteredSolicitudesPDF() {
         document.body.appendChild(pdfContent);
         
         // Generar PDF
+        await window.cargarLibreriasPDF();
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -2818,7 +3063,8 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             const areas = [
                 { key: 'INGENIERIA_BIOMEDICA', name: 'biomedica' },
                 { key: 'MECANICA', name: 'mecanica' },
-                { key: 'INFRAESTRUCTURA', name: 'infraestructura' }
+                { key: 'INFRAESTRUCTURA', name: 'infraestructura' },
+                { key: 'SISTEMAS', name: 'sistemas' }
             ];
 
             areas.forEach(area => {
@@ -2843,6 +3089,12 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                         t.area === 'INFRAESTRUCTURA' || 
                         t.area === 'Infraestructura' ||
                         (t.area && t.area.toLowerCase().includes('infra'))
+                    );
+                } else if (area.key === 'SISTEMAS') {
+                    personnel = cloudTecnicos.filter(t => 
+                        t.area === 'SISTEMAS' || 
+                        t.area === 'Sistemas' ||
+                        (t.area && t.area.toLowerCase().includes('sistema'))
                     );
                 } else {
                     personnel = cloudTecnicos.filter(t => t.area === area.key);
@@ -2882,12 +3134,12 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
             console.log('🔄 Actualizando solicitudes desde Airtable...');
             
             try {
-                cloudSolicitudes = await window.airtableAPI.getSolicitudes();
-                clasificarSolicitudesPorArea();
+                // Refresco de las que cambian, no de las 5.239
+                await refrescarIncremental();
                 filterSolicitudesByArea(currentAreaFilter);
-                updateAllCounters();
-                
-                alert(`✅ Solicitudes actualizadas desde Airtable\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
+                guardarCache();
+
+                alert(`✅ Solicitudes actualizadas\n\n📊 Total: ${cloudSolicitudes.length} solicitudes\n🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'}\n🕐 ${new Date().toLocaleTimeString('es-CO')}`);
                 
             } catch (error) {
                 console.error('❌ Error actualizando solicitudes:', error);
@@ -2969,6 +3221,13 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                     headerText += ` - ${currentStatusFilter.toLowerCase().replace('_', ' ')}`;
                 }
 
+                // Solo se pintan los primeros TAMANO_LOTE; el resto se añade
+                // al pulsar "Mostrar más" o al llegar al final de la lista.
+                // Pintar 5.239 tarjetas de golpe generaba varios MB de HTML y
+                // congelaba la pestaña durante segundos.
+                solicitudesRenderPendientes = solicitudesSorted;
+                solicitudesRenderIndice = 0;
+
                 container.innerHTML = `
                     <div style="background: #f0fdf4; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem;">
                         <h4 style="color: #059669; margin-bottom: 0.5rem;">
@@ -2979,10 +3238,68 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                             🔄 Auto-refresh: ${isAutoRefreshActive ? 'Activo' : 'Pausado'} | 
                             Última actualización: ${new Date().toLocaleTimeString('es-CO')}
                         </p>
+                        <p id="indicador-carga" style="display:none; color:#047857; font-size:0.8rem; margin-top:0.5rem;"></p>
                     </div>
-                    ${solicitudesSorted.map(solicitud => createSolicitudCard(solicitud)).join('')}
+                    <div id="solicitudes-lote"></div>
+                    <div id="solicitudes-mas" style="text-align:center; padding:1rem;"></div>
                 `;
+
+                pintarSiguienteLote();
             }
+        }
+
+        // ── Render por lotes ────────────────────────────────────────────
+        const TAMANO_LOTE = 40;
+        let solicitudesRenderPendientes = [];
+        let solicitudesRenderIndice = 0;
+
+        function pintarSiguienteLote() {
+            const lote = document.getElementById('solicitudes-lote');
+            const pie = document.getElementById('solicitudes-mas');
+            if (!lote || !pie) return;
+
+            const siguiente = solicitudesRenderPendientes.slice(
+                solicitudesRenderIndice,
+                solicitudesRenderIndice + TAMANO_LOTE
+            );
+
+            // insertAdjacentHTML no vuelve a analizar lo ya pintado,
+            // a diferencia de innerHTML += que reconstruye todo el bloque
+            lote.insertAdjacentHTML('beforeend',
+                siguiente.map(solicitud => createSolicitudCard(solicitud)).join(''));
+
+            solicitudesRenderIndice += siguiente.length;
+            const restantes = solicitudesRenderPendientes.length - solicitudesRenderIndice;
+
+            if (restantes > 0) {
+                pie.innerHTML = `
+                    <button class="btn btn-secondary" onclick="pintarSiguienteLote()">
+                        Mostrar ${Math.min(TAMANO_LOTE, restantes)} más
+                        <span style="opacity:.7">(${restantes} restantes)</span>
+                    </button>`;
+                observarFinDeLista();
+            } else {
+                pie.innerHTML = solicitudesRenderPendientes.length > TAMANO_LOTE
+                    ? `<span style="color:#6b7280; font-size:0.85rem;">
+                         ${solicitudesRenderPendientes.length} solicitudes mostradas</span>`
+                    : '';
+            }
+        }
+
+        // Carga automática al llegar al final: más cómodo que pulsar el botón
+        let observadorLista = null;
+        function observarFinDeLista() {
+            const pie = document.getElementById('solicitudes-mas');
+            if (!pie || !('IntersectionObserver' in window)) return;
+
+            if (observadorLista) observadorLista.disconnect();
+            observadorLista = new IntersectionObserver(entradas => {
+                if (entradas[0].isIntersecting) {
+                    observadorLista.disconnect();
+                    pintarSiguienteLote();
+                }
+            }, { rootMargin: '300px' });
+            observadorLista.observe(pie);
         }
 
         function createSolicitudCard(solicitud) {
@@ -3037,6 +3354,8 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                     return 'badge-mecanica';
                 } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                     return 'badge-infraestructura';
+                } else if (area === 'SISTEMAS' || area === 'Sistemas' || lowerArea.includes('sistema')) {
+                    return 'badge-sistemas';
                 }
                 
                 return 'badge-biomedica';
@@ -3055,6 +3374,8 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                     return '⚙️ Mecánica';
                 } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                     return '🏗️ Infraestructura';
+                } else if (area === 'SISTEMAS' || area === 'Sistemas' || lowerArea.includes('sistema')) {
+                    return '💻 Sistemas';
                 }
                 
                 return area;
@@ -3226,6 +3547,8 @@ window.exportFilteredSolicitudesPDF = exportFilteredSolicitudesPDF;
                 return 'Mecánica';
             } else if (area === 'INFRAESTRUCTURA' || area === 'Infraestructura' || lowerArea.includes('infra')) {
                 return 'Infraestructura';
+            } else if (area === 'SISTEMAS' || area === 'Sistemas' || lowerArea.includes('sistema')) {
+                return 'Sistemas';
             }
             
             return area;
@@ -3312,7 +3635,7 @@ async function showAdvancedStatisticsModal() {
                 <div class="alert alert-warning">
                     <h4>⚠️ No hay datos disponibles</h4>
                     <p>Por favor, espere a que se carguen los datos o presione el botón de actualizar.</p>
-                    <button class="btn btn-primary" onclick="loadAllDataFromCloud()">🔄 Cargar Datos</button>
+                    <button class="btn btn-primary" onclick="loadAllDataFromCloud({ usarCache: false })">🔄 Cargar Datos</button>
                 </div>
             `;
             return;
@@ -3386,6 +3709,9 @@ async function showAdvancedStatisticsModal() {
                         <button class="area-tab" data-area-stats="infraestructura" onclick="showAreaStats('infraestructura')">
                             🏗️ Infraestructura (${statsPorArea.INFRAESTRUCTURA.total})
                         </button>
+                        <button class="area-tab" data-area-stats="sistemas" onclick="showAreaStats('sistemas')">
+                            💻 Sistemas (${statsPorArea.SISTEMAS.total})
+                        </button>
                     </div>
 
                     <!-- Contenido de estadísticas General -->
@@ -3406,6 +3732,11 @@ async function showAdvancedStatisticsModal() {
                     <!-- Contenido de estadísticas Infraestructura -->
                     <div id="stats-infraestructura" class="area-stats-section">
                         ${generateAreaSpecificStats('INFRAESTRUCTURA', statsPorArea.INFRAESTRUCTURA)}
+                    </div>
+
+                    <!-- Contenido de estadísticas Sistemas -->
+                    <div id="stats-sistemas" class="area-stats-section">
+                        ${generateAreaSpecificStats('SISTEMAS', statsPorArea.SISTEMAS)}
                     </div>
                 </div>
 
@@ -3493,6 +3824,11 @@ function calcularEstadisticasLocales() {
             const area = s.servicioIngenieria || '';
             return area === 'INFRAESTRUCTURA' || 
                    area.toLowerCase().includes('infra');
+        }).length,
+        SISTEMAS: cloudSolicitudes.filter(s => {
+            const area = s.servicioIngenieria || '';
+            return area === 'SISTEMAS' || 
+                   area.toLowerCase().includes('sistema');
         }).length
     };
     
@@ -3565,12 +3901,14 @@ function calcularAnalisisTemporal() {
         mensual: {
             BIOMEDICA: {},
             MECANICA: {},
-            INFRAESTRUCTURA: {}
+            INFRAESTRUCTURA: {},
+            SISTEMAS: {}
         },
         trimestral: {
             BIOMEDICA: {},
             MECANICA: {},
-            INFRAESTRUCTURA: {}
+            INFRAESTRUCTURA: {},
+            SISTEMAS: {}
         }
     };
     
@@ -3579,7 +3917,7 @@ function calcularAnalisisTemporal() {
         const fecha = new Date(añoActual, mesActual - i, 1);
         const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
         
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
             analisis.mensual[area][mesKey] = {
                 total: 0,
                 completadas: 0,
@@ -3596,7 +3934,7 @@ function calcularAnalisisTemporal() {
         const año = añoActual - Math.floor((i * 3 - mesActual) / 12);
         const trimestreKey = `${año}-Q${((trimestre + 4) % 4) + 1}`;
         
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
             analisis.trimestral[area][trimestreKey] = {
                 total: 0,
                 completadas: 0,
@@ -3609,7 +3947,7 @@ function calcularAnalisisTemporal() {
     }
     
     // Procesar solicitudes por área
-    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
         const solicitudesArea = solicitudesPorArea[area] || [];
         
         solicitudesArea.forEach(solicitud => {
@@ -3698,6 +4036,9 @@ function generateTemporalAnalysis(analisisTemporal) {
                 <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'mensual')">
                     🏗️ Infraestructura
                 </button>
+                <button class="area-tab" data-temporal-area="SISTEMAS" onclick="showTemporalArea('SISTEMAS', 'mensual')">
+                    💻 Sistemas
+                </button>
                 <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'mensual')">
                     📊 Comparativo
                 </button>
@@ -3712,6 +4053,9 @@ function generateTemporalAnalysis(analisisTemporal) {
             </div>
             <div id="mensual-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
                 ${generateMonthlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.mensual.INFRAESTRUCTURA)}
+            </div>
+            <div id="mensual-SISTEMAS" class="temporal-area-content" style="display: none;">
+                ${generateMonthlyAreaAnalysis('SISTEMAS', analisisTemporal.mensual.SISTEMAS)}
             </div>
             <div id="mensual-COMPARATIVO" class="temporal-area-content" style="display: none;">
                 ${generateComparativeAnalysis('mensual', analisisTemporal.mensual)}
@@ -3733,6 +4077,9 @@ function generateTemporalAnalysis(analisisTemporal) {
                 <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'trimestral')">
                     🏗️ Infraestructura
                 </button>
+                <button class="area-tab" data-temporal-area="SISTEMAS" onclick="showTemporalArea('SISTEMAS', 'trimestral')">
+                    💻 Sistemas
+                </button>
                 <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'trimestral')">
                     📊 Comparativo
                 </button>
@@ -3748,6 +4095,9 @@ function generateTemporalAnalysis(analisisTemporal) {
             <div id="trimestral-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
                 ${generateQuarterlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.trimestral.INFRAESTRUCTURA)}
             </div>
+            <div id="trimestral-SISTEMAS" class="temporal-area-content" style="display: none;">
+                ${generateQuarterlyAreaAnalysis('SISTEMAS', analisisTemporal.trimestral.SISTEMAS)}
+            </div>
             <div id="trimestral-COMPARATIVO" class="temporal-area-content" style="display: none;">
                 ${generateComparativeAnalysis('trimestral', analisisTemporal.trimestral)}
             </div>
@@ -3760,13 +4110,15 @@ function generateMonthlyAreaAnalysis(area, datosMensuales) {
     const areaColors = {
         'BIOMEDICA': '#059669',
         'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
+        'INFRAESTRUCTURA': '#8b5cf6',
+        'SISTEMAS': '#0891b2'
     };
     
     const areaNames = {
         'BIOMEDICA': 'Ingeniería Biomédica',
         'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        'INFRAESTRUCTURA': 'Infraestructura',
+        'SISTEMAS': 'Sistemas'
     };
     
     const color = areaColors[area];
@@ -3914,13 +4266,15 @@ function generateQuarterlyAreaAnalysis(area, datosTrimestral) {
     const areaColors = {
         'BIOMEDICA': '#059669',
         'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
+        'INFRAESTRUCTURA': '#8b5cf6',
+        'SISTEMAS': '#0891b2'
     };
     
     const areaNames = {
         'BIOMEDICA': 'Ingeniería Biomédica',
         'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        'INFRAESTRUCTURA': 'Infraestructura',
+        'SISTEMAS': 'Sistemas'
     };
     
     const color = areaColors[area];
@@ -4073,7 +4427,7 @@ function generateQuarterlyAreaAnalysis(area, datosTrimestral) {
 
 // NUEVA FUNCIÓN: Generar análisis comparativo
 function generateComparativeAnalysis(periodo, datos) {
-    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
     const periodos = Object.keys(datos.BIOMEDICA).sort();
     
     return `
@@ -4126,7 +4480,8 @@ function generateComparativeAnalysis(periodo, datos) {
                                     const areaColors = {
                                         'BIOMEDICA': '#059669',
                                         'MECANICA': '#f59e0b',
-                                        'INFRAESTRUCTURA': '#8b5cf6'
+                                        'INFRAESTRUCTURA': '#8b5cf6',
+                                        'SISTEMAS': '#0891b2'
                                     };
                                     
                                     return `
@@ -4166,7 +4521,8 @@ function generateComparativeAnalysis(periodo, datos) {
                     const areaColors = {
                         'BIOMEDICA': '#059669',
                         'MECANICA': '#f59e0b',
-                        'INFRAESTRUCTURA': '#8b5cf6'
+                        'INFRAESTRUCTURA': '#8b5cf6',
+                        'SISTEMAS': '#0891b2'
                     };
                     
                     const areaNames = {
@@ -4376,6 +4732,13 @@ function createComparativeChart(periodo, datos) {
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
                     tension: 0.3
+                },
+                {
+                    label: '💻 Sistemas',
+                    data: periodos.map(p => datos.SISTEMAS[p].total),
+                    borderColor: '#0891b2',
+                    backgroundColor: 'rgba(8, 145, 178, 0.1)',
+                    tension: 0.3
                 }
             ]
         },
@@ -4566,6 +4929,8 @@ async function exportTemporalAnalysis() {
         
         document.body.appendChild(pdfContent);
         
+        await window.cargarLibreriasPDF();
+        
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -4654,12 +5019,14 @@ function calcularAnalisisTemporal() {
         mensual: {
             BIOMEDICA: {},
             MECANICA: {},
-            INFRAESTRUCTURA: {}
+            INFRAESTRUCTURA: {},
+            SISTEMAS: {}
         },
         trimestral: {
             BIOMEDICA: {},
             MECANICA: {},
-            INFRAESTRUCTURA: {}
+            INFRAESTRUCTURA: {},
+            SISTEMAS: {}
         }
     };
     
@@ -4668,7 +5035,7 @@ function calcularAnalisisTemporal() {
         const fecha = new Date(añoActual, mesActual - i, 1);
         const mesKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
         
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
             analisis.mensual[area][mesKey] = {
                 total: 0,
                 completadas: 0,
@@ -4685,7 +5052,7 @@ function calcularAnalisisTemporal() {
         const año = añoActual - Math.floor((i * 3 - mesActual) / 12);
         const trimestreKey = `${año}-Q${((trimestre + 4) % 4) + 1}`;
         
-        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+        ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
             analisis.trimestral[area][trimestreKey] = {
                 total: 0,
                 completadas: 0,
@@ -4698,7 +5065,7 @@ function calcularAnalisisTemporal() {
     }
     
     // Procesar solicitudes por área
-    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'].forEach(area => {
+    ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'].forEach(area => {
         const solicitudesArea = solicitudesPorArea[area] || [];
         
         solicitudesArea.forEach(solicitud => {
@@ -4787,6 +5154,9 @@ function generateTemporalAnalysis(analisisTemporal) {
                 <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'mensual')">
                     🏗️ Infraestructura
                 </button>
+                <button class="area-tab" data-temporal-area="SISTEMAS" onclick="showTemporalArea('SISTEMAS', 'mensual')">
+                    💻 Sistemas
+                </button>
                 <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'mensual')">
                     📊 Comparativo
                 </button>
@@ -4801,6 +5171,9 @@ function generateTemporalAnalysis(analisisTemporal) {
             </div>
             <div id="mensual-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
                 ${generateMonthlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.mensual.INFRAESTRUCTURA)}
+            </div>
+            <div id="mensual-SISTEMAS" class="temporal-area-content" style="display: none;">
+                ${generateMonthlyAreaAnalysis('SISTEMAS', analisisTemporal.mensual.SISTEMAS)}
             </div>
             <div id="mensual-COMPARATIVO" class="temporal-area-content" style="display: none;">
                 ${generateComparativeAnalysis('mensual', analisisTemporal.mensual)}
@@ -4822,6 +5195,9 @@ function generateTemporalAnalysis(analisisTemporal) {
                 <button class="area-tab" data-temporal-area="INFRAESTRUCTURA" onclick="showTemporalArea('INFRAESTRUCTURA', 'trimestral')">
                     🏗️ Infraestructura
                 </button>
+                <button class="area-tab" data-temporal-area="SISTEMAS" onclick="showTemporalArea('SISTEMAS', 'trimestral')">
+                    💻 Sistemas
+                </button>
                 <button class="area-tab" data-temporal-area="COMPARATIVO" onclick="showTemporalArea('COMPARATIVO', 'trimestral')">
                     📊 Comparativo
                 </button>
@@ -4837,6 +5213,9 @@ function generateTemporalAnalysis(analisisTemporal) {
             <div id="trimestral-INFRAESTRUCTURA" class="temporal-area-content" style="display: none;">
                 ${generateQuarterlyAreaAnalysis('INFRAESTRUCTURA', analisisTemporal.trimestral.INFRAESTRUCTURA)}
             </div>
+            <div id="trimestral-SISTEMAS" class="temporal-area-content" style="display: none;">
+                ${generateQuarterlyAreaAnalysis('SISTEMAS', analisisTemporal.trimestral.SISTEMAS)}
+            </div>
             <div id="trimestral-COMPARATIVO" class="temporal-area-content" style="display: none;">
                 ${generateComparativeAnalysis('trimestral', analisisTemporal.trimestral)}
             </div>
@@ -4849,13 +5228,15 @@ function generateMonthlyAreaAnalysis(area, datosMenuales) {
     const areaColors = {
         'BIOMEDICA': '#059669',
         'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
+        'INFRAESTRUCTURA': '#8b5cf6',
+        'SISTEMAS': '#0891b2'
     };
     
     const areaNames = {
         'BIOMEDICA': 'Ingeniería Biomédica',
         'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        'INFRAESTRUCTURA': 'Infraestructura',
+        'SISTEMAS': 'Sistemas'
     };
     
     const color = areaColors[area];
@@ -5003,13 +5384,15 @@ function generateQuarterlyAreaAnalysis(area, datosTrimestral) {
     const areaColors = {
         'BIOMEDICA': '#059669',
         'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
+        'INFRAESTRUCTURA': '#8b5cf6',
+        'SISTEMAS': '#0891b2'
     };
     
     const areaNames = {
         'BIOMEDICA': 'Ingeniería Biomédica',
         'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        'INFRAESTRUCTURA': 'Infraestructura',
+        'SISTEMAS': 'Sistemas'
     };
     
     const color = areaColors[area];
@@ -5162,7 +5545,7 @@ function generateQuarterlyAreaAnalysis(area, datosTrimestral) {
 
 // NUEVA FUNCIÓN: Generar análisis comparativo
 function generateComparativeAnalysis(periodo, datos) {
-    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
     const periodos = Object.keys(datos.BIOMEDICA).sort();
     
     return `
@@ -5215,7 +5598,8 @@ function generateComparativeAnalysis(periodo, datos) {
                                     const areaColors = {
                                         'BIOMEDICA': '#059669',
                                         'MECANICA': '#f59e0b',
-                                        'INFRAESTRUCTURA': '#8b5cf6'
+                                        'INFRAESTRUCTURA': '#8b5cf6',
+                                        'SISTEMAS': '#0891b2'
                                     };
                                     
                                     return `
@@ -5255,7 +5639,8 @@ function generateComparativeAnalysis(periodo, datos) {
                     const areaColors = {
                         'BIOMEDICA': '#059669',
                         'MECANICA': '#f59e0b',
-                        'INFRAESTRUCTURA': '#8b5cf6'
+                        'INFRAESTRUCTURA': '#8b5cf6',
+                        'SISTEMAS': '#0891b2'
                     };
                     
                     const areaNames = {
@@ -5395,6 +5780,9 @@ async function showRedirectAreaModal(solicitudId) {
         }
         if (areaActual !== 'INFRAESTRUCTURA') {
             areasDisponibles.push({ value: 'INFRAESTRUCTURA', label: '🏗️ Infraestructura' });
+        }
+        if (areaActual !== 'SISTEMAS') {
+            areasDisponibles.push({ value: 'SISTEMAS', label: '💻 Sistemas' });
         }
         
         content.innerHTML = `
@@ -5626,6 +6014,13 @@ function createComparativeChart(periodo, datos) {
                     borderColor: '#8b5cf6',
                     backgroundColor: 'rgba(139, 92, 246, 0.1)',
                     tension: 0.3
+                },
+                {
+                    label: '💻 Sistemas',
+                    data: periodos.map(p => datos.SISTEMAS[p].total),
+                    borderColor: '#0891b2',
+                    backgroundColor: 'rgba(8, 145, 178, 0.1)',
+                    tension: 0.3
                 }
             ]
         },
@@ -5764,6 +6159,8 @@ async function exportTemporalAnalysis() {
         
         document.body.appendChild(pdfContent);
         
+        await window.cargarLibreriasPDF();
+        
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -5869,7 +6266,8 @@ function createGeneralCharts(stats) {
             const areaData = [
                 stats.solicitudes.porArea?.INGENIERIA_BIOMEDICA || 0,
                 stats.solicitudes.porArea?.MECANICA || 0,
-                stats.solicitudes.porArea?.INFRAESTRUCTURA || 0
+                stats.solicitudes.porArea?.INFRAESTRUCTURA || 0,
+                stats.solicitudes.porArea?.SISTEMAS || 0
             ];
             
             // Solo crear el gráfico si hay datos
@@ -5877,14 +6275,15 @@ function createGeneralCharts(stats) {
                 chartInstances.areaChart = new Chart(ctxArea.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura'],
+                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura', 'Sistemas'],
                         datasets: [{
                             label: 'Solicitudes por Área',
                             data: areaData,
                             backgroundColor: [
                                 '#059669',
                                 '#f59e0b',
-                                '#8b5cf6'
+                                '#8b5cf6',
+                                '#0891b2'
                             ]
                         }]
                     },
@@ -5911,7 +6310,7 @@ function createGeneralCharts(stats) {
 function calcularEstadisticasPorArea() {
     console.log('📊 Calculando estadísticas por área...');
     
-    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+    const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
     const statsPorArea = {};
     
     // Verificar que solicitudesPorArea esté actualizado
@@ -6117,6 +6516,7 @@ function calcularEstadisticasPorArea() {
                             <div>🏥 Biomédica: <b>${statsPorArea?.BIOMEDICA?.tiempoPromedio || '—'}</b></div>
                             <div>⚙️ Mecánica: <b>${statsPorArea?.MECANICA?.tiempoPromedio || '—'}</b></div>
                             <div>🏗️ Infraestructura: <b>${statsPorArea?.INFRAESTRUCTURA?.tiempoPromedio || '—'}</b></div>
+                            <div>💻 Sistemas: <b>${statsPorArea?.SISTEMAS?.tiempoPromedio || '—'}</b></div>
                         </div>
                         <div class="stat-card-description">
                             Promedio (creación → completado) en solicitudes completadas
@@ -6144,6 +6544,7 @@ function calcularEstadisticasPorArea() {
                                         <th>🏥 Biomédica</th>
                                         <th>⚙️ Mecánica</th>
                                         <th>🏗️ Infraestructura</th>
+                                        <th>💻 Sistemas</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -6153,6 +6554,7 @@ function calcularEstadisticasPorArea() {
                                             <td>${tiemposMensualesPorArea.textos.BIOMEDICA[idx] || '—'}</td>
                                             <td>${tiemposMensualesPorArea.textos.MECANICA[idx] || '—'}</td>
                                             <td>${tiemposMensualesPorArea.textos.INFRAESTRUCTURA[idx] || '—'}</td>
+                                            <td>${tiemposMensualesPorArea.textos.SISTEMAS[idx] || '—'}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -6207,11 +6609,12 @@ function calcularEstadisticasPorArea() {
                 meses.push(mesKey);
             }
 
-            const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA'];
+            const areas = ['BIOMEDICA', 'MECANICA', 'INFRAESTRUCTURA', 'SISTEMAS'];
             const acumulados = {
                 BIOMEDICA: {},
                 MECANICA: {},
-                INFRAESTRUCTURA: {}
+                INFRAESTRUCTURA: {},
+                SISTEMAS: {}
             };
             areas.forEach(a => {
                 meses.forEach(m => {
@@ -6246,8 +6649,8 @@ function calcularEstadisticasPorArea() {
                 });
             });
 
-            const horas = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [] };
-            const textos = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [] };
+            const horas = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [], SISTEMAS: [] };
+            const textos = { BIOMEDICA: [], MECANICA: [], INFRAESTRUCTURA: [], SISTEMAS: [] };
 
             const formatearMs = (ms) => {
                 const totalMin = Math.round(ms / (1000 * 60));
@@ -6278,13 +6681,15 @@ function calcularEstadisticasPorArea() {
     const areaNames = {
         'BIOMEDICA': 'Ingeniería Biomédica',
         'MECANICA': 'Mecánica',
-        'INFRAESTRUCTURA': 'Infraestructura'
+        'INFRAESTRUCTURA': 'Infraestructura',
+        'SISTEMAS': 'Sistemas'
     };
     
     const areaColors = {
         'BIOMEDICA': '#059669',
         'MECANICA': '#f59e0b',
-        'INFRAESTRUCTURA': '#8b5cf6'
+        'INFRAESTRUCTURA': '#8b5cf6',
+        'SISTEMAS': '#0891b2'
     };
     
     const areaName = areaNames[area];
@@ -6525,18 +6930,20 @@ function calcularEstadisticasPorArea() {
                 chartInstances.areaChart = new Chart(ctxArea.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura'],
+                        labels: ['Ing. Biomédica', 'Mecánica', 'Infraestructura', 'Sistemas'],
                         datasets: [{
                             label: 'Solicitudes por Área',
                             data: [
                                 stats.solicitudes.porArea.INGENIERIA_BIOMEDICA,
                                 stats.solicitudes.porArea.MECANICA,
-                                stats.solicitudes.porArea.INFRAESTRUCTURA
+                                stats.solicitudes.porArea.INFRAESTRUCTURA,
+                                stats.solicitudes.porArea.SISTEMAS
                             ],
                             backgroundColor: [
                                 '#059669',
                                 '#f59e0b',
-                                '#8b5cf6'
+                                '#8b5cf6',
+                                '#0891b2'
                             ]
                         }]
                     },
@@ -6588,6 +6995,14 @@ function calcularEstadisticasPorArea() {
                                 data: tiemposMensualesPorArea.horas.INFRAESTRUCTURA,
                                 borderColor: '#8b5cf6',
                                 backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                                tension: 0.3,
+                                spanGaps: true
+                            },
+                            {
+                                label: 'Sistemas (h)',
+                                data: tiemposMensualesPorArea.horas.SISTEMAS,
+                                borderColor: '#0891b2',
+                                backgroundColor: 'rgba(8, 145, 178, 0.08)',
                                 tension: 0.3,
                                 spanGaps: true
                             }
@@ -6680,7 +7095,7 @@ function calcularEstadisticasPorArea() {
 
         // Actualizar datos de estadísticas
         async function refreshStatsData() {
-            await loadAllDataFromCloud();
+            await loadAllDataFromCloud({ usarCache: false });
             await showAdvancedStatisticsModal();
         }
 
@@ -6749,6 +7164,7 @@ function calcularEstadisticasPorArea() {
                 document.body.appendChild(pdfWrapper);
 
                 // Render a canvas del DOM para PDF
+                await window.cargarLibreriasPDF();
                 const canvas = await html2canvas(pdfWrapper, {
                     scale: 2,
                     logging: false,
@@ -6819,6 +7235,7 @@ async function exportSolicitudesPorAreaPDF() {
         const biomedica = solicitudesPorArea.BIOMEDICA || [];
         const mecanica = solicitudesPorArea.MECANICA || [];
         const infraestructura = solicitudesPorArea.INFRAESTRUCTURA || [];
+        const sistemas = solicitudesPorArea.SISTEMAS || [];
         
         // Calcular estadísticas por área
         const calcularEstadisticas = (solicitudes) => ({
@@ -6838,6 +7255,7 @@ async function exportSolicitudesPorAreaPDF() {
         const statsBiomedica = calcularEstadisticas(biomedica);
         const statsMecanica = calcularEstadisticas(mecanica);
         const statsInfra = calcularEstadisticas(infraestructura);
+        const statsSistemas = calcularEstadisticas(sistemas);
 
         pdfContent.innerHTML = `
             <div style="text-align: center; margin-bottom: 30px; border-bottom: 2px solid #2563eb; padding-bottom: 20px;">
@@ -6982,6 +7400,41 @@ async function exportSolicitudesPorAreaPDF() {
                     </p>` : ''}
                 </div>
             </div>
+
+            <!-- Sistemas -->
+            <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                <div style="background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%); color: white; padding: 10px 15px; border-radius: 8px 8px 0 0;">
+                    <h3 style="margin: 0;">💻 SISTEMAS</h3>
+                </div>
+                <div style="border: 1px solid #e5e7eb; border-top: none; padding: 15px;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px;">
+                        <div style="text-align: center;">
+                            <strong>${statsSistemas.total}</strong><br>
+                            <small style="color: #6b7280;">Total</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #f59e0b;">${statsSistemas.pendientes}</strong><br>
+                            <small style="color: #6b7280;">Pendientes</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #3b82f6;">${statsSistemas.enProceso}</strong><br>
+                            <small style="color: #6b7280;">En Proceso</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #059669;">${statsSistemas.completadas}</strong><br>
+                            <small style="color: #6b7280;">Completadas</small>
+                        </div>
+                        <div style="text-align: center;">
+                            <strong style="color: #ef4444;">${statsSistemas.criticas}</strong><br>
+                            <small style="color: #6b7280;">Críticas</small>
+                        </div>
+                    </div>
+                    ${generateSolicitudesTable(sistemas.slice(0, 10))}
+                    ${sistemas.length > 10 ? `<p style="text-align: center; color: #6b7280; margin-top: 10px;">
+                        Mostrando 10 de ${sistemas.length} solicitudes
+                    </p>` : ''}
+                </div>
+            </div>
         `;
 
 
@@ -7056,6 +7509,7 @@ function generateFilteredSolicitudesTable(solicitudes) {
         document.body.appendChild(pdfContent);
         
         // Generar PDF
+        await window.cargarLibreriasPDF();
         const canvas = await html2canvas(pdfContent, {
             scale: 2,
             logging: false,
@@ -7368,6 +7822,13 @@ function getPriorityColor(priority) {
                         areaLower === 'infraestructura' ||
                         areaLower.includes('infra')) {
                         return 'INFRAESTRUCTURA';
+                    }
+                    
+                    if (areaStr === 'SISTEMAS' || 
+                        areaStr === 'Sistemas' ||
+                        areaLower === 'sistemas' ||
+                        areaLower.includes('sistema')) {
+                        return 'SISTEMAS';
                     }
                     
                     return areaStr.toUpperCase();
@@ -7701,6 +8162,7 @@ async function diagnosticarProblema() {
         console.log(`   Biomédica: ${solicitudesPorArea.BIOMEDICA.length}`);
         console.log(`   Mecánica: ${solicitudesPorArea.MECANICA.length}`);
         console.log(`   Infraestructura: ${solicitudesPorArea.INFRAESTRUCTURA.length}`);
+        console.log(`   Sistemas: ${solicitudesPorArea.SISTEMAS.length}`);
         
         // Verificar el DOM
         console.log('\n📊 VALORES EN PANTALLA:');
@@ -7708,6 +8170,7 @@ async function diagnosticarProblema() {
         console.log(`   Contador Biomédica: ${document.getElementById('metric-biomedica').textContent}`);
         console.log(`   Contador Mecánica: ${document.getElementById('metric-mecanica').textContent}`);
         console.log(`   Contador Infraestructura: ${document.getElementById('metric-infraestructura').textContent}`);
+        console.log(`   Contador Sistemas: ${document.getElementById('metric-sistemas').textContent}`);
         
         return {
             total: cloudSolicitudes.length,
@@ -7741,8 +8204,9 @@ async function forzarActualizacionCompleta() {
     cloudUsuarios = [];
     cloudSolicitudesAcceso = [];
     
-    // Recargar todo
-    await loadAllDataFromCloud();
+    // Recargar todo, ignorando la caché
+    sessionStorage.removeItem('hslv_cache_datos');
+    await loadAllDataFromCloud({ usarCache: false });
     
     // Reiniciar auto-refresh
     startAutoRefresh();
@@ -7870,6 +8334,8 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
                             return tecnicoArea === 'MECANICA' || tecnicoArea === 'Mecánica' || lowerArea.includes('mec');
                         } else if (areaFilter === 'INFRAESTRUCTURA') {
                             return tecnicoArea === 'INFRAESTRUCTURA' || tecnicoArea === 'Infraestructura' || lowerArea.includes('infra');
+                        } else if (areaFilter === 'SISTEMAS') {
+                            return tecnicoArea === 'SISTEMAS' || tecnicoArea === 'Sistemas' || lowerArea.includes('sistema');
                         }
                         return false;
                     });
@@ -8070,6 +8536,7 @@ window.forzarActualizacionCompleta = forzarActualizacionCompleta;
                                 <option value="INGENIERIA_BIOMEDICA" ${personal.area === 'INGENIERIA_BIOMEDICA' || personal.area === 'Ingeniería Biomédica' ? 'selected' : ''}>Ingeniería Biomédica</option>
                                 <option value="MECANICA" ${personal.area === 'MECANICA' || personal.area === 'Mecánica' ? 'selected' : ''}>Mecánica</option>
                                 <option value="INFRAESTRUCTURA" ${personal.area === 'INFRAESTRUCTURA' || personal.area === 'Infraestructura' ? 'selected' : ''}>Infraestructura</option>
+                                <option value="SISTEMAS" ${personal.area === 'SISTEMAS' || personal.area === 'Sistemas' ? 'selected' : ''}>Sistemas</option>
                             </select>
                         </div>
                         <div>
@@ -8315,8 +8782,10 @@ async function notifyTechnician(technicianId, requestNumber) {
                         <div style="background: #dcfce7; padding: 0.75rem; border-radius: 0.5rem; margin-top: 1rem;">
                             <h5 style="color: #166534; margin-bottom: 0.5rem;">👤 Usuario Creado</h5>
                             <p style="color: #047857; font-size: 0.875rem; margin: 0;">
-                                <strong>Código de Acceso:</strong> ${user.codigoAcceso || 'No disponible'}<br>
-                                <strong>Estado:</strong> ${user.estado || 'ACTIVO'}
+                                <strong>Usuario:</strong> ${user.email || user.nombreCompleto || 'Creado'}<br>
+                                <strong>Estado:</strong> ${user.estado || 'ACTIVO'}<br>
+                                <span style="font-size:0.75rem;color:#166534">El código se muestra
+                                una sola vez al aprobar la solicitud.</span>
                             </p>
                         </div>
                     `;
@@ -8500,6 +8969,8 @@ async function notifyTechnician(technicianId, requestNumber) {
             let aprobadas = 0;
             let errores = 0;
             
+            // Secuencial a propósito: cada aprobación escribe en Airtable y la API
+            // admite 5 peticiones por segundo. Paralelizar aquí devuelve 429.
             for (const solicitud of pendientes) {
                 try {
                     const result = await window.airtableAPI.approveAccessRequestAndCreateUser(solicitud.id);
@@ -8509,6 +8980,7 @@ async function notifyTechnician(technicianId, requestNumber) {
                 } catch (error) {
                     errores++;
                 }
+                await new Promise(r => setTimeout(r, 220));
             }
             
             await refreshAccessFromCloud();
@@ -8601,6 +9073,7 @@ window.debugEstadisticas = function() {
     console.log('   Biomédica:', solicitudesPorArea.BIOMEDICA?.length || 0);
     console.log('   Mecánica:', solicitudesPorArea.MECANICA?.length || 0);
     console.log('   Infraestructura:', solicitudesPorArea.INFRAESTRUCTURA?.length || 0);
+    console.log('   Sistemas:', solicitudesPorArea.SISTEMAS?.length || 0);
     
     console.log('\n📊 Estados:');
     const estados = {};
@@ -8621,7 +9094,8 @@ window.debugEstadisticas = function() {
         porArea: {
             biomedica: solicitudesPorArea.BIOMEDICA?.length || 0,
             mecanica: solicitudesPorArea.MECANICA?.length || 0,
-            infraestructura: solicitudesPorArea.INFRAESTRUCTURA?.length || 0
+            infraestructura: solicitudesPorArea.INFRAESTRUCTURA?.length || 0,
+            sistemas: solicitudesPorArea.SISTEMAS?.length || 0
         },
         estados: estados
     };
@@ -8638,1869 +9112,30 @@ window.debugEstadisticas = function() {
             
             document.getElementById('add-personal-form').addEventListener('submit', handleAddPersonalForm);
             
-            setTimeout(async () => {
+            // Sin setTimeout(1000): airtable-config.js ya está cargado en este punto
+            // porque su <script> es anterior. Ese segundo era espera pura.
+            (async () => {
                 if (window.airtableAPI) {
-                    console.log('🔗 Conectando con Airtable...');
                     await loadAllDataFromCloud();
-                    
-                    console.log('🔄 Iniciando auto-refresh cada 60 segundos...');
                     startAutoRefresh();
                 } else {
                     console.error('❌ No se pudo cargar airtable-config.js');
                     updateConnectionStatus('disconnected');
                     loadDataFromLocalStorage();
                 }
-            }, 1000);
+            })();
         });
-
-
-/* ============================================================================
-   MODULO: RANKING DE EQUIPOS Y SERVICIOS  —  INICIO (insertado automáticamente)
-   ============================================================================ */
-/* ============================================================================
-   MODULO: RANKING DE EQUIPOS Y SERVICIOS  -  Portal de Gestion HSLV
-   Autor: Paul Eduardo Munoz R.
-   Analiza que equipos y que ubicaciones/servicios generan mas solicitudes.
-   Se integra como pestana "Equipos y Servicios" en Estadisticas Avanzadas.
-   Comandos de consola: rkRenderizar() - rkDiagnosticoNombres() - rkExportarCSV()
-   ============================================================================ */
-
-// ---------------------------------------------------------------------------
-// 1) NORMALIZACIÓN Y AGRUPACIÓN INTELIGENTE DE NOMBRES
-// ---------------------------------------------------------------------------
-
-function rkNormalizar(txt) {
-    if (!txt) return '';
-    return String(txt)
-        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')  // quita tildes/ñ
-        .toUpperCase()
-        .replace(/[_\-\/]/g, ' ')
-        .replace(/[^A-Z0-9 ]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-}
-
-// Catálogo canónico: agrupa variantes, typos y descripciones largas.
-// El orden importa: se evalúa de patrón más largo a más corto.
-// Catálogo canónico: agrupa variantes, typos y descripciones largas.
-// El patrón MÁS LARGO que coincida gana, por eso el orden de la lista no afecta
-// el resultado. Para añadir un equipo nuevo basta con agregar una línea.
-const RK_CATALOGO_EQUIPOS = [
-
-    // ── MONITOREO Y SIGNOS VITALES ──────────────────────────────────────────
-    { canon: 'MONITOR DE SIGNOS VITALES', pat: ['MONITOR DE SIGNOS', 'MONITOR SIGNOS', 'MONITOR MULTIPARAMETRO', 'MONITOR DE PACIENTE', 'MONITOR DE TRANSPORTE'] },
-    { canon: 'MONITOR FETAL',             pat: ['MONITOR FETAL', 'CARDIOTOCOGRAFO', 'MONITOREO FETAL'] },
-    { canon: 'DOPPLER FETAL',             pat: ['DOPPLER'] },
-    { canon: 'SATUROMETRO / PULSIOXIMETRO', pat: ['SATUROMETRO', 'SATURIMETRO', 'PULSIOXIMETRO', 'OXIMETRO', 'PULSOXIMETRO'] },
-    { canon: 'TENSIOMETRO',               pat: ['TENSIOMETRO', 'ESFIGMOMANOMETRO', 'TOMA TENSION'] },
-    { canon: 'ELECTROCARDIOGRAFO',        pat: ['ELECTROCARDIOGRAFO', 'EKG', 'ELECTROCARDIOGRAMA'] },
-    { canon: 'ELECTROENCEFALOGRAFO',      pat: ['ELECTROENCEFALOGRAFO', 'ENCEFALOGRAFO', 'EEG'] },
-    { canon: 'TERMOMETRO',                pat: ['TERMOMETRO', 'TERMOHIGROMETRO'] },
-    { canon: 'GLUCOMETRO',                pat: ['GLUCOMETRO'] },
-
-    // ── SOPORTE VITAL Y RESPIRATORIO ────────────────────────────────────────
-    { canon: 'VENTILADOR MECANICO',       pat: ['VENTILADOR MECANICO', 'VENTILADOR PULMONAR', 'VENTILADOR'] },
-    { canon: 'CPAP / BIPAP',              pat: ['CPAP', 'BIPAP', 'VENTILACION NO INVASIVA'] },
-    { canon: 'MAQUINA DE ANESTESIA',      pat: ['MAQUINA DE ANESTESIA', 'MAQUINA ANESTESIA', 'ANESTESIA', 'VAPORIZADOR'] },
-    { canon: 'DESFIBRILADOR',             pat: ['DESFIBRILADOR', 'DESFIBRILACION', 'CARDIODESFIBRILADOR'] },
-    { canon: 'CARRO DE PARO',             pat: ['CARRO DE PARO', 'CARRO PARO'] },
-    { canon: 'ASPIRADOR / SUCCIONADOR',   pat: ['ASPIRADOR', 'SUCCIONADOR', 'SUCCION', 'ASPIRACION'] },
-    { canon: 'NEBULIZADOR',               pat: ['NEBULIZADOR', 'MICRONEBULIZADOR'] },
-    { canon: 'CONCENTRADOR DE OXIGENO',   pat: ['CONCENTRADOR DE OXIGENO', 'CONCENTRADOR OXIGENO'] },
-    { canon: 'FLUJOMETRO / REGULADOR',    pat: ['FLUJOMETRO', 'REGULADOR DE OXIGENO', 'MANOMETRO', 'VACUOMETRO'] },
-    { canon: 'LARINGOSCOPIO',             pat: ['LARINGOSCOPIO'] },
-    { canon: 'HUMIDIFICADOR',             pat: ['HUMIDIFICADOR', 'CALENTADOR HUMIDIFICADOR'] },
-
-    // ── INFUSIÓN ────────────────────────────────────────────────────────────
-    { canon: 'BOMBA DE INFUSION',         pat: ['BOMBA DE INFUSION', 'BOMBA INFUSION', 'INFUSOR', 'BOMBA VOLUMETRICA'] },
-    { canon: 'BOMBA DE JERINGA',          pat: ['BOMBA DE JERINGA', 'JERINGA DE INFUSION', 'PERFUSOR'] },
-    { canon: 'CALENTADOR DE FLUIDOS',     pat: ['CALENTADOR DE FLUIDOS', 'CALENTADOR DE SANGRE', 'MANTA TERMICA'] },
-
-    // ── QUIRÓFANO ───────────────────────────────────────────────────────────
-    { canon: 'MESA QUIRURGICA',           pat: ['MESA QUIRURGICA', 'MESA QUIRUGICA', 'MESA DE CIRUGIA', 'MESA DE MAYO'] },
-    { canon: 'LAMPARA CIELITICA',         pat: ['CIELITICA', 'CIALITICA', 'SIALITICA', 'LAMPARA QUIRURGICA', 'LAMPARA DE CIRUGIA'] },
-    { canon: 'ELECTROBISTURI',            pat: ['ELECTROBISTURI', 'ELECTRO BISTURI', 'UNIDAD ELECTROQUIRURGICA', 'BISTURI ELECTRICO'] },
-    { canon: 'ASPIRADOR DE HUMO',         pat: ['ASPIRADOR DE HUMO', 'EVACUADOR DE HUMO'] },
-    { canon: 'TORNIQUETE NEUMATICO',      pat: ['TORNIQUETE'] },
-    { canon: 'MOTOR / SIERRA QUIRURGICA', pat: ['SIERRA QUIRURGICA', 'MOTOR QUIRURGICO', 'PERFORADOR OSEO', 'CRANEOTOMO', 'MICROMOTOR'] },
-    { canon: 'TORRE DE LAPAROSCOPIA',     pat: ['LAPAROSCOPIA', 'LAPAROSCOPIO', 'TORRE DE VIDEO', 'VIDEOCAMARA QUIRURGICA'] },
-    { canon: 'CRIOCAUTERIO',              pat: ['CRIOCAUTERIO', 'CRIOCIRUGIA', 'CRIOTERAPIA'] },
-
-    // ── IMAGENOLOGÍA Y ENDOSCOPIA ───────────────────────────────────────────
-    { canon: 'RAYOS X',                   pat: ['RAYOS X', 'RAYOS-X', 'RX PORTATIL', 'EQUIPO DE RX', 'RADIOLOGIA'] },
-    { canon: 'RAYOS X DENTAL',            pat: ['RAYOS X DENTAL', 'RX DENTAL', 'PERIAPICAL', 'PANORAMICO'] },
-    { canon: 'ARCO EN C',                 pat: ['ARCO EN C', 'ARCO C'] },
-    { canon: 'FLUOROSCOPIO',              pat: ['FLUOROSCOPIO', 'FLUOROSCOPIA'] },
-    { canon: 'ECOGRAFO',                  pat: ['ECOGRAFO', 'ECOGRAFIA', 'ULTRASONIDO', 'ULTRASONIDO DIAGNOSTICO', 'TRANSDUCTOR'] },
-    { canon: 'MAMOGRAFO',                 pat: ['MAMOGRAFO', 'MAMOGRAFIA'] },
-    { canon: 'TOMOGRAFO',                 pat: ['TOMOGRAFO', 'TOMOGRAFIA', 'ESCANOGRAFO'] },
-    { canon: 'ENDOSCOPIO / COLONOSCOPIO', pat: ['ENDOSCOPIO', 'COLONOSCOPIO', 'GASTROSCOPIO', 'VIDEOENDOSCOPIO', 'FIBROBRONCOSCOPIO'] },
-    { canon: 'NEGATOSCOPIO',              pat: ['NEGATOSCOPIO'] },
-    { canon: 'REVELADORA / PROCESADORA',  pat: ['REVELADORA', 'PROCESADORA DE PLACAS', 'CHASIS'] },
-
-    // ── ESTERILIZACIÓN ──────────────────────────────────────────────────────
-    { canon: 'AUTOCLAVE',                 pat: ['AUTOCLAVE', 'ESTERILIZADOR A VAPOR', 'ESTERILIZADOR DE VAPOR'] },
-    { canon: 'HORNO DE CALOR SECO',       pat: ['CALOR SECO', 'POUPINEL', 'PUPINEL', 'HORNO DE ESTERILIZACION'] },
-    { canon: 'LAVADORA ULTRASONICA',      pat: ['LAVADORA ULTRASONICA', 'ULTRASONIDO DE LIMPIEZA', 'CUBA ULTRASONICA'] },
-    { canon: 'SELLADORA',                 pat: ['SELLADORA', 'TERMOSELLADORA'] },
-    { canon: 'ESTERILIZADOR DE PLASMA',   pat: ['PLASMA', 'PEROXIDO DE HIDROGENO', 'OXIDO DE ETILENO'] },
-
-    // ── NEONATOLOGÍA Y PEDIATRÍA ────────────────────────────────────────────
-    { canon: 'INCUBADORA',                pat: ['INCUBADORA'] },
-    { canon: 'LAMPARA DE CALOR RADIANTE', pat: ['CALOR RADIANTE', 'LAMPARA DE CALOR', 'SERVOCUNA', 'CUNA TERMICA'] },
-    { canon: 'FOTOTERAPIA',               pat: ['FOTOTERAPIA', 'LAMPARA DE FOTOTERAPIA'] },
-    { canon: 'BILIRRUBINOMETRO',          pat: ['BILIRRUBINOMETRO', 'BILIRRUBINA'] },
-
-    // ── LABORATORIO Y BANCO DE SANGRE ───────────────────────────────────────
-    { canon: 'CENTRIFUGA',                pat: ['CENTRIFUGA', 'MICROCENTRIFUGA'] },
-    { canon: 'MICROSCOPIO',               pat: ['MICROSCOPIO', 'ESTEREOSCOPIO'] },
-    { canon: 'ANALIZADOR DE LABORATORIO', pat: ['ANALIZADOR', 'HEMATOLOGIA', 'QUIMICA SANGUINEA', 'COAGULOMETRO', 'GASES ARTERIALES', 'ELECTROLITOS'] },
-    { canon: 'CABINA DE BIOSEGURIDAD',    pat: ['CABINA DE SEGURIDAD', 'CABINA DE BIOSEGURIDAD', 'FLUJO LAMINAR', 'CAMPANA EXTRACTORA'] },
-    { canon: 'BAÑO SEROLOGICO',           pat: ['BANO SEROLOGICO', 'BANO MARIA', 'BANO TERMOSTATADO'] },
-    { canon: 'INCUBADORA DE LABORATORIO', pat: ['INCUBADORA BACTERIOLOGICA', 'ESTUFA DE CULTIVO', 'HORNO DE SECADO'] },
-    { canon: 'AGITADOR / ROTADOR',        pat: ['AGITADOR', 'VORTEX', 'ROTADOR', 'HOMOGENIZADOR'] },
-    { canon: 'PIPETA / DISPENSADOR',      pat: ['PIPETA', 'DISPENSADOR DE REACTIVO'] },
-    { canon: 'DESTILADOR DE AGUA',        pat: ['DESTILADOR', 'AGUA DESTILADA', 'OSMOSIS'] },
-
-    // ── ODONTOLOGÍA ─────────────────────────────────────────────────────────
-    { canon: 'UNIDAD ODONTOLOGICA',       pat: ['UNIDAD ODONTOLOGICA', 'SILLA ODONTOLOGICA', 'SILLON ODONTOLOGICO', 'ESCUPIDERA'] },
-    { canon: 'LAMPARA DE FOTOCURADO',     pat: ['FOTOCURADO', 'LAMPARA DE LUZ HALOGENA'] },
-    { canon: 'AMALGAMADOR',               pat: ['AMALGAMADOR', 'VIBRADOR DE AMALGAMA'] },
-    { canon: 'CAVITRON / ULTRASONIDO DENTAL', pat: ['CAVITRON', 'ULTRASONIDO DENTAL', 'DESTARTARIZADOR'] },
-    { canon: 'COMPRESOR ODONTOLOGICO',    pat: ['COMPRESOR ODONTOLOGICO', 'COMPRESOR DENTAL'] },
-
-    // ── FISIOTERAPIA Y REHABILITACIÓN ───────────────────────────────────────
-    { canon: 'ULTRASONIDO TERAPEUTICO',   pat: ['ULTRASONIDO TERAPEUTICO', 'ULTRASONIDO DE TERAPIA'] },
-    { canon: 'ELECTROESTIMULADOR / TENS', pat: ['ELECTROESTIMULADOR', 'TENS', 'CORRIENTES INTERFERENCIALES', 'ELECTROTERAPIA'] },
-    { canon: 'MAGNETOTERAPIA',            pat: ['MAGNETOTERAPIA', 'MAGNETO'] },
-    { canon: 'LASER TERAPEUTICO',         pat: ['LASER TERAPEUTICO', 'LASER DE TERAPIA'] },
-    { canon: 'COMPRESERO / PARAFINA',     pat: ['COMPRESERO', 'TANQUE DE PARAFINA', 'PARAFINERO', 'COMPRESAS'] },
-    { canon: 'BICICLETA / TROTADORA',     pat: ['SPINING', 'SPINNING', 'BICICLETA', 'ELIPTICA', 'TROTADORA', 'CAMINADORA', 'BANDA SIN FIN'] },
-    { canon: 'BARRAS PARALELAS / GIMNASIO', pat: ['PARALELAS', 'ESPALDERA', 'COLCHONETA', 'ESCALERILLA', 'POLEA'] },
-    { canon: 'TANQUE DE HIDROTERAPIA',    pat: ['HIDROTERAPIA', 'TINA DE REMOLINO', 'TANQUE DE HUBBARD'] },
-
-    // ── CONSULTA EXTERNA / ESPECIALIDADES ───────────────────────────────────
-    { canon: 'LAMPARA DE HENDIDURA',      pat: ['LAMPARA DE HENDIDURA', 'BIOMICROSCOPIO'] },
-    { canon: 'OFTALMOSCOPIO / OTOSCOPIO', pat: ['OFTALMOSCOPIO', 'OTOSCOPIO', 'RETINOSCOPIO', 'QUERATOMETRO'] },
-    { canon: 'AUDIOMETRO',                pat: ['AUDIOMETRO', 'AUDIOMETRIA', 'IMPEDANCIOMETRO', 'CABINA SONOAMORTIGUADA'] },
-    { canon: 'ESPIROMETRO',               pat: ['ESPIROMETRO', 'ESPIROMETRIA'] },
-    { canon: 'FONENDOSCOPIO',             pat: ['FONENDOSCOPIO', 'ESTETOSCOPIO'] },
-    { canon: 'LAMPARA DE EXAMEN / CUELLO DE CISNE', pat: ['CUELLO DE CISNE', 'LAMPARA DE EXAMEN'] },
-    { canon: 'CAMILLA GINECOLOGICA',      pat: ['GINECOLOGICA', 'MESA DE EXAMEN'] },
-
-    // ── MOBILIARIO CLÍNICO Y TRANSPORTE ─────────────────────────────────────
-    { canon: 'CAMA HOSPITALARIA',         pat: ['CAMA'] },
-    { canon: 'CAMILLA',                   pat: ['CAMILLA'] },
-    { canon: 'SILLA DE RUEDAS',           pat: ['SILLA DE RUEDAS'] },
-    { canon: 'ATRIL / PORTASUEROS',       pat: ['ATRIL', 'PORTASUERO', 'PORTA SUERO'] },
-    { canon: 'BALANZA / BASCULA',         pat: ['BALANZA', 'BASCULA', 'PESABEBE', 'PESA BEBE', 'TALLIMETRO'] },
-    { canon: 'NEVERA / REFRIGERADOR',     pat: ['NEVERA', 'REFRIGERADOR', 'CONGELADOR', 'REFRIGERACION DE VACUNAS'] },
-
-    // ── GASES MEDICINALES ───────────────────────────────────────────────────
-    { canon: 'RED DE GASES MEDICINALES',  pat: ['MAQUINA DE GASES', 'EQUIPO DE GASES', 'RED DE GASES', 'GASES MEDICINALES', 'MANIFOLD', 'TOMA DE OXIGENO', 'CENTRAL DE OXIGENO'] },
-    { canon: 'BOMBA DE VACIO',            pat: ['BOMBA DE VACIO', 'VACIO MEDICINAL'] },
-
-    // ── MECÁNICA / PLANTA FÍSICA ────────────────────────────────────────────
-    { canon: 'AIRE ACONDICIONADO',        pat: ['AIRE ACONDICIONADO', 'SPLIT', 'CLIMATIZACION', 'MINISPLIT', 'MANEJADORA'] },
-    { canon: 'CHILLER / TORRE DE ENFRIAMIENTO', pat: ['CHILLER', 'TORRE DE ENFRIAMIENTO', 'CONDENSADORA'] },
-    { canon: 'EXTRACTOR / VENTILACION',   pat: ['EXTRACTOR', 'VENTILACION MECANICA', 'INYECTOR DE AIRE', 'DUCTO'] },
-    { canon: 'CALDERA',                   pat: ['CALDERA', 'CALENTADOR DE AGUA', 'CALDERIN'] },
-    { canon: 'PLANTA ELECTRICA',          pat: ['PLANTA ELECTRICA', 'GENERADOR', 'GRUPO ELECTROGENO'] },
-    { canon: 'UPS / REGULADOR',           pat: ['UPS', 'REGULADOR DE VOLTAJE', 'ESTABILIZADOR'] },
-    { canon: 'TRANSFORMADOR / SUBESTACION', pat: ['TRANSFORMADOR', 'SUBESTACION'] },
-    { canon: 'ASCENSOR / MONTACARGAS',    pat: ['ASCENSOR', 'MONTACARGA', 'ELEVADOR'] },
-    { canon: 'BOMBA DE AGUA',             pat: ['BOMBA DE AGUA', 'MOTOBOMBA', 'BOMBA HIDRAULICA', 'TANQUE DE AGUA', 'HIDROFLO'] },
-    { canon: 'COMPRESOR DE AIRE',         pat: ['COMPRESOR', 'AIRE COMPRIMIDO', 'SECADOR DE AIRE'] },
-    { canon: 'PLANTA DE TRATAMIENTO',     pat: ['PTAR', 'TRATAMIENTO DE AGUAS', 'TRAMPA DE GRASA'] },
-    { canon: 'HIDROLAVADORA',             pat: ['HIDROLAVADORA'] },
-
-    // ── LAVANDERÍA Y COCINA ─────────────────────────────────────────────────
-    { canon: 'LAVADORA INDUSTRIAL',       pat: ['LAVADORA INDUSTRIAL', 'LAVADORA DE ROPA', 'LAVADORA'] },
-    { canon: 'SECADORA INDUSTRIAL',       pat: ['SECADORA'] },
-    { canon: 'PLANCHADORA / CALANDRA',    pat: ['PLANCHADORA', 'CALANDRA', 'PLANCHA INDUSTRIAL'] },
-    { canon: 'MARMITA / ESTUFA INDUSTRIAL', pat: ['MARMITA', 'ESTUFA INDUSTRIAL', 'FOGON', 'HORNO INDUSTRIAL', 'FREIDORA'] },
-    { canon: 'CUARTO FRIO',               pat: ['CUARTO FRIO', 'CAVA'] },
-    { canon: 'CARRO TERMICO / BANDEJERO', pat: ['CARRO TERMICO', 'BANDEJERO', 'CARRO DE ALIMENTOS'] },
-    { canon: 'LICUADORA / PROCESADOR',    pat: ['LICUADORA', 'PROCESADOR DE ALIMENTOS', 'PELADORA'] },
-
-    // ── INFRAESTRUCTURA / OBRA ──────────────────────────────────────────────
-    { canon: 'RED HIDRAULICA / SANITARIA', pat: ['LAVAMANOS', 'SANITARIO', 'INODORO', 'TUBERIA', 'GRIFO', 'GRIFERIA', 'LLAVE DE PASO', 'DUCHA', 'ORINAL', 'SIFON', 'DESAGUE', 'POCETA'] },
-    { canon: 'RED ELECTRICA / ILUMINACION', pat: ['TOMACORRIENTE', 'ILUMINACION', 'LUMINARIA', 'BOMBILLO', 'TABLERO ELECTRICO', 'BREAKER', 'INTERRUPTOR', 'LAMPARA FLUORESCENTE', 'ACOMETIDA'] },
-    { canon: 'OBRA CIVIL',                pat: ['PUERTA', 'VENTANA', 'MURO', 'PARED', 'TECHO', 'CIELO RASO', 'PISO', 'CERRADURA', 'ENCHAPE', 'PINTURA', 'GOTERA', 'FILTRACION', 'DIVISION'] },
-    { canon: 'PUERTA AUTOMATICA',         pat: ['PUERTA AUTOMATICA', 'PUERTA CORREDIZA AUTOMATICA'] },
-    { canon: 'MOBILIARIO',                pat: ['ESCRITORIO', 'SILLA', 'ARMARIO', 'ESTANTE', 'MESA DE NOCHE', 'ARCHIVADOR', 'CASILLERO', 'MESON'] },
-    { canon: 'RED DE DATOS / TELEFONIA',  pat: ['PUNTO DE RED', 'RED DE DATOS', 'CITOFONO', 'TELEFONO', 'CABLEADO ESTRUCTURADO', 'SWITCH', 'ACCESS POINT'] },
-    { canon: 'CCTV / SEGURIDAD',          pat: ['CAMARA DE SEGURIDAD', 'CCTV', 'CAMARA DE VIGILANCIA', 'ALARMA', 'CONTROL DE ACCESO'] },
-    { canon: 'SISTEMA CONTRA INCENDIOS',  pat: ['EXTINTOR', 'DETECTOR DE HUMO', 'GABINETE CONTRA INCENDIO', 'ROCIADOR'] },
-    { canon: 'ZONAS VERDES / EXTERIORES', pat: ['GUADANA', 'JARDIN', 'ZONA VERDE', 'PODA'] },
-
-    // ── OFIMÁTICA / VARIOS ──────────────────────────────────────────────────
-    { canon: 'COMPUTADOR / IMPRESORA',    pat: ['COMPUTADOR', 'IMPRESORA', 'COMPUTADOR PORTATIL', 'MONITOR DE COMPUTADOR', 'CPU', 'ESCANER'] },
-    { canon: 'TELEVISOR / VIDEOBEAM',     pat: ['TELEVISOR', 'VIDEOBEAM', 'PROYECTOR', 'PANTALLA'] }
-];
-
-/**
- * Devuelve el nombre canónico del equipo.
- * @param {string} valor  texto crudo del campo `equipo`
- * @param {boolean} agrupar  true = agrupación inteligente, false = texto normalizado tal cual
- */
-// Caché de expresiones regulares (coincidencia por PALABRA COMPLETA, para que
-// "CAMA" no capture "CAMARA" ni "TENS" capture "EXTENSION").
-const RK_REGEX_CACHE = {};
-function rkRegexPatron(p) {
-    if (!RK_REGEX_CACHE[p]) RK_REGEX_CACHE[p] = new RegExp('(?:^| )' + p + '(?: |$)');
-    return RK_REGEX_CACHE[p];
-}
-
-/**
- * Busca el equipo canónico. Gana el patrón MÁS LARGO que coincida.
- * @returns {{canon:string, patron:string}|null}
- */
-function rkBuscarCanon(norm) {
-    let mejor = null;
-    let mejorLargo = 0;
-    for (const item of RK_CATALOGO_EQUIPOS) {
-        for (const p of item.pat) {
-            if (p.length > mejorLargo && rkRegexPatron(p).test(norm)) {
-                mejor = { canon: item.canon, patron: p };
-                mejorLargo = p.length;
-            }
-        }
-    }
-    return mejor;
-}
-
-function rkCanonizarEquipo(valor, agrupar = true) {
-    const norm = rkNormalizar(valor);
-    if (!norm) return 'SIN ESPECIFICAR';
-    if (!agrupar) return norm;
-    const m = rkBuscarCanon(norm);
-    return m ? m.canon : norm;
-}
-
-function rkCanonizarUbicacion(valor) {
-    const norm = rkNormalizar(valor);
-    return norm || 'SIN ESPECIFICAR';
-}
-
-// ---------------------------------------------------------------------------
-// 2) ESTADO DEL MÓDULO
-// ---------------------------------------------------------------------------
-
-let rkFiltros = {
-    area: 'TODAS',        // TODAS | BIOMEDICA | MECANICA | INFRAESTRUCTURA
-    meses: 12,            // 3 | 6 | 12 | 0 (histórico completo)
-    agrupar: true,        // agrupación inteligente de nombres
-    top: 15               // cuántos mostrar en cada ranking
-};
-
-// ---------------------------------------------------------------------------
-// 3) CÁLCULO DEL RANKING
-// ---------------------------------------------------------------------------
-
-function rkCalcularRanking() {
-    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
-        clasificarSolicitudesPorArea();
-    }
-
-    // Base de solicitudes según filtro de área
-    let base = [];
-    if (rkFiltros.area === 'TODAS') {
-        base = [
-            ...(solicitudesPorArea.BIOMEDICA || []),
-            ...(solicitudesPorArea.MECANICA || []),
-            ...(solicitudesPorArea.INFRAESTRUCTURA || [])
-        ];
-    } else {
-        base = solicitudesPorArea[rkFiltros.area] || [];
-    }
-
-    // Filtro temporal
-    if (rkFiltros.meses > 0) {
-        const limite = new Date();
-        limite.setMonth(limite.getMonth() - rkFiltros.meses);
-        base = base.filter(s => s.fechaCreacion && new Date(s.fechaCreacion) >= limite);
-    }
-
-    const crearNodo = (nombre) => ({
-        nombre,
-        total: 0,
-        completadas: 0,
-        pendientes: 0,
-        criticas: 0,
-        reparaciones: 0,
-        inspecciones: 0,
-        erroresUsuario: 0,
-        sumaTiempoMs: 0,
-        conTiempo: 0,
-        relacionados: {}   // ubicaciones (para equipos) o equipos (para ubicaciones)
-    });
-
-    const equipos = {};
-    const ubicaciones = {};
-    const servicios = {};
-    const combos = {};
-
-    base.forEach(s => {
-        const eq  = rkCanonizarEquipo(s.equipo, rkFiltros.agrupar);
-        const ub  = rkCanonizarUbicacion(s.ubicacion);
-        const srv = rkCanonizarUbicacion(s.servicioHospitalario || s.ubicacion);
-
-        const estado   = rkNormalizar(s.estado);
-        const tipo     = rkNormalizar(s.tipoServicio);
-        const prio     = rkNormalizar(s.prioridad);
-        const esComp   = estado === 'COMPLETADA';
-        const esError  = tipo.includes('ERROR');
-        const esCrit   = prio === 'CRITICA';
-
-        let tiempoMs = null;
-        if (s.fechaCreacion && s.fechaCompletado) {
-            const d = new Date(s.fechaCompletado) - new Date(s.fechaCreacion);
-            if (d > 0 && d < 1000 * 60 * 60 * 24 * 365) tiempoMs = d;
-        }
-
-        const acumular = (mapa, clave, relacionado) => {
-            if (!mapa[clave]) mapa[clave] = crearNodo(clave);
-            const n = mapa[clave];
-            n.total++;
-            if (esComp) n.completadas++; else n.pendientes++;
-            if (esCrit) n.criticas++;
-            if (tipo.includes('REPARACION')) n.reparaciones++;
-            if (tipo.includes('INSPECCION')) n.inspecciones++;
-            if (esError) n.erroresUsuario++;
-            if (tiempoMs !== null) { n.sumaTiempoMs += tiempoMs; n.conTiempo++; }
-            if (relacionado) n.relacionados[relacionado] = (n.relacionados[relacionado] || 0) + 1;
-        };
-
-        acumular(equipos, eq, ub);
-        acumular(ubicaciones, ub, eq);
-        acumular(servicios, srv, eq);
-
-        const claveCombo = `${eq}|||${ub}`;
-        if (!combos[claveCombo]) combos[claveCombo] = { equipo: eq, ubicacion: ub, total: 0, criticas: 0, reparaciones: 0 };
-        combos[claveCombo].total++;
-        if (esCrit) combos[claveCombo].criticas++;
-        if (tipo.includes('REPARACION')) combos[claveCombo].reparaciones++;
-    });
-
-    const aLista = (mapa) => Object.values(mapa)
-        .map(n => ({
-            ...n,
-            promedioHoras: n.conTiempo > 0 ? (n.sumaTiempoMs / n.conTiempo) / 3600000 : null,
-            topRelacionado: Object.entries(n.relacionados).sort((a, b) => b[1] - a[1])[0] || null
-        }))
-        .sort((a, b) => b.total - a.total);
-
-    return {
-        totalAnalizado: base.length,
-        equipos: aLista(equipos),
-        ubicaciones: aLista(ubicaciones),
-        servicios: aLista(servicios),
-        combos: Object.values(combos).sort((a, b) => b.total - a.total)
-    };
-}
-
-// ---------------------------------------------------------------------------
-// 4) RENDERIZADO
-// ---------------------------------------------------------------------------
-
-const RK_COLORES = {
-    TODAS: '#2563eb',
-    BIOMEDICA: '#059669',
-    MECANICA: '#f59e0b',
-    INFRAESTRUCTURA: '#8b5cf6'
-};
-
-function rkBarra(valor, maximo, color) {
-    const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
-    return `<div style="background:#f1f5f9;border-radius:999px;height:8px;overflow:hidden;min-width:60px;">
-                <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;"></div>
-            </div>`;
-}
-
-function rkTablaRanking(titulo, icono, lista, color, tipoRelacion) {
-    const top = lista.slice(0, rkFiltros.top);
-    const maximo = top.length ? top[0].total : 0;
-    const totalGlobal = lista.reduce((a, b) => a + b.total, 0);
-
-    if (!top.length) {
-        return `<div class="card"><div class="card-header"><h3 class="card-title">${icono} ${titulo}</h3></div>
-                <div class="card-content"><p style="color:#6b7280;">Sin datos para los filtros seleccionados.</p></div></div>`;
-    }
-
-    const filas = top.map((n, i) => {
-        const pct = totalGlobal > 0 ? ((n.total / totalGlobal) * 100).toFixed(1) : '0.0';
-        const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#9ca3af;">${i + 1}</span>`;
-        const rel = n.topRelacionado ? `${n.topRelacionado[0]} (${n.topRelacionado[1]})` : '—';
-        const horas = n.promedioHoras !== null ? `${n.promedioHoras.toFixed(1)} h` : '—';
-        return `
-            <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:0.5rem 0.4rem;text-align:center;font-weight:600;">${medalla}</td>
-                <td style="padding:0.5rem 0.4rem;font-weight:600;color:#1f2937;">${n.nombre}</td>
-                <td style="padding:0.5rem 0.4rem;min-width:90px;">${rkBarra(n.total, maximo, color)}</td>
-                <td style="padding:0.5rem 0.4rem;text-align:right;font-weight:700;color:${color};">${n.total}</td>
-                <td style="padding:0.5rem 0.4rem;text-align:right;color:#6b7280;">${pct}%</td>
-                <td style="padding:0.5rem 0.4rem;text-align:right;color:#dc2626;font-weight:600;">${n.criticas}</td>
-                <td style="padding:0.5rem 0.4rem;text-align:right;color:#6b7280;">${horas}</td>
-                <td style="padding:0.5rem 0.4rem;color:#6b7280;font-size:0.8rem;">${rel}</td>
-            </tr>`;
-    }).join('');
-
-    return `
-        <div class="card" style="margin-bottom:1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">${icono} ${titulo}
-                    <span style="font-weight:normal;color:#6b7280;font-size:0.8rem;">
-                        (${lista.length} distintos · mostrando top ${top.length})
-                    </span>
-                </h3>
-            </div>
-            <div class="card-content" style="overflow-x:auto;">
-                <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-                    <thead>
-                        <tr style="border-bottom:2px solid #e5e7eb;color:#6b7280;font-size:0.75rem;text-transform:uppercase;">
-                            <th style="padding:0.5rem 0.4rem;">#</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Nombre</th>
-                            <th style="padding:0.5rem 0.4rem;"></th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Solic.</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">%</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Críticas</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">T. prom.</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">${tipoRelacion}</th>
-                        </tr>
-                    </thead>
-                    <tbody>${filas}</tbody>
-                </table>
-            </div>
-        </div>`;
-}
-
-function rkTablaCombos(combos, color) {
-    const top = combos.slice(0, 12);
-    if (!top.length) return '';
-    const filas = top.map((c, i) => `
-        <tr style="border-bottom:1px solid #f1f5f9;">
-            <td style="padding:0.5rem 0.4rem;text-align:center;color:#9ca3af;">${i + 1}</td>
-            <td style="padding:0.5rem 0.4rem;font-weight:600;color:#1f2937;">${c.equipo}</td>
-            <td style="padding:0.5rem 0.4rem;color:#374151;">${c.ubicacion}</td>
-            <td style="padding:0.5rem 0.4rem;text-align:right;font-weight:700;color:${color};">${c.total}</td>
-            <td style="padding:0.5rem 0.4rem;text-align:right;color:#dc2626;font-weight:600;">${c.criticas}</td>
-            <td style="padding:0.5rem 0.4rem;text-align:right;color:#6b7280;">${c.reparaciones}</td>
-        </tr>`).join('');
-
-    return `
-        <div class="card" style="margin-bottom:1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">🎯 Puntos críticos: Equipo × Ubicación</h3>
-            </div>
-            <div class="card-content" style="overflow-x:auto;">
-                <p style="color:#6b7280;font-size:0.8rem;margin-bottom:0.75rem;">
-                    Combinaciones con mayor carga de solicitudes. Útil para priorizar mantenimiento preventivo o reposición.
-                </p>
-                <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-                    <thead>
-                        <tr style="border-bottom:2px solid #e5e7eb;color:#6b7280;font-size:0.75rem;text-transform:uppercase;">
-                            <th style="padding:0.5rem 0.4rem;">#</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Equipo</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Ubicación</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Solic.</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Críticas</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Reparac.</th>
-                        </tr>
-                    </thead>
-                    <tbody>${filas}</tbody>
-                </table>
-            </div>
-        </div>`;
-}
-
-function rkRenderizar() {
-    const cont = document.getElementById('ranking-equipos-container');
-    if (!cont) return;
-
-    const color = RK_COLORES[rkFiltros.area] || RK_COLORES.TODAS;
-    const data = rkCalcularRanking();
-    window.__rkUltimoResultado = data;
-
-    const eqTop = data.equipos[0];
-    const ubTop = data.ubicaciones[0];
-    const periodoTxt = rkFiltros.meses === 0 ? 'histórico completo' : `últimos ${rkFiltros.meses} meses`;
-
-    const btn = (label, activo, onclick) => `
-        <button onclick="${onclick}"
-            style="padding:0.4rem 0.85rem;border-radius:0.5rem;border:1px solid ${activo ? color : '#e5e7eb'};
-                   background:${activo ? color : '#fff'};color:${activo ? '#fff' : '#374151'};
-                   font-size:0.8rem;font-weight:600;cursor:pointer;">${label}</button>`;
-
-    cont.innerHTML = `
-        <!-- Controles -->
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:0.75rem;padding:1rem;margin-bottom:1.5rem;">
-            <div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:center;">
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Área</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('🌐 Todas', rkFiltros.area === 'TODAS', "rkSetFiltro('area','TODAS')")}
-                        ${btn('🏥 Biomédica', rkFiltros.area === 'BIOMEDICA', "rkSetFiltro('area','BIOMEDICA')")}
-                        ${btn('⚙️ Mecánica', rkFiltros.area === 'MECANICA', "rkSetFiltro('area','MECANICA')")}
-                        ${btn('🏗️ Infraestructura', rkFiltros.area === 'INFRAESTRUCTURA', "rkSetFiltro('area','INFRAESTRUCTURA')")}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Periodo</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('3 m', rkFiltros.meses === 3, "rkSetFiltro('meses',3)")}
-                        ${btn('6 m', rkFiltros.meses === 6, "rkSetFiltro('meses',6)")}
-                        ${btn('12 m', rkFiltros.meses === 12, "rkSetFiltro('meses',12)")}
-                        ${btn('Histórico', rkFiltros.meses === 0, "rkSetFiltro('meses',0)")}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Mostrar</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('Top 10', rkFiltros.top === 10, "rkSetFiltro('top',10)")}
-                        ${btn('Top 15', rkFiltros.top === 15, "rkSetFiltro('top',15)")}
-                        ${btn('Top 30', rkFiltros.top === 30, "rkSetFiltro('top',30)")}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Nombres</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('🧠 Agrupados', rkFiltros.agrupar, "rkSetFiltro('agrupar',true)")}
-                        ${btn('📝 Literales', !rkFiltros.agrupar, "rkSetFiltro('agrupar',false)")}
-                    </div>
-                </div>
-                <div style="margin-left:auto;">
-                    <button class="btn btn-info btn-sm" onclick="rkExportarCSV()">📥 Exportar CSV</button>
-                </div>
-            </div>
-            <p style="margin:0.85rem 0 0;color:#6b7280;font-size:0.78rem;">
-                🧠 <strong>Agrupados</strong> unifica variantes de escritura (ej. "autoclave vapor", "AUTOCLAVE" y "Autoclave #2" → AUTOCLAVE).
-                📝 <strong>Literales</strong> respeta el texto tal como fue digitado.
-            </p>
-        </div>
-
-        <!-- KPIs -->
-        <div class="stats-grid" style="margin-bottom:1.5rem;">
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">📋 Solicitudes analizadas</span></div>
-                <div class="stat-card-value" style="color:${color};">${data.totalAnalizado}</div>
-                <div class="stat-card-description">${rkFiltros.area === 'TODAS' ? 'Todas las áreas' : rkFiltros.area} · ${periodoTxt}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">🔧 Equipo más solicitado</span></div>
-                <div class="stat-card-value" style="color:${color};font-size:1.15rem;line-height:1.3;">${eqTop ? eqTop.nombre : '—'}</div>
-                <div class="stat-card-description">${eqTop ? `${eqTop.total} solicitudes · ${eqTop.criticas} críticas` : 'Sin datos'}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">📍 Ubicación más solicitante</span></div>
-                <div class="stat-card-value" style="color:${color};font-size:1.15rem;line-height:1.3;">${ubTop ? ubTop.nombre : '—'}</div>
-                <div class="stat-card-description">${ubTop ? `${ubTop.total} solicitudes · ${ubTop.criticas} críticas` : 'Sin datos'}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">🗂️ Variedad</span></div>
-                <div class="stat-card-value" style="color:${color};">${data.equipos.length}</div>
-                <div class="stat-card-description">tipos de equipo en ${data.ubicaciones.length} ubicaciones</div>
-            </div>
-        </div>
-
-        ${rkTablaRanking('Ranking de equipos con más solicitudes', '🔧', data.equipos, color, 'Ubicación frecuente')}
-        ${rkTablaRanking('Ranking de ubicaciones / servicios', '📍', data.ubicaciones, color, 'Equipo frecuente')}
-        ${rkTablaCombos(data.combos, color)}
-    `;
-}
-
-function rkSetFiltro(campo, valor) {
-    rkFiltros[campo] = valor;
-    rkRenderizar();
-}
-
-// ---------------------------------------------------------------------------
-// 5) EXPORTACIÓN CSV
-// ---------------------------------------------------------------------------
-
-function rkExportarCSV() {
-    try {
-        const data = window.__rkUltimoResultado || rkCalcularRanking();
-        const sep = ';';
-        const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-        const lineas = [];
-
-        lineas.push(esc('RANKING DE EQUIPOS Y SERVICIOS - HOSPITAL SUSANA LOPEZ DE VALENCIA'));
-        lineas.push([esc('Area'), esc(rkFiltros.area)].join(sep));
-        lineas.push([esc('Periodo'), esc(rkFiltros.meses === 0 ? 'Historico completo' : `Ultimos ${rkFiltros.meses} meses`)].join(sep));
-        lineas.push([esc('Solicitudes analizadas'), esc(data.totalAnalizado)].join(sep));
-        lineas.push([esc('Generado'), esc(new Date().toLocaleString('es-CO'))].join(sep));
-        lineas.push('');
-
-        const bloque = (titulo, lista, etiquetaRel) => {
-            lineas.push(esc(titulo));
-            lineas.push([esc('#'), esc('Nombre'), esc('Total'), esc('Completadas'), esc('Pendientes'),
-                         esc('Criticas'), esc('Reparaciones'), esc('Inspecciones'),
-                         esc('Tiempo prom. (h)'), esc(etiquetaRel)].join(sep));
-            lista.forEach((n, i) => {
-                lineas.push([
-                    esc(i + 1), esc(n.nombre), esc(n.total), esc(n.completadas), esc(n.pendientes),
-                    esc(n.criticas), esc(n.reparaciones), esc(n.inspecciones),
-                    esc(n.promedioHoras !== null ? n.promedioHoras.toFixed(1) : ''),
-                    esc(n.topRelacionado ? `${n.topRelacionado[0]} (${n.topRelacionado[1]})` : '')
-                ].join(sep));
-            });
-            lineas.push('');
-        };
-
-        bloque('EQUIPOS CON MAS SOLICITUDES', data.equipos, 'Ubicacion frecuente');
-        bloque('UBICACIONES / SERVICIOS CON MAS SOLICITUDES', data.ubicaciones, 'Equipo frecuente');
-
-        lineas.push(esc('PUNTOS CRITICOS: EQUIPO x UBICACION'));
-        lineas.push([esc('#'), esc('Equipo'), esc('Ubicacion'), esc('Total'), esc('Criticas'), esc('Reparaciones')].join(sep));
-        data.combos.forEach((c, i) => {
-            lineas.push([esc(i + 1), esc(c.equipo), esc(c.ubicacion), esc(c.total), esc(c.criticas), esc(c.reparaciones)].join(sep));
-        });
-
-        const blob = new Blob(['\ufeff' + lineas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `ranking_equipos_${rkFiltros.area}_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        if (typeof showNotification === 'function') {
-            showNotification('✅ Ranking exportado correctamente', 'success');
-        }
-    } catch (error) {
-        console.error('❌ Error exportando ranking:', error);
-        alert('No fue posible exportar el ranking: ' + error.message);
-    }
-}
-
-// Exponer al ámbito global
-window.rkSetFiltro = rkSetFiltro;
-window.rkRenderizar = rkRenderizar;
-window.rkExportarCSV = rkExportarCSV;
-window.rkCalcularRanking = rkCalcularRanking;
-
-// ---------------------------------------------------------------------------
-// 6) 🔍 DIAGNÓSTICO DEL CATÁLOGO
-//    Ejecuta rkDiagnosticoNombres() en la consola del navegador (F12) para ver
-//    qué nombres reales de tu Airtable NO están siendo reconocidos por el
-//    catálogo, y cuáles variantes se están agrupando en cada equipo canónico.
-// ---------------------------------------------------------------------------
-
-function rkDiagnosticoNombres(descargarCSV = false) {
-    if (!solicitudesPorArea || Object.keys(solicitudesPorArea).length === 0) {
-        clasificarSolicitudesPorArea();
-    }
-
-    const base = [
-        ...(solicitudesPorArea.BIOMEDICA || []),
-        ...(solicitudesPorArea.MECANICA || []),
-        ...(solicitudesPorArea.INFRAESTRUCTURA || [])
-    ];
-
-    const sinReconocer = {};   // nombre normalizado -> conteo
-    const agrupados = {};      // canon -> { total, variantes: {crudo: conteo} }
-
-    base.forEach(s => {
-        const crudo = rkNormalizar(s.equipo);
-        if (!crudo) return;
-        const m = rkBuscarCanon(crudo);
-
-        if (!m) {
-            // No coincidió con ningún patrón del catálogo
-            sinReconocer[crudo] = (sinReconocer[crudo] || 0) + 1;
-        } else {
-            if (!agrupados[m.canon]) agrupados[m.canon] = { total: 0, variantes: {} };
-            agrupados[m.canon].total++;
-            agrupados[m.canon].variantes[crudo] = (agrupados[m.canon].variantes[crudo] || 0) + 1;
-        }
-    });
-
-    const listaSin = Object.entries(sinReconocer).sort((a, b) => b[1] - a[1]);
-    const listaAgr = Object.entries(agrupados).sort((a, b) => b[1].total - a[1].total);
-
-    const totalSin = listaSin.reduce((a, b) => a + b[1], 0);
-    const cobertura = base.length > 0 ? (((base.length - totalSin) / base.length) * 100).toFixed(1) : '0';
-
-    console.log('%c🔍 DIAGNÓSTICO DEL CATÁLOGO DE EQUIPOS', 'font-size:14px;font-weight:bold;color:#2563eb');
-    console.log(`Solicitudes revisadas: ${base.length}`);
-    console.log(`Cobertura del catálogo: ${cobertura}%  (${totalSin} solicitudes con nombre no reconocido)`);
-    console.log(`Nombres distintos SIN reconocer: ${listaSin.length}`);
-
-    console.groupCollapsed('❌ Nombres NO reconocidos (ordenados por frecuencia)');
-    console.table(listaSin.map(([n, c]) => ({ nombre: n, solicitudes: c })));
-    console.groupEnd();
-
-    console.groupCollapsed('✅ Agrupaciones aplicadas (verifica que ninguna esté mal unida)');
-    listaAgr.forEach(([canon, info]) => {
-        console.log(`${canon} → ${info.total} solicitudes | variantes:`,
-            Object.entries(info.variantes).sort((a, b) => b[1] - a[1]).map(([v, c]) => `${v} (${c})`).join(' · '));
-    });
-    console.groupEnd();
-
-    if (descargarCSV) {
-        const sep = ';';
-        const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-        const lineas = [
-            esc('DIAGNOSTICO DEL CATALOGO DE EQUIPOS'),
-            [esc('Solicitudes revisadas'), esc(base.length)].join(sep),
-            [esc('Cobertura'), esc(cobertura + '%')].join(sep),
-            '',
-            esc('NOMBRES NO RECONOCIDOS'),
-            [esc('Nombre'), esc('Solicitudes')].join(sep),
-            ...listaSin.map(([n, c]) => [esc(n), esc(c)].join(sep)),
-            '',
-            esc('AGRUPACIONES APLICADAS'),
-            [esc('Canonico'), esc('Total'), esc('Variantes detectadas')].join(sep),
-            ...listaAgr.map(([canon, info]) => [
-                esc(canon), esc(info.total),
-                esc(Object.entries(info.variantes).sort((a, b) => b[1] - a[1]).map(([v, c]) => `${v} (${c})`).join(' | '))
-            ].join(sep))
-        ];
-        const blob = new Blob(['\ufeff' + lineas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `diagnostico_catalogo_equipos_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-
-    return { cobertura: Number(cobertura), sinReconocer: listaSin, agrupados: listaAgr };
-}
-
-window.rkDiagnosticoNombres = rkDiagnosticoNombres;
-
-// ---------------------------------------------------------------------------
-// 7) ⚙️ AUTO-INSTALADOR DE LA PESTAÑA
-//    Crea la pestaña "Equipos y Servicios" automáticamente cada vez que se
-//    abre el modal de estadísticas. NO requiere editar el HTML del portal.
-// ---------------------------------------------------------------------------
-
-function rkInstalarPestana() {
-    // El contenedor de pestañas del modal de estadísticas
-    const tabs = document.querySelector('#stats-modal-content .analysis-tabs');
-    if (!tabs) return false;
-
-    // Evitar duplicados si el modal se vuelve a renderizar
-    if (tabs.querySelector('[data-analysis-type="equipos"]')) return true;
-
-    // 1) Botón de la pestaña
-    const btn = document.createElement('button');
-    btn.className = 'analysis-tab';
-    btn.setAttribute('data-analysis-type', 'equipos');
-    btn.innerHTML = '🔧 Equipos y Servicios';
-    btn.addEventListener('click', () => showAnalysisType('equipos'));
-    tabs.appendChild(btn);
-
-    // 2) Contenedor del contenido (hermano de analysis-general / analysis-temporal)
-    const padre = tabs.parentNode;
-    if (!document.getElementById('analysis-equipos')) {
-        const cont = document.createElement('div');
-        cont.id = 'analysis-equipos';
-        cont.className = 'analysis-content';
-        cont.style.display = 'none';
-        cont.innerHTML = '<div id="ranking-equipos-container"></div>';
-        padre.appendChild(cont);
-    }
-
-    console.log('✅ Pestaña "Equipos y Servicios" instalada');
-    return true;
-}
-
-// Intenta instalar varias veces, porque el modal arma su HTML de forma asíncrona
-function rkIntentarInstalar(intentos = 20) {
-    if (rkInstalarPestana()) return;
-    if (intentos > 0) setTimeout(() => rkIntentarInstalar(intentos - 1), 250);
-}
-
-(function rkEngancharModal() {
-    // Envolver showAdvancedStatisticsModal para instalar la pestaña al abrirlo
-    if (typeof window.showAdvancedStatisticsModal === 'function' && !window.__rkModalParcheado) {
-        const original = window.showAdvancedStatisticsModal;
-        window.showAdvancedStatisticsModal = async function (...args) {
-            const r = await original.apply(this, args);
-            rkIntentarInstalar();
-            return r;
-        };
-        window.__rkModalParcheado = true;
-    }
-
-    // Envolver showAnalysisType para que dibuje el ranking al entrar a la pestaña
-    if (typeof window.showAnalysisType === 'function' && !window.__rkTabParcheado) {
-        const originalTab = window.showAnalysisType;
-        window.showAnalysisType = function (type) {
-            originalTab.apply(this, arguments);
-            if (type === 'equipos') setTimeout(() => rkRenderizar(), 30);
-        };
-        window.__rkTabParcheado = true;
-    }
-
-    // Si el modal ya estaba abierto cuando se cargó este módulo
-    rkIntentarInstalar(4);
-})();
-
-window.rkInstalarPestana = rkInstalarPestana;
-
-console.log('🔧 Módulo Ranking de Equipos y Servicios cargado. ' +
-            'Comandos: rkRenderizar() · rkDiagnosticoNombres() · rkExportarCSV()');
-
-/* ============================================================================
-   MODULO: RANKING DE EQUIPOS Y SERVICIOS  —  FIN
-   ============================================================================ */
-
-
-/* ============================================================================
-   MODULO: DESEMPENO DEL PERSONAL  —  INICIO (insertado automáticamente)
-   ============================================================================ */
-/* ============================================================================
-   MODULO: DESEMPENO DEL PERSONAL  -  Portal de Gestion HSLV
-   Autor: Paul Eduardo Munoz R.
-   Analiza que tecnico / ingeniero completa las solicitudes, con que tiempos
-   y sobre que equipos. Se integra como pestana "Desempeno del Personal".
-   Comandos de consola: tpRenderizar() - tpExportarCSV()
-   ============================================================================ */
-
-let tpFiltros = {
-    area: 'TODAS',      // TODAS | BIOMEDICA | MECANICA | INFRAESTRUCTURA
-    meses: 12,          // 3 | 6 | 12 | 0 (historico)
-    orden: 'total',     // total | tiempo | criticas
-    top: 20
-};
-
-// --- Dependencias del modulo de equipos, con respaldo propio ----------------
-// Si el modulo "Ranking de Equipos" no esta cargado, este modulo sigue
-// funcionando con versiones minimas equivalentes.
-const TP_COLORES = (typeof RK_COLORES !== 'undefined') ? RK_COLORES : {
-    TODAS: '#2563eb', BIOMEDICA: '#059669', MECANICA: '#f59e0b', INFRAESTRUCTURA: '#8b5cf6'
-};
-
-function tpNorm(txt) {
-    if (typeof rkNormalizar === 'function') return rkNormalizar(txt);
-    if (!txt) return '';
-    return String(txt).normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        .toUpperCase().replace(/[_\-\/]/g, ' ')
-        .replace(/[^A-Z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function tpEquipo(v) {
-    return (typeof rkCanonizarEquipo === 'function') ? rkCanonizarEquipo(v, true)
-                                                     : (tpNorm(v) || 'SIN ESPECIFICAR');
-}
-
-function tpUbicacion(v) {
-    return (typeof rkCanonizarUbicacion === 'function') ? rkCanonizarUbicacion(v)
-                                                        : (tpNorm(v) || 'SIN ESPECIFICAR');
-}
-
-function tpBarra(valor, maximo, color) {
-    if (typeof rkBarra === 'function') return rkBarra(valor, maximo, color);
-    const pct = maximo > 0 ? Math.round((valor / maximo) * 100) : 0;
-    return `<div style="background:#f1f5f9;border-radius:999px;height:8px;overflow:hidden;min-width:60px;">
-                <div style="width:${pct}%;height:100%;background:${color};border-radius:999px;"></div>
-            </div>`;
-}
-
-// ---------------------------------------------------------------------------
-// 1) CÁLCULO
-// ---------------------------------------------------------------------------
-
-function tpBaseSolicitudes() {
-    if (!solicitudesPorArea || !solicitudesPorArea.BIOMEDICA) {
-        clasificarSolicitudesPorArea();
-    }
-    let base = tpFiltros.area === 'TODAS'
-        ? [...(solicitudesPorArea.BIOMEDICA || []),
-           ...(solicitudesPorArea.MECANICA || []),
-           ...(solicitudesPorArea.INFRAESTRUCTURA || [])]
-        : (solicitudesPorArea[tpFiltros.area] || []);
-
-    if (tpFiltros.meses > 0) {
-        const limite = new Date();
-        limite.setMonth(limite.getMonth() - tpFiltros.meses);
-        base = base.filter(s => s.fechaCreacion && new Date(s.fechaCreacion) >= limite);
-    }
-    return base;
-}
-
-// Datos de la tabla Tecnicos (rol, area, especialidad), indexados por nombre
-function tpIndicePersonal() {
-    const idx = {};
-    (typeof cloudTecnicos !== 'undefined' ? cloudTecnicos : []).forEach(t => {
-        const k = tpNorm(t.nombre);
-        if (k) idx[k] = {
-            rol: (t.tipo || '').toLowerCase() || 'sin rol',
-            area: t.area || '',
-            especialidad: t.especialidad || '',
-            estado: t.estado || ''
-        };
-    });
-    return idx;
-}
-
-function tpMediana(arr) {
-    if (!arr.length) return null;
-    const a = [...arr].sort((x, y) => x - y);
-    const m = Math.floor(a.length / 2);
-    return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2;
-}
-
-function tpCalcular() {
-    const base = tpBaseSolicitudes();
-    const infoPersonal = tpIndicePersonal();
-
-    const personas = {};
-    let completadasTotal = 0;
-    let completadasSinTecnico = 0;
-
-    // Últimos 6 meses para la mini-tendencia
-    const clavesMes = [];
-    const hoy = new Date();
-    for (let i = 5; i >= 0; i--) {
-        const f = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1);
-        clavesMes.push(`${f.getFullYear()}-${String(f.getMonth() + 1).padStart(2, '0')}`);
-    }
-
-    base.forEach(s => {
-        const estado = tpNorm(s.estado);
-        const esCompletada = estado === 'COMPLETADA';
-        const nombreCrudo = (s.tecnicoAsignado || '').trim();
-        const clave = tpNorm(nombreCrudo);
-
-        if (esCompletada) {
-            completadasTotal++;
-            if (!clave) { completadasSinTecnico++; return; }
-        }
-        if (!clave) return;
-
-        if (!personas[clave]) {
-            const info = infoPersonal[clave] || {};
-            personas[clave] = {
-                nombre: nombreCrudo,
-                rol: info.rol || 'no registrado',
-                area: info.area || '',
-                especialidad: info.especialidad || '',
-                estadoPersonal: info.estado || '',
-                completadas: 0, pendientes: 0, criticas: 0,
-                reparaciones: 0, inspecciones: 0,
-                tiempos: [], conAsignacion: 0,
-                equipos: {}, ubicaciones: {}, areas: {},
-                meses: Object.fromEntries(clavesMes.map(m => [m, 0]))
-            };
-        }
-        const p = personas[clave];
-
-        if (esCompletada) {
-            p.completadas++;
-            const tipo = tpNorm(s.tipoServicio);
-            if (tpNorm(s.prioridad) === 'CRITICA') p.criticas++;
-            if (tipo.includes('REPARACION')) p.reparaciones++;
-            if (tipo.includes('INSPECCION')) p.inspecciones++;
-
-            // Tiempo de resolución: desde la asignación si existe, si no desde la creación
-            const fin = s.fechaCompletado ? new Date(s.fechaCompletado) : null;
-            const ini = s.fechaAsignacion ? new Date(s.fechaAsignacion)
-                      : (s.fechaCreacion ? new Date(s.fechaCreacion) : null);
-            if (fin && ini) {
-                const h = (fin - ini) / 3600000;
-                if (h >= 0 && h < 8760) {          // descarta datos absurdos (> 1 año)
-                    p.tiempos.push(h);
-                    if (s.fechaAsignacion) p.conAsignacion++;
-                }
-            }
-
-            const eq = tpEquipo(s.equipo);
-            const ub = tpUbicacion(s.ubicacion);
-            p.equipos[eq] = (p.equipos[eq] || 0) + 1;
-            p.ubicaciones[ub] = (p.ubicaciones[ub] || 0) + 1;
-            const ar = tpNorm(s.servicioIngenieria).replace('INGENIERIA ', '');
-            if (ar) p.areas[ar] = (p.areas[ar] || 0) + 1;
-
-            if (s.fechaCompletado) {
-                const d = new Date(s.fechaCompletado);
-                const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                if (k in p.meses) p.meses[k]++;
-            }
-        } else {
-            p.pendientes++;
-        }
-    });
-
-    const top1 = (obj) => {
-        const e = Object.entries(obj).sort((a, b) => b[1] - a[1])[0];
-        return e ? `${e[0]} (${e[1]})` : '—';
-    };
-
-    let lista = Object.values(personas).map(p => ({
-        ...p,
-        promedioHoras: p.tiempos.length ? p.tiempos.reduce((a, b) => a + b, 0) / p.tiempos.length : null,
-        medianaHoras: tpMediana(p.tiempos),
-        topEquipo: top1(p.equipos),
-        topUbicacion: top1(p.ubicaciones),
-        areasTexto: Object.keys(p.areas).join(', ') || '—',
-        serieMeses: clavesMes.map(m => p.meses[m])
-    }));
-
-    const totalConTecnico = lista.reduce((a, b) => a + b.completadas, 0);
-    lista.forEach(p => { p.porcentaje = totalConTecnico > 0 ? (p.completadas / totalConTecnico) * 100 : 0; });
-
-    // Ordenamiento
-    if (tpFiltros.orden === 'tiempo') {
-        lista.sort((a, b) => {
-            if (a.medianaHoras === null) return 1;
-            if (b.medianaHoras === null) return -1;
-            return a.medianaHoras - b.medianaHoras;
-        });
-    } else if (tpFiltros.orden === 'criticas') {
-        lista.sort((a, b) => b.criticas - a.criticas || b.completadas - a.completadas);
-    } else {
-        lista.sort((a, b) => b.completadas - a.completadas);
-    }
-
-    // Resumen por rol
-    const porRol = {};
-    lista.forEach(p => {
-        if (!porRol[p.rol]) porRol[p.rol] = { personas: 0, completadas: 0, tiempos: [] };
-        porRol[p.rol].personas++;
-        porRol[p.rol].completadas += p.completadas;
-        porRol[p.rol].tiempos.push(...p.tiempos);
-    });
-    Object.values(porRol).forEach(r => { r.mediana = tpMediana(r.tiempos); });
-
-    const todosTiempos = lista.flatMap(p => p.tiempos);
-
-    return {
-        totalAnalizado: base.length,
-        completadasTotal,
-        completadasSinTecnico,
-        totalConTecnico,
-        personas: lista,
-        porRol,
-        medianaGlobal: tpMediana(todosTiempos),
-        clavesMes
-    };
-}
-
-// ---------------------------------------------------------------------------
-// 2) RENDERIZADO
-// ---------------------------------------------------------------------------
-
-function tpFormatoHoras(h) {
-    if (h === null || h === undefined) return '—';
-    if (h < 1) return `${Math.round(h * 60)} min`;
-    if (h < 48) return `${h.toFixed(1)} h`;
-    return `${(h / 24).toFixed(1)} d`;
-}
-
-function tpSparkline(serie, color) {
-    const max = Math.max(...serie, 1);
-    return `<div style="display:flex;align-items:flex-end;gap:2px;height:24px;">` +
-        serie.map(v => `<div title="${v}" style="width:6px;height:${Math.max(2, (v / max) * 24)}px;
-            background:${v > 0 ? color : '#e5e7eb'};border-radius:1px;"></div>`).join('') + `</div>`;
-}
-
-function tpRenderizar() {
-    const cont = document.getElementById('ranking-personal-container');
-    if (!cont) return;
-
-    const color = TP_COLORES[tpFiltros.area] || TP_COLORES.TODAS;
-    const d = tpCalcular();
-    window.__tpUltimoResultado = d;
-
-    const top = d.personas.slice(0, tpFiltros.top);
-    const lider = d.personas.filter(p => p.completadas > 0)
-        .sort((a, b) => b.completadas - a.completadas)[0];
-    const periodoTxt = tpFiltros.meses === 0 ? 'histórico completo' : `últimos ${tpFiltros.meses} meses`;
-    const pctSin = d.completadasTotal > 0
-        ? ((d.completadasSinTecnico / d.completadasTotal) * 100).toFixed(1) : '0.0';
-
-    const btn = (label, activo, onclick) => `
-        <button onclick="${onclick}"
-            style="padding:0.4rem 0.85rem;border-radius:0.5rem;border:1px solid ${activo ? color : '#e5e7eb'};
-                   background:${activo ? color : '#fff'};color:${activo ? '#fff' : '#374151'};
-                   font-size:0.8rem;font-weight:600;cursor:pointer;">${label}</button>`;
-
-    const avisoSinTecnico = d.completadasSinTecnico > 0 ? `
-        <div class="alert alert-warning" style="margin-bottom:1.5rem;">
-            <strong>⚠️ ${d.completadasSinTecnico} solicitudes completadas (${pctSin}%) no tienen técnico registrado.</strong>
-            <p style="margin:0.4rem 0 0;font-size:0.85rem;">
-                No aparecen en este ranking. Suelen ser solicitudes cerradas antes de que el sistema
-                empezara a conservar el técnico asignado, o cerradas sin pasar por asignación.
-                Interpreta los totales como "solicitudes completadas <em>con registro de responsable</em>".
-            </p>
-        </div>` : '';
-
-    const filas = top.map((p, i) => {
-        const medalla = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="color:#9ca3af;">${i + 1}</span>`;
-        const iconoRol = p.rol.includes('ingenier') ? '👨‍🔬' : p.rol.includes('tecnic') ? '🔧' : p.rol.includes('auxiliar') ? '🧰' : '👤';
-        const maxComp = top[0] ? Math.max(...top.map(x => x.completadas), 1) : 1;
-        return `
-            <tr style="border-bottom:1px solid #f1f5f9;">
-                <td style="padding:0.55rem 0.4rem;text-align:center;font-weight:600;">${medalla}</td>
-                <td style="padding:0.55rem 0.4rem;">
-                    <div style="font-weight:600;color:#1f2937;">${iconoRol} ${p.nombre}</div>
-                    <div style="font-size:0.72rem;color:#9ca3af;text-transform:capitalize;">
-                        ${p.rol}${p.especialidad ? ' · ' + p.especialidad : ''}
-                    </div>
-                </td>
-                <td style="padding:0.55rem 0.4rem;min-width:80px;">${tpBarra(p.completadas, maxComp, color)}</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;font-weight:700;color:${color};">${p.completadas}</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;color:#6b7280;">${p.porcentaje.toFixed(1)}%</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;color:#f59e0b;font-weight:600;">${p.pendientes}</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;color:#dc2626;font-weight:600;">${p.criticas}</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;color:#374151;">${tpFormatoHoras(p.medianaHoras)}</td>
-                <td style="padding:0.55rem 0.4rem;text-align:right;color:#9ca3af;font-size:0.8rem;">${tpFormatoHoras(p.promedioHoras)}</td>
-                <td style="padding:0.55rem 0.4rem;">${tpSparkline(p.serieMeses, color)}</td>
-                <td style="padding:0.55rem 0.4rem;color:#6b7280;font-size:0.78rem;">${p.topEquipo}</td>
-                <td style="padding:0.55rem 0.4rem;color:#6b7280;font-size:0.78rem;">${p.topUbicacion}</td>
-            </tr>`;
-    }).join('');
-
-    const rolesHtml = Object.entries(d.porRol)
-        .sort((a, b) => b[1].completadas - a[1].completadas)
-        .map(([rol, r]) => `
-            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:0.6rem;padding:0.85rem 1rem;">
-                <div style="font-size:0.72rem;text-transform:uppercase;color:#6b7280;font-weight:700;">${rol}</div>
-                <div style="font-size:1.4rem;font-weight:700;color:${color};">${r.completadas}</div>
-                <div style="font-size:0.75rem;color:#6b7280;">
-                    ${r.personas} persona${r.personas !== 1 ? 's' : ''} · mediana ${tpFormatoHoras(r.mediana)}
-                </div>
-            </div>`).join('');
-
-    cont.innerHTML = `
-        <!-- Controles -->
-        <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:0.75rem;padding:1rem;margin-bottom:1.5rem;">
-            <div style="display:flex;flex-wrap:wrap;gap:1.25rem;align-items:center;">
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Área</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('🌐 Todas', tpFiltros.area === 'TODAS', "tpSetFiltro('area','TODAS')")}
-                        ${btn('🏥 Biomédica', tpFiltros.area === 'BIOMEDICA', "tpSetFiltro('area','BIOMEDICA')")}
-                        ${btn('⚙️ Mecánica', tpFiltros.area === 'MECANICA', "tpSetFiltro('area','MECANICA')")}
-                        ${btn('🏗️ Infraestructura', tpFiltros.area === 'INFRAESTRUCTURA', "tpSetFiltro('area','INFRAESTRUCTURA')")}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Periodo</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('3 m', tpFiltros.meses === 3, "tpSetFiltro('meses',3)")}
-                        ${btn('6 m', tpFiltros.meses === 6, "tpSetFiltro('meses',6)")}
-                        ${btn('12 m', tpFiltros.meses === 12, "tpSetFiltro('meses',12)")}
-                        ${btn('Histórico', tpFiltros.meses === 0, "tpSetFiltro('meses',0)")}
-                    </div>
-                </div>
-                <div>
-                    <div style="font-size:0.7rem;text-transform:uppercase;color:#6b7280;margin-bottom:0.35rem;font-weight:700;">Ordenar por</div>
-                    <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
-                        ${btn('📊 Más completadas', tpFiltros.orden === 'total', "tpSetFiltro('orden','total')")}
-                        ${btn('⏱️ Menor tiempo', tpFiltros.orden === 'tiempo', "tpSetFiltro('orden','tiempo')")}
-                        ${btn('🚨 Más críticas', tpFiltros.orden === 'criticas', "tpSetFiltro('orden','criticas')")}
-                    </div>
-                </div>
-                <div style="margin-left:auto;">
-                    <button class="btn btn-info btn-sm" onclick="tpExportarCSV()">📥 Exportar CSV</button>
-                </div>
-            </div>
-        </div>
-
-        ${avisoSinTecnico}
-
-        <!-- KPIs -->
-        <div class="stats-grid" style="margin-bottom:1.5rem;">
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">👥 Personal con actividad</span></div>
-                <div class="stat-card-value" style="color:${color};">${d.personas.length}</div>
-                <div class="stat-card-description">${tpFiltros.area === 'TODAS' ? 'Todas las áreas' : tpFiltros.area} · ${periodoTxt}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">✅ Completadas con responsable</span></div>
-                <div class="stat-card-value" style="color:${color};">${d.totalConTecnico}</div>
-                <div class="stat-card-description">de ${d.completadasTotal} completadas en el periodo</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">🏆 Mayor volumen</span></div>
-                <div class="stat-card-value" style="color:${color};font-size:1.1rem;line-height:1.3;">${lider ? lider.nombre : '—'}</div>
-                <div class="stat-card-description">${lider ? `${lider.completadas} completadas · ${lider.porcentaje.toFixed(1)}% del total` : 'Sin datos'}</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-card-header"><span class="stat-card-title">⏱️ Tiempo mediano global</span></div>
-                <div class="stat-card-value" style="color:${color};">${tpFormatoHoras(d.medianaGlobal)}</div>
-                <div class="stat-card-description">desde asignación hasta cierre</div>
-            </div>
-        </div>
-
-        <!-- Resumen por rol -->
-        ${rolesHtml ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:1.5rem;">${rolesHtml}</div>` : ''}
-
-        <!-- Tabla principal -->
-        <div class="card" style="margin-bottom:1.5rem;">
-            <div class="card-header">
-                <h3 class="card-title">👷 Desempeño individual
-                    <span style="font-weight:normal;color:#6b7280;font-size:0.8rem;">
-                        (${d.personas.length} personas · mostrando ${top.length})
-                    </span>
-                </h3>
-            </div>
-            <div class="card-content" style="overflow-x:auto;">
-                ${top.length === 0 ? '<p style="color:#6b7280;">Sin datos de personal para los filtros seleccionados.</p>' : `
-                <table style="width:100%;border-collapse:collapse;font-size:0.875rem;">
-                    <thead>
-                        <tr style="border-bottom:2px solid #e5e7eb;color:#6b7280;font-size:0.72rem;text-transform:uppercase;">
-                            <th style="padding:0.5rem 0.4rem;">#</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Persona</th>
-                            <th style="padding:0.5rem 0.4rem;"></th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Completadas</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">%</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Abiertas</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Críticas</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Mediana</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:right;">Promedio</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">6 meses</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Equipo frecuente</th>
-                            <th style="padding:0.5rem 0.4rem;text-align:left;">Ubicación frecuente</th>
-                        </tr>
-                    </thead>
-                    <tbody>${filas}</tbody>
-                </table>`}
-                <p style="margin:1rem 0 0;color:#6b7280;font-size:0.78rem;line-height:1.5;">
-                    <strong>Cómo leer esta tabla.</strong> La <em>mediana</em> es más representativa que el promedio:
-                    un solo caso que tardó semanas dispara el promedio pero no la mediana. Los tiempos se miden
-                    desde la asignación hasta el cierre, o desde la creación si no hubo asignación registrada.
-                    Compara tiempos solo entre personas con carga y tipo de trabajo similares: una reparación
-                    mayor y una inspección de rutina no son equiparables.
-                </p>
-            </div>
-        </div>`;
-}
-
-function tpSetFiltro(campo, valor) {
-    tpFiltros[campo] = valor;
-    tpRenderizar();
-}
-
-// ---------------------------------------------------------------------------
-// 3) EXPORTACIÓN CSV
-// ---------------------------------------------------------------------------
-
-function tpExportarCSV() {
-    try {
-        const d = window.__tpUltimoResultado || tpCalcular();
-        const sep = ';';
-        const esc = (v) => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-        const lineas = [];
-
-        lineas.push(esc('DESEMPENO DEL PERSONAL - HOSPITAL SUSANA LOPEZ DE VALENCIA'));
-        lineas.push([esc('Area'), esc(tpFiltros.area)].join(sep));
-        lineas.push([esc('Periodo'), esc(tpFiltros.meses === 0 ? 'Historico completo' : `Ultimos ${tpFiltros.meses} meses`)].join(sep));
-        lineas.push([esc('Completadas en el periodo'), esc(d.completadasTotal)].join(sep));
-        lineas.push([esc('Completadas con responsable'), esc(d.totalConTecnico)].join(sep));
-        lineas.push([esc('Completadas SIN tecnico registrado'), esc(d.completadasSinTecnico)].join(sep));
-        lineas.push([esc('Generado'), esc(new Date().toLocaleString('es-CO'))].join(sep));
-        lineas.push('');
-
-        lineas.push([esc('#'), esc('Nombre'), esc('Rol'), esc('Especialidad'), esc('Completadas'),
-                     esc('% del total'), esc('Abiertas'), esc('Criticas'), esc('Reparaciones'),
-                     esc('Inspecciones'), esc('Mediana (h)'), esc('Promedio (h)'),
-                     esc('Areas'), esc('Equipo frecuente'), esc('Ubicacion frecuente')].join(sep));
-
-        d.personas.forEach((p, i) => {
-            lineas.push([
-                esc(i + 1), esc(p.nombre), esc(p.rol), esc(p.especialidad), esc(p.completadas),
-                esc(p.porcentaje.toFixed(1)), esc(p.pendientes), esc(p.criticas), esc(p.reparaciones),
-                esc(p.inspecciones),
-                esc(p.medianaHoras !== null ? p.medianaHoras.toFixed(1) : ''),
-                esc(p.promedioHoras !== null ? p.promedioHoras.toFixed(1) : ''),
-                esc(p.areasTexto), esc(p.topEquipo), esc(p.topUbicacion)
-            ].join(sep));
-        });
-
-        const blob = new Blob(['\ufeff' + lineas.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `desempeno_personal_${tpFiltros.area}_${new Date().toISOString().slice(0, 10)}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-
-        if (typeof showNotification === 'function') {
-            showNotification('✅ Desempeño del personal exportado', 'success');
-        }
-    } catch (error) {
-        console.error('❌ Error exportando desempeno:', error);
-        alert('No fue posible exportar: ' + error.message);
-    }
-}
-
-// ---------------------------------------------------------------------------
-// 4) AUTO-INSTALADOR DE LA PESTAÑA
-// ---------------------------------------------------------------------------
-
-function tpInstalarPestana() {
-    const tabs = document.querySelector('#stats-modal-content .analysis-tabs');
-    if (!tabs) return false;
-    if (tabs.querySelector('[data-analysis-type="personal"]')) return true;
-
-    const btn = document.createElement('button');
-    btn.className = 'analysis-tab';
-    btn.setAttribute('data-analysis-type', 'personal');
-    btn.innerHTML = '👷 Desempeño del Personal';
-    btn.addEventListener('click', () => showAnalysisType('personal'));
-    tabs.appendChild(btn);
-
-    if (!document.getElementById('analysis-personal')) {
-        const cont = document.createElement('div');
-        cont.id = 'analysis-personal';
-        cont.className = 'analysis-content';
-        cont.style.display = 'none';
-        cont.innerHTML = '<div id="ranking-personal-container"></div>';
-        tabs.parentNode.appendChild(cont);
-    }
-    console.log('✅ Pestaña "Desempeño del Personal" instalada');
-    return true;
-}
-
-function tpIntentarInstalar(intentos = 20) {
-    if (tpInstalarPestana()) return;
-    if (intentos > 0) setTimeout(() => tpIntentarInstalar(intentos - 1), 250);
-}
-
-(function tpEnganchar() {
-    if (typeof window.showAdvancedStatisticsModal === 'function' && !window.__tpModalParcheado) {
-        const original = window.showAdvancedStatisticsModal;
-        window.showAdvancedStatisticsModal = async function (...args) {
-            const r = await original.apply(this, args);
-            tpIntentarInstalar();
-            return r;
-        };
-        window.__tpModalParcheado = true;
-    }
-    if (typeof window.showAnalysisType === 'function' && !window.__tpTabParcheado) {
-        const originalTab = window.showAnalysisType;
-        window.showAnalysisType = function (type) {
-            originalTab.apply(this, arguments);
-            if (type === 'personal') setTimeout(() => tpRenderizar(), 30);
-        };
-        window.__tpTabParcheado = true;
-    }
-    tpIntentarInstalar(4);
-})();
-
-window.tpRenderizar = tpRenderizar;
-window.tpSetFiltro = tpSetFiltro;
-window.tpExportarCSV = tpExportarCSV;
-window.tpCalcular = tpCalcular;
-window.tpInstalarPestana = tpInstalarPestana;
-
-console.log('👷 Módulo Desempeño del Personal cargado. Comandos: tpRenderizar() · tpExportarCSV()');
-
-/* ============================================================================
-   MODULO: DESEMPENO DEL PERSONAL  —  FIN
-   ============================================================================ */
-
-
-/* ============================================================================
-   MODULO: INFORME MENSUAL  —  INICIO (insertado automáticamente)
-   ============================================================================ */
-/* =========================================================================
-   INFORME MENSUAL — Portal de Gestión HSLV
-   Pestaña "Informe Mensual" dentro del modal de Estadísticas Avanzadas.
-   Muestra, para el mes seleccionado:
-     • Qué equipo tuvo más llamados (ranking)
-     • Quién lo solucionó (técnico que más atendió por equipo y técnico del mes)
-     • Si el llamado fue en día de semana o fin de semana
-   Módulo autoinstalable: parchea showAdvancedStatisticsModal y showAnalysisType
-   en tiempo de ejecución. No requiere editar pestañas HTML manualmente.
-   Diseñado para coexistir con los módulos "Equipos y Servicios" y
-   "Desempeño del Personal" (encadena sobre las funciones ya existentes).
-   ========================================================================= */
-(function () {
-  'use strict';
-
-  if (window.__informeMensualInstalado) return;
-  window.__informeMensualInstalado = true;
-
-  var IM_TIPO = 'mensual';
-  var IM_VERDE = '#059669';
-  var IM_AZUL = '#2563eb';
-
-  // Estado de la vista (se conserva mientras el modal está abierto)
-  var imEstado = { mes: null, area: 'todas' };
-
-  /* ---------------------------------------------------------------------
-     Utilidades
-     --------------------------------------------------------------------- */
-
-  // Parser de fechas orientado al DÍA CALENDARIO local (no al instante UTC).
-  // Esto es clave para el informe: el mes y la clasificación día de semana /
-  // fin de semana deben corresponder a la fecha tal como aparece en el registro,
-  // sin que la zona horaria (Colombia, UTC-5) la corra un día.
-  function imParseFecha(raw) {
-    if (!raw) return null;
-    if (raw instanceof Date) return isNaN(raw) ? null : raw;
-    var texto = String(raw).trim();
-
-    // ISO: YYYY-MM-DD (con o sin hora). Se toma el día calendario tal cual.
-    var iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
-    if (iso) {
-      return new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]));
-    }
-
-    // Formato colombiano: dd/mm/yyyy o dd-mm-yyyy (con hora opcional).
-    var lat = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
-    if (lat) {
-      return new Date(Number(lat[3]), Number(lat[2]) - 1, Number(lat[1]));
-    }
-
-    // Último recurso: dejar que el motor intente, y si el portal tiene su
-    // propio parser, usarlo como respaldo.
-    var d = new Date(texto);
-    if (!isNaN(d)) return d;
-    try {
-      if (typeof parseFechaSolicitud === 'function') {
-        var f = parseFechaSolicitud(raw);
-        if (f) return f;
-      }
-    } catch (e) { /* noop */ }
-    return null;
-  }
-
-  // Lee las solicitudes globales de forma segura.
-  function imSolicitudes() {
-    try {
-      if (typeof cloudSolicitudes !== 'undefined' && Array.isArray(cloudSolicitudes)) {
-        return cloudSolicitudes;
-      }
-    } catch (e) { /* noop */ }
-    if (Array.isArray(window.cloudSolicitudes)) return window.cloudSolicitudes;
-    return [];
-  }
-
-  function imClasificarArea(servicio) {
-    var s = (servicio || '').toString().toLowerCase();
-    if (s.indexOf('biomed') !== -1 || s.indexOf('bioméd') !== -1) return 'BIOMEDICA';
-    if (s.indexOf('mecán') !== -1 || s.indexOf('mecan') !== -1) return 'MECANICA';
-    if (s.indexOf('infra') !== -1) return 'INFRAESTRUCTURA';
-    return 'OTRA';
-  }
-
-  var IM_AREA_KEY = { todas: null, biomedica: 'BIOMEDICA', mecanica: 'MECANICA', infraestructura: 'INFRAESTRUCTURA' };
-
-  // Normalización de nombres de equipo.
-  // Si el módulo "Ranking de Equipos" está cargado, se usa su catálogo canónico
-  // (rkCanonizarEquipo) para que el "equipo con más llamados" coincida con la
-  // pestaña "Equipos y Servicios" en modo Agrupados. Si no, se usa un
-  // normalizador básico (mayúsculas, sin tildes, sin numeración final).
-  // Se puede forzar uno propio con:  window.imNormalizarEquipoOverride = fn;
-  function imNormalizarEquipoDefault(nombre) {
-    if (!nombre) return 'SIN ESPECIFICAR';
-    var t = String(nombre).toUpperCase();
-    t = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    t = t.replace(/\s*(#|N[º°O]\.?\s*|NO\.?\s*)\d+\s*$/i, '');
-    t = t.replace(/[\s\-_.]+$/, '');
-    t = t.replace(/\s+/g, ' ').trim();
-    return t || 'SIN ESPECIFICAR';
-  }
-  function imNormalizarEquipo(nombre) {
-    if (typeof window.imNormalizarEquipoOverride === 'function') {
-      try { return window.imNormalizarEquipoOverride(nombre); } catch (e) { /* fallback */ }
-    }
-    if (typeof rkCanonizarEquipo === 'function') {
-      try {
-        var canon = rkCanonizarEquipo(nombre);
-        if (canon) return canon;
-      } catch (e) { /* fallback */ }
-    }
-    return imNormalizarEquipoDefault(nombre);
-  }
-
-  function imEsFinDeSemana(fecha) {
-    var d = fecha.getDay(); // 0 = domingo, 6 = sábado
-    return d === 0 || d === 6;
-  }
-
-  function imEsCritica(prioridad) {
-    var p = (prioridad || '').toString().toUpperCase();
-    return p === 'CRITICA' || p === 'CRÍTICA';
-  }
-
-  function imMesKey(fecha) {
-    return fecha.getFullYear() + '-' + String(fecha.getMonth() + 1).padStart(2, '0');
-  }
-
-  var IM_MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-                  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-
-  function imMesLegible(mesKey) {
-    if (!mesKey) return '';
-    var p = mesKey.split('-');
-    var mi = Number(p[1]) - 1;
-    return (IM_MESES[mi] || '') + ' ' + p[0];
-  }
-
-  function imEscapar(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  }
-
-  function imTopDeMapa(mapa) {
-    var top = null, max = -1;
-    mapa.forEach(function (v, k) { if (v > max) { max = v; top = k; } });
-    return { nombre: top, cantidad: max < 0 ? 0 : max };
-  }
-
-  /* ---------------------------------------------------------------------
-     Cálculo
-     --------------------------------------------------------------------- */
-
-  // Devuelve los mesKey presentes en los datos (para el selector y el default).
-  function imMesesDisponibles() {
-    var set = {};
-    imSolicitudes().forEach(function (s) {
-      var f = imParseFecha(s.fechaCreacion || s.fecha || s.createdTime);
-      if (f) set[imMesKey(f)] = true;
-    });
-    return Object.keys(set).sort(); // ascendente
-  }
-
-  function imComputar(mesKey, areaKey) {
-    var areaObjetivo = IM_AREA_KEY[areaKey] || null;
-    var resultado = {
-      total: 0, entreSemana: 0, finDeSemana: 0, criticas: 0,
-      completadas: 0, sinTecnico: 0,
-      porEquipo: new Map(),   // norm -> {total,entreSemana,finDeSemana,criticas,tecnicos:Map,original}
-      porTecnico: new Map()   // tecnico -> cantidad
-    };
-
-    imSolicitudes().forEach(function (s) {
-      var f = imParseFecha(s.fechaCreacion || s.fecha || s.createdTime);
-      if (!f) return;
-      if (imMesKey(f) !== mesKey) return;
-      if (areaObjetivo && imClasificarArea(s.servicioIngenieria) !== areaObjetivo) return;
-
-      var norm = imNormalizarEquipo(s.equipo);
-      var tecnico = (s.tecnicoAsignado || '').toString().trim();
-      var finde = imEsFinDeSemana(f);
-      var critica = imEsCritica(s.prioridad);
-      var estado = (s.estado || '').toString().toUpperCase();
-
-      resultado.total++;
-      if (finde) resultado.finDeSemana++; else resultado.entreSemana++;
-      if (critica) resultado.criticas++;
-      if (estado === 'COMPLETADA') resultado.completadas++;
-
-      if (tecnico) {
-        resultado.porTecnico.set(tecnico, (resultado.porTecnico.get(tecnico) || 0) + 1);
-      } else {
-        resultado.sinTecnico++;
-      }
-
-      var eq = resultado.porEquipo.get(norm);
-      if (!eq) {
-        eq = { total: 0, entreSemana: 0, finDeSemana: 0, criticas: 0,
-               tecnicos: new Map(), original: s.equipo || 'Sin especificar' };
-        resultado.porEquipo.set(norm, eq);
-      }
-      eq.total++;
-      if (finde) eq.finDeSemana++; else eq.entreSemana++;
-      if (critica) eq.criticas++;
-      if (tecnico) eq.tecnicos.set(tecnico, (eq.tecnicos.get(tecnico) || 0) + 1);
-    });
-
-    // Ranking de equipos ordenado por total desc
-    resultado.ranking = Array.from(resultado.porEquipo.entries())
-      .map(function (par) {
-        var eq = par[1];
-        var topTec = imTopDeMapa(eq.tecnicos);
-        return {
-          equipo: par[0], total: eq.total,
-          entreSemana: eq.entreSemana, finDeSemana: eq.finDeSemana,
-          criticas: eq.criticas, tecnicoTop: topTec.nombre, tecnicoTopCant: topTec.cantidad
-        };
-      })
-      .sort(function (a, b) { return b.total - a.total || a.equipo.localeCompare(b.equipo); });
-
-    resultado.tecnicoDelMes = imTopDeMapa(resultado.porTecnico);
-    return resultado;
-  }
-
-  /* ---------------------------------------------------------------------
-     Render
-     --------------------------------------------------------------------- */
-
-  function imTarjeta(icono, titulo, valor, sub, color) {
-    return '' +
-      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.25rem 1.25rem 1.1rem;">' +
-        '<div style="font-size:.8rem;color:#6b7280;font-weight:600;margin-bottom:.4rem;">' + icono + ' ' + imEscapar(titulo) + '</div>' +
-        '<div style="font-size:1.7rem;font-weight:800;color:' + color + ';line-height:1.1;">' + valor + '</div>' +
-        '<div style="font-size:.8rem;color:#6b7280;margin-top:.35rem;">' + sub + '</div>' +
-      '</div>';
-  }
-
-  function imBotonArea(key, etiqueta, icono) {
-    var activo = imEstado.area === key;
-    return '<button onclick="imSetArea(\'' + key + '\')" style="' +
-      'padding:.5rem 1rem;border-radius:8px;border:1px solid ' + (activo ? IM_VERDE : '#d1d5db') + ';' +
-      'background:' + (activo ? IM_VERDE : '#fff') + ';color:' + (activo ? '#fff' : '#374151') + ';' +
-      'font-weight:600;font-size:.85rem;cursor:pointer;">' + icono + ' ' + etiqueta + '</button>';
-  }
-
-  function imRender() {
-    var cont = document.getElementById('analysis-mensual');
-    if (!cont) return;
-
-    var disponibles = imMesesDisponibles();
-    if (!imEstado.mes) {
-      imEstado.mes = disponibles.length ? disponibles[disponibles.length - 1] : imMesKey(new Date());
-    }
-
-    var r = imComputar(imEstado.mes, imEstado.area);
-    var pctFinde = r.total ? Math.round((r.finDeSemana / r.total) * 100) : 0;
-    var pctSemana = 100 - pctFinde;
-
-    // --- Controles ---
-    var html = '';
-    html += '<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:1rem 1.25rem;margin-bottom:1.25rem;">' +
-      '<div style="display:flex;flex-wrap:wrap;gap:1.5rem;align-items:flex-end;">' +
-        '<div>' +
-          '<div style="font-size:.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.03em;margin-bottom:.4rem;">Mes</div>' +
-          '<input type="month" id="im-mes" value="' + imEstado.mes + '" ' +
-            (disponibles.length ? 'min="' + disponibles[0] + '" max="' + disponibles[disponibles.length - 1] + '"' : '') +
-            ' onchange="imOnMesChange(this.value)" ' +
-            'style="padding:.5rem .75rem;border:1px solid #d1d5db;border-radius:8px;font-size:.9rem;font-weight:600;color:#111827;">' +
-        '</div>' +
-        '<div>' +
-          '<div style="font-size:.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.03em;margin-bottom:.4rem;">Área</div>' +
-          '<div style="display:flex;gap:.5rem;flex-wrap:wrap;">' +
-            imBotonArea('todas', 'Todas', '🌐') +
-            imBotonArea('biomedica', 'Biomédica', '🏥') +
-            imBotonArea('mecanica', 'Mecánica', '⚙️') +
-            imBotonArea('infraestructura', 'Infraestructura', '🏗️') +
-          '</div>' +
-        '</div>' +
-        '<div style="margin-left:auto;">' +
-          '<button onclick="imExportCSV()" style="padding:.55rem 1.1rem;border:none;border-radius:8px;background:' + IM_AZUL + ';color:#fff;font-weight:600;font-size:.85rem;cursor:pointer;">📥 Exportar CSV</button>' +
-        '</div>' +
-      '</div>' +
-      '<div style="margin-top:.75rem;font-size:.82rem;color:#6b7280;">Informe de <strong style="color:#111827;">' + imMesLegible(imEstado.mes) + '</strong> · el conteo de llamados y el clasificador día de semana / fin de semana se basan en la <strong>fecha de creación</strong> de cada solicitud.</div>' +
-    '</div>';
-
-    if (r.total === 0) {
-      html += '<div style="text-align:center;padding:3rem;color:#6b7280;border:1px dashed #d1d5db;border-radius:12px;">' +
-        '<div style="font-size:2rem;margin-bottom:.5rem;">🗓️</div>' +
-        'No hay llamados registrados en <strong>' + imMesLegible(imEstado.mes) + '</strong>' +
-        (imEstado.area !== 'todas' ? ' para el área seleccionada.' : '.') +
-        '</div>';
-      cont.innerHTML = html;
-      return;
-    }
-
-    var topEquipo = r.ranking[0];
-
-    // --- Tarjetas resumen ---
-    html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin-bottom:1.25rem;">';
-    html += imTarjeta('📋', 'Llamados del mes', r.total,
-      r.completadas + ' completadas · ' + r.criticas + ' críticas', IM_VERDE);
-    html += imTarjeta('🔧', 'Equipo con más llamados', imEscapar(topEquipo.equipo),
-      topEquipo.total + ' llamados · atendió principalmente <strong>' + imEscapar(topEquipo.tecnicoTop || 'Sin registrar') + '</strong>', IM_VERDE);
-    html += imTarjeta('👤', 'Técnico del mes',
-      imEscapar(r.tecnicoDelMes.nombre || 'Sin registrar'),
-      (r.tecnicoDelMes.nombre ? r.tecnicoDelMes.cantidad + ' llamados atendidos' : 'sin técnico en los registros'), IM_AZUL);
-    html += imTarjeta('📆', 'Distribución semanal',
-      pctSemana + '% <span style="font-size:1rem;color:#6b7280;">entre semana</span>',
-      r.entreSemana + ' entre semana · ' + r.finDeSemana + ' fin de semana (' + pctFinde + '%)', IM_AZUL);
-    html += '</div>';
-
-    // --- Barra día de semana vs fin de semana ---
-    html += '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:1.1rem 1.25rem;margin-bottom:1.25rem;">' +
-      '<div style="font-weight:700;color:#111827;margin-bottom:.75rem;">📆 Día de semana vs. fin de semana</div>' +
-      '<div style="display:flex;height:26px;border-radius:8px;overflow:hidden;font-size:.78rem;font-weight:700;color:#fff;">' +
-        (pctSemana > 0 ? '<div style="width:' + pctSemana + '%;background:' + IM_AZUL + ';display:flex;align-items:center;justify-content:center;">' + (pctSemana >= 12 ? 'Entre semana ' + pctSemana + '%' : '') + '</div>' : '') +
-        (pctFinde > 0 ? '<div style="width:' + pctFinde + '%;background:' + IM_VERDE + ';display:flex;align-items:center;justify-content:center;">' + (pctFinde >= 12 ? 'Fin de semana ' + pctFinde + '%' : '') + '</div>' : '') +
-      '</div>' +
-      '<div style="display:flex;gap:1.5rem;margin-top:.6rem;font-size:.82rem;color:#6b7280;">' +
-        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + IM_AZUL + ';margin-right:.35rem;"></span>Entre semana: <strong style="color:#111827;">' + r.entreSemana + '</strong></span>' +
-        '<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:' + IM_VERDE + ';margin-right:.35rem;"></span>Fin de semana: <strong style="color:#111827;">' + r.finDeSemana + '</strong></span>' +
-      '</div>' +
-    '</div>';
-
-    // --- Aviso de calidad de datos (técnico sin registrar) ---
-    if (r.sinTecnico > 0) {
-      var pctSin = Math.round((r.sinTecnico / r.total) * 100);
-      html += '<div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:.75rem 1rem;margin-bottom:1.25rem;font-size:.85rem;color:#92400e;">' +
-        '⚠️ <strong>' + r.sinTecnico + '</strong> de ' + r.total + ' llamados (' + pctSin + '%) no tienen técnico registrado. ' +
-        'Algunas versiones anteriores del sistema borraban el técnico asignado al completar la solicitud, por lo que "quién lo solucionó" puede quedar vacío en registros históricos.' +
-        '</div>';
-    }
-
-    // --- Tabla de ranking ---
-    html += '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;">' +
-      '<div style="padding:.9rem 1.25rem;font-weight:700;color:#111827;border-bottom:1px solid #e5e7eb;">🔧 Equipos con más llamados en ' + imMesLegible(imEstado.mes) + '</div>' +
-      '<div style="overflow-x:auto;">' +
-      '<table style="width:100%;border-collapse:collapse;font-size:.85rem;">' +
-      '<thead><tr style="background:#f9fafb;color:#6b7280;text-align:left;">' +
-        '<th style="padding:.6rem .75rem;">#</th>' +
-        '<th style="padding:.6rem .75rem;">Equipo</th>' +
-        '<th style="padding:.6rem .75rem;text-align:center;">Llamados</th>' +
-        '<th style="padding:.6rem .75rem;text-align:center;">Entre semana</th>' +
-        '<th style="padding:.6rem .75rem;text-align:center;">Fin de semana</th>' +
-        '<th style="padding:.6rem .75rem;text-align:center;">Críticas</th>' +
-        '<th style="padding:.6rem .75rem;">Quién lo solucionó (principal)</th>' +
-      '</tr></thead><tbody>';
-
-    r.ranking.forEach(function (row, i) {
-      var resaltar = i === 0;
-      html += '<tr style="border-top:1px solid #f0f0f0;' + (resaltar ? 'background:#ecfdf5;' : '') + '">' +
-        '<td style="padding:.6rem .75rem;font-weight:700;color:#6b7280;">' + (i + 1) + '</td>' +
-        '<td style="padding:.6rem .75rem;font-weight:' + (resaltar ? '800' : '600') + ';color:#111827;">' + imEscapar(row.equipo) + '</td>' +
-        '<td style="padding:.6rem .75rem;text-align:center;font-weight:800;color:' + IM_VERDE + ';">' + row.total + '</td>' +
-        '<td style="padding:.6rem .75rem;text-align:center;color:' + IM_AZUL + ';font-weight:600;">' + row.entreSemana + '</td>' +
-        '<td style="padding:.6rem .75rem;text-align:center;color:' + IM_VERDE + ';font-weight:600;">' + row.finDeSemana + '</td>' +
-        '<td style="padding:.6rem .75rem;text-align:center;color:' + (row.criticas ? '#dc2626' : '#9ca3af') + ';font-weight:600;">' + row.criticas + '</td>' +
-        '<td style="padding:.6rem .75rem;color:#374151;">' +
-          (row.tecnicoTop
-            ? imEscapar(row.tecnicoTop) + ' <span style="color:#9ca3af;">(' + row.tecnicoTopCant + '/' + row.total + ')</span>'
-            : '<span style="color:#9ca3af;font-style:italic;">Sin registrar</span>') +
-        '</td>' +
-      '</tr>';
-    });
-
-    html += '</tbody></table></div></div>';
-
-    cont.innerHTML = html;
-  }
-
-  /* ---------------------------------------------------------------------
-     Interacción (expuestas a window para los onclick/onchange inline)
-     --------------------------------------------------------------------- */
-
-  window.imOnMesChange = function (valor) {
-    if (valor) imEstado.mes = valor;
-    imRender();
-  };
-
-  window.imSetArea = function (area) {
-    imEstado.area = area;
-    imRender();
-  };
-
-  window.imExportCSV = function () {
-    var r = imComputar(imEstado.mes, imEstado.area);
-    var filas = [['Puesto', 'Equipo', 'Llamados', 'Entre semana', 'Fin de semana', 'Criticas', 'Tecnico principal', 'Llamados atendidos por ese tecnico']];
-    r.ranking.forEach(function (row, i) {
-      filas.push([i + 1, row.equipo, row.total, row.entreSemana, row.finDeSemana, row.criticas,
-                  row.tecnicoTop || 'Sin registrar', row.tecnicoTop ? row.tecnicoTopCant : 0]);
-    });
-    var csv = filas.map(function (f) {
-      return f.map(function (c) {
-        var t = String(c == null ? '' : c);
-        return /[",;\n]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
-      }).join(',');
-    }).join('\r\n');
-
-    var blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'informe-mensual-' + imEstado.mes + '-' + imEstado.area + '.csv';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 500);
-  };
-
-  /* ---------------------------------------------------------------------
-     Inyección de la pestaña en el modal
-     --------------------------------------------------------------------- */
-
-  function imInyectarPestana() {
-    var tabs = document.querySelector('#stats-modal-content .analysis-tabs');
-    if (!tabs) return;
-    if (document.querySelector('.analysis-tab[data-analysis-type="' + IM_TIPO + '"]')) return; // ya inyectada
-
-    // Botón de pestaña
-    var btn = document.createElement('button');
-    btn.className = 'analysis-tab';
-    btn.setAttribute('data-analysis-type', IM_TIPO);
-    btn.setAttribute('onclick', "showAnalysisType('" + IM_TIPO + "')");
-    btn.innerHTML = '📆 Informe Mensual';
-    tabs.appendChild(btn);
-
-    // Contenedor de contenido (hermano de los demás .analysis-content)
-    if (!document.getElementById('analysis-' + IM_TIPO)) {
-      var algunContenido = document.querySelector('#stats-modal-content .analysis-content');
-      var div = document.createElement('div');
-      div.id = 'analysis-' + IM_TIPO;
-      div.className = 'analysis-content';
-      div.style.display = 'none';
-      if (algunContenido && algunContenido.parentNode) {
-        algunContenido.parentNode.appendChild(div);
-      } else {
-        document.getElementById('stats-modal-content').appendChild(div);
-      }
-    }
-  }
-
-  /* ---------------------------------------------------------------------
-     Parcheo de funciones globales (encadenado, no destructivo)
-     --------------------------------------------------------------------- */
-
-  function imInstalarParches() {
-    if (typeof window.showAdvancedStatisticsModal !== 'function' ||
-        typeof window.showAnalysisType !== 'function') {
-      return false;
-    }
-    if (window.__imParchesAplicados) return true;
-    window.__imParchesAplicados = true;
-
-    // 1) Al abrir/reconstruir el modal, reinyectar la pestaña.
-    var origModal = window.showAdvancedStatisticsModal;
-    window.showAdvancedStatisticsModal = function () {
-      var ret = origModal.apply(this, arguments);
-      var reinyectar = function () { setTimeout(imInyectarPestana, 0); };
-      if (ret && typeof ret.then === 'function') {
-        ret.then(reinyectar, reinyectar);
-      } else {
-        reinyectar();
-      }
-      return ret;
-    };
-
-    // 2) Al cambiar de pestaña a "mensual", renderizar con datos frescos.
-    var origTipo = window.showAnalysisType;
-    window.showAnalysisType = function (type) {
-      var ret = origTipo.apply(this, arguments);
-      if (type === IM_TIPO) {
-        imInyectarPestana(); // por si aún no estaba
-        var cont = document.getElementById('analysis-' + IM_TIPO);
-        if (cont) cont.style.display = 'block';
-        setTimeout(imRender, 30);
-      }
-      return ret;
-    };
-
-    return true;
-  }
-
-  // Esperar a que existan las funciones globales (orden de carga flexible).
-  var intentos = 0;
-  (function esperar() {
-    if (imInstalarParches()) return;
-    if (intentos++ > 100) return; // ~10 s máximo
-    setTimeout(esperar, 100);
-  })();
-
-})();
-
-/* ============================================================================
-   MODULO: INFORME MENSUAL  —  FIN
-   ============================================================================ */
-
     </script>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         Módulos de análisis.
+         Van DESPUÉS del script principal a propósito: cada uno envuelve
+         showAnalysisType() y showAdvancedStatisticsModal(), así que esas
+         funciones deben existir ya. Se auto-instalan como pestañas nuevas
+         dentro del modal de Estadísticas Avanzadas.
+         ═══════════════════════════════════════════════════════════════ -->
+    <script defer src="modules/ranking-equipos.js"></script>
+    <script defer src="modules/desempeno-personal.js"></script>
+    <script defer src="modules/informe-mensual.js"></script>
 </body>
 </html>

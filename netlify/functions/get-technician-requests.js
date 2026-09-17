@@ -1,25 +1,26 @@
 const Airtable = require('airtable');
+const { requireSession, corsHeaders } = require('./utils/session');
 
 exports.handler = async (event) => {
-    const headers = {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Content-Type': 'application/json'
-    };
+    const headers = corsHeaders(event);
 
-    if (event.httpMethod !== 'GET') {
-        return { statusCode: 405, headers, body: 'Method Not Allowed' };
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
     }
 
-    const { techId } = event.queryStringParameters || {};
-    
-    if (!techId) {
-        return { 
-            statusCode: 400, 
-            headers, 
-            body: JSON.stringify({ error: 'Tech ID required' }) 
-        };
+    // La app movil envia POST; se acepta GET por compatibilidad
+    if (!['GET', 'POST'].includes(event.httpMethod)) {
+        return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
     }
+
+    // 🔐 Sesion obligatoria
+    const control = requireSession(event, headers);
+    if (control.error) return control.error;
+
+    // El tecnico se toma del TOKEN, no del parametro que envia el cliente.
+    // Antes bastaba cambiar el techId en la peticion para ver las
+    // solicitudes de cualquier otro tecnico.
+    const techId = control.sesion.sub;
 
     try {
         const base = new Airtable({
@@ -29,27 +30,30 @@ exports.handler = async (event) => {
         const records = await base('Solicitudes')
             .select({
                 filterByFormula: `AND(
-                    {tecnicoAsignadoId} = '${techId}',
+                    {tecnicoAsignadoId} = '${String(techId).replace(/'/g, "\\'")}',
                     OR(
                         {estado} = 'ASIGNADA',
                         {estado} = 'EN_PROCESO'
                     )
                 )`,
-                sort: [{field: "prioridad", direction: "desc"}]
+                sort: [{ field: "prioridad", direction: "desc" }]
             })
             .all();
 
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify({ records })
+            body: JSON.stringify({
+                success: true,
+                requests: records.map(r => ({ id: r.id, ...r.fields }))
+            })
         };
     } catch (error) {
         console.error('Error:', error);
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'Server error' })
+            body: JSON.stringify({ success: false, error: 'Server error' })
         };
     }
 };
