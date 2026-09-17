@@ -214,7 +214,15 @@ function corsHeaders(event) {
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
         'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
         'Vary': 'Origin',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // Las [[headers]] de netlify.toml NO se aplican a las respuestas de las
+        // funciones (solo a archivos estáticos): hay que enviarlas desde aquí.
+        'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+        'Pragma': 'no-cache',
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'Referrer-Policy': 'no-referrer',
+        'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'"
     };
 }
 
