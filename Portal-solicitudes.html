@@ -1325,6 +1325,9 @@
             
             // Verificar sesión
             checkSession();
+
+            // Reintentar el envío de solicitudes de acceso guardadas en el equipo
+            setTimeout(reenviarSolicitudesAccesoLocales, 1500);
             
             // Listener para prioridades
             document.querySelectorAll('.priority-option').forEach(option => {
@@ -1495,6 +1498,42 @@
         // Comparaba el código contra una lista guardada en localStorage, que
         // cualquiera puede editar desde la consola del navegador.
 
+        function guardarSolicitudAccesoLocal(formData) {
+            try {
+                const pendientes = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
+                if (!pendientes.some(r => r.email === formData.email && r.fechaSolicitud === formData.fechaSolicitud)) {
+                    pendientes.push(formData);
+                    localStorage.setItem('hospital_access_requests', JSON.stringify(pendientes));
+                }
+            } catch (e) {
+                console.warn('⚠️ No se pudo guardar la solicitud de acceso localmente:', e.message);
+            }
+        }
+
+        // Reenvía las solicitudes de acceso que quedaron guardadas en el equipo
+        async function reenviarSolicitudesAccesoLocales() {
+            let pendientes;
+            try {
+                pendientes = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
+            } catch { return; }
+            if (!pendientes.length || !window.airtableAPI) return;
+
+            const enviadas = [];
+            for (const solicitud of pendientes) {
+                try {
+                    await window.airtableAPI.createSolicitudAcceso(solicitud);
+                    enviadas.push(solicitud);
+                    console.log(`✅ Solicitud de acceso de ${solicitud.email} enviada a Airtable`);
+                } catch (error) {
+                    console.warn(`⚠️ Sigue pendiente la solicitud de ${solicitud.email}:`, error.message);
+                }
+            }
+            if (enviadas.length) {
+                localStorage.setItem('hospital_access_requests',
+                    JSON.stringify(pendientes.filter(p => !enviadas.includes(p))));
+            }
+        }
+
         // ACTUALIZADO: Solicitud de acceso con todos los campos obligatorios
         async function handleAccessRequestCloud(e) {
             e.preventDefault();
@@ -1528,7 +1567,11 @@
             requestBtn.innerHTML = '🔄 Enviando con valores mapeados...';
             
             try {
-                if (window.airtableAPI && isCloudConnected) {
+                // La solicitud de ACCESO se envía SIN sesión (el proxy la permite como
+                // pública), así que no depende de isCloudConnected: antes del login esa
+                // bandera siempre está en false y todas las solicitudes terminaban
+                // guardadas en el navegador, sin llegar nunca al portal de gestión.
+                if (window.airtableAPI) {
                     await window.airtableAPI.createSolicitudAcceso(formData);
                     
                     showAlert(alertDiv, 'success', 
@@ -1547,11 +1590,8 @@
                         `⏰ Tiempo estimado: 24-48 horas laborales`
                     );
                 } else {
-                    const existingRequests = JSON.parse(localStorage.getItem('hospital_access_requests') || '[]');
-                    existingRequests.push(formData);
-                    localStorage.setItem('hospital_access_requests', JSON.stringify(existingRequests));
-                    
-                    showAlert(alertDiv, 'success', '✅ Solicitud guardada localmente. Se sincronizará cuando se restablezca la conexión a Airtable.');
+                    guardarSolicitudAccesoLocal(formData);
+                    showAlert(alertDiv, 'success', '✅ Solicitud guardada en este equipo. Se enviará automáticamente cuando haya conexión.');
                 }
                 
                 // CORRECCIÓN: Resetear el formulario correctamente
@@ -1566,7 +1606,11 @@
                 
             } catch (error) {
                 console.error('❌ Error enviando solicitud:', error);
-                showAlert(alertDiv, 'error', '❌ Error al enviar la solicitud: ' + error.message);
+                // Solo si el envío falla se conserva en el equipo, para reintentarlo
+                guardarSolicitudAccesoLocal(formData);
+                showAlert(alertDiv, 'error',
+                    '⚠️ No se pudo enviar la solicitud en este momento: ' + error.message +
+                    '\nQuedó guardada y se reintentará al recargar la página.');
             } finally {
                 requestBtn.disabled = false;
                 requestBtn.innerHTML = '📤 Enviar Solicitud';
