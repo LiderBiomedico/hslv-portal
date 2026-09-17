@@ -1353,6 +1353,18 @@
                 console.log('🔄 Estado de conexión actualizado:', event.detail);
                 isCloudConnected = event.detail.connected;
                 updateCloudStatus(event.detail.connected ? 'connected' : 'disconnected');
+                if (isCloudConnected) sincronizarSolicitudesLocales();
+            });
+
+            // Token vencido o inválido: se pide iniciar sesión de nuevo
+            window.addEventListener('hslvSesionExpirada', function() {
+                sessionStorage.removeItem('hospital_user');
+                currentUser = null;
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('user-actions').style.display = 'none';
+                document.getElementById('auth-modal').classList.add('show');
+                const alertDiv = document.getElementById('login-alert');
+                if (alertDiv) showAlert(alertDiv, 'error', '🔒 Su sesión expiró. Ingrese nuevamente; las solicitudes guardadas localmente se enviarán al conectar.');
             });
             
             // Check inicial
@@ -1360,6 +1372,39 @@
                 const status = window.airtableAPI.getStatus();
                 isCloudConnected = status.isConnected;
                 updateCloudStatus(isCloudConnected ? 'connected' : 'disconnected');
+            }
+        }
+
+        // Envía a Airtable las solicitudes que quedaron en "Modo local" (TEMP-xxxxxx)
+        let sincronizando = false;
+        async function sincronizarSolicitudesLocales() {
+            if (sincronizando || !window.airtableAPI || !currentUser) return;
+            let pendientes;
+            try {
+                pendientes = JSON.parse(localStorage.getItem('hospital_solicitudes') || '[]');
+            } catch { pendientes = []; }
+            // Solo las del usuario actual
+            const mias = pendientes.filter(r => r.emailSolicitante === currentUser.email);
+            if (mias.length === 0) return;
+
+            sincronizando = true;
+            const enviadas = new Set();
+            for (const req of mias) {
+                try {
+                    const { id, numero, fechaCreacion, estado, ...datos } = req;
+                    const res = await window.airtableAPI.createSolicitud(datos);
+                    enviadas.add(req.id);
+                    console.log(`✅ ${numero} sincronizada como ${res?.fields?.numero || res?.id}`);
+                } catch (err) {
+                    console.warn(`⚠️ No se pudo sincronizar ${req.numero}:`, err.message);
+                    if (/sesi[oó]n/i.test(err.message)) break;
+                }
+            }
+            const restantes = pendientes.filter(r => !enviadas.has(r.id));
+            localStorage.setItem('hospital_solicitudes', JSON.stringify(restantes));
+            sincronizando = false;
+            if (enviadas.size > 0) {
+                alert(`✅ Se enviaron a Airtable ${enviadas.size} solicitud(es) que estaban guardadas sin conexión.`);
             }
         }
 
@@ -1781,6 +1826,11 @@
             try {
                 let result;
                 
+                // Si hay sesión pero el estado quedó desconectado, se reintenta antes de guardar local
+                if (window.airtableAPI && !isCloudConnected && window.airtableAPI.getSessionToken()) {
+                    isCloudConnected = await window.airtableAPI.reconectar();
+                }
+
                 if (window.airtableAPI && isCloudConnected) {
                     console.log('☁️ Enviando a Airtable con mapeo automático...');
                     result = await window.airtableAPI.createSolicitud(formData);

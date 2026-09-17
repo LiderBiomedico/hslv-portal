@@ -272,38 +272,61 @@ class AirtableAPI {
     }
 
     async initializeConnectionAsync() {
-        setTimeout(async () => {
+        setTimeout(() => {
+            // En producción el proxy exige sesión: antes del login no se consulta nada.
+            // Antes se probaba igual, recibía 401 y el portal quedaba en "Modo local"
+            // para siempre, porque nunca se volvía a probar después de iniciar sesión.
+            if (this.useProxy && !this.getSessionToken()) {
+                this.connectionStatus = 'sin-sesion';
+                this.notifyConnectionStatus(false);
+                console.log('🔒 Esperando inicio de sesión para conectar con Airtable');
+                return;
+            }
+            this.reconectar();
+        }, 500);
+    }
+
+    // 🔄 Prueba la conexión y carga valores válidos. Se ejecuta al cargar (si hay
+    // token) y automáticamente cada vez que se guarda un token nuevo.
+    async reconectar() {
+        if (this._reconectando) return this._reconectando;
+        this._reconectando = (async () => {
             try {
                 const isConnected = await this.testConnection();
-                
+                this.connectionStatus = isConnected ? 'connected' : 'disconnected';
+                this.notifyConnectionStatus(isConnected);
                 if (isConnected) {
-                    this.connectionStatus = 'connected';
-                    this.notifyConnectionStatus(true);
                     console.log('✅ Conectado exitosamente a Airtable');
-                    
                     await this.detectValidAccessRequestValues();
                     await this.detectValidUserValues();
-                    
                     try {
                         await this.detectValidSolicitudValues();
                     } catch (error) {
-                        console.warn('⚠️ No se pudieron detectar valores de solicitudes, usando valores por defecto conocidos');
+                        console.warn('⚠️ Usando valores por defecto conocidos para solicitudes');
                     }
                 } else {
-                    this.connectionStatus = 'disconnected';
-                    this.notifyConnectionStatus(false);
-                    console.warn('⚠️ Modo localStorage activo');
+                    console.warn('⚠️ Sin conexión con Airtable');
                 }
+                return isConnected;
             } catch (error) {
-                console.error('❌ Error en inicialización:', error);
+                console.error('❌ Error en reconexión:', error);
                 this.connectionStatus = 'disconnected';
                 this.notifyConnectionStatus(false);
+                return false;
+            } finally {
+                this._reconectando = null;
             }
-        }, 2000);
+        })();
+        return this._reconectando;
     }
 
     // 🔍 FUNCIÓN: Detectar valores válidos para solicitudes de acceso
     async detectValidAccessRequestValues() {
+        // SolicitudesAcceso solo admite GET para administradores en el proxy
+        if (this.useProxy) {
+            this.validAccessRequestValues.estado = this.validAccessRequestValues.estado || 'Pendiente';
+            return;
+        }
         console.log('🔍 Detectando valores y campos válidos para SolicitudesAcceso...');
         
         try {
@@ -378,6 +401,11 @@ class AirtableAPI {
 
     // 🔍 Detectar valores válidos para tabla de usuarios
     async detectValidUserValues() {
+        // La tabla Usuarios está bloqueada en el proxy a propósito (user-management.js)
+        if (this.useProxy) {
+            this.validUserValues.estado = this.validUserValues.estado || 'Activo';
+            return;
+        }
         console.log('🔍 Detectando valores válidos para tabla Usuarios...');
         
         try {
@@ -595,8 +623,14 @@ class AirtableAPI {
             console.error('❌ Error response:', errorText);
 
             if (response.status === 401) {
-                this.setSessionToken(null);
-                throw new Error('Sesión expirada. Vuelva a iniciar sesión.');
+                if (this.useProxy && options.headers && options.headers.Authorization) {
+                    this.setSessionToken(null);
+                    this.connectionStatus = 'sin-sesion';
+                    this.notifyConnectionStatus(false);
+                    window.dispatchEvent(new CustomEvent('hslvSesionExpirada'));
+                    throw new Error('Sesión expirada. Vuelva a iniciar sesión.');
+                }
+                throw new Error('Se requiere iniciar sesión.');
             }
 
             throw new Error(`HTTP ${response.status}: ${errorText}`);
@@ -1150,6 +1184,8 @@ async getSolicitudes(opciones = {}) {
         } catch (e) {
             console.warn('⚠️ sessionStorage no disponible; el token vive solo en memoria');
         }
+        // Con un token nuevo se reintenta la conexión (antes quedaba en Modo local)
+        if (token) this.reconectar();
     }
 
     getSessionToken() {
@@ -2450,34 +2486,4 @@ console.log('✨ NUEVO: Cambio de tipo de servicio al marcar como completada');
 console.log('📊 Para estadísticas avanzadas: window.airtableAPI.getAdvancedStatistics()');
 console.log('🛠️ Para estado general: debugAirtableConnection()');
 
-// Auto-verificación después de la carga
-setTimeout(async () => {
-    if (window.airtableAPI) {
-        console.log('🔄 Iniciando detección automática de valores válidos...');
-        
-        try {
-            await window.airtableAPI.detectValidAccessRequestValues();
-            await window.airtableAPI.detectValidUserValues();
-            
-            try {
-                await window.airtableAPI.detectValidSolicitudValues();
-            } catch (error) {
-                console.log('📋 Usando valores por defecto para solicitudes');
-            }
-            
-            const solicitudValues = window.airtableAPI.validSolicitudValues;
-            
-            console.log('✅ Detección completada');
-            console.log('📋 Valores de solicitudes disponibles:', {
-                áreas: solicitudValues.servicioIngenieria,
-                tipos: solicitudValues.tipoServicio.length,
-                prioridades: solicitudValues.prioridad.length,
-                estados: solicitudValues.estado.length
-            });
-            console.log('✨ Sistema listo con cambio de tipo de servicio al completar');
-            
-        } catch (error) {
-            console.error('❌ Error en detección automática:', error);
-        }
-    }
-}, 3000);
+// La detección de valores la hace reconectar() cuando existe una sesión válida.
