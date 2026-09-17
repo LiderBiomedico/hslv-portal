@@ -170,20 +170,12 @@ class AirtableAPI {
         console.log('🔍 Hostname:', this.hostname);
         console.log('🏠 Es desarrollo local:', this.isLocalDevelopment);
         
-        if (this.isLocalDevelopment) {
-            this.useProxy = false;
-            this.baseUrl = 'https://api.airtable.com/v0/appFyEBCedQGOeJyV';
-            // ⚠️ SEGURIDAD: NUNCA incrustar el token aqui (este archivo se sirve al navegador).
-            // Para desarrollo local usar `netlify dev` (que enruta por el proxy con la
-            // variable de entorno) o definir window.__AIRTABLE_DEV_KEY en una consola local.
-            this.directApiKey = (typeof window !== 'undefined' && window.__AIRTABLE_DEV_KEY) || null;
-            console.log('🔧 MODO DESARROLLO: Conexión directa');
-        } else {
-            this.useProxy = true;
-            this.baseUrl = '/.netlify/functions/airtable-proxy';
-            this.directApiKey = null;
-            console.log('🛡️ MODO PRODUCCIÓN: Usando proxy Netlify');
-        }
+        // Siempre por el proxy, también en local: usar `netlify dev`, que levanta
+        // las funciones con las variables de entorno. El navegador nunca habla
+        // directo con Airtable ni conoce el BASE_ID.
+        this.useProxy = true;
+        this.baseUrl = '/.netlify/functions/airtable-proxy';
+        this.directApiKey = null;
         
         // 📋 Tablas confirmadas
         this.tables = {

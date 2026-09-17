@@ -9,7 +9,8 @@
 // ===============================================
 
 const { signSession, verifyCode, corsHeaders,
-        revisarConfiguracion, respuestaConfiguracion } = require('./utils/session');
+        revisarConfiguracion, respuestaConfiguracion,
+        ipBloqueada, registrarFalloIp, limpiarFallosIp } = require('./utils/session');
 
 const BLOQUEO_INTENTOS = Number(process.env.LOGIN_MAX_INTENTOS || 5);
 const BLOQUEO_MINUTOS = Number(process.env.LOGIN_BLOQUEO_MINUTOS || 15);
@@ -57,6 +58,15 @@ exports.handler = async (event) => {
         return respuestaConfiguracion(problemas, headers, 'technician-auth');
     }
 
+    const minutosIp = ipBloqueada(event);
+    if (minutosIp) {
+        return {
+            statusCode: 429,
+            headers,
+            body: JSON.stringify({ success: false, message: `Demasiados intentos. Espere ${minutosIp} min.` })
+        };
+    }
+
     try {
         const { email, code } = JSON.parse(event.body || '{}');
 
@@ -79,7 +89,10 @@ exports.handler = async (event) => {
         const data = await airtable(BASE_ID, API_KEY, `Tecnicos?filterByFormula=${filtro}&maxRecords=1`);
         const tecnico = data.records?.[0];
 
-        if (!tecnico) return credencialInvalida;
+        if (!tecnico) {
+            registrarFalloIp(event);
+            return credencialInvalida;
+        }
 
         const campos = tecnico.fields || {};
 
@@ -103,6 +116,7 @@ exports.handler = async (event) => {
         }
 
         if (!verifyCode(code, almacenado)) {
+            registrarFalloIp(event);
             const fallidos = Number(campos.intentosFallidos || 0) + 1;
             const camposActualizar = { intentosFallidos: fallidos };
 
@@ -129,6 +143,8 @@ exports.handler = async (event) => {
                 }
             })
         }).catch(err => console.warn('No se actualizo el ultimo acceso:', err.message));
+
+        limpiarFallosIp(event);
 
         const token = signSession({
             sub: tecnico.id,

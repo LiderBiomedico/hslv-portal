@@ -14,8 +14,12 @@ const { getSession, corsHeaders } = require('./utils/session');
 // Que se puede hacer contra cada tabla, y quien puede hacerlo.
 // 'publico' = sin sesion | 'usuario' = sesion valida | 'admin' = sesion con rol admin
 const REGLAS = {
-    Solicitudes:        { GET: 'usuario', POST: 'usuario', PATCH: 'usuario' },
-    Tecnicos:           { GET: 'usuario' },
+    // PATCH solo admin: un usuario o técnico cualquiera podía cambiar el estado,
+    // la asignación o la descripción de solicitudes ajenas enviando el id.
+    // (Los técnicos actualizan por start-work.js / submit-technician-response.js.)
+    Solicitudes:        { GET: 'usuario', POST: 'usuario', PATCH: 'admin' },
+    // PATCH admin: el portal de gestión cambia el estado del técnico al asignar
+    Tecnicos:           { GET: 'usuario', PATCH: 'admin' },
     SolicitudesAcceso:  { POST: 'publico', GET: 'admin', PATCH: 'admin' }
     // Usuarios NO aparece aqui a proposito: se gestiona solo por user-management.js
 };

@@ -6,7 +6,8 @@
 // ===============================================
 
 const { signSession, verifyCode, corsHeaders,
-        revisarConfiguracion, respuestaConfiguracion } = require('./utils/session');
+        revisarConfiguracion, respuestaConfiguracion,
+        ipBloqueada, registrarFalloIp, limpiarFallosIp } = require('./utils/session');
 
 const BLOQUEO_INTENTOS = Number(process.env.LOGIN_MAX_INTENTOS || 5);
 const BLOQUEO_MINUTOS = Number(process.env.LOGIN_BLOQUEO_MINUTOS || 15);
@@ -55,6 +56,15 @@ exports.handler = async (event) => {
         return respuestaConfiguracion(problemas, headers, 'auth-login');
     }
 
+    const minutosIp = ipBloqueada(event);
+    if (minutosIp) {
+        return {
+            statusCode: 429,
+            headers,
+            body: JSON.stringify({ valid: false, error: `Demasiados intentos. Espere ${minutosIp} min.` })
+        };
+    }
+
     try {
         const { email, codigoAcceso } = JSON.parse(event.body || '{}');
 
@@ -89,7 +99,10 @@ exports.handler = async (event) => {
             body: JSON.stringify({ valid: false, error: 'Credenciales invalidas' })
         };
 
-        if (!registro) return credencialInvalida;
+        if (!registro) {
+            registrarFalloIp(event);
+            return credencialInvalida;
+        }
 
         const campos = registro.fields || {};
 
@@ -116,6 +129,7 @@ exports.handler = async (event) => {
         const codigoValido = verifyCode(codigoAcceso, almacenado);
 
         if (!codigoValido) {
+            registrarFalloIp(event);
             const fallidos = Number(campos.intentosFallidos || 0) + 1;
             const camposActualizar = { intentosFallidos: fallidos };
 
@@ -148,6 +162,7 @@ exports.handler = async (event) => {
         }).catch(err => console.warn('No se actualizo el ultimo acceso:', err.message));
 
         intentosMemoria.delete(clave);
+        limpiarFallosIp(event);
 
         const token = signSession({
             sub: registro.id,

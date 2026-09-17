@@ -202,9 +202,12 @@ function corsHeaders(event) {
     const permitidos = (process.env.ALLOWED_ORIGINS || '')
         .split(',').map(o => o.trim()).filter(Boolean);
     const origin = event.headers?.origin || event.headers?.Origin || '';
-    const allow = permitidos.length === 0
-        ? origin || '*'                                  // sin configurar: no rompe nada
-        : (permitidos.includes(origin) ? origin : permitidos[0]);
+    // Sin ALLOWED_ORIGINS se permite SOLO el propio dominio del sitio.
+    // Antes se reflejaba cualquier Origin, lo que abría la API a sitios externos.
+    const host = event.headers?.host || '';
+    const propio = host ? `https://${host}` : '';
+    const lista = permitidos.length > 0 ? permitidos : [propio].filter(Boolean);
+    const allow = lista.includes(origin) ? origin : (lista[0] || 'null');
 
     return {
         'Access-Control-Allow-Origin': allow,
@@ -215,7 +218,51 @@ function corsHeaders(event) {
     };
 }
 
+// ---------- Freno de fuerza bruta por IP ----------
+// Cuenta intentos FALLIDOS por IP, exista o no la cuenta. Así no se puede
+// probar códigos sin límite contra correos inexistentes ni enumerar cuentas
+// por la diferencia entre 401 y 429. Vive en memoria de la instancia: frena
+// ataques rápidos; el bloqueo persistente por cuenta sigue en Airtable.
+const intentosPorIp = new Map();
+const IP_MAX_FALLOS = Number(process.env.IP_MAX_FALLOS || 10);
+const IP_BLOQUEO_MINUTOS = Number(process.env.IP_BLOQUEO_MINUTOS || 15);
+
+function ipCliente(event) {
+    return event.headers?.['x-nf-client-connection-ip']
+        || event.headers?.['client-ip']
+        || (event.headers?.['x-forwarded-for'] || '').split(',')[0].trim()
+        || 'desconocida';
+}
+
+function ipBloqueada(event) {
+    const ahora = Date.now();
+    for (const [ip, d] of intentosPorIp) {
+        if (d.hasta < ahora && d.ultimo < ahora - 3600000) intentosPorIp.delete(ip);
+    }
+    const d = intentosPorIp.get(ipCliente(event));
+    return d && d.hasta > ahora ? Math.ceil((d.hasta - ahora) / 60000) : 0;
+}
+
+function registrarFalloIp(event) {
+    const ip = ipCliente(event);
+    const d = intentosPorIp.get(ip) || { fallos: 0, hasta: 0, ultimo: 0 };
+    d.fallos += 1;
+    d.ultimo = Date.now();
+    if (d.fallos >= IP_MAX_FALLOS) {
+        d.hasta = Date.now() + IP_BLOQUEO_MINUTOS * 60000;
+        d.fallos = 0;
+    }
+    intentosPorIp.set(ip, d);
+}
+
+function limpiarFallosIp(event) {
+    intentosPorIp.delete(ipCliente(event));
+}
+
 module.exports = {
+    ipBloqueada,
+    registrarFalloIp,
+    limpiarFallosIp,
     revisarConfiguracion,
     respuestaConfiguracion,
     signSession,
